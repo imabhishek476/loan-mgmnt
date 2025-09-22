@@ -7,7 +7,8 @@
     "frontend": "cd frontend && npm start",
     "backend": "cd backend && npm start",
     "dev": "concurrently 'npm run frontend' 'npm run backend'",
-    "win-dev": "concurrently \"npm run frontend\" \"npm run backend\""
+      "win-dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm start\""
+
   },
   "keywords": [],
   "author": "",
