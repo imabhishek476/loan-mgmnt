@@ -15,6 +15,16 @@ export default defineConfig([
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
     ],
+ "rules": {
+        "no-unused-vars": ["error", {
+            "vars": "all",
+            "args": "after-used",
+            "caughtErrors": "all",
+            "ignoreRestSiblings": false,
+            "ignoreUsingDeclarations": false,
+            "reportUsedIgnorePattern": false
+        }]
+    },
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
