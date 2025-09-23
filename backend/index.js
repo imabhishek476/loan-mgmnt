@@ -20,7 +20,7 @@ app.use(
 connectDB();
 
 // Routes
-app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/auth", require("./routes/auth.router"));
 
 // Seed admin user
 const seedAdmin = require("./admin");
