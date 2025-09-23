@@ -11,9 +11,9 @@ import {
 } from "react-icons/fa";
 
 import { Link, useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../hooks/user";
-import { logoutSuccess } from "../store/userSlice";
-import { logout } from "../services/AuthServices";
+import { useAppDispatch, useAppSelector } from "../../hooks/user";
+import { logoutSuccess } from "../../store/UserSlice";
+import { logout } from "../../services/AuthServices";
 
 const Sidebar = ({ active }) => {
   const { user } = useAppSelector((state) => state.user);
@@ -62,37 +62,36 @@ const Sidebar = ({ active }) => {
         </div>
 
         {/* Nav */}
-  <nav className="mt-4 m-3 flex flex-col gap-2">
-  {[
-    { name: "Dashboard", icon: <FaThLarge />, path: "dashboard" },
-    { name: "Clients", icon: <FaUserFriends />, path: "clients" },
-    { name: "Loans", icon: <FaDollarSign />, path: "loans" },
-    { name: "Payments", icon: <FaCreditCard />, path: "payments" },
-    { name: "Documents", icon: <FaFileAlt />, path: "documents" },
-    { name: "Reports", icon: <FaChartBar />, path: "reports" },
-  ].map((item) => (
-    <Link
-      key={item.path}
-      to={`/${item.path}`}
-      className={`flex items-center justify-between px-4 py-2 gap-3 rounded-lg font-medium transition-colors ${
-        active === item.path
-          ? "bg-deep-forest text-white shadow-lg"
-          : "text-text-gray hover:bg-soft-gray hover:shadow-sm"
-      }`}
-    >
-      {/* Left side: icon + label */}
-      <div className="flex items-center gap-3">
-        {item.icon}
-        {item.name}
-      </div>
+        <nav className="mt-4 m-3 flex flex-col gap-2">
+          {[
+            { name: "Dashboard", icon: <FaThLarge />, path: "dashboard" },
+            { name: "Clients", icon: <FaUserFriends />, path: "clients" },
+            { name: "Loans", icon: <FaDollarSign />, path: "loans" },
+            { name: "Payments", icon: <FaCreditCard />, path: "payments" },
+            { name: "Documents", icon: <FaFileAlt />, path: "documents" },
+            { name: "Reports", icon: <FaChartBar />, path: "reports" },
+          ].map((item) => (
+            <Link
+              key={item.path}
+              to={`/${item.path}`}
+              className={`flex items-center justify-between px-4 py-2 gap-3 rounded-lg font-medium transition-colors ${active === item.path
+                  ? "bg-deep-forest text-white shadow-lg"
+                  : "text-text-gray hover:bg-soft-gray hover:shadow-sm"
+                }`}
+            >
+              {/* Left side: icon + label */}
+              <div className="flex items-center gap-3">
+                {item.icon}
+                {item.name}
+              </div>
 
-      {/* Right side: arrow only if active */}
-      {active === item.path && (
-        <FaChevronRight className="text-sm transition-transform rotate-0" />
-      )}
-    </Link>
-  ))}
-</nav>
+              {/* Right side: arrow only if active */}
+              {active === item.path && (
+                <FaChevronRight className="text-sm transition-transform rotate-0" />
+              )}
+            </Link>
+          ))}
+        </nav>
 
       </div>
 
@@ -100,7 +99,7 @@ const Sidebar = ({ active }) => {
       <div className="relative mb-4" ref={profileRef}>
         {/* Profile Button */}
         <div
-        className="flex items-center gap-3 px-4 py-3 bg-deep-forest cursor-pointer hover:shadow-lg hover:bg-primary-green transition-shadow rounded-lg"
+          className="flex items-center gap-3 px-4 py-3 bg-deep-forest cursor-pointer hover:shadow-lg hover:bg-primary-green transition-shadow rounded-lg"
           onClick={() => setProfileOpen((prev) => !prev)}
         >
           {/* Avatar */}

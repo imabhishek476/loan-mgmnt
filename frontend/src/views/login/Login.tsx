@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch } from "../hooks/user";
-import { login } from "../services/AuthServices";
-import { loginSuccess } from "../store/userSlice";
+import { useAppDispatch } from "../../hooks/user";
+import { login } from "../../services/AuthServices";
+import { loginSuccess } from "../../store/UserSlice";
 import { toast } from "react-toastify";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-import  Logo  from "../assets/img/logo/loans-logo.jpg";
+import  Logo  from "../../assets/img/logo/loans-logo.jpg";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
