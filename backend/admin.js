@@ -8,7 +8,7 @@ module.exports = async function seedAdmin() {
     if (!existing) {
       const hashed = await bcrypt.hash("admin123", 10); 
       const admin = new User({
-        name: "Cristin jenfar",
+        name: "vInnovate",
         email,
         password: hashed,
         userRole: "admin",

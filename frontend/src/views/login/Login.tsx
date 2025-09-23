@@ -6,7 +6,7 @@ import { loginSuccess } from "../../store/UserSlice";
 import { toast } from "react-toastify";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-import  Logo  from "../../assets/img/logo/loans-logo.jpg";
+import  Logo  from "../../assets/img/logo/favicon.png";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +32,7 @@ const Login = () => {
   };
 
   return (
-<div className="min-h-screen flex items-center justify-center w-full bg-gradient-to-br from-green-200 to-green-400 px-4">
+<div className="min-h-screen flex items-center justify-center w-full bg-gradient-to-br from-green-400 to-green-600 px-4">
   <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
     
     {/* Logo */}
@@ -46,7 +46,7 @@ const Login = () => {
 
     {/* Title */}
     <h1 className="text-3xl font-bold text-center mb-2 text-gray-700 tracking-tight font-sans">
-      Loans <span className="text-green-600">Program</span>
+      Claim <span className="text-green-700">Advance</span>
     </h1>
     <p className="text-center text-gray-500 text-sm mb-8 font-medium">
       A professional platform for smart financial solutions
@@ -56,26 +56,24 @@ const Login = () => {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* Email Field */}
       <div className="flex items-center border border-gray-200 rounded-lg px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-green-400">
-        <FaEnvelope className="text-green-500 mr-3" />
+        <FaEnvelope className="text-green-600 mr-3" />
         <input
           type="email"
           placeholder="Enter your email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
+          onChange={(e) => setEmail(e.target.value)}          
           className="w-full outline-none text-gray-700 placeholder-gray-400 font-medium"
         />
       </div>
 
       {/* Password Field */}
       <div className="flex items-center border border-gray-200 rounded-lg px-4 py-3 shadow-sm relative focus-within:ring-2 focus-within:ring-green-400">
-        <FaLock className="text-green-500 mr-3" />
+        <FaLock className="text-green-600 mr-3" />
         <input
           type={showPassword ? "text" : "password"}
           placeholder="Enter your password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
+          onChange={(e) => setPassword(e.target.value)}          
           className="w-full outline-none text-gray-700 placeholder-gray-400 font-medium pr-10"
         />
         <div
