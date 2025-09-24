@@ -1,31 +1,36 @@
 import React, { useState, useRef } from "react";
 import {
-  FaThLarge,
-  FaUserFriends,
-  FaDollarSign,
-  FaCreditCard,
-  FaFileAlt,
-  FaChartBar,
-  FaUser,
-  FaChevronRight,
-} from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+  LayoutDashboard,
+  Users,
+  DollarSign,
+  CreditCard,
+  FileText,
+  BarChart3,
+  ChevronRight,
+  LogOut,
+  User,
+  Menu,
+} from "lucide-react";
+
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/user";
 import { logoutSuccess } from "../../store/UserSlice";
 import { logout } from "../../services/AuthServices";
-import  Logo  from "../../assets/img/logo/favicon.png";
-interface SidebarProps {
-  active: string;
-}
-const Sidebar: React.FC<SidebarProps> = ({ active }) => {
-  const [open, setOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-    const dispatch = useAppDispatch();
-  const profileRef = useRef(null);
+import Logo from "../../assets/img/logo/favicon.png";
+
+const Sidebar: React.FC = () => {
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.user);
   const navigate = useNavigate();
+  const location = useLocation();
+  const profileRef = useRef(null);
 
-
+  const [open, setOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 768; // open by default on md+
+    }
+    return true;
+  });
 
   const handleLogout = async () => {
     try {
@@ -37,127 +42,106 @@ const Sidebar: React.FC<SidebarProps> = ({ active }) => {
     }
   };
 
+  const menuItems = [
+    { name: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, path: "dashboard" },
+    { name: "Clients", icon: <Users className="w-5 h-5" />, path: "clients" },
+    { name: "Loans", icon: <DollarSign className="w-5 h-5" />, path: "loans" },
+    { name: "Payments", icon: <CreditCard className="w-5 h-5" />, path: "payments" },
+    { name: "Documents", icon: <FileText className="w-5 h-5" />, path: "documents" },
+    { name: "Reports", icon: <BarChart3 className="w-5 h-5" />, path: "reports" },
+  ];
+  const currentPath = location.pathname.replace(/^\/+/, "") || "dashboard";
+
   return (
-    <>
-      {/* Mobile Menu Button */}
-      <button
-        className="md:hidden fixed top-2 right-2 z-50 bg-green-600 bg-opacity-40 text-green p-2 rounded-lg"
-        onClick={() => setOpen(!open)}
+    <aside
+      className={`fixed md:static top-0 left-0 h-full flex flex-col justify-between border-r bg-white z-50 transform transition-all duration-300 ${open ? "w-64" : "w-16"
+        }`}
+    >
+      <div
+        className={`border-b border-gray-300 p-4 relative ${open ? "flex flex-row items-center justify-between" : "flex flex-col items-center"
+          }`}
       >
-        ☰
-      </button>
-
-      {/* Overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      <aside
-        className={`fixed md:static top-0 left-0 h-full w-64 bg-white flex flex-col justify-between border-r z-50 transform transition-transform duration-300
-          ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
-      >
-        {/* Logo */}
-        <div>
-          <div className="flex items-center gap-3 px-6 py-6 border-b border-gray-300">
-            <div className="bg-green-100 p-2 rounded-lg">
-              {/* <FaThLarge className="text-green-700 text-2xl" /> */}
-               <img
-        src={Logo} 
-        alt="Company Logo"
-        className="h-10 w-auto object-contain"
-      />
-            </div>
-            <div>
-              <span className="block font-semibold text-green-900 text-lg">
-              Claim Advance
-              </span>
-              {/* <span className="block text-gray-500 text-sm font-bold mt-1">
-               LMS
-              </span> */}
-            </div>
+        <div className={`flex items-center gap-3 ${open ? "" : "flex-col"}`}>
+          <div className="p-2 rounded-lg flex items-center justify-center h-16 w-16">
+            <img
+              src={Logo}
+              alt="Company Logo"
+              className="h-full w-auto object-contain transition-all duration-300"
+            />
           </div>
+          {open && <span className="font-semibold text-green-900 text-lg">Claim Advance</span>}
+        </div>
 
-          {/* Nav Links */}
-          <nav className="mt-4 m-3 flex flex-col gap-2">
-            {[
-              { name: "Dashboard", icon: <FaThLarge />, path: "dashboard" },
-              { name: "Clients", icon: <FaUserFriends />, path: "clients" },
-              { name: "Loans", icon: <FaDollarSign />, path: "loans" },
-              { name: "Payments", icon: <FaCreditCard />, path: "payments" },
-              { name: "Documents", icon: <FaFileAlt />, path: "documents" },
-              { name: "Reports", icon: <FaChartBar />, path: "reports" },
-            ].map((item) => (
-              <Link
-                key={item.path}
-                to={`/${item.path}`}
-                className={`flex items-center justify-between px-4 py-2 gap-3 rounded-lg font-medium transition-colors ${
-                  active === item.path
-                    ? "bg-green-800 text-white shadow-lg"
-                    : "text-gray-600 hover:bg-gray-100"
+        <button
+          onClick={() => setOpen(!open)}
+          className={`p-2 rounded-md hover:bg-gray-200 bg-white transition-colors ${open ? "" : "mb-2"
+            } lg:hidden`}
+        >
+          <Menu className="w-6 h-6 text-gray-600" />
+        </button>
+      </div>
+
+      <nav className="m-2 mt-4 flex flex-col gap-2 flex-1">
+        {menuItems.map((item) => {
+          const isActive = currentPath === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={`/${item.path}`}
+              className={`flex items-center px-4 py-2 gap-3 rounded-lg font-medium transition-colors ${isActive
+                  ? "bg-green-800 text-white shadow-lg"
+                  : "text-gray-600 hover:bg-gray-100"
                 }`}
-              >
-                <div className="flex items-center gap-3">
-                  {item.icon}
-                  {item.name}
-                </div>
-                {active === item.path && (
-                  <FaChevronRight className="text-sm" />
-                )}
-              </Link>
-            ))}
-          </nav>
-        </div>
+            >
+              {item.icon}
+              {open && <span>{item.name}</span>}
+              {isActive && open && <ChevronRight className="w-4 h-4 ml-auto" />}
+            </Link>
+          );
+        })}
+      </nav>
 
-        {/* Profile Section */}
-        <div className="relative mb-4" ref={profileRef}>
-          <div
-            className="flex items-center gap-3 px-4 py-3 bg-green-700 cursor-pointer hover:shadow-lg transition-shadow rounded-lg"
-            onClick={() => setProfileOpen((prev) => !prev)}
-          >
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-green-600 font-bold text-lg">
-              {(user?.name || user?.email || "").charAt(0).toUpperCase()}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-white font-semibold">
-                {user?.name || user?.email}
-              </span>
-              <span className="text-sm bg-white text-green-600 px-2 py-0.5 mt-1 rounded-full font-medium uppercase">
-                {user?.role}
-              </span>
-            </div>
-          </div>
 
-          {/* Dropdown */}
-          {profileOpen && (
-            <div className="absolute right-0 bottom-full mb-2 w-72 bg-white rounded-lg shadow-lg border z-50 animate-fade-in overflow-hidden">
-              <div className="px-4 py-4 border-b">
-                <div className="font-semibold text-gray-900">
-                  {user?.name || user?.email}
-                </div>
-                <div className="text-xs text-gray-500 truncate">{user?.email}</div>
+      <div className="relative border-t border-gray-300" ref={profileRef}>
+        {open ? (
+          <div className="flex items-center justify-between gap-3 px-2 py-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-green-600 font-bold text-base">
+                <User className="w-4 h-4 text-green-600" />
               </div>
-
-              <Link
-                to="/profile"
-                className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 transition-colors text-gray-800 font-medium"
-              >
-                <FaUser className="text-green-600" /> Profile Settings
-              </Link>
-
-              <button
-                onClick={handleLogout}
-                className="w-full px-4 py-1 bg-red-500 text-white font-medium hover:bg-red-400 transition-colors flex items-center justify-center gap-2"
-              >
-                &#8682; Sign Out
-              </button>
+              <div className="flex flex-col leading-tight">
+                <span className="text-gray-800 font-medium text-sm">
+                  {user?.name || user?.email}
+                </span>
+                <span className="text-gray-500 text-xs">{user?.role}</span>
+              </div>
             </div>
-          )}
-        </div>
-      </aside>
-    </>
+
+            <button
+              onClick={handleLogout}
+              className="p-1.5 rounded-full text-gray-500 hover:bg-red-500 hover:text-white transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 py-3">
+            <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-green-600">
+              <User className="w-4 h-4 text-green-600" />
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-full text-gray-500 hover:bg-red-500 hover:text-white transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+      </div>
+    </aside>
   );
 };
 

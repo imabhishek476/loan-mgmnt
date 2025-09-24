@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional: your custom colors */
 :root {
   --primary-green: #1E824C;
   --accent-mint: #A9DFBF;

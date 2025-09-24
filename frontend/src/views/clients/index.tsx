@@ -1,52 +1,63 @@
 import { useAppSelector } from "../../hooks/user";
+import Button from '@mui/material/Button';
+import { Plus, User } from "lucide-react";
+import { useState } from "react";
+import AddClient from "../../views/clients/components/AddClient";
 
 const Clients = () => {
-  const { user } = useAppSelector((state) => state.user);
+  const { user } = useAppSelector(state => state.user);
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex items-left justify-center px-2 py-8 sm:px-0">
-      <div className="w-full bg-white rounded-xl shadow-md flex flex-col mx-auto sm:p-8">
-        <h1 className="text-xl sm:text-2xl font-semibold mb-2 text-left">
-          Client Management
-        </h1>
-        <p className="text-gray-600 mb-6 sm:mb-8 text-left text-sm sm:text-base">
-          Manage client records and personal information
-        </p>
-        <div className="flex grow bg-gray-100 rounded-lg shadow-inner p-5 sm:p-8 flex-col justify-between">
-          <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <svg
-              className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mb-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 1 7 7M12 14a7 7 0 0 0-7 7"
-              />
-            </svg>
-            <h2 className="text-base sm:text-lg text-gray-700 mb-2">
-              No clients yet
-            </h2>
-            <p className="text-gray-500 mb-5 text-sm sm:text-base">
-              Get started by adding your first client
-            </p>
-            <button className="bg-green-700 hover:bg-green-800 text-white font-semibold py-2 px-4 sm:px-5 rounded transition duration-150 w-full sm:w-auto">
-              + Add First Client
-            </button>
+    <div className="min-h-screen text-left flex bg-white transition-all duration-300 pl-[70px] lg:pl-0">
+      <div className="w-full max-w-7xl flex flex-col mx-auto">
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold mb-1">Client Management</h1>
+            <p className="text-gray-600 text-base">Manage client records and personal information</p>
           </div>
-          <div className="text-xs sm:text-sm text-gray-500 mt-4 text-center sm:text-right">
-            Your role:{" "}
-            <span className="bg-gray-200 text-gray-700 py-0.5 px-2 rounded">
-              {user?.role}
-            </span>
-          </div>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: '#145A32',
+              '&:hover': { backgroundColor: '#0f3f23' },
+            }}
+            startIcon={<Plus />}
+            onClick={() => setModalOpen(true)}
+            className="self-start sm:self-auto"
+          >
+            New Client
+          </Button>
         </div>
+        {modalOpen && <AddClient open={modalOpen} onClose={() => setModalOpen(false)} />}
+        <div className="flex flex-col grow bg-gray-100 rounded-lg shadow-inner p-5 sm:p-8 justify-center items-center text-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-green-600 text-4xl">
+            <User className="w-12 h-12" />
+          </div>
+
+          <div className="text-gray-700 text-lg font-medium">
+            No clients found
+          </div>
+          <div className="text-gray-500 text-sm">
+            Get started by adding your first client.
+          </div>
+
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: '#145A32',
+              '&:hover': { backgroundColor: '#0f3f23' },
+            }}
+            startIcon={<Plus />}
+            onClick={() => setModalOpen(true)}
+            className="mt-2"
+          >
+            New Client
+          </Button>
+        </div>
+
       </div>
     </div>
   );
 };
-
 export default Clients;

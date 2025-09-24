@@ -1,9 +1,9 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Layout from "./Layout";
-import Login from "../../views/login/Login";
-import Dashboard from "../../views/dashboard";
-import Clients from "../../views/clients";
-import ProtectedRoute from "../../views/ProtectedRoute";
+import Layout from "./views/components/Layout";
+import Login from "./views/login/Login";
+import Dashboard from "./views/dashboard/index";
+import Clients from "./views/clients";
+import ProtectedRoute from "./views/ProtectedRoute";
 import { ToastContainer } from "react-toastify";
 
 const Body = () => {
@@ -48,7 +48,7 @@ const appRouter = createBrowserRouter([
       },
     ],
   },
-  
+
 ]);
 
 export default Body;
