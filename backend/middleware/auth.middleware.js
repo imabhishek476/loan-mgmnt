@@ -2,15 +2,15 @@ const jwt = require("jsonwebtoken");
 
 
 exports.isAuthenticated = (req, res, next) => {
-  const token = req.headers.authorization;
-
-  if (!token) {
+  const token = req.headers.cookie?.split('=')[1] || req.headers.authorization?.split(' ')[1];
+  console.log("Auth Middleware Token:", token);
+  if (token == null) {
     return res.status(401).json({ msg: "No token, please login first" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; 
+    req.user = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ msg: "Token invalid" });
@@ -24,7 +24,8 @@ exports.isAdmin = (req, res, next) => {
       return res.status(401).json({ msg: "Not authenticated" });
     }
 
-    const role = req.user.userRole?.toLowerCase(); 
+    const role = req.user.role;
+
 
     const allowedRoles = ["admin",];
 

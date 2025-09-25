@@ -22,11 +22,10 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email, role: user.userRole, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -34,7 +33,7 @@ exports.login = async (req, res) => {
     });
 
     res.json({
-      user: { id: user._id, email: user.email, role: user.userRole,name:user.name },
+      user: { id: user._id, email: user.email, role: user.userRole, name: user.name },
     });
   } catch (err) {
     res.status(500).send("Server error");

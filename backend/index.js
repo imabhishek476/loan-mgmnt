@@ -1,9 +1,9 @@
 const express = require("express");
-const connectDB = require("./database"); 
+const connectDB = require("./database");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 require("dotenv").config();
-
+const clientRouter = require("./routes/client.router");
 const app = express();
 
 // Middleware
@@ -21,7 +21,7 @@ connectDB();
 
 // Routes
 app.use("/api/auth", require("./routes/auth.router"));
-
+app.use("/api/client", clientRouter);
 // Seed admin user
 const seedAdmin = require("./admin");
 seedAdmin();

@@ -1,20 +1,11 @@
 import { useState } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  IconButton,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Checkbox,
-  FormControlLabel,
-} from "@mui/material";
+import { toast } from "react-toastify";
+import { createClient } from "../../../services/ClientServices";
 import { X, Plus } from "lucide-react";
+import { TextField } from "@mui/material";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import moment, { Moment } from "moment";
 
 interface CustomField {
   id: number;
@@ -23,161 +14,203 @@ interface CustomField {
   type: "string" | "number" | "boolean";
 }
 
-interface AddClientModalProps {
+interface AddClientProps {
   open: boolean;
   onClose: () => void;
+  onClientAdded?: (client: any) => void;
 }
 
-const AddClient = ({ open, onClose }: AddClientModalProps) => {
+const AddClient = ({ open, onClose, onClientAdded }: AddClientProps) => {
+  const [loading, setLoading] = useState(false);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [fieldCounter, setFieldCounter] = useState(1);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    ssn: "",
+    dob: "",           // store formatted date string
+    accidentDate: "",  // store formatted date string
+    address: "",
+    attorneyName: "",
+  });
 
   const addCustomField = () => {
-    setCustomFields([
-      ...customFields,
-      { id: fieldCounter, name: "", value: "", type: "string" },
-    ]);
+    setCustomFields([...customFields, { id: fieldCounter, name: "", value: "", type: "string" }]);
     setFieldCounter(fieldCounter + 1);
   };
 
-  const removeCustomField = (id: number) => {
+  const removeCustomField = (id: number) =>
     setCustomFields(customFields.filter((f) => f.id !== id));
-  };
 
   const handleCustomFieldChange = (id: number, key: string, value: any) => {
-    setCustomFields(
-      customFields.map((f) => (f.id === id ? { ...f, [key]: value } : f))
-    );
+    setCustomFields(customFields.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
   };
 
+  const formatCustomFields = () =>
+    customFields.map((f) => ({
+      ...f,
+      value: f.type === "number" ? Number(f.value) || 0 : f.type === "boolean" ? Boolean(f.value) : f.value,
+    }));
+
+  const handleChange = (key: string, value: string) => setFormData({ ...formData, [key]: value });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.fullName || !formData.email || !formData.phone) {
+      toast.error("Full name, email and phone are required");
+      return;
+    }
+    setLoading(true);
+    try {
+      const payload = { ...formData, customFields: formatCustomFields() };
+      const response = await createClient(payload);
+      toast.success(`${response.client.fullName} created successfully 🎉`);
+      onClientAdded?.(response.client);
+      onClose();
+    } catch (error: any) {
+      toast.error(error.response?.data?.msg || "Failed to create client");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
-      <DialogTitle className="flex justify-between items-center">
-        <span>Add New Client</span>
-        <IconButton onClick={onClose} size="small">
-          <X />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        {/* Basic Info */}
-        <div className="grid grid-cols sm:grid-cols-2 gap-4 mb-2">
-          <TextField label="Full Name" fullWidth />
-          <TextField label="Email" fullWidth />
-          <TextField label="Phone" fullWidth />
-          <TextField label="SSN" fullWidth placeholder="XXX-XX-XXXX" />
-          <TextField
-            label="Date of Birth"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-          />
-          <TextField
-            label="Accident Date"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-          />
-          <TextField label="Address" multiline rows={2} fullWidth />
-          <TextField label="Attorney Name" fullWidth />
-        </div>
+    <LocalizationProvider dateAdapter={AdapterMoment}>
+      <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50 overflow-auto">
+        <div className="bg-white rounded-lg w-full max-w-3xl shadow-lg relative mx-4 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
 
-        {/* Custom Fields */}
-        <div className="mb-4">
-          <h3 className="font-semibold mb-2">Custom Fields</h3>
-          {customFields.map((field) => (
-            <div key={field.id} className="flex gap-2 mb-2 ">
-              <TextField
-                label="Name"
-                value={field.name}
-                onChange={(e) =>
-                  handleCustomFieldChange(field.id, "name", e.target.value)
-                }
-              />
-              {field.type === "boolean" ? (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={field.value as boolean}
-                      onChange={(e) =>
-                        handleCustomFieldChange(
-                          field.id,
-                          "value",
-                          e.target.checked
-                        )
-                      }
-                    />
-                  }
-                  label="Value"
+          {/* Header */}
+          <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
+            <h2 className="text-xl font-bold text-gray-800">Add New Client</h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Scrollable Form */}
+          <form onSubmit={handleSubmit} className="overflow-y-auto px-4 py-4 flex-1 flex flex-col gap-6">
+
+            {/* Standard Fields */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                { label: "Full Name", key: "fullName", type: "text" },
+                { label: "Email", key: "email", type: "email" },
+                { label: "Phone", key: "phone", type: "text" },
+                { label: "SSN", key: "ssn", type: "text" },
+                { label: "Attorney Name", key: "attorneyName", type: "text" },
+              ].map(field => (
+                <div key={field.key} className="flex flex-col">
+                  <label className="mb-2 font-medium text-gray-700">{field.label}</label>
+                  <input
+                    type={field.type}
+                    placeholder={field.label}
+                    value={formData[field.key as keyof typeof formData]}
+                    onChange={(e) => handleChange(field.key, e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
+                  />
+                </div>
+              ))}
+
+              {/* Date of Birth */}
+              <div className="flex flex-col">
+                <label className="mb-2 font-medium text-gray-700">Date of Birth</label>
+                <DatePicker
+                  value={formData.dob ? moment(formData.dob, "MM/DD/YYYY") : null}
+                  onChange={(date: Moment | null) => handleChange("dob", date ? date.format("MM/DD/YYYY") : "")}
+                  renderInput={(params) => <TextField {...params} />}
                 />
-              ) : (
-                <TextField
-                  label="Value"
-                  type={field.type === "number" ? "number" : "text"}
-                  value={field.value as string | number}
-                  onChange={(e) =>
-                    handleCustomFieldChange(field.id, "value", e.target.value)
-                  }
+              </div>
+
+              {/* Accident Date */}
+              <div className="flex flex-col">
+                <label className="mb-2 font-medium text-gray-700">Accident Date</label>
+                <DatePicker
+                  value={formData.accidentDate ? moment(formData.accidentDate, "MM/DD/YYYY") : null}
+                  onChange={(date: Moment | null) => handleChange("accidentDate", date ? date.format("MM/DD/YYYY") : "")}
+                  renderInput={(params) => <TextField {...params} />}
                 />
-              )}
-              <FormControl>
-                {/* <InputLabel>Type</InputLabel> */}
-                <Select
-                  value={field.type}
-                  onChange={(e) =>
-                    handleCustomFieldChange(field.id, "type", e.target.value)
-                  }
-                >
-                  <MenuItem value="text">text</MenuItem>
-                  <MenuItem value="number">number</MenuItem>
-                  <MenuItem value="boolean">boolean</MenuItem>
-                </Select>
-              </FormControl>
-              <IconButton
-                onClick={() => removeCustomField(field.id)}
-                color="error"
-              >
-                X
-              </IconButton>
+              </div>
+
+              {/* Address */}
+              <div className="flex flex-col sm:col-span-2">
+                <label className="mb-2 font-medium text-gray-700">Address</label>
+                <textarea
+                  placeholder="Address"
+                  value={formData.address}
+                  onChange={(e) => handleChange("address", e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none resize-none w-full"
+                  rows={3}
+                />
+              </div>
             </div>
-          ))}
 
-          <Button
-            variant="outlined"
-            startIcon={<Plus />}
-            onClick={addCustomField}
-            size="small"
-            sx={{
-              backgroundColor: "#145A32",
-              "&:hover": { backgroundColor: "#0f3f23" },
-              color: "white",
-            }}
-          >
-            Add Custom Field
-          </Button>
+            {/* Custom Fields */}
+            <div className="flex flex-col gap-3">
+              <h3 className="font-semibold mb-2 text-gray-800">Custom Fields</h3>
+              {customFields.map(field => (
+                <div key={field.id} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                  <input
+                    type="text"
+                    placeholder="Field Name"
+                    value={field.name}
+                    onChange={(e) => handleCustomFieldChange(field.id, "name", e.target.value)}
+                    className="border border-gray-300 rounded-lg px-2 py-1 flex-1 focus:ring-2 focus:ring-green-500 transition"
+                  />
+                  {field.type === "boolean" ? (
+                    <label className="flex items-center gap-1 mt-2 sm:mt-0">
+                      <input
+                        type="checkbox"
+                        checked={field.value as boolean}
+                        onChange={(e) => handleCustomFieldChange(field.id, "value", e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      Value
+                    </label>
+                  ) : (
+                    <input
+                      type={field.type === "number" ? "number" : "text"}
+                      placeholder="Value"
+                      value={field.value as string | number}
+                      onChange={(e) => handleCustomFieldChange(field.id, "value", e.target.value)}
+                      className="border border-gray-300 rounded-lg px-2 py-1 flex-1 focus:ring-2 focus:ring-green-500 transition"
+                    />
+                  )}
+                  <select
+                    value={field.type}
+                    onChange={(e) => handleCustomFieldChange(field.id, "type", e.target.value)}
+                    className="border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-green-500 transition"
+                  >
+                    <option value="string">Text</option>
+                    <option value="number">Number</option>
+                    <option value="boolean">Boolean</option>
+                  </select>
+                  <button type="button" onClick={() => removeCustomField(field.id)} className="text-red-600 hover:text-red-800 transition">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+              <button type="button" onClick={addCustomField} className="mt-2 px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-1">
+                <Plus className="w-4 h-4" /> Add Custom Field
+              </button>
+            </div>
+          </form>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 p-4 border-t sticky bottom-0 bg-white z-10">
+            <button type="button" onClick={onClose} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-1">
+              <X className="w-4 h-4" /> Cancel
+            </button>
+            <button type="submit" onClick={handleSubmit} className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition flex items-center gap-1">
+              <Plus className="w-4 h-4" /> Create Client
+            </button>
+          </div>
+
         </div>
-      </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={onClose}
-          sx={{
-            backgroundColor: "#e73f3fff",
-            "&:hover": { backgroundColor: "#792400ff" },
-            color: "white",
-          }}
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          sx={{
-            backgroundColor: "#145A32",
-            "&:hover": { backgroundColor: "#0f3f23" },
-          }}
-        >
-          Create Client
-        </Button>
-      </DialogActions>
-    </Dialog>
+      </div>
+    </LocalizationProvider>
   );
 };
 

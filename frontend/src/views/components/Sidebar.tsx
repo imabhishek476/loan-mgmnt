@@ -113,7 +113,7 @@ const Sidebar: React.FC = () => {
                 <span className="text-gray-800 font-medium text-sm">
                   {user?.name || user?.email}
                 </span>
-                <span className="text-gray-500 text-xs">{user?.role}</span>
+                <span className="text-gray-500 text-xs text-left">{user?.role}</span>
               </div>
             </div>
 
