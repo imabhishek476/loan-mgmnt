@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import Button from "@mui/material/Button";
-import { Search, Pencil, Trash2, Plus, User, Weight } from "lucide-react";
-
+import { Search, Pencil, Trash2, User } from "lucide-react";
+import CircularProgress from "@mui/material/CircularProgress"; 
 interface ClientsDataTableProps {
   clients: any[];
   onSearch: (query: string) => void;
@@ -39,8 +38,13 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
         />
       </div>
 
-      <div className="overflow-hidden rounded-lg border-gray-300">
-        {clients.length > 0 ? (
+     <div className="overflow-hidden rounded-lg border-gray-300">
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <CircularProgress className="text-green-700" />
+            <span className="ml-3 text-gray-700 font-medium">Loading clients...</span>
+          </div>
+        ) : clients.length > 0 ? (
           <MaterialTable
             isLoading={loading}
             title={null}
@@ -104,34 +108,8 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
                 ? `No results found for "${search}"`
                 : "No clients available. Add a new client to get started."}
             </p>
-
-            {/* <Button
-              variant="contained"
-              sx={{
-                backgroundColor: "#145A32",
-                fontWeight: 600,
-                textTransform: "none",
-                borderRadius: "8px",
-                padding: "8px 10px",
-                fontSize: "14px",
-                boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
-                "&:hover": {
-                  backgroundColor: "#0f3f23",
-                  boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-                },
-              }}
-              startIcon={<Plus />}
-              onClick={() => {
-                setEditingClient(null);
-                setModalOpen(true);
-              }}
-            >
-              New Client
-            </Button> */}
           </div>
         )}
-
-
       </div>
     </div>
   );

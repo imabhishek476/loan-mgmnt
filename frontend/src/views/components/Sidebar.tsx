@@ -69,7 +69,13 @@ const Sidebar: React.FC = () => {
               className="h-full w-auto object-contain transition-all duration-300"
             />
           </div>
-          {open && <span className="font-semibold text-green-900 text-lg">Claim Advance</span>}
+         {open && (
+ <span className="font-semibold text-green-900  sm:text-sm xs:text-xs md:text-lg">
+  Claim Advance
+</span>
+
+)}
+
         </div>
 
         <button
