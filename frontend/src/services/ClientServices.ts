@@ -24,3 +24,13 @@ export const getClientsSearch = async (filters: { query?: string } = {}) => {
   });
   return data.clients || [];
 };
+export const updateClient = async (id: string, data: ClientPayload) => {
+  const { data: response } = await axios.put(`/client/${id}`, data);
+  console.log("update data:", response);
+  return response;
+};
+
+export const deleteClient = async (id: string) => {
+  const { data: response } = await axios.delete(`/client/${id}`);
+  return response;
+};

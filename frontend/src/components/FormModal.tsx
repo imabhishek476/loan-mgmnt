@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useEffect } from "react";
 import { toast } from "react-toastify";
 import { X, Plus } from "lucide-react";
 import { TextField } from "@mui/material";
@@ -45,7 +45,17 @@ const FormModal = ({
     const [fieldCounter, setFieldCounter] = useState(1);
     const [formData, setFormData] = useState(initialData);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    useEffect(() => {
+    setFormData(initialData || {});
 
+    if (initialData?.customFields && Array.isArray(initialData.customFields)) {
+        setCustomFields(initialData.customFields);
+        setFieldCounter(initialData.customFields.length + 1);
+    } else {
+        setCustomFields([]);
+        setFieldCounter(1);
+    }
+    }, [initialData]);
     const addCustomField = () => {
         setCustomFields([...customFields, { id: fieldCounter, name: "", value: "", type: "string" }]);
         setFieldCounter(fieldCounter + 1);
@@ -182,7 +192,7 @@ const FormModal = ({
 
                             {enableCustomFields && (
                                 <div className="flex flex-col gap-3 sm:col-span-2">
-                                    <h3 className="font-semibold mb-2 text-gray-800">Custom Fields</h3>
+                                    <h3 className="font-semibold text-gray-800">Custom Fields</h3>
                                     {customFields.map(field => (
                                         <div key={field.id} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                                             <input
@@ -225,7 +235,7 @@ const FormModal = ({
                                             </button>
                                         </div>
                                     ))}
-                                    <button type="button" onClick={addCustomField} className="mt-2 px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-1">
+                                    <button type="button" onClick={addCustomField} className=" px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-1 w-fit">
                                         <Plus className="w-4 h-4" /> Add Custom Field
                                     </button>
                                 </div>

@@ -3,12 +3,14 @@ import Button from "@mui/material/Button";
 import { Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import ClientsDataTable from "./components/clientDataTable";
-import { getClientsSearch, createClient } from "../../services/ClientServices";
+import { getClientsSearch, createClient, updateClient, deleteClient } from "../../services/ClientServices";
 import FormModal, { FieldConfig } from "../../components/FormModal";
+import { toast } from "react-toastify";
 const Clients = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingClient, setEditingClient] = useState<any | null>(null);
 
   const fetchClients = async (query = "") => {
     setLoading(true);
@@ -38,6 +40,27 @@ const Clients = () => {
     { label: "Attorney Name", key: "attorneyName", type: "text" },
     { label: "Address", key: "address", type: "textarea", fullWidth: true },
   ];
+  const handleSave = async (data: any) => {
+    if (editingClient) {
+      const response = await updateClient(editingClient._id, data);
+      setClients((prev) =>
+        prev.map((c) => (c._id === editingClient._id ? response.client : c))
+      );
+      setEditingClient(null);
+      return response;
+    } else {
+      const response = await createClient(data);
+      setClients((prev) => [...prev, response.client]);
+      return response;
+    }
+  };
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this client?")) {
+      await deleteClient(id);
+      setClients((prev) => prev.filter((c) => c._id !== id));
+      toast.success("Client deleted successfully");
+    }
+  };
 
   return (
     <div className="text-left flex bg-white transition-all duration-300 pl-[70px] lg:pl-0">
@@ -61,26 +84,33 @@ const Clients = () => {
               "&:hover": { backgroundColor: "#0f3f23", boxShadow: "0 4px 8px rgba(0,0,0,0.3)" },
             }}
             startIcon={<Plus />}
-            onClick={() => setModalOpen(true)}
+            onClick={() => {setEditingClient(null);setModalOpen(true);
+            }}
           >
             New Client
           </Button>
         </div>
+
         <FormModal
           open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          title="Add New Client"
+          onClose={() => {
+          setModalOpen(false);
+          setEditingClient(null);
+        }}
+          title={editingClient ? "Edit Client" : "Add New Client"}
           fields={clientFields}
-          onSubmit={async (data) => {
-            const response = await createClient(data);
-            setClients((prev) => [...prev, response.client]);
-            return response;
-          }}
+          initialData={editingClient || {}}
+          onSubmit={handleSave}
         />
         <ClientsDataTable
           clients={clients}
           loading={loading}
           onSearch={fetchClients}
+          onEdit={(client) => {
+            setEditingClient(client);
+            setModalOpen(true);
+          }}
+          onDelete={handleDelete}
         />
       </div>
     </div>
