@@ -99,7 +99,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
             }}
           />
         ) : (
-          <div className="text-center py-10">
+          <div className="text-center py-10 bg-gray-200 rounded-lg">
             <div className="flex items-center justify-center mb-4 bg-gray-300 rounded-full w-20 h-20 mx-auto">
               <User className="w-16 h-16 text-green-700" />
             </div>

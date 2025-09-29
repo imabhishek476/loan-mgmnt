@@ -8,4 +8,21 @@
   --soft-gray: #F2F4F4;
   --text-gray: #555555;
   --white: #FFFFFF;
+   /* Font families */
+  --font-sans: 'Poppins', sans-serif;
+  --font-serif: 'Merriweather', serif;
+  --font-mono: 'Fira Code', monospace;
+  --font-cursive: 'Pacifico', cursive;
+  --font-display: 'Oswald', sans-serif;
+    /* Sharp, modern fonts */
+  --font-roboto: 'Roboto', sans-serif;          /* Clean and professional */
+  --font-open-sans: 'Open Sans', sans-serif;   /* Sharp readability */
+  --font-ubuntu: 'Ubuntu', sans-serif;         /* Strong edges, modern */
+  --font-inter: 'Inter', sans-serif;           /* Popular UI font, crisp */
+  --font-pt-sans: 'PT Sans', sans-serif;      /* Angular, professional */
+  --font-work-sans: 'Work Sans', sans-serif;   /* Minimal & sharp */
+  --font-lato: 'Lato', sans-serif;            /* Slightly rounded but sharp */
+  --font-exo: 'Exo 2', sans-serif;             /* Techy and angular */
 }
+
+

@@ -15,6 +15,12 @@ module.exports = {
         'text-gray': '#555555',
         'white': '#FFFFFF',
       },
+      fontFamily: {
+        'sans': ['Helvetica', 'Arial', 'sans-serif'],
+        'serif': ['Georgia', 'serif'],
+        'mono': ['Courier New', 'monospace'],
+        
+      },
       animation: {
         'spin-slow': 'spin 20s linear infinite',
       },

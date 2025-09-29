@@ -109,7 +109,6 @@ const FormModal = ({
         try {
             const payload = { ...formData, customFields: formatCustomFields() };
             await onSubmit(payload);
-            toast.success(`${title} saved successfully 🎉`);
             setFormData(initialData);
             setCustomFields([]);
             setFieldCounter(1);

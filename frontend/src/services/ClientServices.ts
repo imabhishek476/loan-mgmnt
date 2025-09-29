@@ -15,6 +15,7 @@ export interface ClientPayload {
 export const createClient = async (data: ClientPayload) => {
   const { data: response } = await axios.post("/client/store", data, {
   });
+  // console.log("create data:", response);
   return response;
 };
 
