@@ -13,6 +13,7 @@ import {
   LogOut,
   User,
   Menu,
+  Settings,
 } from "lucide-react";
 import Logo from "../../assets/img/logo/favicon.png";
 
@@ -42,6 +43,8 @@ const Sidebar: React.FC = observer(() => {
     { name: "Payments", icon: <CreditCard className="w-5 h-5" />, path: "payments" },
     { name: "Documents", icon: <FileText className="w-5 h-5" />, path: "documents" },
     { name: "Reports", icon: <BarChart3 className="w-5 h-5" />, path: "reports" },
+    { name: "Administration", icon: <Settings className="w-5 h-5" />, path: "administration" },
+
   ];
 
   const currentPath = location.pathname.replace(/^\/+/, "") || "dashboard";
@@ -50,23 +53,23 @@ const Sidebar: React.FC = observer(() => {
     <aside className={`fixed md:static top-0 left-0 h-full flex flex-col justify-between border-r bg-white z-50 transform transition-all duration-300 ${open ? "w-64" : "w-16"}`}>
       {/* Logo */}
       <div className={`border-b border-gray-300 p-4 relative ${open ? "flex flex-row items-center justify-between" : "flex flex-col items-center"}`}>
-       <div className={`flex items-center gap-3 ${open ? "" : "flex-col"}`}>
-  <div className="p-2 rounded-lg flex items-center justify-center h-16 w-16">
-    <img
-      src={Logo}
-      alt="Company Logo"
-      className="h-full w-auto object-contain transition-all duration-300"
-    />
-  </div>
-  {open && (
-  <span
-  className={`text-primary-green font-pt-sans  text-2xl lg:text-[20px] font-bold`}
->
-  Claim Advance
-</span>
+        <div className={`flex items-center gap-3 ${open ? "" : "flex-col"}`}>
+          <div className="p-2 rounded-lg flex items-center justify-center h-16 w-16">
+            <img
+              src={Logo}
+              alt="Company Logo"
+              className="h-full w-auto object-contain transition-all duration-300"
+            />
+          </div>
+          {open && (
+            <span
+              className={`text-primary-green font-pt-sans  text-2xl lg:text-[20px] font-bold`}
+            >
+              Claim Advance
+            </span>
 
-  )}
-</div>
+          )}
+        </div>
 
         <button onClick={() => setOpen(!open)} className={`p-2 rounded-md hover:bg-gray-200 bg-white transition-colors ${open ? "" : "mb-2"} lg:hidden`}>
           <Menu className="w-6 h-6 text-gray-600" />

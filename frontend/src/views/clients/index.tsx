@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
-import { Plus } from "lucide-react";
+import { Plus, Save } from "lucide-react";
 import ClientsDataTable from "./components/clientDataTable";
 import FormModal, { FieldConfig } from "../../components/FormModal";
-import { clientStore } from "../../store/ClientStore"; 
+import { clientStore } from "../../store/ClientStore";
 
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -15,28 +15,30 @@ const Clients = observer(() => {
     { label: "Full Name", key: "fullName", type: "text", required: true },
     { label: "Email", key: "email", type: "email", required: true },
     { label: "Phone", key: "phone", type: "text", required: true },
-    { label: "SSN", key: "ssn", type: "text" },
-    { label: "Date of Birth", key: "dob", type: "date" },
-    { label: "Accident Date", key: "accidentDate", type: "date" },
-    { label: "Attorney Name", key: "attorneyName", type: "text" },
-    { label: "Address", key: "address", type: "textarea", fullWidth: true },
+    { label: "SSN", key: "ssn", type: "text", required: true },
+    { label: "Date of Birth", key: "dob", type: "date", required: true },
+    { label: "Accident Date", key: "accidentDate", type: "date", required: true },
+    { label: "Attorney Name", key: "attorneyName", type: "text", required: true },
+    { label: "Address", key: "address", type: "textarea", fullWidth: true, required: true },
   ];
 
-const handleSave = async (data: any) => {
-  try {
-    if (editingClient) {
-      await clientStore.updateClient(editingClient._id, data);
-      toast.success("Client updated successfully 🎉");
-      setEditingClient(null);
-    } else {
-      await clientStore.createClient(data);
-      toast.success("New client added successfully 🎉");
+  const customFields: FieldConfig[] = clientStore.customFields || [];
+
+  const handleSave = async (data: any) => {
+    try {
+      if (editingClient) {
+        await clientStore.updateClient(editingClient._id, data);
+        toast.success("Client updated successfully 🎉");
+        setEditingClient(null);
+      } else {
+        await clientStore.createClient(data);
+        toast.success("New client added successfully 🎉");
+      }
+      setModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to save client");
     }
-    setModalOpen(false);
-  } catch (error: any) {
-    toast.error(error.response?.data?.error || "Failed to save client");
-  }
-};
+  };
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this client?")) {
@@ -44,14 +46,17 @@ const handleSave = async (data: any) => {
       toast.success("Client deleted successfully");
     }
   };
+
   useEffect(() => {
     clientStore.fetchClients();
   }, []);
+
   return (
     <div className="text-left flex flex-col bg-white transition-all duration-300">
+      {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-700">Client Management</h1>
+          <h1 className="text-2xl font-bold ">Client Management</h1>
           <p className="text-gray-600 text-base">Manage client records and personal information</p>
         </div>
 
@@ -77,18 +82,26 @@ const handleSave = async (data: any) => {
         </Button>
       </div>
 
+      {/* Form Modal */}
       <FormModal
         open={modalOpen}
         onClose={() => {
           setModalOpen(false);
           setEditingClient(null);
         }}
-        title={editingClient ? "Edit Client" : "Add New Client"}
+        title={editingClient ? "Edit Client" : "New Client"}
         fields={clientFields}
+        customFields={customFields}  // <-- Pass custom fields here
         initialData={editingClient || {}}
+        submitButtonText={editingClient ? "Update Client" : <>
+          <Save size={16} className="inline mr-1" /> Create Client
+        </>
+        }
+
         onSubmit={handleSave}
       />
 
+      {/* Data Table */}
       <ClientsDataTable
         clients={clientStore.clients.slice()}
         loading={clientStore.loading}

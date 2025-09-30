@@ -4,6 +4,8 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 require("dotenv").config();
 const clientRouter = require("./routes/client.router");
+const companiesRouter = require("./routes/companies.router");
+
 const app = express();
 
 // Middleware
@@ -22,6 +24,7 @@ connectDB();
 // Routes
 app.use("/api/auth", require("./routes/auth.router"));
 app.use("/api/client", clientRouter);
+app.use("/api/companies", companiesRouter);
 // Seed admin user
 const seedAdmin = require("./admin");
 seedAdmin();
