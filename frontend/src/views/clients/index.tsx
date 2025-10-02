@@ -1,32 +1,15 @@
-import { useAppSelector } from "../../hooks/user";
+import { useState, useEffect } from "react";
+import { observer } from "mobx-react-lite";
+import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
 import { Plus } from "lucide-react";
-import { useState, useEffect } from "react";
 import ClientsDataTable from "./components/clientDataTable";
-import { getClientsSearch, createClient } from "../../services/ClientServices";
 import FormModal, { FieldConfig } from "../../components/FormModal";
-const Clients = () => {
+import { clientStore } from "../../store/ClientStore"; 
+
+const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [clients, setClients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchClients = async (query = "") => {
-    setLoading(true);
-    try {
-      const data = await getClientsSearch({ query });
-      setClients(data || []);
-    } catch (error) {
-      console.error("Error fetching clients:", error);
-      setClients([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  useEffect(() => {
-    fetchClients();
-  }, []);
+  const [editingClient, setEditingClient] = useState<any | null>(null);
 
   const clientFields: FieldConfig[] = [
     { label: "Full Name", key: "fullName", type: "text", required: true },
@@ -39,53 +22,85 @@ const Clients = () => {
     { label: "Address", key: "address", type: "textarea", fullWidth: true },
   ];
 
-  return (
-    <div className="text-left flex bg-white transition-all duration-300 pl-[70px] lg:pl-0">
-      <div className="w-full flex flex-col mx-auto">
-        <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-gray-700">Client Management</h1>
-            <p className="text-gray-600 text-base">Manage client records and personal information</p>
-          </div>
-
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: "#145A32",
-              fontWeight: 600,
-              textTransform: "none",
-              borderRadius: "8px",
-              padding: "8px 10px",
-              fontSize: "14px",
-              boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
-              "&:hover": { backgroundColor: "#0f3f23", boxShadow: "0 4px 8px rgba(0,0,0,0.3)" },
-            }}
-            startIcon={<Plus />}
-            onClick={() => setModalOpen(true)}
-          >
-            New Client
-          </Button>
-        </div>
-        <FormModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          title="Add New Client"
-          fields={clientFields}
-          onSubmit={async (data) => {
-            const response = await createClient(data);
-            setClients((prev) => [...prev, response.client]);
-            return response;
-          }}
-        />
-        <ClientsDataTable
-          clients={clients}
-          loading={loading}
-          onSearch={fetchClients}
-        />
-      </div>
-    </div>
-  );
+const handleSave = async (data: any) => {
+  try {
+    if (editingClient) {
+      await clientStore.updateClient(editingClient._id, data);
+      toast.success("Client updated successfully 🎉");
+      setEditingClient(null);
+    } else {
+      await clientStore.createClient(data);
+      toast.success("New client added successfully 🎉");
+    }
+    setModalOpen(false);
+  } catch (error: any) {
+    toast.error(error.response?.data?.error || "Failed to save client");
+  }
 };
 
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this client?")) {
+      await clientStore.deleteClient(id);
+      toast.success("Client deleted successfully");
+    }
+  };
+  useEffect(() => {
+    clientStore.fetchClients();
+  }, []);
+  return (
+    <div className="text-left flex flex-col bg-white transition-all duration-300">
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-700">Client Management</h1>
+          <p className="text-gray-600 text-base">Manage client records and personal information</p>
+        </div>
+
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: "#145A32",
+            fontWeight: 600,
+            textTransform: "none",
+            borderRadius: "8px",
+            padding: "8px 10px",
+            fontSize: "14px",
+            boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
+            "&:hover": { backgroundColor: "#0f3f23" },
+          }}
+          startIcon={<Plus />}
+          onClick={() => {
+            setEditingClient(null);
+            setModalOpen(true);
+          }}
+        >
+          New Client
+        </Button>
+      </div>
+
+      <FormModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingClient(null);
+        }}
+        title={editingClient ? "Edit Client" : "Add New Client"}
+        fields={clientFields}
+        initialData={editingClient || {}}
+        onSubmit={handleSave}
+      />
+
+      <ClientsDataTable
+        clients={clientStore.clients.slice()}
+        loading={clientStore.loading}
+        onSearch={(query: string) => clientStore.fetchClients(query)}
+        onEdit={(client) => {
+          setEditingClient(client);
+          setModalOpen(true);
+        }}
+        onDelete={handleDelete}
+      />
+    </div>
+  );
+});
 
 export default Clients;

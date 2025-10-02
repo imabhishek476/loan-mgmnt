@@ -111,6 +111,41 @@ exports.searchClients = async (req, res) => {
   }
 };
 
+exports.updateClient = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
 
+    if (updates.dob) {
+      updates.dob = moment(updates.dob).format("MM-DD-YYYY");
+    }
+    if (updates.accidentDate) {
+      updates.accidentDate = moment(updates.accidentDate).format("MM-DD-YYYY");
+    }
+
+    const client = await Client.findByIdAndUpdate(id, updates, { new: true });
+    if (!client) {
+      return res.status(404).json({ success: false, error: "Client not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Client updated", client });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.deleteClient = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const client = await Client.findByIdAndDelete(id);
+    if (!client) {
+      return res.status(404).json({ success: false, error: "Client not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Client deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 

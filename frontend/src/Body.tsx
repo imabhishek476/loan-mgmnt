@@ -1,27 +1,17 @@
+import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Layout from "./views/components/Layout";
+import { ToastContainer } from "react-toastify";
 import Login from "./views/login/Login";
 import Dashboard from "./views/dashboard/index";
 import Clients from "./views/clients";
-import ProtectedRoute from "./views/ProtectedRoute";
-import { ToastContainer } from "react-toastify";
-
-const Body = () => {
-  return (
-    <>
-      <RouterProvider router={appRouter} />
-      <ToastContainer />
-    </>
-  );
-};
+import Layout from "./views/components/Layout";
+import ProtectedRoute from "./views/ProtectedRoute"; 
 
 const appRouter = createBrowserRouter([
-
   {
     path: "/",
     element: <Login />,
   },
-
   {
     path: "/",
     element: (
@@ -32,23 +22,23 @@ const appRouter = createBrowserRouter([
     children: [
       {
         path: "dashboard",
-        element: (
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        ),
+        element: <Dashboard />,
       },
       {
         path: "clients",
-        element: (
-          <ProtectedRoute>
-            <Clients />
-          </ProtectedRoute>
-        ),
+        element: <Clients />,
       },
     ],
   },
-
 ]);
+
+const Body = () => {
+  return (
+    <>
+      <RouterProvider router={appRouter} />
+      <ToastContainer />
+    </>
+  );
+};
 
 export default Body;

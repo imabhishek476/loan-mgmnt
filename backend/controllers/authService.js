@@ -22,11 +22,12 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.userRole, name: user.name },
+      { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-    res.cookie("token", token, {
+  
+    res.cookie("jwtToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -41,6 +42,29 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("jwtToken");
   res.json({ msg: "Logged out" });
+};
+
+
+exports.me = async (req, res) => {
+  try {
+    const token = req.cookies.jwtToken;
+    if (!token) return res.status(401).json({ msg: "No token found" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    console.log("isAdmin middleware passed",user);
+
+   
+    res.json({
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.userRole,
+    });
+  } catch (err) {
+    res.status(401).json({ msg: "Invalid token" });
+  }
 };

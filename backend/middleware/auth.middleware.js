@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 
 exports.isAuthenticated = (req, res, next) => {
   const token = req.headers.cookie?.split('=')[1] || req.headers.authorization?.split(' ')[1];
-  console.log("Auth Middleware Token:", token);
   if (token == null) {
     return res.status(401).json({ msg: "No token, please login first" });
   }
@@ -34,7 +33,6 @@ exports.isAdmin = (req, res, next) => {
         msg: "Only admins can performs this action",
       });
     }
-
     next();
   } catch (error) {
     return res.status(500).json({

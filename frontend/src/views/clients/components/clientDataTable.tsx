@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search } from "lucide-react";
-
+import { Search, Pencil, Trash2, User } from "lucide-react";
+import CircularProgress from "@mui/material/CircularProgress"; 
 interface ClientsDataTableProps {
   clients: any[];
   onSearch: (query: string) => void;
+  onEdit: (client: any) => void;
+  onDelete: (id: string) => void;
   loading: boolean;
 }
 
-const ClientsDataTable = ({ clients, onSearch, loading }: ClientsDataTableProps) => {
+const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: ClientsDataTableProps) => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useMemo(
     () => debounce((value: string) => onSearch(value), 300),
@@ -22,7 +24,7 @@ const ClientsDataTable = ({ clients, onSearch, loading }: ClientsDataTableProps)
   };
 
   return (
-    <div className="p-5 rounded-lg border border-gray-300">
+    <div className="">
       <div className="mb-3 relative w-full">
         <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <Search className="w-5 h-5 text-gray-400" />
@@ -36,57 +38,78 @@ const ClientsDataTable = ({ clients, onSearch, loading }: ClientsDataTableProps)
         />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-gray-300">
-        <MaterialTable
-          isLoading={loading}
-          title={null}
-          columns={[
-            {
-              title: "Sr.no",
-              render: (rowData) => rowData.tableData.id + 1,
-              cellStyle: { textAlign: "center", borderRadius: "8px" },
-              headerStyle: { textAlign: "center", borderRadius: "8px" }
-            },
-            { title: "Name", field: "fullName", cellStyle: { borderRadius: "8px" }, headerStyle: { borderRadius: "8px" } },
-            { title: "Email", field: "email", cellStyle: { borderRadius: "8px" }, headerStyle: { borderRadius: "8px" } },
-            { title: "Phone", field: "phone", cellStyle: { borderRadius: "8px" }, headerStyle: { borderRadius: "8px" } },
-            { title: "DOB", field: "dob", type: "date", cellStyle: { borderRadius: "8px" }, headerStyle: { borderRadius: "8px" } },
-            { title: "Accident Date", field: "accidentDate", type: "date", cellStyle: { borderRadius: "8px" }, headerStyle: { borderRadius: "8px" } },
-            { title: "Attorney", field: "attorneyName", cellStyle: { borderRadius: "8px" }, headerStyle: { borderRadius: "8px" } },
-            { title: "SSN", field: "ssn", cellStyle: { borderRadius: "8px" }, headerStyle: { borderRadius: "8px" } },
-          ]}
-          data={clients}
-          options={{
-            paging: true,
-            pageSize: 5,
-            pageSizeOptions: [5, 10, 20],
-            sorting: true,
-            search: false,
-            actionsColumnIndex: -1,
-            headerStyle: {
-              fontWeight: "bold",
-              backgroundColor: "#ffffff",
-              fontSize: "14px",
-              height: 40,
-              borderBottom: "1px solid #d1d5db",
-            },
-            rowStyle: (rowData, index) => ({
-              fontSize: "16px",
-              height: 45,
-              borderBottom: "1px solid #d1d5db",
-            }),
-            padding: "dense",
-            toolbar: false,
-            paginationType: "stepped",
-          }}
-          localization={{
-            body: {
-              emptyDataSourceMessage: search
+     <div className="overflow-hidden rounded-lg border-gray-300">
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <CircularProgress className="text-green-700" />
+            <span className="ml-3 text-gray-700 font-medium">Loading clients...</span>
+          </div>
+        ) : clients.length > 0 ? (
+          <MaterialTable
+            isLoading={loading}
+            title={null}
+            columns={[
+              {
+                title: "Sr.no",
+                render: (rowData) => rowData.tableData.id + 1,
+              },
+              { title: "Name", field: "fullName" },
+              { title: "Email", field: "email" },
+              { title: "Phone", field: "phone" },
+              { title: "DOB", field: "dob", type: "date" },
+              { title: "Accident Date", field: "accidentDate", type: "date" },
+              { title: "Attorney", field: "attorneyName" },
+              { title: "SSN", field: "ssn" },
+            ]}
+            data={clients}
+            actions={[
+              {
+                icon: () => <Pencil className="w-5 h-5 text-green-600" />,
+                tooltip: "Edit",
+                onClick: (event, rowData: any) => onEdit(rowData),
+              },
+              {
+                icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
+                tooltip: "Delete",
+                onClick: (event, rowData: any) => onDelete(rowData._id),
+              },
+            ]}
+            options={{
+              paging: true,
+              pageSize: 5,
+              pageSizeOptions: [5, 10, 20],
+              sorting: true,
+              search: false,
+              actionsColumnIndex: -1,
+              headerStyle: {
+                fontWeight: "bold",
+                backgroundColor: "#ffffff",
+                fontSize: "14px",
+                height: 40,
+                borderBottom: "1px solid #d1d5db",
+              },
+              rowStyle: (rowData, index) => ({
+                fontSize: "16px",
+                height: 45,
+                borderBottom: "1px solid #d1d5db",
+              }),
+              padding: "dense",
+              toolbar: false,
+              paginationType: "stepped",
+            }}
+          />
+        ) : (
+          <div className="text-center py-10 bg-gray-200 rounded-lg">
+            <div className="flex items-center justify-center mb-4 bg-gray-300 rounded-full w-20 h-20 mx-auto">
+              <User className="w-16 h-16 text-green-700" />
+            </div>
+            <p className="text-gray-700 font-semibold mb-4">
+              {search
                 ? `No results found for "${search}"`
-                : "No clients available. Add a new client to get started.",
-            },
-          }}
-        />
+                : "No clients available. Add a new client to get started."}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
