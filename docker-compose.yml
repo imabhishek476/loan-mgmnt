@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # NODE SERVICE CONTAINER
+  node-service:
+    build: ./server
+    container_name: node-container 
+    hostname: node-container
+    restart: always
+    tty: true 
+    env_file: .env
+    ports:
+      - "5000:5000"
+
+
+    # volumes:
+    #   - ./server:/usr/src/app
+
+  mongo-service:
+    # image: mongo:4.4-focal
+    image: mongo:5.0-focal
+    restart: always
+    tty: true
+    container_name: mongo-container
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: root
+        MONGO_INITDB_ROOT_PASSWORD: 1004
+        MONGO_INITDB_DATABASE: dwa
+    volumes:
+        - mongo-storage:/data/db
+    ports:
+        - 27020:27017
+
+  nginx-service:
+    # image: nginx:1.18.0
+    image: nginx:1.21
+    restart: always
+    tty: true
+    container_name: nginx-container
+    volumes:
+        - ./templates:/etc/nginx/templates
+        - ./nginx.conf:/etc/nginx/conf.d
+        - ./web-build:/usr/share/nginx/html
+        # - /home/ubuntu/uploads-mocr:/usr/share/nginx/api/uploads
+        - ./certbot/conf:/etc/letsencrypt
+        - ./certbot/www:/var/www/certbot
+        - /home/ubuntu/maintenance:/usr/share/nginx/html/maintenance
+        - /home/ubuntu/maintenance/maintenance.html:/usr/share/nginx/html/maintenance.html
+    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+
+    ports:
+        - '80:80'
+        - '443:443'
+
+    environment:
+        - NGINX_HOST=http://103.108.117.162/
+        - NGINX_PORT=80
+
+volumes:
+  mongo-storage:

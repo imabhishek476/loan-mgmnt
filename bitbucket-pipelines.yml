@@ -1,0 +1,178 @@
+image: node:20
+
+pipelines:
+  tags:
+    release-server-1*:
+      - step:
+          name: Cleaning old docker enviroment
+          script:
+            # to access the bitbucket variables inside bash script
+            - apt-get update
+            - apt-get -y install gettext-base
+            - envsubst < ./utilities/clearDocker.sh > clearDocker.sh
+            - apt-get clean
+            - rm -rf /var/lib/apt/lists/*
+
+            # - USER_NAME_1="$USER_NAME"
+            # - echo usr name is $USER_NAME_1
+            - pipe: atlassian/ssh-run:0.2.6
+              variables:
+                SSH_USER: $USER_NAME
+                SERVER: $SERVER_IP
+                MODE: script
+                # COMMAND: "./utilities/clearDocker.sh"
+                COMMAND: "clearDocker.sh"
+
+      - step:
+          name: Install & build dependancies
+          image: node:20.11.0
+          caches:
+            - node
+          script:
+            - mkdir -p dwa
+            - ls
+            - chmod +x utilities/createBuilds.sh
+            - /bin/bash ./utilities/createBuilds.sh
+          artifacts: # defining the artifacts to be passed to each next step .
+            - dwa/**
+
+      - step:
+          name: Move artifacts to server
+          script:
+            # SSH ACCESS WITH PIPE
+            # - pipe: atlassian/scp-deploy:0.3.12
+            - pipe: atlassian/scp-deploy:1.1.0
+              variables:
+                USER: $USER_NAME
+                SERVER: $SERVER_IP
+                REMOTE_PATH: "/home/$USER_NAME/"
+                LOCAL_PATH: "${BITBUCKET_CLONE_DIR}/dwa"
+
+      - step:
+          name: Running new docker setup
+          script:
+            - pipe: atlassian/ssh-run:0.2.6
+              variables:
+                SSH_USER: $USER_NAME
+                SERVER: $SERVER_IP
+                COMMAND: "cd /home/$USER_NAME/dwa && sudo docker-compose up -d"
+
+      - step:
+          name: Disbale maintenance page
+          script:
+            # to access the bitbucket variables inside bash script
+            - apt-get update
+            - apt-get -y install gettext-base
+            - envsubst < ./utilities/obfuscatation.sh > obfuscatation.sh
+            - apt-get clean
+            - rm -rf /var/lib/apt/lists/*
+            - chmod +x ./utilities/obfuscatation.sh
+
+            - pipe: atlassian/ssh-run:0.4.0
+              variables:
+                SSH_USER: $USER_NAME
+                SERVER: $SERVER_IP
+                MODE: script
+                COMMAND: "./utilities/obfuscatation.sh"
+                ENV_VARS: >-
+                  ENV="prod"
+
+
+    release-demo-server-2*:
+      - step:
+          name: Cleaning old docker enviroment
+          script:
+            # to access the bitbucket variables inside bash script
+            - apt-get update
+            - apt-get -y install gettext-base
+            - envsubst < ./utilities/clearDocker2.sh > clearDocker2.sh
+            - apt-get clean
+            - rm -rf /var/lib/apt/lists/*
+
+            # - USER_NAME_1="$USER_NAME"
+            # - echo usr name is $USER_NAME_1
+            - pipe: atlassian/ssh-run:0.2.6
+              variables:
+                SSH_USER: $USER_NAME
+                SERVER: $SERVER_IP
+                MODE: script
+                # COMMAND: "./utilities/clearDocker.sh"
+                COMMAND: "clearDocker2.sh"
+
+      - step:
+          name: Install & build dependancies
+          image: node:16.14.0
+          caches:
+            - node
+          script:
+            - mkdir -p vSmartdemo
+            - chmod +x ./utilities/createBuilds2.sh
+            # - npm install -g yarn
+            - yarn install
+            - cd server
+            - yarn install
+            - cd ..
+            - /bin/bash ./utilities/createBuilds2.sh
+            # - yarn productionBuilds
+          artifacts: # defining the artifacts to be passed to each next step .
+            - vSmartdemo/**
+
+      - step:
+          name: Move artifacts to server
+          script:
+            # SSH ACCESS WITH PIPE
+            - pipe: atlassian/scp-deploy:0.3.12
+              variables:
+                USER: $USER_NAME
+                SERVER: $SERVER_IP
+                REMOTE_PATH: "/home/$USER_NAME/vSmartdemo"
+                LOCAL_PATH: "${BITBUCKET_CLONE_DIR}/vSmartdemo"
+
+      - step:
+          name: Running new docker setup
+          script:
+            - pipe: atlassian/ssh-run:0.2.6
+              variables:
+                SSH_USER: $USER_NAME
+                SERVER: $SERVER_IP
+                COMMAND: "cd /home/$USER_NAME/vSmartdemo && sudo docker-compose up -d"
+
+      
+# old work remote if not neede
+# - step:
+#     name: Deploying build and server on production
+#     # caches:
+#     #     - node
+#     script: # Modify the commands below to build your repository.
+#       # - apt-get update && apt-get install -y rsync
+#       # - ssh-keyscan -H 13.233.244.243 >> ~/.ssh/known_hosts
+#       # DIRECT SSH ACCESS
+#       # - cd $BITBUCKET_CLONE_DIR
+#       # - rsync -r -v -e ssh . ubuntu@13.233.244.243:/home/ubuntu/myPipeline/NodePipeline --delete-before --exclude '.git'
+#       # - ssh ubuntu@13.233.244.243 'cd /home/ubuntu/myPipeline/NodePipeline && /home/ubuntu/.nvm/versions/node/v14.7.0/bin/npm install'
+#       # - ssh ubuntu@13.233.244.243 'cd /home/ubuntu/myPipeline/NodePipeline && /home/ubuntu/.nvm/versions/node/v14.7.0/bin/node --version'
+#       # - ssh ubuntu@13.233.244.243 'cd /home/ubuntu/myPipeline/NodePipeline && /home/ubuntu/.nvm/versions/node/v14.7.0/bin/npm --version'
+#       # - ssh ubuntu@15.206.82.175 './myDeploy.sh'
+
+#       # SSH ACCESS WITH PIPE
+#       # - pipe: atlassian/scp-deploy:0.3.4
+#       #   variables:
+#       #       USER: "ubuntu"
+#       #       SERVER: "15.206.82.175"
+#       #       REMOTE_PATH: "/home/ubuntu/myPipeline"
+#       #       LOCAL_PATH: "${BITBUCKET_CLONE_DIR}/build"
+
+#       - pipe: atlassian/scp-deploy:0.3.4
+#         variables:
+#           USER: "ubuntu"
+#           SERVER: $SERVER_IP
+#           REMOTE_PATH: "/home/ubuntu/myPipeline"
+#           LOCAL_PATH: "${BITBUCKET_CLONE_DIR}/server"
+
+#       - pipe: atlassian/ssh-run:0.2.2
+#         variables:
+#           SSH_USER: "ubuntu"
+#           SERVER: $SERVER_IP
+#           COMMAND: "./myDeploy.sh"
+# trial test after server change 5
+

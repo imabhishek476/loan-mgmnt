@@ -1,0 +1,64 @@
+# version: "3.8"
+
+services:
+  # REACT SERVICE
+  react-service:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-dev 
+
+    container_name: react-container
+    # tty: true
+    environment:
+      - NODE_ENV=development
+      - PUBLIC_URL=
+      - REACT_APP_API_KEY=
+      - REACT_APP_AUTH_DOMAIN=
+      - REACT_APP_DATABASE_URL=
+      - REACT_APP_PROJECT_ID=
+      - REACT_APP_STORAGE_BUCKET=
+      - REACT_APP_MESSAGING_SENDER_ID=
+    #restart: always
+    ports:
+      - "0.0.0.0:3000:3000"
+    volumes:
+      - ./frontend:/usr/src/app/frontend
+      - /usr/src/app/frontend/node_modules
+        #entrypoint: ["echo","react disabled"]
+    command: yarn dev --host 0.0.0.0
+
+  # NODE SERVICE CONTAINER
+  node-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile-dev
+    container_name: node-container 
+    hostname: node-container
+    # restart: always
+    tty: true 
+    env_file: .env
+    ports:
+      - "5000:5000"
+
+
+    volumes:
+      - ./backend:/usr/src/app/backend
+
+  mongo-service:
+    # image: mongo:4.4-focal
+    image: mongo:5.0-focal
+    restart: always
+    tty: true
+    container_name: mongo-container
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: root
+        MONGO_INITDB_ROOT_PASSWORD: 1004
+        MONGO_INITDB_DATABASE: dwa
+    volumes:
+        - mongo-storage:/data/db
+    ports:
+        - 27020:27017
+
+  
+volumes:
+  mongo-storage:

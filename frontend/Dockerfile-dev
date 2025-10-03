@@ -1,0 +1,27 @@
+
+#FROM node:14
+#FROM node:14.11.0-stretch-slim
+FROM node:20
+
+
+#RUN apt update
+
+WORKDIR /usr/src/app/frontend
+
+COPY . /usr/src/app/frontend
+
+
+
+RUN cd /usr/src/app/frontend
+
+
+RUN yarn install 
+
+
+
+
+
+EXPOSE 3000
+
+CMD [ "yarn", "dev"]
+

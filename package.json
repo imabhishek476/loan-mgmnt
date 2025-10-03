@@ -1,26 +1,57 @@
 {
-  "name": "loans-mgmt",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "frontend": "cd frontend && npm start",
-    "backend": "cd backend && npm start",
-    "dev": "concurrently 'npm run frontend' 'npm run backend'",
-    "win-dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm start\""
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "autoprefixer": "^10.4.21",
-    "concurrently": "^9.2.1",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17"
-  },
-  "dependencies": {
-    "js-cookie": "^3.0.5",
-    "lodash": "^4.17.21"
-  }
+    "homepage": "./",
+    "name": "loans-mgmt",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "start": " WDS_SOCKET_HOST=127.0.0.1 CHOKIDAR_USEPOLLING=true WATCHPACK_POLLING=true PORT=3000 react-scripts  start ",
+        "build": "react-scripts build ",
+        "test": "react-scripts test",
+        "eject": "react-scripts eject",
+        "deploy": "yarn build && firebase deploy",
+        "dev:server": "nodemon ./server/app.js",
+        "release": "yarn build && utilities/createReleaseZips.sh",
+        "productionBuilds": "utilities/createBuilds.sh",
+        "docker:up": "sudo docker compose -f docker-compose-dev.yml up -d",
+        "docker:build": "sudo docker compose -f docker-compose-dev.yml build ",
+        "docker:down": "sudo docker compose -f docker-compose-dev.yml down ",
+        "docker:install-react": "sudo docker exec -it react-container yarn install",
+        "docker:install-server": "sudo docker exec -it node-container yarn install",
+        "docker:add-react": "sudo docker exec -it react-container yarn add",
+        "docker:add-server": "sudo docker exec -it node-container yarn add",
+        "docker:db-clear": "sudo docker-compose -f docker-compose-dev.yml down -v",
+        "docker:start-react": "yarn docker:up && sudo docker exec -it react-container yarn dev",
+        "docker:start-server": "yarn docker:up && sudo docker exec -it node-container yarn start",
+        "docker:start-server-2": "yarn docker:up && sudo docker exec -it node-container yarn serve-2",
+        "docker:productionBuild": "sudo docker exec -it react-container yarn productionBuilds",
+        "docker-win:up": "docker-compose -f docker-compose-dev.yml up -d ",
+        "docker-win:build": "docker-compose -f docker-compose-dev.yml build ",
+        "docker-win:down": "docker-compose -f docker-compose-dev.yml down ",
+        "docker-win:db-clear": "docker-compose -f docker-compose-dev.yml down -v",
+        "docker-win:start-react": "docker exec -it react-container yarn start",
+        "docker-win:start-server": "docker exec -it node-container yarn dev",
+        "docker-win:install-react": "docker exec -it react-container yarn install",
+        "docker-win:install-server": "docker exec -it node-container yarn install",
+        "docker-win:add-react": "docker exec -it react-container yarn add",
+        "docker-win:add-server": "docker exec -it node-container yarn add"
+    },
+    "eslintConfig": {
+        "extends": "react-app"
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    },
+    "dependencies": {
+    },
+    "devDependencies": {
+    }
 }

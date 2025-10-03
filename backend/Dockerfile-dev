@@ -1,0 +1,41 @@
+
+#FROM node:14
+# FROM node:14.11.0-stretch-slim
+FROM node:18.14
+
+
+
+
+#RUN apt update
+
+WORKDIR /usr/src/app/backend
+
+#COPY package.json /usr/src/app
+RUN yarn global add nodemon 
+
+#RUN cd /usr/src/app 
+
+
+COPY . /usr/src/app/backend
+
+
+RUN cd /usr/src/app/backend
+
+RUN yarn install 
+
+#RUN rm -rf package.json
+
+
+#RUN ls
+
+
+#RUN ls
+
+# EXPOSE 3050 5050 5000
+# EXPOSE 5050
+EXPOSE 5000 
+
+CMD [ "yarn", "start"]
+#CMD ["sh", "-c", "yarn install && yarn run start"]
+
+
