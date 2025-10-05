@@ -46,10 +46,10 @@ const Administration = observer(() => {
     try {
       if (editingCompany) {
         await companyStore.updateCompany(editingCompany._id!, data);
-        toast.success("Company updated successfully 🎉");
+        toast.success("Company updated successfully.");
       } else {
         await companyStore.createCompany(data);
-        toast.success("New company added successfully 🎉");
+        toast.success("New company added successfully.");
       }
       handleClose();
       loadCompanies();
@@ -155,7 +155,7 @@ const Administration = observer(() => {
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-left">
+          <h1 className="text-2xl text-gray-800  font-bold text-left">
             Administration
           </h1>
           <p className="text-gray-600 text-base">

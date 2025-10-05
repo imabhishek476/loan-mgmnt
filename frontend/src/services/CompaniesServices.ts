@@ -15,12 +15,13 @@ export interface CompanyPayload {
   };
 
   fees?: {
-    administrativeFee?: number;
-    applicationFee?: number;
-    attorneyReviewFee?: number;
-    brokerFee?: number;
-    annualMaintenanceFee?: number;
+    administrativeFee?: { amount: number; type: "flat" | "percentage" };
+    applicationFee?: { amount: number; type: "flat" | "percentage" };
+    attorneyReviewFee?: { amount: number; type: "flat" | "percentage" };
+    brokerFee?: { amount: number; type: "flat" | "percentage" };
+    annualMaintenanceFee?: { amount: number; type: "flat" | "percentage" };
   };
+
 
   loanTerms?: number[];
 
@@ -60,7 +61,7 @@ export const fetchCompanies = async (query?: string) => {
       ? `/companies/allcompanies?search=${encodeURIComponent(query)}`
       : "/companies/allcompanies";
     const res = await api.get(url);
-    return res.data.data; 
+    return res.data.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to fetch companies");
   }

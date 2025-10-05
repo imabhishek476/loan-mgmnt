@@ -4,6 +4,7 @@ const Company = require("../models/companies");
 exports.CompaniesCreate = async (req, res) => {
   try {
     const body = req.body;
+
     const companyData = {
       companyName: body.companyName,
       companyCode: body.companyCode,
@@ -12,32 +13,53 @@ exports.CompaniesCreate = async (req, res) => {
       email: body.email,
       website: body.website,
       address: body.address,
-      activeCompany: body.activeCompany,
+      activeCompany: body.activeCompany ?? true,
+      backgroundColor: body.backgroundColor ?? "#555555",
+
       interestRate: {
         monthlyRate: Number(body.interestRate?.monthlyRate ?? body.interestRate ?? 0),
         interestType: body.interestRate?.interestType ?? body.interestType ?? "flat",
       },
+
       fees: {
-        administrativeFee: body.adminFee,
-        applicationFee: body.applicationFee,
-        attorneyReviewFee: body.attorneyFee,
-        brokerFee: body.brokerFee,
-        annualMaintenanceFee: body.maintenanceFee,
+        administrativeFee: {
+          value: Number(body.adminFee ?? 0),
+          type: body.adminFeeType ?? "flat",
+        },
+        applicationFee: {
+          value: Number(body.applicationFee ?? 0),
+          type: body.applicationFeeType ?? "flat",
+        },
+        attorneyReviewFee: {
+          value: Number(body.attorneyFee ?? 0),
+          type: body.attorneyFeeType ?? "flat",
+        },
+        brokerFee: {
+          value: Number(body.brokerFee ?? 0),
+          type: body.brokerFeeType ?? "flat",
+        },
+        annualMaintenanceFee: {
+          value: Number(body.maintenanceFee ?? 0),
+          type: body.maintenanceFeeType ?? "flat",
+        },
       },
-      loanTerms: body.loanTerms,
+
+      loanTerms: Array.isArray(body.loanTerms) ? body.loanTerms.map(Number) : [],
+
       freshLoanRules: {
-        enabled: body.enableFreshLoanRules,
-        minMonthsBetweenLoans: body.minimumMonthsBetween,
-        allowOverlappingLoans: body.allowOverlappingLoans,
-        requireFullPayoff: body.requireFullPayoff,
+        enabled: Boolean(body.enableFreshLoanRules),
+        minMonthsBetweenLoans: Number(body.minimumMonthsBetween ?? 0),
+        allowOverlappingLoans: Boolean(body.allowOverlappingLoans),
+        requireFullPayoff: Boolean(body.requireFullPayoff),
       },
+
       payoffSettings: {
-        allowEarlyPayoff: body.allowEarlyPayoff,
-        earlyPayoffPenalty: body.earlyPayoffPenalty,
-        earlyPayoffDiscount: body.earlyPayoffDiscount,
-        gracePeriodDays: body.gracePeriodDays,
-        lateFeeAmount: body.lateFeeAmount,
-        lateFeeGraceDays: body.lateFeeGraceDays,
+        allowEarlyPayoff: Boolean(body.allowEarlyPayoff),
+        earlyPayoffPenalty: Number(body.earlyPayoffPenalty ?? 0),
+        earlyPayoffDiscount: Number(body.earlyPayoffDiscount ?? 0),
+        gracePeriodDays: Number(body.gracePeriodDays ?? 0),
+        lateFeeAmount: Number(body.lateFeeAmount ?? 0),
+        lateFeeGraceDays: Number(body.lateFeeGraceDays ?? 0),
       },
     };
 
@@ -50,6 +72,7 @@ exports.CompaniesCreate = async (req, res) => {
     }
 
     const newCompany = await Company.create(companyData);
+
     res.status(201).json({
       success: true,
       message: "Company created successfully",
@@ -59,10 +82,11 @@ exports.CompaniesCreate = async (req, res) => {
     console.error("Error in CompaniesCreate:", error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
+
 exports.AllCompanies = async (req, res) => {
   try {
     const { search } = req.query;
@@ -105,6 +129,12 @@ exports.updateCompany = async (req, res) => {
   try {
     const { id } = req.params;
     const body = req.body;
+
+    const getFee = (valueKey, typeKey) => ({
+      value: Number(body[valueKey] ?? 0),
+      type: body[typeKey] ?? "flat",
+    });
+
     const companyData = {
       companyName: body.companyName,
       companyCode: body.companyCode,
@@ -114,43 +144,52 @@ exports.updateCompany = async (req, res) => {
       website: body.website,
       address: body.address,
       activeCompany: body.activeCompany,
+      backgroundColor: body.backgroundColor ?? "#ffffff",
       interestRate: {
-        monthlyRate: body.interestRate?.monthlyRate ?? body.interestRate,
-        interestType: body.interestRate?.interestType ?? body.interestType,
+        monthlyRate: Number(body.interestRate?.monthlyRate ?? body.interestRate ?? 0),
+        interestType: body.interestRate?.interestType ?? body.interestType ?? "flat",
       },
+
       fees: {
-        administrativeFee: body.adminFee ?? body.fees?.administrativeFee,
-        applicationFee: body.applicationFee ?? body.fees?.applicationFee,
-        attorneyReviewFee: body.attorneyFee ?? body.fees?.attorneyReviewFee,
-        brokerFee: body.brokerFee ?? body.fees?.brokerFee,
-        annualMaintenanceFee: body.maintenanceFee ?? body.fees?.annualMaintenanceFee,
+        administrativeFee: getFee("adminFee", "adminFeeType"),
+        applicationFee: getFee("applicationFee", "applicationFeeType"),
+        attorneyReviewFee: getFee("attorneyFee", "attorneyFeeType"),
+        brokerFee: getFee("brokerFee", "brokerFeeType"),
+        annualMaintenanceFee: getFee("maintenanceFee", "maintenanceFeeType"),
       },
-      loanTerms: body.loanTerms,
+
+      loanTerms: Array.isArray(body.loanTerms) ? body.loanTerms.map(Number) : [],
+
       freshLoanRules: {
-        enabled: body.enableFreshLoanRules ?? body.freshLoanRules?.enabled,
-        minMonthsBetweenLoans: body.minimumMonthsBetween ?? body.freshLoanRules?.minMonthsBetweenLoans,
-        allowOverlappingLoans: body.allowOverlappingLoans ?? body.freshLoanRules?.allowOverlappingLoans,
-        requireFullPayoff: body.requireFullPayoff ?? body.freshLoanRules?.requireFullPayoff,
+        enabled: body.enableFreshLoanRules ?? false,
+        minMonthsBetweenLoans: Number(body.minimumMonthsBetween ?? 0),
+        allowOverlappingLoans: body.allowOverlappingLoans ?? false,
+        requireFullPayoff: body.requireFullPayoff ?? false,
       },
+
       payoffSettings: {
-        allowEarlyPayoff: body.allowEarlyPayoff ?? body.payoffSettings?.allowEarlyPayoff,
-        earlyPayoffPenalty: body.earlyPayoffPenalty ?? body.payoffSettings?.earlyPayoffPenalty,
-        earlyPayoffDiscount: body.earlyPayoffDiscount ?? body.payoffSettings?.earlyPayoffDiscount,
-        gracePeriodDays: body.gracePeriodDays ?? body.payoffSettings?.gracePeriodDays,
-        lateFeeAmount: body.lateFeeAmount ?? body.payoffSettings?.lateFeeAmount,
-        lateFeeGraceDays: body.lateFeeGraceDays ?? body.payoffSettings?.lateFeeGraceDays,
+        allowEarlyPayoff: body.allowEarlyPayoff ?? false,
+        earlyPayoffPenalty: Number(body.earlyPayoffPenalty ?? 0),
+        earlyPayoffDiscount: Number(body.earlyPayoffDiscount ?? 0),
+        gracePeriodDays: Number(body.gracePeriodDays ?? 0),
+        lateFeeAmount: Number(body.lateFeeAmount ?? 0),
+        lateFeeGraceDays: Number(body.lateFeeGraceDays ?? 0),
       },
     };
+
     const updatedCompany = await Company.findByIdAndUpdate(id, companyData, {
       new: true,
       runValidators: true,
+      context: 'query',
     });
+
     if (!updatedCompany) {
       return res.status(404).json({
         success: false,
         message: "Company not found",
       });
     }
+
     res.status(200).json({
       success: true,
       message: "Company updated successfully",
@@ -160,7 +199,7 @@ exports.updateCompany = async (req, res) => {
     console.error("Error in updateCompany:", error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to update company",
     });
   }
 };

@@ -56,7 +56,7 @@ const Clients = observer(() => {
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold ">Client Management</h1>
+          <h1 className="text-2xl  text-gray-800 font-bold ">Client Management</h1>
           <p className="text-gray-600 text-base">Manage client records and personal information</p>
         </div>
 
