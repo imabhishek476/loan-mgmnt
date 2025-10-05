@@ -20,13 +20,14 @@ export interface Company {
   };
 
   fees?: {
-    administrativeFee?: number;
-    applicationFee?: number;
-    attorneyReviewFee?: number;
-    brokerFee?: number;
-    annualMaintenanceFee?: number;
+    administrativeFee?: { amount: number; type: "flat" | "percentage" };
+    applicationFee?: { amount: number; type: "flat" | "percentage" };
+    attorneyReviewFee?: { amount: number; type: "flat" | "percentage" };
+    brokerFee?: { amount: number; type: "flat" | "percentage" };
+    annualMaintenanceFee?: { amount: number; type: "flat" | "percentage" };
   };
 
+  backgroundColor?: string;
   loanTerms?: number[];
 
   freshLoanRules?: {
@@ -56,33 +57,33 @@ class CompanyStore {
     makeAutoObservable(this);
   }
 
- async createCompany(company: Company) {
-  this.loading = true;
-  try {
-    const res = await createCompany(company); 
-    const newCompany = res.data; 
+  async createCompany(company: Company) {
+    this.loading = true;
+    try {
+      const res = await createCompany(company);
+      const newCompany = res.data;
 
-    const companyWithId = { ...newCompany, id: newCompany._id };
+      const companyWithId = { ...newCompany, id: newCompany._id };
 
-    runInAction(() => {
-      this.companies.push(companyWithId);
-      this.filteredCompanies = [...this.companies];
-    });
+      runInAction(() => {
+        this.companies.push(companyWithId);
+        this.filteredCompanies = [...this.companies];
+      });
 
-    return companyWithId; 
-  } finally {
-    runInAction(() => (this.loading = false));
+      return companyWithId;
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
   }
-}
   async fetchCompany() {
     this.loading = true;
     try {
       const { data } = await api.get("/companies/allcompanies");
-    runInAction(() => {
-  const validCompanies = (data.data || data.companies || []).filter(Boolean); // removes undefined/null
-  this.companies = validCompanies;
-  this.filteredCompanies = validCompanies;
-});
+      runInAction(() => {
+        const validCompanies = (data.data || data.companies || []).filter(Boolean); // removes undefined/null
+        this.companies = validCompanies;
+        this.filteredCompanies = validCompanies;
+      });
     } catch (err) {
       console.error("Failed to fetch companies:", err);
     } finally {
@@ -104,48 +105,48 @@ class CompanyStore {
     }
   }
 
-async updateCompany(id: string, data: Company) {
-  this.loading = true;
-  try {
-    const res = await api.put(`/companies/update/${id}`, data);
+  async updateCompany(id: string, data: Company) {
+    this.loading = true;
+    try {
+      const res = await api.put(`/companies/update/${id}`, data);
 
-    runInAction(() => {
-      const index = this.companies.findIndex((c) => c._id === id);
-      if (index !== -1) {
-        this.companies[index] = res.data.data;
-        this.filteredCompanies = [...this.companies];
-      }
-    });
+      runInAction(() => {
+        const index = this.companies.findIndex((c) => c._id === id);
+        if (index !== -1) {
+          this.companies[index] = res.data.data;
+          this.filteredCompanies = [...this.companies];
+        }
+      });
 
-    return res.data.data;
-  } catch (err) {
-    console.error("Failed to update company:", err);
-    throw err;
-  } finally {
-    runInAction(() => {
-      this.loading = false;
-    });
+      return res.data.data;
+    } catch (err) {
+      console.error("Failed to update company:", err);
+      throw err;
+    } finally {
+      runInAction(() => {
+        this.loading = false;
+      });
+    }
   }
-}
 
-async deleteCompany(id: string) {
-  this.loading = true;
-  try {
-    await api.delete(`/companies/delete/${id}`);
+  async deleteCompany(id: string) {
+    this.loading = true;
+    try {
+      await api.delete(`/companies/delete/${id}`);
 
-    runInAction(() => {
-      this.companies = this.companies.filter((c) => c._id !== id);
-      this.filteredCompanies = this.companies;
-    });
-  } catch (err) {
-    console.error("Failed to delete company:", err);
-    throw err; 
-  } finally {
-    runInAction(() => {
-      this.loading = false;
-    });
+      runInAction(() => {
+        this.companies = this.companies.filter((c) => c._id !== id);
+        this.filteredCompanies = this.companies;
+      });
+    } catch (err) {
+      console.error("Failed to delete company:", err);
+      throw err;
+    } finally {
+      runInAction(() => {
+        this.loading = false;
+      });
+    }
   }
-}
 
 }
 

@@ -1,31 +1,41 @@
 const mongoose = require("mongoose");
 
+const feeSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ["flat", "percentage"],
+    default: "flat"
+  },
+  value: {
+    type: Number,
+    default: 0
+  }
+}, { _id: false });
+
 const companySchema = new mongoose.Schema({
   companyName: { type: String, required: true },
   companyCode: { type: String, required: true, unique: true },
-  description: { type: String },
-  phone: { type: String },
-  email: { type: String },
-  website: { type: String },
-  address: { type: String },
-  activeCompany: { type: Boolean},
-
- 
+  description: String,
+  phone: String,
+  email: String,
+  website: String,
+  address: String,
+  activeCompany: { type: Boolean, default: true },
+  backgroundColor: { type: String, default: "#ffffff" },
   interestRate: {
-    monthlyRate: { type: Number, required: true }, 
+    monthlyRate: { type: Number, required: true },
     interestType: { type: String, enum: ["flat", "compound"], required: true }
   },
 
   fees: {
-    administrativeFee: { type: Number, default: 0 },
-    applicationFee: { type: Number, default: 0 },
-    attorneyReviewFee: { type: Number, default: 0 },
-    brokerFee: { type: Number, default: 0 },
-    annualMaintenanceFee: { type: Number, default: 0 }
+    administrativeFee: { type: feeSchema, default: () => ({}) },
+    applicationFee: { type: feeSchema, default: () => ({}) },
+    attorneyReviewFee: { type: feeSchema, default: () => ({}) },
+    brokerFee: { type: feeSchema, default: () => ({}) },
+    annualMaintenanceFee: { type: feeSchema, default: () => ({}) }
   },
 
   loanTerms: [{ type: Number, enum: [6, 12, 18, 24, 30, 36] }],
-
 
   freshLoanRules: {
     enabled: { type: Boolean, default: false },
@@ -34,7 +44,6 @@ const companySchema = new mongoose.Schema({
     requireFullPayoff: { type: Boolean, default: false }
   },
 
- 
   payoffSettings: {
     allowEarlyPayoff: { type: Boolean, default: false },
     earlyPayoffPenalty: { type: Number, default: 0 },
@@ -45,4 +54,5 @@ const companySchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model("Compaines", companySchema);
+
+module.exports = mongoose.model("Company", companySchema);

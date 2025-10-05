@@ -13,6 +13,11 @@ const companyFields: FieldConfig[] = [
   { label: "Company Name", key: "companyName", type: "text", required: true },
   { label: "Company Code", key: "companyCode", type: "text", required: true },
   { label: "Description", key: "description", type: "textarea", fullWidth: true },
+  {
+    label: "Background Color",
+    key: "backgroundColor",
+    type: "color"
+  },
   { label: "Phone", key: "phone", type: "text" },
   { label: "Email", key: "email", type: "email" },
   { label: "Website", key: "website", type: "text" },
@@ -33,29 +38,18 @@ const companyFields: FieldConfig[] = [
   // Loan Terms
   { label: "Available Loan Terms", key: "availableLoanTerms", type: "section", icon: <FileText size={18} /> },
   { label: "", key: "loanTerms", type: "toggle" },
-  // Fees
+  // Fee Structure
   { label: "Fee Structure", key: "feeStructure", type: "section", icon: <DollarSign size={18} /> },
-  { label: "Administrative Fee ($)", key: "adminFee", type: "number" },
-  { label: "Application Fee ($)", key: "applicationFee", type: "number" },
-  { label: "Attorney Fee ($)", key: "attorneyFee", type: "number" },
-  { label: "Broker Fee ($)", key: "brokerFee", type: "number" },
-  { label: "Maintenance Fee ($)", key: "maintenanceFee", type: "number" },
-  // Loan Rules
-  { label: "Fresh Loan Rules", key: "freshLoanRulesSection", type: "section", icon: <Settings size={18} /> },
-  { label: "Enable Fresh Loan Rules", key: "enableFreshLoanRules", type: "toggle" },
-  { label: "Allow Overlapping Loans", key: "allowOverlappingLoans", type: "toggle" },
 
-  { label: "Minimum Months Between Loans", key: "minimumMonthsBetween", type: "number" },
-
-  { label: "Require Full Payoff Before New Loan", key: "requireFullPayoff", type: "toggle" },
-  // Payoff
-  { label: "Payoff Settings", key: "payoffSettings", type: "section", icon: <DollarSign size={18} /> },
-  { label: "Allow Early Payoff", key: "allowEarlyPayoff", type: "toggle" },
+  {
+    label: "Payoff Settings",
+    key: "payoffSettings",
+    type: "section",
+    icon: <DollarSign size={18} />,
+    inlineToggle: { key: "allowEarlyPayoff", label: "Allow Early Payoff" }
+  },
   { label: "Early Payoff Penalty (%)", key: "earlyPayoffPenalty", type: "number" },
   { label: "Early Payoff Discount (%)", key: "earlyPayoffDiscount", type: "number" },
-  { label: "Grace Period (Days)", key: "gracePeriodDays", type: "number" },
-  { label: "Late Fee Amount ($)", key: "lateFeeAmount", type: "number" },
-  { label: "Late Fee Grace Days", key: "lateFeeGraceDays", type: "number" },
 ];
 
 interface CompanyFormProps {
@@ -64,7 +58,6 @@ interface CompanyFormProps {
   open: boolean;
   onClose: () => void;
 }
-
 function normalizeCompany(data?: Company) {
   if (!data) return {};
   return {
@@ -72,23 +65,32 @@ function normalizeCompany(data?: Company) {
     interestRate: data.interestRate?.monthlyRate ?? 0,
     interestType: data.interestRate?.interestType ?? "flat",
 
-    adminFee: data.fees?.administrativeFee ?? 0,
-    applicationFee: data.fees?.applicationFee ?? 0,
-    attorneyFee: data.fees?.attorneyReviewFee ?? 0,
-    brokerFee: data.fees?.brokerFee ?? 0,
-    maintenanceFee: data.fees?.annualMaintenanceFee ?? 0,
+    // ✅ Use .value instead of .amount
+    adminFee: data.fees?.administrativeFee?.value ?? 0,
+    adminFeeType: data.fees?.administrativeFee?.type ?? "flat",
+    applicationFee: data.fees?.applicationFee?.value ?? 0,
+    applicationFeeType: data.fees?.applicationFee?.type ?? "flat",
+    attorneyFee: data.fees?.attorneyReviewFee?.value ?? 0,
+    attorneyFeeType: data.fees?.attorneyReviewFee?.type ?? "flat",
+    brokerFee: data.fees?.brokerFee?.value ?? 0,
+    brokerFeeType: data.fees?.brokerFee?.type ?? "flat",
+    maintenanceFee: data.fees?.annualMaintenanceFee?.value ?? 0,
+    maintenanceFeeType: data.fees?.annualMaintenanceFee?.type ?? "flat",
 
+    // Fresh Loan Rules
     enableFreshLoanRules: data.freshLoanRules?.enabled ?? false,
     minimumMonthsBetween: data.freshLoanRules?.minMonthsBetweenLoans ?? 0,
     allowOverlappingLoans: data.freshLoanRules?.allowOverlappingLoans ?? false,
     requireFullPayoff: data.freshLoanRules?.requireFullPayoff ?? false,
 
+    // Payoff Settings
     allowEarlyPayoff: data.payoffSettings?.allowEarlyPayoff ?? false,
     earlyPayoffPenalty: data.payoffSettings?.earlyPayoffPenalty ?? 0,
     earlyPayoffDiscount: data.payoffSettings?.earlyPayoffDiscount ?? 0,
     gracePeriodDays: data.payoffSettings?.gracePeriodDays ?? 0,
     lateFeeAmount: data.payoffSettings?.lateFeeAmount ?? 0,
     lateFeeGraceDays: data.payoffSettings?.lateFeeGraceDays ?? 0,
+    loanTerms: data.loanTerms ?? [],
   };
 }
 
@@ -97,30 +99,46 @@ function denormalizeCompany(data: any): Company {
     ...data,
     activeCompany: data.activeCompany ?? true,
     interestRate: {
-      monthlyRate: data.interestRate,
-      interestType: data.interestType,
+      monthlyRate: Number(data.interestRate ?? 0),
+      interestType: data.interestType ?? "flat",
     },
     fees: {
-      administrativeFee: data.adminFee,
-      applicationFee: data.applicationFee,
-      attorneyReviewFee: data.attorneyFee,
-      brokerFee: data.brokerFee,
-      annualMaintenanceFee: data.maintenanceFee,
+      administrativeFee: {
+        amount: Number(data.adminFee ?? 0),
+        type: data.adminFeeType ?? "flat",
+      },
+      applicationFee: {
+        amount: Number(data.applicationFee ?? 0),
+        type: data.applicationFeeType ?? "flat",
+      },
+      attorneyReviewFee: {
+        amount: Number(data.attorneyFee ?? 0),
+        type: data.attorneyFeeType ?? "flat",
+      },
+      brokerFee: {
+        amount: Number(data.brokerFee ?? 0),
+        type: data.brokerFeeType ?? "flat",
+      },
+      annualMaintenanceFee: {
+        amount: Number(data.maintenanceFee ?? 0),
+        type: data.maintenanceFeeType ?? "flat",
+      },
     },
     freshLoanRules: {
-      enabled: data.enableFreshLoanRules,
-      minMonthsBetweenLoans: data.minimumMonthsBetween,
-      allowOverlappingLoans: data.allowOverlappingLoans,
-      requireFullPayoff: data.requireFullPayoff,
+      enabled: data.enableFreshLoanRules ?? false,
+      minMonthsBetweenLoans: Number(data.minimumMonthsBetween ?? 0),
+      allowOverlappingLoans: data.allowOverlappingLoans ?? false,
+      requireFullPayoff: data.requireFullPayoff ?? false,
     },
     payoffSettings: {
-      allowEarlyPayoff: data.allowEarlyPayoff,
-      earlyPayoffPenalty: data.earlyPayoffPenalty,
-      earlyPayoffDiscount: data.earlyPayoffDiscount,
-      gracePeriodDays: data.gracePeriodDays,
-      lateFeeAmount: data.lateFeeAmount,
-      lateFeeGraceDays: data.lateFeeGraceDays,
+      allowEarlyPayoff: data.allowEarlyPayoff ?? false,
+      earlyPayoffPenalty: Number(data.earlyPayoffPenalty ?? 0),
+      earlyPayoffDiscount: Number(data.earlyPayoffDiscount ?? 0),
+      gracePeriodDays: Number(data.gracePeriodDays ?? 0),
+      lateFeeAmount: Number(data.lateFeeAmount ?? 0),
+      lateFeeGraceDays: Number(data.lateFeeGraceDays ?? 0),
     },
+    loanTerms: Array.isArray(data.loanTerms) ? data.loanTerms.map(Number) : [],
   };
 }
 
@@ -161,9 +179,6 @@ const CompanyForm = observer(({ initialData, onSubmit, open, onClose }: CompanyF
     const earlyPayoffFields = [
       "earlyPayoffPenalty",
       "earlyPayoffDiscount",
-      "gracePeriodDays",
-      "lateFeeAmount",
-      "lateFeeGraceDays",
     ];
 
     if (!formData.enableFreshLoanRules && freshLoanFields.includes(field.key)) {

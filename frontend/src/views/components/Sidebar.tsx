@@ -40,9 +40,9 @@ const Sidebar: React.FC = observer(() => {
     { name: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, path: "dashboard" },
     { name: "Clients", icon: <Users className="w-5 h-5" />, path: "clients" },
     { name: "Loans", icon: <DollarSign className="w-5 h-5" />, path: "loans" },
-    { name: "Payments", icon: <CreditCard className="w-5 h-5" />, path: "payments" },
-    { name: "Documents", icon: <FileText className="w-5 h-5" />, path: "documents" },
-    { name: "Reports", icon: <BarChart3 className="w-5 h-5" />, path: "reports" },
+    // { name: "Payments", icon: <CreditCard className="w-5 h-5" />, path: "payments" },
+    // { name: "Documents", icon: <FileText className="w-5 h-5" />, path: "documents" },
+    // { name: "Reports", icon: <BarChart3 className="w-5 h-5" />, path: "reports" },
     { name: "Administration", icon: <Settings className="w-5 h-5" />, path: "administration" },
 
   ];
