@@ -21,8 +21,14 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
-// Handle preflight requests
-app.options("*", cors());
+// Handle preflight requests globally
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // Connect DB
 connectDB();
