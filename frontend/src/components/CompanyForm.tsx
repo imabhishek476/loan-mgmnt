@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { Home, Percent, DollarSign, FileText, Settings, Save } from "lucide-react";
+import { Home, Percent, DollarSign, FileText } from "lucide-react";
 import type { Company } from "../store/CompanyStore";
-import FormModal, { FieldConfig } from "./FormModal";
+import FormModal from "./FormModal";
+import type { FieldConfig } from "./FormModal";
 import { Switch, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 
 const loanTermOptions = [6, 12, 18, 24, 30, 36];
 
 const companyFields: FieldConfig[] = [
-  // Basic Info
   { label: "Basic Information", key: "basicInformation", type: "section", icon: <Home size={18} /> },
   { label: "Company Name", key: "companyName", type: "text", required: true },
   { label: "Company Code", key: "companyCode", type: "text", required: true },
-  { label: "Description", key: "description", type: "textarea", fullWidth: true },
-  {
-    label: "Background Color",
-    key: "backgroundColor",
-    type: "color"
-  },
-  { label: "Phone", key: "phone", type: "text" },
-  { label: "Email", key: "email", type: "email" },
-  { label: "Website", key: "website", type: "text" },
-  { label: "Active Company", key: "activeCompany", type: "toggle" },
-  { label: "Address", key: "address", type: "textarea", fullWidth: true },
-  // Interest
+  { label: "Description", key: "description", type: "textarea", fullWidth: true, required: true },
+  { label: "Background Color", key: "backgroundColor", type: "color", required: true },
+  { label: "Phone", key: "phone", type: "text", required: true },
+  { label: "Email", key: "email", type: "email", required: true },
+  { label: "Website", key: "website", type: "text", required: true },
+  { label: "Active Company", key: "activeCompany", type: "toggle", required: true },
+  { label: "Address", key: "address", type: "textarea", fullWidth: true, required: true },
   { label: "Interest Rate Configuration", key: "interestRateConfiguration", type: "section", icon: <Percent size={18} /> },
-  { label: "Interest Rate (%)", key: "interestRate", type: "number" },
+  { label: "Interest Rate (%)", key: "interestRate", type: "number", min: 0, max: 100, required: true },
   {
     label: "Interest Type",
     key: "interestType",
@@ -34,22 +29,20 @@ const companyFields: FieldConfig[] = [
       { label: "Compound", value: "compound" },
       { label: "Flat", value: "flat" },
     ],
+    required: true,
   },
-  // Loan Terms
   { label: "Available Loan Terms", key: "availableLoanTerms", type: "section", icon: <FileText size={18} /> },
-  { label: "", key: "loanTerms", type: "toggle" },
-  // Fee Structure
+  { label: "", key: "loanTerms", type: "toggle", required: true },
   { label: "Fee Structure", key: "feeStructure", type: "section", icon: <DollarSign size={18} /> },
-
   {
     label: "Payoff Settings",
     key: "payoffSettings",
     type: "section",
     icon: <DollarSign size={18} />,
-    inlineToggle: { key: "allowEarlyPayoff", label: "Allow Early Payoff" }
+    inlineToggle: { key: "allowEarlyPayoff", label: "Allow Early Payoff" },
   },
-  { label: "Early Payoff Penalty (%)", key: "earlyPayoffPenalty", type: "number" },
-  { label: "Early Payoff Discount (%)", key: "earlyPayoffDiscount", type: "number" },
+  { label: "Early Payoff Penalty (%)", key: "earlyPayoffPenalty", type: "number", min: 0, max: 100 },
+  { label: "Early Payoff Discount (%)", key: "earlyPayoffDiscount", type: "number", min: 0, max: 100 },
 ];
 
 interface CompanyFormProps {
@@ -58,14 +51,13 @@ interface CompanyFormProps {
   open: boolean;
   onClose: () => void;
 }
+
 function normalizeCompany(data?: Company) {
   if (!data) return {};
   return {
     ...data,
     interestRate: data.interestRate?.monthlyRate ?? 0,
     interestType: data.interestRate?.interestType ?? "flat",
-
-    // ✅ Use .value instead of .amount
     adminFee: data.fees?.administrativeFee?.value ?? 0,
     adminFeeType: data.fees?.administrativeFee?.type ?? "flat",
     applicationFee: data.fees?.applicationFee?.value ?? 0,
@@ -76,14 +68,10 @@ function normalizeCompany(data?: Company) {
     brokerFeeType: data.fees?.brokerFee?.type ?? "flat",
     maintenanceFee: data.fees?.annualMaintenanceFee?.value ?? 0,
     maintenanceFeeType: data.fees?.annualMaintenanceFee?.type ?? "flat",
-
-    // Fresh Loan Rules
     enableFreshLoanRules: data.freshLoanRules?.enabled ?? false,
     minimumMonthsBetween: data.freshLoanRules?.minMonthsBetweenLoans ?? 0,
     allowOverlappingLoans: data.freshLoanRules?.allowOverlappingLoans ?? false,
     requireFullPayoff: data.freshLoanRules?.requireFullPayoff ?? false,
-
-    // Payoff Settings
     allowEarlyPayoff: data.payoffSettings?.allowEarlyPayoff ?? false,
     earlyPayoffPenalty: data.payoffSettings?.earlyPayoffPenalty ?? 0,
     earlyPayoffDiscount: data.payoffSettings?.earlyPayoffDiscount ?? 0,
@@ -104,23 +92,23 @@ function denormalizeCompany(data: any): Company {
     },
     fees: {
       administrativeFee: {
-        amount: Number(data.adminFee ?? 0),
+        value: Number(data.adminFee ?? 0),
         type: data.adminFeeType ?? "flat",
       },
       applicationFee: {
-        amount: Number(data.applicationFee ?? 0),
+        value: Number(data.applicationFee ?? 0),
         type: data.applicationFeeType ?? "flat",
       },
       attorneyReviewFee: {
-        amount: Number(data.attorneyFee ?? 0),
+        value: Number(data.attorneyFee ?? 0),
         type: data.attorneyFeeType ?? "flat",
       },
       brokerFee: {
-        amount: Number(data.brokerFee ?? 0),
+        value: Number(data.brokerFee ?? 0),
         type: data.brokerFeeType ?? "flat",
       },
       annualMaintenanceFee: {
-        amount: Number(data.maintenanceFee ?? 0),
+        value: Number(data.maintenanceFee ?? 0),
         type: data.maintenanceFeeType ?? "flat",
       },
     },
@@ -171,34 +159,19 @@ const CompanyForm = observer(({ initialData, onSubmit, open, onClose }: CompanyF
   };
 
   const visibleFields = companyFields.filter((field) => {
-    const freshLoanFields = [
-      "minimumMonthsBetween",
-      "allowOverlappingLoans",
-      "requireFullPayoff",
-    ];
-    const earlyPayoffFields = [
-      "earlyPayoffPenalty",
-      "earlyPayoffDiscount",
-    ];
-
-    if (!formData.enableFreshLoanRules && freshLoanFields.includes(field.key)) {
-      return false;
-    }
+    const earlyPayoffFields = ["earlyPayoffPenalty", "earlyPayoffDiscount"];
     if (!formData.allowEarlyPayoff && earlyPayoffFields.includes(field.key)) {
       return false;
     }
     return true;
   });
 
-
   return (
     <FormModal
       open={open}
       onClose={onClose}
       title={initialData ? "Edit Company" : "Add New Company"}
-      submitButtonText={initialData ? "Update Company" : <>
-        <Save size={16} className="inline mr-1" /> Create Company
-      </>}
+      submitButtonText={initialData ? "Update Company" : "Create Company"}
       fields={visibleFields}
       initialData={formData}
       onSubmit={handleSubmit}

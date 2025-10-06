@@ -4,7 +4,10 @@ import { X, Plus } from "lucide-react";
 import { TextField as MuiTextField, Switch, FormGroup, FormControlLabel, Autocomplete } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import moment, { Moment } from "moment";
+import moment from "moment";
+import type { Moment } from "moment";
+
+
 
 export interface FieldConfig {
   label: string;
@@ -16,6 +19,8 @@ export interface FieldConfig {
   icon?: ReactNode;
   inlineToggle?: { key: string; label: string }; // for inline toggle in section
   onChange?: (value: any) => void;
+  min?: number;
+  max?: number;
 }
 
 interface FormModalProps {
@@ -155,45 +160,70 @@ const FormModal = ({
                         </h3>
 
                         <div className="mt-3 grid sm:grid-cols-2 gap-4">
-                          {feeFields.map(({ key, label, typeKey }) => (
-                            <div key={key} className="flex flex-col text-left">
-                              <div className="flex justify-between items-center mb-1">
-                                <label className="font-medium text-gray-700">
-                                  {label} ({formData[typeKey] === "percent" ? "%" : "$"})
-                                </label>
-                                <FormControlLabel
-                                  control={
-                                    <Switch
-                                      checked={formData[typeKey] === "percentage"}
-                                      onChange={(e) =>
-                                        handleChange(typeKey, e.target.checked ? "percentage" : "flat")
-                                      }
-                                      color="success"
-                                    />
-                                  }
-                                  label={formData[typeKey] === "percentage" ? "Percentage" : "Flat"}
+                          {feeFields.map(({ key, label, typeKey }) => {
+                            const feeType = formData[typeKey] || "flat";
+                            const feeValue = formData[key] || "";
+                            const handleFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                              let value = e.target.value;
+                              if (value && isNaN(Number(value))) return;
+                              let numValue = Number(value);
+                              if (feeType === "percentage" && numValue > 100) {
+                                numValue = 100;
+                              }
+                              handleChange(key, numValue);
+                            };
+
+                            return (
+                              <div key={key} className="flex flex-col text-left">
+                                <div className="flex  items-center mb-1">
+                                  <label className="font-medium text-gray-700">
+                                    {label} ({feeType === "percentage" ? "%" : "$"})
+                                  </label>
+                                  <FormControlLabel
+                                    control={
+                                      <Switch
+                                        checked={feeType === "percentage"}
+                                        onChange={(e) => {
+                                          const newType = e.target.checked ? "percentage" : "flat";
+                                          handleChange(typeKey, newType);
+
+                                          let currentValue = Number(formData[key] || 0);
+                                          if (newType === "percentage" && currentValue > 100) {
+                                            handleChange(key, 100);
+                                          }
+                                        }}
+                                        color="success"
+                                      />
+                                    }
+                                    label={feeType === "percentage" ? "Percentage" : "Flat"}
+                                    labelPlacement="start"
+                                  />
+
+                                </div>
+
+                                <input
+                                  type="number"
+                                  placeholder={label}
+                                  value={feeValue}
+                                  onChange={handleFeeChange}
+                                  min={0}
+                                  max={feeType === "percentage" ? 100 : undefined}
+                                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                                 />
+
+                                {errors[key] && (
+                                  <span className="text-red-600 text-sm">{errors[key]}</span>
+                                )}
                               </div>
-                              <input
-                                type="number"
-                                placeholder={label}
-                                value={formData[key] || ""}
-                                onChange={(e) => handleChange(key, e.target.value)}
-                                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
-                              />
-                              {errors[key] && <span className="text-red-600 text-sm">{errors[key]}</span>}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );
                   }
-
-
-                  // Regular section with optional inline toggle
                   return (
                     <div key={field.label} className="w-full mt-0 mb-0 col-span-full">
-                      <div className="flex justify-between items-center text-lg font-semibold text-green-800 border-b border-gray-300 pb-1">
+                      <div className="flex gap-3 items-center text-lg font-semibold text-green-800 border-b border-gray-300 pb-1">
                         <div className="flex items-center gap-3">
                           {field.icon && <span className="text-green-700">{field.icon}</span>}
                           {field.label}
@@ -288,9 +318,13 @@ const FormModal = ({
                         onChange={(date: Moment | null) =>
                           handleChange(field.key, date ? date.format("MM-DD-YYYY") : "")
                         }
-                        renderInput={(params) => (
-                          <MuiTextField {...params} error={!!errors[field.key]} helperText={errors[field.key]} />
-                        )}
+                        slotProps={{
+                          textField: {
+                            error: !!errors[field.key],
+                            helperText: errors[field.key],
+                            size: "small",
+                          }
+                        }}
                       />
                       {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
                     </div>
@@ -409,10 +443,10 @@ const FormModal = ({
           </form>
 
           <div className="flex justify-end gap-3 p-4 border-t sticky bottom-0 bg-white z-10">
-            <button type="button" onClick={onClose} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+            <button type="button" onClick={onClose} className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
               Cancel
             </button>
-            <button type="submit" onClick={handleSubmit} className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition">
+            <button type="submit" onClick={handleSubmit} className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition">
               {submitButtonText || "Save"}
             </button>
           </div>
