@@ -3,17 +3,18 @@ import {
   fetchLoans,
   createLoan,
   deleteLoan,
-  LoanPayload,
+  type LoanPayload,
 } from "../services/LoanService";
 
 export interface Loan {
+  tableData: any;
   _id?: string;
   issueDate: string;
   client: string;
   company: string;
   loanTerms: number;
   baseAmount: number;
-  fees?: Record<string, any>;
+  fees?: Record<string, number>;
   interestType?: "flat" | "compound";
   monthlyRate?: number;
   totalLoan?: number;
@@ -34,7 +35,7 @@ class LoanStore {
     try {
       const data = await fetchLoans();
       runInAction(() => (this.loans = data));
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching loans:", err);
     } finally {
       runInAction(() => (this.loading = false));

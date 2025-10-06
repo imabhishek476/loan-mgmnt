@@ -33,6 +33,7 @@ class ClientStore {
   clients: Client[] = [];
   selectedClientLoans: Loan[] = [];
   loading = false;
+  customFields:[];
 
   constructor() {
     makeAutoObservable(this);

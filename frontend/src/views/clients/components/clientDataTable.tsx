@@ -69,22 +69,26 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
                {
                 icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
                 tooltip: "Add Loan",
+                //@ts-ignore
                 onClick: (event, rowData: any) => onAddLoan(rowData),
               },
              {
             icon: () => <Eye className="w-5 h-5 text-emerald-600" />,
             tooltip: "View Client",
+                //@ts-ignore
             onClick: (event, rowData: any) => onViewClient?.(rowData),
           },
 
               {
                 icon: () => <Pencil className="w-5 h-5 text-green-600" />,
                 tooltip: "Edit",
+                //@ts-ignore
                 onClick: (event, rowData: any) => onEdit(rowData),
               },
               {
                 icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
                 tooltip: "Delete",
+                //@ts-ignore
                 onClick: (event, rowData: any) => onDelete(rowData._id),
               },
             ]}

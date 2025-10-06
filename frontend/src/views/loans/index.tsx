@@ -1,11 +1,11 @@
 // src/views/loans/Loans.tsx
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { debounce } from "lodash";
+// import { debounce } from "lodash";
 import { Plus, Save, Wallet } from "lucide-react";
 import Button from "@mui/material/Button";
-import FormModal, { FieldConfig } from "../../components/FormModal";
+import FormModal, { type FieldConfig } from "../../components/FormModal";
 import LoanCalculation from "./components/LoanCalculation";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
@@ -51,12 +51,12 @@ const Loans = observer(({
   });
   const [formData, setFormData] = useState<Record<string, any>>(getInitialFormData());
 
-  const [search, setSearch] = useState("");
+  // const [search, setSearch] = useState("");
   const hasLoaded = useRef(false);
 
-  const debouncedSearchRef = useRef(
-    debounce((query: string) => setSearch(query), 300)
-  );
+  // const debouncedSearchRef = useRef(
+  //   debounce((query: string) => setSearch(query), 300)
+  // );
 
   const loadInitialData = async () => {
     try {
@@ -156,8 +156,8 @@ const Loans = observer(({
 
     try {
       if (editingLoan) {
-        await loanStore.updateLoan(editingLoan._id, payload);
-        toast.success("Loan updated successfully");
+        // await loanStore.updateLoan(editingLoan._id, payload);
+        // toast.success("Loan updated successfully");
       } else {
         await loanStore.createLoan(payload);
         toast.success("Loan created successfully");

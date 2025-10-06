@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Eye, Trash2, Wallet } from "lucide-react";
+import { Search, Eye, Wallet } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -20,12 +20,13 @@ import {
 interface LoanTableProps {
   onDelete: (id: string) => void;
   clientId?: string;
+  onEdit? : (loan:any) => void;
 }
 
-const LoanTable: React.FC<LoanTableProps> = ({ onDelete, clientId }) => {
+const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
   const { loans, loading } = loanStore;
   const [search, setSearch] = useState("");
-  const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
+  const [selectedLoan, setSelectedLoan] = useState(null);
 
   const filteredLoans = useMemo(() => {
     if (loading || !loans) return [];
@@ -33,7 +34,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onDelete, clientId }) => {
 
     if (clientId) {
       data = data.filter(
-        (loan) => loan.client === clientId || loan.client?._id === clientId
+        (loan) => loan.client === clientId || loan.client?.["_id"] === clientId
       );
     }
 
@@ -41,11 +42,11 @@ const LoanTable: React.FC<LoanTableProps> = ({ onDelete, clientId }) => {
 
     return data.filter((loan) => {
       const clientName =
-        loan.client?.fullName ||
+        loan.client?.["fullName"] ||
         clientStore.clients.find((c) => c._id === loan.client)?.fullName ||
         "";
       const companyName =
-        loan.company?.companyName ||
+        loan.company?.["companyName"] ||
         companyStore.companies.find((c) => c._id === loan.company)?.companyName ||
         "";
       return (
@@ -95,7 +96,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onDelete, clientId }) => {
           <MaterialTable
             title={null}
             columns={[
-              { title: "Sr.no", render: (rowData) => rowData.tableData.id + 1, width: "5%" },
+              { title: "Sr.no", render: (rowData) => rowData?.["tableData"]?.["id"] + 1, width: "5%" },
               {
                 title: "Client",
                 render: (rowData) =>
@@ -134,7 +135,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onDelete, clientId }) => {
               {
                 icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                 tooltip: "View Details",
-                onClick: (event, rowData: any) => handleView(rowData),
+                onClick: (rowData: any) => handleView(rowData),
               },
               // {
               //   icon: () => <Trash2 className="w-5 h-5 text-red-600" />,

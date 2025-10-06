@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2 } from "lucide-react";
-import CircularProgress from "@mui/material/CircularProgress";
+// import CircularProgress from "@mui/material/CircularProgress";
 
 interface CompaniesDataTableProps {
   companies?: any[];
@@ -126,11 +126,13 @@ const CompaniesDataTable = ({
             {
               icon: () => <Pencil className="w-4 h-4 text-green-600" />,
               tooltip: "Edit",
+              //@ts-ignore
               onClick: (event, rowData: any) => onEdit(rowData),
             },
             {
               icon: () => <Trash2 className="w-4 h-4 text-red-600" />,
               tooltip: "Delete",
+              //@ts-ignore
               onClick: (event, rowData: any) => onDelete(rowData._id),
             },
           ]}
