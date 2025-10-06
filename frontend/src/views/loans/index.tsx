@@ -1,28 +1,31 @@
 // src/views/loans/Loans.tsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { observer } from "mobx-react-lite";
-import Button from "@mui/material/Button";
+import { toast } from "react-toastify";
+import { debounce } from "lodash";
 import { Plus, Save, Wallet } from "lucide-react";
+import Button from "@mui/material/Button";
 import FormModal, { FieldConfig } from "../../components/FormModal";
+import LoanCalculation from "./components/LoanCalculation";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
 import { loanStore } from "../../store/LoanStore";
 import moment from "moment";
-import { toast } from "react-toastify";
-import LoanCalculation from "../loans/components/LoanCalculation";
+import LoanTable from "./components/LoanTable";
 
 const Loans = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<any | null>(null);
-  const hasLoaded = useRef(false);
-
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [loanTermsOptions, setLoanTermsOptions] = useState<{ label: string; value: number }[]>([]);
-
-  const [formData, setFormData] = useState<Record<string, any>>({
-    issueDate: moment().format("MM-DD-YYYY"),
+  const getInitialFormData = () => ({
+    client: "",
+    company: "",
     baseAmount: 0,
-    loanTerms: null,
+    subtotal: 0,
+    loanTerms: 24,
+    issueDate: moment().format("MM-DD-YYYY"),
+    checkNumber: "",
     fees: {
       administrativeFee: { value: 0, type: "flat" },
       applicationFee: { value: 0, type: "flat" },
@@ -30,42 +33,57 @@ const Loans = observer(() => {
       brokerFee: { value: 0, type: "flat" },
       annualMaintenanceFee: { value: 0, type: "flat" },
     },
-    interestType: "flat",
+    interestType: "flat" as "flat" | "compound",
     monthlyRate: 0,
     totalLoan: 0,
   });
+  const [formData, setFormData] = useState<Record<string, any>>(getInitialFormData());
 
-  const getClientsCompanies = async () => {
+  const [search, setSearch] = useState("");
+  const hasLoaded = useRef(false);
+
+  const debouncedSearchRef = useRef(
+    debounce((query: string) => setSearch(query), 300)
+  );
+
+  const loadInitialData = async () => {
     try {
-      await companyStore.fetchCompany();
-      await clientStore.fetchClients();
-    } catch {
-      toast.error("Failed to fetch companies and clients");
+      await Promise.all([
+        companyStore.fetchCompany(),
+        clientStore.fetchClients(),
+        loanStore.fetchLoans(),
+      ]);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load data");
     }
   };
 
   useEffect(() => {
     if (!hasLoaded.current) {
-      getClientsCompanies();
+      loadInitialData();
       hasLoaded.current = true;
     }
   }, []);
 
   const handleCompanyChange = (companyId: string) => {
     setSelectedCompany(companyId);
-    const company = companyStore.companies.find(c => c._id === companyId);
+    const company = companyStore.companies.find((c) => c._id === companyId);
     if (!company) return;
 
-    const terms = company.loanTerms || [12];
-    setLoanTermsOptions(terms.map(t => ({ label: `${t} months`, value: t })));
+    const terms = company.loanTerms && company.loanTerms.length > 0 ? company.loanTerms : [12];
+    setLoanTermsOptions(terms.map((t) => ({ label: `${t} months`, value: t })));
+
+    const defaultTerm = terms.includes(24) ? 24 : terms[0] || 12;
 
     const mapFee = (fee: any) => ({
-      value: fee?.value ?? 0,
+      value: fee?.value || 0,
       type: fee?.type === "percentage" ? "percentage" : "flat",
     });
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
+      company: companyId,
       fees: {
         administrativeFee: mapFee(company.fees?.administrativeFee),
         applicationFee: mapFee(company.fees?.applicationFee),
@@ -75,48 +93,66 @@ const Loans = observer(() => {
       },
       interestType: company.interestRate?.interestType || "flat",
       monthlyRate: company.interestRate?.monthlyRate || 0,
-      loanTerms: terms[0],
+      loanTerms: defaultTerm,
+      status: "Fresh Loan Issued",
+
     }));
   };
+
+
+  const filteredLoans = useMemo(() => {
+    if (!search) return loanStore.loans;
+    return loanStore.loans.filter((loan) => {
+      const clientName = clientStore.clients.find(c => c._id === loan.client)?.fullName || "";
+      const companyName = companyStore.companies.find(c => c._id === loan.company)?.companyName || "";
+      return clientName.toLowerCase().includes(search.toLowerCase())
+        || companyName.toLowerCase().includes(search.toLowerCase());
+    });
+  }, [loanStore.loans, search]);
 
   const loanFields: FieldConfig[] = [
     {
       label: "Client",
       key: "client",
       type: "select",
-      options: clientStore.clients.length
-        ? clientStore.clients.map(c => ({ label: c.fullName, value: c._id }))
-        : [{ label: "No clients available", value: "" }],
+      options: clientStore.clients.map(c => ({ label: c.fullName, value: c._id })),
       required: true,
     },
     {
       label: "Company",
       key: "company",
       type: "select",
-      options: companyStore.companies.length
-        ? companyStore.companies.map(c => ({ label: c.companyName, value: c._id }))
-        : [{ label: "No Companies available", value: "" }],
+      options: companyStore.companies.map(c => ({ label: c.companyName, value: c._id })),
       onChange: handleCompanyChange,
       required: true,
     },
     { label: "Base Amount ($)", key: "baseAmount", type: "number", required: true },
-    { label: "Loan Terms", key: "loanTerms", type: "select", options: loanTermsOptions, required: true },
+    {
+      label: "Loan Terms",
+      key: "loanTerms",
+      type: "select",
+      options: loanTermsOptions,
+      required: true,
+    },
     { label: "Issue Date", key: "issueDate", type: "date", required: true },
-    { label: "Check Number", key: "checkNumber", type: "number", required: false },
+    { label: "Check Number", key: "checkNumber", type: "number" },
   ];
 
   const handleSave = async (data: any) => {
-    try {
-      const payload = {
-        ...data,
-        baseAmount: formData.baseAmount,
-        fees: formData.fees,
-        interestType: formData.interestType,
-        monthlyRate: formData.monthlyRate,
-        loanTermMonths: formData.loanTerms,
-        totalLoan: formData.totalLoan,
-      };
+    const payload = {
+      ...data,
+      baseAmount: formData.subtotal,
+      checkNumber: formData.checkNumber || null,
+      fees: formData.fees,
+      interestType: formData.interestType,
+      monthlyRate: formData.monthlyRate,
+      loanTerms: formData.loanTerms,
+      totalLoan: formData.totalLoan,
+      status: "Fresh Loan Issued",
 
+    };
+
+    try {
       if (editingLoan) {
         await loanStore.updateLoan(editingLoan._id, payload);
         toast.success("Loan updated successfully");
@@ -124,93 +160,97 @@ const Loans = observer(() => {
         await loanStore.createLoan(payload);
         toast.success("Loan created successfully");
       }
-
+      await loanStore.fetchLoans();
       setModalOpen(false);
       setEditingLoan(null);
     } catch (error) {
-      toast.error("Failed to save loan");
       console.error(error);
+      toast.error("Failed to save loan");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this loan?")) return;
+    try {
+      await loanStore.deleteLoan(id);
+      toast.success("Loan deleted successfully");
+    } catch {
+      toast.error("Failed to delete loan");
     }
   };
 
   return (
-    <div className="flex flex-col bg-white rounded-lg text-left transition-all duration-300">
-      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="flex flex-col bg-white rounded-lg text-left">
+      {/* Header */}
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl text-gray-800 font-bold">Loans</h1>
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <Wallet size={20} /> Loans ({loanStore.loans.length})
+          </h1>
           <p className="text-gray-600 text-base">Manage loan origination, fresh loans, and tracking</p>
         </div>
         <Button
           variant="contained"
-          sx={{
-            backgroundColor: "#145A32",
-            fontWeight: 600,
-            textTransform: "none",
-            borderRadius: "8px",
-            padding: "8px 14px",
-            fontSize: "14px",
-            boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
-            "&:hover": { backgroundColor: "#0f3f23" },
-          }}
           startIcon={<Plus />}
-          onClick={() => {
-            setEditingLoan(null);
-            setModalOpen(true);
-            setFormData(prev => ({
-              ...prev,
-              issueDate: moment().format("MM-DD-YYYY"),
-              loanTerms: loanTermsOptions[0]?.value || 12,
-            }));
-          }}
+          sx={{ backgroundColor: "#145A32", "&:hover": { backgroundColor: "#0f3f23" }, textTransform: "none", fontWeight: 600, borderRadius: 1, px: 3, py: 1 }}
+          onClick={() => { setEditingLoan(null); setModalOpen(true); setFormData(getInitialFormData()); }}
         >
           New Loan
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700 flex items-center gap-2">
-              <Wallet size={20} className="text-green-700" />
-              Loans Portfolio <span className="text-gray-500">(0 Loans)</span>
-            </h2>
-          </div>
-        </div>
-      </div>
 
+      <LoanTable
+        onEdit={(loan) => {
+          setEditingLoan(loan);
+          setFormData(loan);
+          setModalOpen(true);
+        }}
+        onDelete={(id) => {
+          handleDelete(id);
+        }}
+      />
+
+
+      {/* Form Modal */}
       <FormModal
         open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingLoan(null);
-        }}
+        onClose={() => setModalOpen(false)}
         title={editingLoan ? "Edit Loan" : "Create New Loan"}
         fields={loanFields}
-        initialData={editingLoan || { ...formData, issueDate: formData.issueDate }}
+        initialData={editingLoan || { ...formData }}
         onFormDataChange={(updated) => {
-          setFormData(prev => ({ ...prev, ...updated }));
+          setFormData((prev) => ({ ...prev, ...updated }));
           if (updated.company && updated.company !== selectedCompany) handleCompanyChange(updated.company);
         }}
         submitButtonText={editingLoan ? "Update Loan" : <><Save size={16} className="inline mr-1" /> Create Loan</>}
         onSubmit={handleSave}
       >
-        {formData.company && (() => {
+        {formData.company && companyStore.companies.length > 0 && (() => {
           const selected = companyStore.companies.find(c => c._id === formData.company);
           if (!selected) return null;
           return (
-            <div className="mt-4 rounded-lg border w-full">
+            <div className="mt-4 rounded-lg border p-3 w-full">
               <LoanCalculation
-                baseAmount={formData.baseAmount}
+                baseAmount={formData.baseAmount || 0}
                 fees={formData.fees}
-                company={{
-                  name: selected.companyName,
-                  backgroundColor: selected.backgroundColor || "#555555",
-                }}
                 interestType={formData.interestType}
+                company={{ name: selected.companyName, backgroundColor: selected.backgroundColor || "#555555" }}
                 monthlyRate={formData.monthlyRate}
                 loanTermMonths={formData.loanTerms}
                 loanTermsOptions={loanTermsOptions.map(opt => opt.value)}
-                onChange={(updated) => setFormData(prev => ({ ...prev, ...updated }))}
+                onChange={(updated) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    baseAmount: updated.baseAmount,
+                    subtotal: updated.subtotal,
+                    fees: updated.fees,
+                    interestType: updated.interestType,
+                    monthlyRate: updated.monthlyRate,
+                    loanTerms: updated.loanTermMonths,
+                    totalLoan: updated.totalLoan,
+                  }))
+                }
               />
             </div>
           );

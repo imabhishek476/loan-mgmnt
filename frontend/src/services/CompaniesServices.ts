@@ -15,11 +15,11 @@ export interface CompanyPayload {
   };
 
   fees?: {
-    administrativeFee?: { amount: number; type: "flat" | "percentage" };
-    applicationFee?: { amount: number; type: "flat" | "percentage" };
-    attorneyReviewFee?: { amount: number; type: "flat" | "percentage" };
-    brokerFee?: { amount: number; type: "flat" | "percentage" };
-    annualMaintenanceFee?: { amount: number; type: "flat" | "percentage" };
+    administrativeFee?: { value: number; type: "flat" | "percentage" };
+    applicationFee?: { value: number; type: "flat" | "percentage" };
+    attorneyReviewFee?: { value: number; type: "flat" | "percentage" };
+    brokerFee?: { value: number; type: "flat" | "percentage" };
+    annualMaintenanceFee?: { value: number; type: "flat" | "percentage" };
   };
 
 
@@ -36,9 +36,6 @@ export interface CompanyPayload {
     allowEarlyPayoff?: boolean;
     earlyPayoffPenalty?: number;
     earlyPayoffDiscount?: number;
-    gracePeriodDays?: number;
-    lateFeeAmount?: number;
-    lateFeeGraceDays?: number;
   };
 
   customFields?: Record<string, unknown>[];

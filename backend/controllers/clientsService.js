@@ -107,7 +107,6 @@ exports.searchClients = async (req, res) => {
         },
       },
     ]);
-    console.log(clients, 'client data')
 
     res.status(200).json({ clients });
   } catch (error) {

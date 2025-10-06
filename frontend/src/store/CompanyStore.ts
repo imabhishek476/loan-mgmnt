@@ -1,4 +1,3 @@
-// stores/CompanyStore.ts
 import { makeAutoObservable, runInAction } from "mobx";
 import { createCompany, fetchCompanies } from "../services/CompaniesServices";
 import api from "../api/axios";
@@ -20,11 +19,11 @@ export interface Company {
   };
 
   fees?: {
-    administrativeFee?: { amount: number; type: "flat" | "percentage" };
-    applicationFee?: { amount: number; type: "flat" | "percentage" };
-    attorneyReviewFee?: { amount: number; type: "flat" | "percentage" };
-    brokerFee?: { amount: number; type: "flat" | "percentage" };
-    annualMaintenanceFee?: { amount: number; type: "flat" | "percentage" };
+    administrativeFee?: { value: number; type: "flat" | "percentage" };
+    applicationFee?: { value: number; type: "flat" | "percentage" };
+    attorneyReviewFee?: { value: number; type: "flat" | "percentage" };
+    brokerFee?: { value: number; type: "flat" | "percentage" };
+    annualMaintenanceFee?: { value: number; type: "flat" | "percentage" };
   };
 
   backgroundColor?: string;
