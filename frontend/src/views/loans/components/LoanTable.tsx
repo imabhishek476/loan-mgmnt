@@ -136,11 +136,11 @@ const LoanTable: React.FC<LoanTableProps> = ({ onDelete, clientId }) => {
                 tooltip: "View Details",
                 onClick: (event, rowData: any) => handleView(rowData),
               },
-              {
-                icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
-                tooltip: "Delete",
-                onClick: (event, rowData: any) => onDelete(rowData._id),
-              },
+              // {
+              //   icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
+              //   tooltip: "Delete",
+              //   onClick: (event, rowData: any) => onDelete(rowData._id),
+              // },
 
             ]}
             options={{
