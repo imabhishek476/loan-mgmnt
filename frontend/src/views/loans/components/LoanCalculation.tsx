@@ -1,6 +1,6 @@
 import React from "react";
 import { Calculator } from "lucide-react";
-import { Switch, FormControlLabel } from "@mui/material";
+// import { Switch, FormControlLabel } from "@mui/material";
 
 type Fee = {
   value: number;
@@ -182,12 +182,12 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
     emitChange(currentBase, newFees, interestType, currentRate, loanTerm);
   };
 
-  const handleFeeTypeToggle = (key: string) => {
-    const newType = fees[key].type === "percentage" ? "flat" : "percentage";
-    const newFees = { ...fees, [key]: { ...fees[key], type: newType } };
-    setFees(newFees);
-    emitChange(currentBase, newFees, interestType, currentRate, loanTerm);
-  };
+  // const handleFeeTypeToggle = (key: string) => {
+  //   const newType = fees[key].type === "percentage" ? "flat" : "percentage";
+  //   const newFees = { ...fees, [key]: { ...fees[key], type: newType } };
+  //   setFees(newFees);
+  //   emitChange(currentBase, newFees, interestType, currentRate, loanTerm);
+  // };
 
   const handleInterestChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const type = e.target.value as "flat" | "compound";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, FileText, DollarSign } from "lucide-react";
 import LoanTable from "../../loans/components/LoanTable";
 import { loanStore } from "../../../store/LoanStore";
@@ -8,7 +8,19 @@ import { toast } from "react-toastify";
 interface ClientViewModalProps {
     open: boolean;
     onClose: () => void;
-    client: any;
+    client: {
+        _id: string;
+        fullName: string;
+        email: string;
+        phone: string;
+        dob: string;
+        accidentDate: string;
+        attorneyName: string;
+        ssn: string;
+        address: string;
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    loans?: any[];
 }
 
 const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
@@ -65,7 +77,7 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
                     {tabs.map((tab) => (
                         <button
                             key={tab.key}
-                            onClick={() => setActiveTab(tab.key as any)}
+                            onClick={() => setActiveTab(tab.key as "details" | "history")}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md font-medium transition-all
                 ${activeTab === tab.key
                                     ? "bg-white text-green-800 shadow-sm border border-gray-200"
