@@ -25,7 +25,7 @@ const LoanSchema = new mongoose.Schema(
     checkNumber: { type: String },
      status: {
       type: String,
-      enum: ["Fresh Loan Issued", "Payment Received", "Partial Payment Received"],
+      enum: ["Fresh Loan Issued", "Paid Off", "Partial Payment Received"],
       default: "Fresh Loan Issued",
     },
     
@@ -33,4 +33,4 @@ const LoanSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Loan", LoanSchema);
+module.exports.Loan = mongoose.model("Loan", LoanSchema);

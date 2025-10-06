@@ -13,7 +13,19 @@ import { loanStore } from "../../store/LoanStore";
 import moment from "moment";
 import LoanTable from "./components/LoanTable";
 
-const Loans = observer(() => {
+const Loans = observer(({
+  defaultClient,
+  onClose,
+  showTable = true,
+  fromClientPage = false,
+}: {
+  defaultClient?: any;
+  onClose?: () => void;
+  showTable?: boolean;
+  fromClientPage?: boolean;
+}) => {
+
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<any | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
@@ -99,17 +111,6 @@ const Loans = observer(() => {
     }));
   };
 
-
-  const filteredLoans = useMemo(() => {
-    if (!search) return loanStore.loans;
-    return loanStore.loans.filter((loan) => {
-      const clientName = clientStore.clients.find(c => c._id === loan.client)?.fullName || "";
-      const companyName = companyStore.companies.find(c => c._id === loan.company)?.companyName || "";
-      return clientName.toLowerCase().includes(search.toLowerCase())
-        || companyName.toLowerCase().includes(search.toLowerCase());
-    });
-  }, [loanStore.loans, search]);
-
   const loanFields: FieldConfig[] = [
     {
       label: "Client",
@@ -117,6 +118,7 @@ const Loans = observer(() => {
       type: "select",
       options: clientStore.clients.map(c => ({ label: c.fullName, value: c._id })),
       required: true,
+      disabled: fromClientPage,
     },
     {
       label: "Company",
@@ -126,7 +128,7 @@ const Loans = observer(() => {
       onChange: handleCompanyChange,
       required: true,
     },
-    { label: "Base Amount ($)", key: "baseAmount", type: "number", required: true },
+    // { label: "Base Amount ($)", key: "baseAmount", type: "number", required: true },
     {
       label: "Loan Terms",
       key: "loanTerms",
@@ -178,7 +180,15 @@ const Loans = observer(() => {
       toast.error("Failed to delete loan");
     }
   };
-
+  useEffect(() => {
+    if (defaultClient) {
+      setFormData((prev) => ({
+        ...prev,
+        client: defaultClient._id,
+      }));
+      setModalOpen(true);
+    }
+  }, [defaultClient]);
   return (
     <div className="flex flex-col bg-white rounded-lg text-left">
       {/* Header */}
@@ -200,22 +210,26 @@ const Loans = observer(() => {
       </div>
 
 
-      <LoanTable
-        onEdit={(loan) => {
-          setEditingLoan(loan);
-          setFormData(loan);
-          setModalOpen(true);
-        }}
-        onDelete={(id) => {
-          handleDelete(id);
-        }}
-      />
-
+      {showTable && (
+        <LoanTable
+          onEdit={(loan) => {
+            setEditingLoan(loan);
+            setFormData(loan);
+            setModalOpen(true);
+          }}
+          onDelete={(id) => {
+            handleDelete(id);
+          }}
+        />
+      )}
 
       {/* Form Modal */}
       <FormModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          if (onClose) onClose();
+        }}
         title={editingLoan ? "Edit Loan" : "Create New Loan"}
         fields={loanFields}
         initialData={editingLoan || { ...formData }}
