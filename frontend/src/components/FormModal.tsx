@@ -331,33 +331,7 @@ const FormModal = ({
                     </div>
                   );
                 }
-  if (field.type === "color") {
-                  return (
-                  <div key={field.key} className="flex flex-col text-left">
-                    <label className="mb-2 font-medium text-gray-700">{field.label}</label>
-                    <input
-                      type="color"
-                      value={formData[field.key] || "#777777"}
-                      onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="w-12 h-12 cursor-pointer rounded-full border border-gray-300"
-                      style={{
-                        appearance: "none",
-                        WebkitAppearance: "none",
-                        MozAppearance: "none",
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        padding: "0",
-                        border: "2px solid #ccc",
-                      }}
-                    />
-                    {errors[field.key] && (
-                      <span className="text-red-600 text-sm">{errors[field.key]}</span>
-                    )}    
-                  </div>
 
-
-                  );
-                }
                 // --- SELECT ---
                 if (field.type === "select" && field.options) {
                   return (
@@ -386,7 +360,21 @@ const FormModal = ({
                     </div>
                   );
                 }
-              
+                if (field.type === "color") {
+                  return (
+                    <div key={field.key} className="flex flex-col text-left">
+                      <label className="mb-2 font-medium text-gray-700">{field.label}</label>
+                      <input
+                        type="color"
+                        value={formData[field.key] || "#777777"}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        className="h-10 rounded-lg rounded-lg  focus:ring-2 focus:ring-green-500 focus:outline-none resize-none w-20 p-1"
+
+                      />
+                      {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
+                    </div>
+                  );
+                }
                 return (
                   <div key={field.key} className="flex flex-col text-left">
                     <label className="mb-2 font-medium text-gray-700">{field.label}</label>
@@ -400,7 +388,6 @@ const FormModal = ({
                     {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
                   </div>
                 );
-                
               })}
             </div>
 
