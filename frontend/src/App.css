@@ -24,5 +24,7 @@
   --font-lato: 'Lato', sans-serif;            /* Slightly rounded but sharp */
   --font-exo: 'Exo 2', sans-serif;             /* Techy and angular */
 }
-
-
+.css-vycme6-MuiPickersInputBase-root-MuiPickersOutlinedInput-root{
+  height: 40px;
+    border-radius: 7px;
+}

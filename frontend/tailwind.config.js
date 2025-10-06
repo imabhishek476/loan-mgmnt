@@ -16,10 +16,15 @@ module.exports = {
         'white': '#FFFFFF',
       },
       fontFamily: {
-        'sans': ['Helvetica', 'Arial', 'sans-serif'],
-        'serif': ['Georgia', 'serif'],
-        'mono': ['Courier New', 'monospace'],
-        
+      sans: [
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji",
+        ],
       },
       animation: {
         'spin-slow': 'spin 20s linear infinite',

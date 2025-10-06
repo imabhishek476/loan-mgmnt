@@ -1,17 +1,19 @@
 import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Pencil, Trash2, User } from "lucide-react";
-import CircularProgress from "@mui/material/CircularProgress"; 
+import { Search, Pencil, Trash2, User, Plus, Eye } from "lucide-react";
+import CircularProgress from "@mui/material/CircularProgress";
 interface ClientsDataTableProps {
   clients: any[];
   onSearch: (query: string) => void;
   onEdit: (client: any) => void;
   onDelete: (id: string) => void;
   loading: boolean;
+  onAddLoan: (client: any) => void;
+  onViewClient: (client: any) => void;
 }
 
-const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: ClientsDataTableProps) => {
+const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, onAddLoan,loading }: ClientsDataTableProps) => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useMemo(
     () => debounce((value: string) => onSearch(value), 300),
@@ -38,7 +40,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
         />
       </div>
 
-     <div className="overflow-hidden rounded-lg border-gray-300">
+      <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <CircularProgress className="text-green-700" />
@@ -51,6 +53,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
             columns={[
               {
                 title: "Sr.no",
+                width: "5%",
                 render: (rowData) => rowData.tableData.id + 1,
               },
               { title: "Name", field: "fullName" },
@@ -63,14 +66,29 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
             ]}
             data={clients}
             actions={[
+               {
+                icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
+                tooltip: "Add Loan",
+                //@ts-ignore
+                onClick: (event, rowData: any) => onAddLoan(rowData),
+              },
+             {
+            icon: () => <Eye className="w-5 h-5 text-emerald-600" />,
+            tooltip: "View Client",
+                //@ts-ignore
+            onClick: (event, rowData: any) => onViewClient?.(rowData),
+          },
+
               {
                 icon: () => <Pencil className="w-5 h-5 text-green-600" />,
                 tooltip: "Edit",
+                //@ts-ignore
                 onClick: (event, rowData: any) => onEdit(rowData),
               },
               {
                 icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
                 tooltip: "Delete",
+                //@ts-ignore
                 onClick: (event, rowData: any) => onDelete(rowData._id),
               },
             ]}
@@ -82,17 +100,20 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
               search: false,
               actionsColumnIndex: -1,
               headerStyle: {
-                fontWeight: "bold",
-                backgroundColor: "#ffffff",
-                fontSize: "14px",
-                height: 40,
-                borderBottom: "1px solid #d1d5db",
+                fontWeight: "600",
+                backgroundColor: "#f9fafb",
+                color: "#374151",
+                fontSize: "13px",
+                height: 36,
+                padding: "6px 8px",
+                borderBottom: "1px solid #e5e7eb",
               },
-              rowStyle: (rowData, index) => ({
-                fontSize: "16px",
-                height: 45,
-                borderBottom: "1px solid #d1d5db",
-              }),
+              rowStyle: {
+                fontSize: "13px",
+                height: 38,
+                borderBottom: "1px solid #f1f1f1",
+                transition: "background 0.2s",
+              },
               padding: "dense",
               toolbar: false,
               paginationType: "stepped",

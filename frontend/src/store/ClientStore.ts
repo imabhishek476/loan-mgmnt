@@ -1,5 +1,20 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { getClientsSearch, createClient, updateClient, deleteClient } from "../services/ClientServices";
+import {
+  getClientsSearch,
+  createClient,
+  updateClient,
+  deleteClient,
+  getClientLoans,
+} from "../services/ClientServices";
+
+export interface Loan {
+  _id: string;
+  company: string;
+  baseAmount: number;
+  loanTerms: number;
+  interestType: string;
+  totalLoan?: number;
+}
 
 export interface Client {
   _id?: string;
@@ -11,11 +26,14 @@ export interface Client {
   accidentDate?: string;
   address?: string;
   attorneyName?: string;
+  loans?: Loan[];
 }
 
 class ClientStore {
   clients: Client[] = [];
+  selectedClientLoans: Loan[] = [];
   loading = false;
+  customFields:[];
 
   constructor() {
     makeAutoObservable(this);
@@ -25,15 +43,11 @@ class ClientStore {
     this.loading = true;
     try {
       const data = await getClientsSearch({ query });
-      runInAction(() => {
-        this.clients = data || [];
-      });
-    } catch (error) {
-      console.error("Error fetching clients:", error);
+      runInAction(() => (this.clients = data));
+    } catch (err) {
+      console.error("Error fetching clients:", err);
     } finally {
-      runInAction(() => {
-        this.loading = false;
-      });
+      runInAction(() => (this.loading = false));
     }
   }
 
@@ -41,10 +55,7 @@ class ClientStore {
     this.loading = true;
     try {
       const { client: newClient } = await createClient(client);
-      runInAction(() => {
-        this.clients.push(newClient);
-      });
-      console.log(client,'client')
+      runInAction(() => this.clients.push(newClient));
     } finally {
       runInAction(() => (this.loading = false));
     }
@@ -55,8 +66,8 @@ class ClientStore {
     try {
       const { client: updatedClient } = await updateClient(id, client);
       runInAction(() => {
-        const index = this.clients.findIndex((c) => c._id === id);
-        if (index !== -1) this.clients[index] = updatedClient;
+        const idx = this.clients.findIndex((c) => c._id === id);
+        if (idx !== -1) this.clients[idx] = updatedClient;
       });
     } finally {
       runInAction(() => (this.loading = false));
@@ -70,6 +81,17 @@ class ClientStore {
       runInAction(() => {
         this.clients = this.clients.filter((c) => c._id !== id);
       });
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
+  async fetchClientLoans(id: string) {
+    this.loading = true;
+    try {
+      const loans = await getClientLoans(id);
+      runInAction(() => (this.selectedClientLoans = loans));
+    } catch (err) {
+      console.error("Error fetching client loans:", err);
     } finally {
       runInAction(() => (this.loading = false));
     }

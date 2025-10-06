@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import { userStore } from "../../store/UserStore";
 
 const Dashboard = observer(() => {
-  console.log(userStore.user.email,'userStore in mobx')
   return (
     <div className="text-left flex flex-col bg-white transition-all duration-300">
       <div className="w-full flex flex-col mx-auto mb-8">

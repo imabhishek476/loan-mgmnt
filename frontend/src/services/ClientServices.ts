@@ -1,4 +1,4 @@
-import axios from "../api/axios";
+import api from "../api/axios";
 
 export interface ClientPayload {
   fullName: string;
@@ -13,25 +13,26 @@ export interface ClientPayload {
 }
 
 export const createClient = async (data: ClientPayload) => {
-  const { data: response } = await axios.post("/client/store", data, {
-  });
-  // console.log("create data:", response);
+  const { data: response } = await api.post("/client/store", data);
   return response;
 };
 
 export const getClientsSearch = async (filters: { query?: string } = {}) => {
-  const { data } = await axios.get("/client/search", {
-    params: filters,
-  });
+  const { data } = await api.get("/client/search", { params: filters });
   return data.clients || [];
 };
+
 export const updateClient = async (id: string, data: ClientPayload) => {
-  const { data: response } = await axios.put(`/client/${id}`, data);
-  console.log("update data:", response);
+  const { data: response } = await api.put(`/client/${id}`, data);
   return response;
 };
 
 export const deleteClient = async (id: string) => {
-  const { data: response } = await axios.delete(`/client/${id}`);
+  const { data: response } = await api.delete(`/client/${id}`);
   return response;
+};
+
+export const getClientLoans = async (id: string) => {
+  const { data } = await api.get(`/client/loans/${id}`);
+  return data.loans || [];
 };
