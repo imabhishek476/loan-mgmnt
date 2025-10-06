@@ -13,7 +13,7 @@ const companyFields: FieldConfig[] = [
   { label: "Company Name", key: "companyName", type: "text", required: true },
   { label: "Company Code", key: "companyCode", type: "text", required: true },
   { label: "Description", key: "description", type: "textarea", fullWidth: true, required: true },
-  { label: "Background Color", key: "backgroundColor", type: "color", required: true },
+  { label: "Color Code", key: "backgroundColor", type: "color", required: true },
   { label: "Phone", key: "phone", type: "text", required: true },
   { label: "Email", key: "email", type: "email", required: true },
   { label: "Website", key: "website", type: "text", required: true },
