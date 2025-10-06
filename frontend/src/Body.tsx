@@ -3,9 +3,12 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import Login from "./views/login/Login";
 import Dashboard from "./views/dashboard/index";
-import Clients from "./views/clients";
+import Clients from "./views/clients/index";
 import Layout from "./views/components/Layout";
 import ProtectedRoute from "./views/ProtectedRoute"; 
+import  Administration from "./views/administration/index";
+import  Loans from "./views/loans/index";
+
 
 const appRouter = createBrowserRouter([
   {
@@ -27,6 +30,14 @@ const appRouter = createBrowserRouter([
       {
         path: "clients",
         element: <Clients />,
+      },
+      {
+        path: "loans",
+        element: <Loans />,
+      },
+     {
+        path: "administration",
+        element: <Administration />,
       },
     ],
   },

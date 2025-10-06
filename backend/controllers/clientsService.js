@@ -84,6 +84,8 @@ exports.searchClients = async (req, res) => {
         { ssn: { $regex: query } },
         { dob: { $regex: query } },
         { accidentDate: { $regex: query } },
+        { "customFields.name": regex },
+        { "customFields.value": regex },
       ];
     }
 
@@ -100,6 +102,7 @@ exports.searchClients = async (req, res) => {
           accidentDate: 1,
           attorneyName: 1,
           address: 1,
+          customFields: 1,
           createdAt: 1,
         },
       },

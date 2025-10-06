@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2, User } from "lucide-react";
-import CircularProgress from "@mui/material/CircularProgress"; 
+import CircularProgress from "@mui/material/CircularProgress";
 interface ClientsDataTableProps {
   clients: any[];
   onSearch: (query: string) => void;
@@ -38,7 +38,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
         />
       </div>
 
-     <div className="overflow-hidden rounded-lg border-gray-300">
+      <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <CircularProgress className="text-green-700" />
@@ -51,6 +51,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
             columns={[
               {
                 title: "Sr.no",
+                width: "5%",
                 render: (rowData) => rowData.tableData.id + 1,
               },
               { title: "Name", field: "fullName" },
@@ -82,17 +83,20 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
               search: false,
               actionsColumnIndex: -1,
               headerStyle: {
-                fontWeight: "bold",
-                backgroundColor: "#ffffff",
-                fontSize: "14px",
-                height: 40,
-                borderBottom: "1px solid #d1d5db",
+                fontWeight: "600",
+                backgroundColor: "#f9fafb",
+                color: "#374151",
+                fontSize: "13px",
+                height: 36,
+                padding: "6px 8px",
+                borderBottom: "1px solid #e5e7eb",
               },
-              rowStyle: (rowData, index) => ({
-                fontSize: "16px",
-                height: 45,
-                borderBottom: "1px solid #d1d5db",
-              }),
+              rowStyle: {
+                fontSize: "13px",
+                height: 38,
+                borderBottom: "1px solid #f1f1f1",
+                transition: "background 0.2s",
+              },
               padding: "dense",
               toolbar: false,
               paginationType: "stepped",
