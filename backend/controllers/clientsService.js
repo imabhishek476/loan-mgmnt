@@ -1,4 +1,5 @@
 const { Client } = require("../models/Client");
+const { Loan } = require("../models/loan");
 const moment = require("moment");
 
 exports.Clientstore = async (req, res) => {
@@ -150,5 +151,20 @@ exports.deleteClient = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+exports.getClietsLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const loans = await Loan.find({ client: id })
+      .sort({ createdAt: -1 })
+      .populate("client", "fullName")       
+      .populate("company", "companyName");  
+
+    res.status(200).json({ success: true, loans });
+  } catch (error) {
+    console.error("Error fetching client loans:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 
 

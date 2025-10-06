@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import {useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { userStore } from "../../store/UserStore";
@@ -14,15 +14,14 @@ import {
 } from "lucide-react";
 import Logo from "../../assets/img/logo/favicon.png";
 
-const Sidebar: React.FC = observer(() => {
+interface SidebarProps {
+  open: boolean;
+  setOpen: any;
+}
+const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const profileRef = useRef<HTMLDivElement | null>(null);
-
-  const [open, setOpen] = useState(() => {
-    if (typeof window !== "undefined") return window.innerWidth >= 768;
-    return true;
-  });
 
   const handleLogout = async () => {
     try {

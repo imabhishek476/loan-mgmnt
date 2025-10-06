@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
-import { Plus, Save, Building2, User, Settings, Shield } from "lucide-react";
+import { Plus,Building2, User, Settings, Shield } from "lucide-react";
 import { Dialog } from "@mui/material";
 import { companyStore } from "../../store/CompanyStore";
 import CompanyForm from "../../components/CompanyForm";
@@ -14,7 +14,7 @@ import SubTabs from "../administration/components/subtab";
 const Administration = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("companies");
   const hasLoaded = useRef(false);
 
@@ -62,14 +62,14 @@ const Administration = observer(() => {
     if (!window.confirm("Are you sure you want to delete this company?")) return;
 
     try {
-      setLoading(true);
+      // setLoading(true);
       await companyStore.deleteCompany(id);
       toast.success("Company deleted successfully");
       loadCompanies();
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete company");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 

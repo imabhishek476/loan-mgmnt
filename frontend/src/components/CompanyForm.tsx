@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import{ useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Home, Percent, DollarSign, FileText } from "lucide-react";
 import type { Company } from "../store/CompanyStore";
@@ -13,11 +13,12 @@ const companyFields: FieldConfig[] = [
   { label: "Company Name", key: "companyName", type: "text", required: true },
   { label: "Company Code", key: "companyCode", type: "text", required: true },
   { label: "Description", key: "description", type: "textarea", fullWidth: true, required: true },
-  { label: "Background Color", key: "backgroundColor", type: "color", required: true },
   { label: "Phone", key: "phone", type: "text", required: true },
   { label: "Email", key: "email", type: "email", required: true },
   { label: "Website", key: "website", type: "text", required: true },
   { label: "Active Company", key: "activeCompany", type: "toggle", required: true },
+  { label: "Color Code", key: "backgroundColor", type: "color", required: true },
+
   { label: "Address", key: "address", type: "textarea", fullWidth: true, required: true },
   { label: "Interest Rate Configuration", key: "interestRateConfiguration", type: "section", icon: <Percent size={18} /> },
   { label: "Interest Rate (%)", key: "interestRate", type: "number", min: 0, max: 100, required: true },
@@ -147,14 +148,14 @@ const CompanyForm = observer(({ initialData, onSubmit, open, onClose }: CompanyF
 
   useEffect(() => {
     if (initialData) {
-      setFormData((prev) => ({
+      setFormData((prev: Record<string, unknown>) => ({
         ...prev,
         ...normalizeCompany(initialData),
       }));
     }
   }, [initialData, open]);
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data:Record<string, unknown>) => {
     await onSubmit(denormalizeCompany(data));
   };
 
@@ -179,7 +180,8 @@ const CompanyForm = observer(({ initialData, onSubmit, open, onClose }: CompanyF
       renderToggle={(key, value, onChange) => (
         <Switch checked={!!value} onChange={(e) => onChange(key, e.target.checked)} color="success" />
       )}
-      renderLoanTerms={(selectedTerms: number[], onChange: (terms: number[]) => void) => (
+      //@ts-ignore
+      renderLoanTerms={(selectedTerms: number[], onChange: (terms : number[]) => void) => (
         <FormGroup row>
           {loanTermOptions.map((month) => (
             <FormControlLabel
@@ -188,6 +190,8 @@ const CompanyForm = observer(({ initialData, onSubmit, open, onClose }: CompanyF
                 <Checkbox
                   checked={selectedTerms.includes(month)}
                   onChange={(e) => {
+                    //@ts-ignore
+                    const a = terms
                     const updated = e.target.checked
                       ? [...selectedTerms, month]
                       : selectedTerms.filter((m) => m !== month);

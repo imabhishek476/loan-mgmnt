@@ -1,25 +1,30 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { fetchLoans, createLoan, updateLoan, deleteLoan, LoanPayload } from "../services/LoanService";
+import {
+  fetchLoans,
+  createLoan,
+  deleteLoan,
+  type LoanPayload,
+} from "../services/LoanService";
 
 export interface Loan {
-  status: any;
+  tableData: any;
   _id?: string;
   issueDate: string;
   client: string;
   company: string;
   loanTerms: number;
   baseAmount: number;
-  fees?: Record<string, any>;
+  fees?: Record<string, number>;
   interestType?: "flat" | "compound";
   monthlyRate?: number;
   totalLoan?: number;
   checkNumber?: string;
+  status?: string;
 }
 
 class LoanStore {
   loans: Loan[] = [];
   loading = false;
-  error: string | null = null;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -29,35 +34,45 @@ class LoanStore {
     this.loading = true;
     try {
       const data = await fetchLoans();
-      runInAction(() => { this.loans = data; });
-    } catch (err: any) {
-      runInAction(() => { this.error = err.message; });
-    } finally { runInAction(() => { this.loading = false; }); }
+      runInAction(() => (this.loans = data));
+    } catch (err) {
+      console.error("Error fetching loans:", err);
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
   }
 
   async createLoan(payload: LoanPayload) {
     this.loading = true;
     try {
       const data = await createLoan(payload);
-      runInAction(() => { this.loans.push(data); });
+      runInAction(() => this.loans.push(data));
       return data;
-    } finally { runInAction(() => { this.loading = false; }); }
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
   }
 
   async deleteLoan(id: string) {
     this.loading = true;
     try {
       await deleteLoan(id);
-      runInAction(() => { this.loans = this.loans.filter(l => l._id !== id); });
-    } finally { runInAction(() => { this.loading = false; }); }
+      runInAction(() => {
+        this.loans = this.loans.filter((l) => l._id !== id);
+      });
+    } catch (err) {
+      console.error("Error deleting loan:", err);
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
+
+  getLoansByClient(clientId: string) {
+    return this.loans.filter((l) => l.client === clientId);
   }
 
   getLoansByCompany(companyId: string) {
-    return this.loans.filter(l => l.company === companyId);
-  }
-
-  getTotalLoanForCompany(companyId: string) {
-    return this.getLoansByCompany(companyId).reduce((acc, loan) => acc + (loan.totalLoan || 0), 0);
+    return this.loans.filter((l) => l.company === companyId);
   }
 }
 

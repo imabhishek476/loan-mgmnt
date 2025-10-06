@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactNode } from "react";
+import React, { useState, useEffect, type ReactNode } from "react";
 import { toast } from "react-toastify";
 import { X, Plus } from "lucide-react";
 import { TextField as MuiTextField, Switch, FormGroup, FormControlLabel, Autocomplete } from "@mui/material";
@@ -21,6 +21,7 @@ export interface FieldConfig {
   onChange?: (value: any) => void;
   min?: number;
   max?: number;
+  disabled?: boolean;
 }
 
 interface FormModalProps {
@@ -32,14 +33,14 @@ interface FormModalProps {
   onSubmit: (data: Record<string, any>) => Promise<any>;
   onFormDataChange?: (data: Record<string, any>) => void;
   renderToggle?: (key: string, value: boolean, onChange: (key: string, value: boolean) => void) => JSX.Element;
-  renderLoanTerms?: (selectedTerms: number[], onChange: (terms: number[]) => void) => JSX.Element;
+  renderLoanTerms?: () => JSX.Element;
   customFields?: {
     id: number;
     name: string;
     value: string | number | boolean;
     type: "string" | "number";
   }[];
-  submitButtonText?: string;
+  submitButtonText?: any;
   children?: React.ReactNode;
 }
 
@@ -54,14 +55,14 @@ const FormModal = ({
   onSubmit,
   onFormDataChange,
   renderToggle,
-  renderLoanTerms,
+  // renderLoanTerms,
   customFields: initialCustomFields,
   submitButtonText,
   children
 }: FormModalProps) => {
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
 
   const [customFields, setCustomFields] = useState<any[]>(initialCustomFields || []);
   const [fieldCounter, setFieldCounter] = useState(initialCustomFields?.length || 1);
@@ -113,14 +114,14 @@ const FormModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    setLoading(true);
+    // setLoading(true);
     try {
       await onSubmit({ ...formData, customFields });
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Failed to save data");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -338,12 +339,14 @@ const FormModal = ({
                       <label className="mb-2 font-medium text-gray-700">{field.label}</label>
                       <Autocomplete
                         disablePortal
+                          disabled={field.disabled}
                         options={field.options}
                         getOptionLabel={(option) => option.label || ""}
                         value={field.options.find((opt) => opt.value === formData[field.key]) || null}
-                        onChange={(e, newValue) => {
-                          handleChange(field.key, newValue ? newValue.value : "");
-                          field.onChange?.(newValue?.value);
+                        //@ts-ignore
+                        onChange={(e,newValue) => {
+                          handleChange(field.key, newValue ? newValue?.['value'] : "");
+                          field.onChange?.(newValue?.['value']);
                         }}
                         renderInput={(params) => (
                           <MuiTextField
@@ -366,7 +369,7 @@ const FormModal = ({
                         type="color"
                         value={formData[field.key] || "#777777"}
                         onChange={(e) => handleChange(field.key, e.target.value)}
-                        className="h-10 rounded-lg rounded-lg  focus:ring-2 focus:ring-green-500 focus:outline-none resize-none w-full"
+                        className="h-10 rounded-lg rounded-lg  focus:ring-2 focus:ring-green-500 focus:outline-none resize-none w-20 p-1"
 
                       />
                       {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
