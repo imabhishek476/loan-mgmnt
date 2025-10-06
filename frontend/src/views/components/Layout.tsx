@@ -1,23 +1,23 @@
 // Layout.tsx
-import React, { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Outlet} from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import Sidebar from "./Sidebar";
 import { userStore } from "../../store/UserStore";
-import { LogOut, User } from "lucide-react";
+import { User } from "lucide-react";
 
 const Layout = observer(() => {
   const [sidebarOpen, setSidebarOpen] = useState(true); // sidebar open by default
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    try {
-      await userStore.logout();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+  // const handleLogout = async () => {
+  //   try {
+  //     await userStore.logout();
+  //     navigate("/");
+  //   } catch (error) {
+  //     console.error("Logout failed:", error);
+  //   }
+  // };
 
   return (
     <div className="flex h-screen w-full overflow-hidden">

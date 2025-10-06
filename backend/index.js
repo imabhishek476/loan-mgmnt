@@ -4,6 +4,10 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 require("dotenv").config();
 const clientRouter = require("./routes/client.router");
+const companiesRouter = require("./routes/companies.router");
+const loanRouter = require("./routes/loans.router");
+
+
 const app = express();
 
 // Middleware
@@ -22,6 +26,9 @@ connectDB();
 // Routes
 app.use("/api/auth", require("./routes/auth.router"));
 app.use("/api/client", clientRouter);
+app.use("/api/companies", companiesRouter);
+app.use("/api/loans", loanRouter);
+
 // Seed admin user
 const seedAdmin = require("./admin");
 seedAdmin();

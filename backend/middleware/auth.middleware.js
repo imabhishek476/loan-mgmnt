@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-
+const User = require("../models/User");
 
 exports.isAuthenticated = (req, res, next) => {
   const token = req.headers.cookie?.split('=')[1] || req.headers.authorization?.split(' ')[1];
@@ -17,16 +17,15 @@ exports.isAuthenticated = (req, res, next) => {
 };
 
 
-exports.isAdmin = (req, res, next) => {
+exports.isAdmin = async (req, res, next) => {
   try {
     if (!req.user) {
       return res.status(401).json({ msg: "Not authenticated" });
     }
+    const user = await User.findById(req.user.id);
+    const role = user.userRole;
 
-    const role = req.user.role;
-
-
-    const allowedRoles = ["admin",];
+    const allowedRoles = ["admin"];
 
     if (!allowedRoles.includes(role)) {
       return res.status(403).json({
