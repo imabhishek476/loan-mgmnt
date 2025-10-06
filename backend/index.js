@@ -15,17 +15,14 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps or Postman)
-      if (!origin) return callback(null, true);
-      // allow all other origins
-      return callback(null, true);
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: true,          // allow any origin dynamically
+    credentials: true,     // allow cookies/auth headers
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
+// Handle preflight requests
+app.options("*", cors());
 
 // Connect DB
 connectDB();
