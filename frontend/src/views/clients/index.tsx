@@ -6,10 +6,32 @@ import { Plus, Save } from "lucide-react";
 import ClientsDataTable from "./components/clientDataTable";
 import FormModal, { FieldConfig } from "../../components/FormModal";
 import { clientStore } from "../../store/ClientStore";
-
+import { getClientLoans } from "../../services/ClientServices";
+import Loans from "../loans/index";
+import ClientViewModal from "../../views/clients/components/ClientViewModal";
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any | null>(null);
+  const [loanModalOpen, setLoanModalOpen] = useState(false);
+  const [selectedClientForLoan, setSelectedClientForLoan] = useState<any | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewClient, setViewClient] = useState<any | null>(null);
+
+  const handleViewClient = async (client: Client) => {
+    try {
+      const loans = await getClientLoans(client._id!);
+      setViewClient({ ...client, loans });
+      setViewModalOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch client loans", error);
+    }
+  };
+
+
+  const handleAddLoan = (client: any) => {
+    setSelectedClientForLoan(client);
+    setLoanModalOpen(true);
+  };
 
   const clientFields: FieldConfig[] = [
     { label: "Full Name", key: "fullName", type: "text", required: true },
@@ -91,7 +113,7 @@ const Clients = observer(() => {
         }}
         title={editingClient ? "Edit Client" : "New Client"}
         fields={clientFields}
-        customFields={customFields}  // <-- Pass custom fields here
+        customFields={customFields}
         initialData={editingClient || {}}
         submitButtonText={editingClient ? "Update Client" : <>
           <Save size={16} className="inline mr-1" /> Create Client
@@ -100,7 +122,22 @@ const Clients = observer(() => {
 
         onSubmit={handleSave}
       />
-
+      {loanModalOpen && (
+        <Loans
+          defaultClient={selectedClientForLoan}
+          onClose={() => setLoanModalOpen(false)}
+          showTable={false}
+          fromClientPage={true}
+        />
+      )}
+      {viewModalOpen && viewClient && (
+        <ClientViewModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          client={viewClient}
+          loans={viewClient.loans || []}
+        />
+      )}
       {/* Data Table */}
       <ClientsDataTable
         clients={clientStore.clients.slice()}
@@ -110,6 +147,8 @@ const Clients = observer(() => {
           setEditingClient(client);
           setModalOpen(true);
         }}
+        onAddLoan={handleAddLoan}
+        onViewClient={handleViewClient}
         onDelete={handleDelete}
       />
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Pencil, Trash2, User } from "lucide-react";
+import { Search, Pencil, Trash2, User, Plus, Eye } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 interface ClientsDataTableProps {
   clients: any[];
@@ -9,9 +9,11 @@ interface ClientsDataTableProps {
   onEdit: (client: any) => void;
   onDelete: (id: string) => void;
   loading: boolean;
+  onAddLoan: (client: any) => void;
+  onViewClient: (client: any) => void;
 }
 
-const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: ClientsDataTableProps) => {
+const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, onAddLoan,loading }: ClientsDataTableProps) => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useMemo(
     () => debounce((value: string) => onSearch(value), 300),
@@ -64,6 +66,17 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete, loading }: Clie
             ]}
             data={clients}
             actions={[
+               {
+                icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
+                tooltip: "Add Loan",
+                onClick: (event, rowData: any) => onAddLoan(rowData),
+              },
+             {
+            icon: () => <Eye className="w-5 h-5 text-emerald-600" />,
+            tooltip: "View Client",
+            onClick: (event, rowData: any) => onViewClient?.(rowData),
+          },
+
               {
                 icon: () => <Pencil className="w-5 h-5 text-green-600" />,
                 tooltip: "Edit",

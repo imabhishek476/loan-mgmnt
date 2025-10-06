@@ -13,11 +13,12 @@ const companyFields: FieldConfig[] = [
   { label: "Company Name", key: "companyName", type: "text", required: true },
   { label: "Company Code", key: "companyCode", type: "text", required: true },
   { label: "Description", key: "description", type: "textarea", fullWidth: true, required: true },
-  { label: "Color Code", key: "backgroundColor", type: "color", required: true },
   { label: "Phone", key: "phone", type: "text", required: true },
   { label: "Email", key: "email", type: "email", required: true },
   { label: "Website", key: "website", type: "text", required: true },
   { label: "Active Company", key: "activeCompany", type: "toggle", required: true },
+  { label: "Color Code", key: "backgroundColor", type: "color", required: true },
+
   { label: "Address", key: "address", type: "textarea", fullWidth: true, required: true },
   { label: "Interest Rate Configuration", key: "interestRateConfiguration", type: "section", icon: <Percent size={18} /> },
   { label: "Interest Rate (%)", key: "interestRate", type: "number", min: 0, max: 100, required: true },
