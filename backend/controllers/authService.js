@@ -30,7 +30,7 @@ exports.login = async (req, res) => {
     res.cookie("jwtToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
     });
 
     res.json({
