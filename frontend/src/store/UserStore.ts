@@ -14,7 +14,6 @@ class UserStore {
 
   constructor() {
     makeAutoObservable(this);
-    this.loadUser(); // 
   }
 
 
