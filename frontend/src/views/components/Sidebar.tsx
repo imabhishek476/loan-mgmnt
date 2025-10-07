@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
   const handleLogout = async () => {
     try {
       await userStore.logout();
-      navigate("/"); // redirect to login
+      navigate("/login"); // redirect to login
     } catch (error) {
       console.error("Logout failed:", error);
     }

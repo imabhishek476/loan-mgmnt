@@ -30,7 +30,7 @@ exports.login = async (req, res) => {
     res.cookie("jwtToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
     });
 
     res.json({
@@ -55,10 +55,10 @@ exports.me = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select("-password");
     if (!user) return res.status(404).json({ msg: "User not found" });
-    console.log("isAdmin middleware passed",user);
+    // console.log("isAdmin middleware passed",user);
 
    
-    res.json({
+    res.status(201).json({
       id: user._id,
       email: user.email,
       name: user.name,

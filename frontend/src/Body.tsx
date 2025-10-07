@@ -1,5 +1,5 @@
 // import React from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import Login from "./views/login/Login";
 import Dashboard from "./views/dashboard/index";
@@ -12,7 +12,7 @@ import  Loans from "./views/loans/index";
 
 const appRouter = createBrowserRouter([
   {
-    path: "/",
+    path: "/login",
     element: <Login />,
   },
   {
@@ -23,6 +23,7 @@ const appRouter = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
+    { path: "", element: <Navigate to="dashboard" replace /> },
       {
         path: "dashboard",
         element: <Dashboard />,
