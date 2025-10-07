@@ -1,19 +1,36 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { userStore } from "../store/UserStore";
-
+import FullPageLoader from "../components/FullPageLoader";
 interface ProtectedRouteProps {
   children: JSX.Element;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = observer(({ children }) => {
-  // If user is not logged in, redirect to login
-  if (!userStore.user) {
-    return <Navigate to="/" replace />;
+  const [checking, setChecking] = useState(true);
+
+  const checkUser = async () => {
+      if (!userStore.user) {
+        await userStore.loadUser();
+      }
+      setChecking(false);
+    };
+
+
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  // ⏳ Wait until loadUser completes
+  if (checking || userStore.loading) {
+    return <FullPageLoader />;
   }
 
-  // If logged in, render the children (page/component)
+  if (!userStore.user) {
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 });
 

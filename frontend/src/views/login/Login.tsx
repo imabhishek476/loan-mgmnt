@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect,useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { observer } from "mobx-react-lite";
@@ -12,7 +12,7 @@ const Login = observer(() => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-
+  const hasLoaded = useRef(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -23,6 +23,18 @@ const Login = observer(() => {
       toast.error(error.response?.data?.msg || "Login failed ❌");
     }
   };
+ async function fetchData() {
+   await userStore.loadUser();
+    if (userStore.user?.name) {
+          navigate("/dashboard");
+    }
+  }
+  useEffect(() => {
+    if (!hasLoaded.current) {
+      fetchData();
+      hasLoaded.current = true;
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 px-4">
@@ -72,9 +84,8 @@ const Login = observer(() => {
           <button
             type="submit"
             disabled={userStore.loading}
-            className={`bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 tracking-wide ${
-              userStore.loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 tracking-wide ${userStore.loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
             {userStore.loading ? "Signing In..." : "Sign In"}
           </button>
