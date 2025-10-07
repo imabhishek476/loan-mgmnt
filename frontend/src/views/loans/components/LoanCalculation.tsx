@@ -285,7 +285,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
             <div key={item.key} className="flex flex-col">
               <div className="flex justify-left items-center mb-1">
                 <span className="text-sm text-white font-medium">{item.label}</span>
-                <span className="ml-2 text-lg font-bold text-green-300">
+                <span className="ml-2 text-lg font-bold text-white">
                   {isPercentage ? "%" : "$"}
                 </span>
               </div>

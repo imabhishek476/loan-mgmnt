@@ -138,12 +138,9 @@ const CompanyForm = observer(({ initialData, onSubmit, open, onClose }: CompanyF
     enableFreshLoanRules: true,
     allowOverlappingLoans: true,
     requireFullPayoff: true,
-    allowEarlyPayoff: true,
+    allowEarlyPayoff: false,
     earlyPayoffPenalty: 0,
     earlyPayoffDiscount: 0,
-    gracePeriodDays: 10,
-    lateFeeAmount: 50,
-    lateFeeGraceDays: 0,
   });
 
   useEffect(() => {

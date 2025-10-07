@@ -288,6 +288,7 @@ const FormModal = ({
                           color="success"
                         />
                       )}
+                      {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
                     </div>
                   );
                 }
@@ -375,7 +376,40 @@ const FormModal = ({
                       {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
                     </div>
                   );
+                } if (field.type === "number") {
+                  return (
+                    <div key={field.key} className="flex flex-col text-left">
+                      <label className="mb-2 font-medium text-gray-700">{field.label}</label>
+                      <input
+                        type="number"
+                        placeholder={field.label}
+                        value={formData[field.key] ?? ""}
+                        min={field.min ?? 0}
+                        max={field.max ?? undefined}
+                        onChange={(e) => {
+                          const rawValue = e.target.value;
+                          if (rawValue === "") {
+                            handleChange(field.key, null);
+                            return;
+                          }
+                          let value = Number(rawValue);
+                          if (["interestRate", "earlyPayoffPenalty", "earlyPayoffDiscount"].includes(field.key)) {
+                            if (value > 100) value = 100;
+                            if (value < 0) value = 0;
+                          } else {
+                            if (field.max !== undefined && value > field.max) value = field.max;
+                            if (field.min !== undefined && value < field.min) value = field.min;
+                          }
+
+                          handleChange(field.key, value);
+                        }}
+                        className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
+                      />
+                      {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
+                    </div>
+                  );
                 }
+               else{
                 return (
                   <div key={field.key} className="flex flex-col text-left">
                     <label className="mb-2 font-medium text-gray-700">{field.label}</label>
@@ -389,6 +423,7 @@ const FormModal = ({
                     {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
                   </div>
                 );
+               }
               })}
             </div>
 

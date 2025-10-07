@@ -135,7 +135,7 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               {
                 icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                 tooltip: "View Details",
-                onClick: (rowData: any) => handleView(rowData),
+                onClick: (event:any,rowData: any) => handleView(rowData),
               },
               // {
               //   icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
