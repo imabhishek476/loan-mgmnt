@@ -13,6 +13,8 @@ import {
   Settings,
 } from "lucide-react";
 import Logo from "../../assets/img/logo/favicon.png";
+import Cookies from "js-cookie";
+
 
 interface SidebarProps {
   open: boolean;
@@ -26,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
   const handleLogout = async () => {
     try {
       await userStore.logout();
+      Cookies.remove("jwtToken");
       navigate("/login"); // redirect to login
     } catch (error) {
       console.error("Logout failed:", error);
