@@ -51,14 +51,15 @@ const Layout = observer(() => {
           <div className="ml-auto flex items-center gap-4 pr-4">
             <div className="relative group flex items-center gap-6">
               <div className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <User className="w-4 h-4 text-green-600" />
-                </div>
+             
                 <div className="flex flex-col leading-tight">
-                  <span className="text-gray-800 font-medium text-sm">
+                  <span className="text-gray-800 font-medium text-sm ">
                     {userStore.user?.name || userStore.user?.email || "User"}
                   </span>
-                  <span className="text-gray-500 text-xs text-left">{userStore.user?.role}</span>
+                  <span className="text-gray-500 text-xs text-right">{userStore.user?.role}</span>
+                </div>
+                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <User className="w-4 h-4 text-green-600" />
                 </div>
               </div>
 
