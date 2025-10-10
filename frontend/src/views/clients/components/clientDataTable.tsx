@@ -94,7 +94,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
             ]}
             options={{
               paging: true,
-              pageSize: 5,
+              pageSize: 10,
               pageSizeOptions: [5, 10, 20],
               sorting: true,
               search: false,
@@ -114,7 +114,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
                 borderBottom: "1px solid #f1f1f1",
                 transition: "background 0.2s",
               },
-              padding: "dense",
+              padding: "default",
               toolbar: false,
               paginationType: "stepped",
             }}

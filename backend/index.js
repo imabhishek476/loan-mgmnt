@@ -6,7 +6,7 @@ require("dotenv").config();
 const clientRouter = require("./routes/client.router");
 const companiesRouter = require("./routes/companies.router");
 const loanRouter = require("./routes/loans.router");
-
+const loanPaymentRouter = require("./routes/loanPayment.router");
 
 const app = express();
 
@@ -39,6 +39,7 @@ app.use("/api/client", clientRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/loans", loanRouter);
 
+app.use("/api/payments", loanPaymentRouter);
 // Seed admin user
 const seedAdmin = require("./admin");
 seedAdmin();

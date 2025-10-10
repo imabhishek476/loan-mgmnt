@@ -1,7 +1,7 @@
 import React, { useState, useEffect, type ReactNode } from "react";
 import { toast } from "react-toastify";
 import { X, Plus } from "lucide-react";
-import { TextField as MuiTextField, Switch, FormGroup, FormControlLabel, Autocomplete } from "@mui/material";
+import { TextField as MuiTextField, Switch, FormGroup, FormControlLabel, Autocomplete,Slider, Typography } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
@@ -130,7 +130,7 @@ const FormModal = ({
   return (
     <LocalizationProvider dateAdapter={AdapterMoment}>
       <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto ">
-        <div className="bg-white rounded-lg w-full max-w-5xl shadow-lg relative mx-4 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
+        <div className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-2 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
           <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
             <h2 className="text-xl font-bold text-gray-800">{title}</h2>
             <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
@@ -139,7 +139,7 @@ const FormModal = ({
           </div>
 
           <form onSubmit={handleSubmit} className="overflow-y-auto px-4 py-4 flex-1 flex flex-col gap-6">
-            <div className="grid sm:grid-cols-2 gap-2">
+            <div className="grid sm:grid-cols-3 gap-4">
               {fields.map((field) => {
                 // --- SECTION ---
                 if (field.type === "section") {
@@ -154,72 +154,68 @@ const FormModal = ({
                     ];
 
                     return (
-                      <div key={field.key} className="w-full mt-0 mb-0 col-span-full">
-                        <h3 className="flex items-center gap-3 text-lg font-semibold text-green-800 border-b border-gray-300 pb-1">
-                          {field.icon && <span className="text-green-700">{field.icon}</span>}
-                          {field.label}
-                        </h3>
+<div key={field.key} className=" mt-0 mb-0 col-span-full">
+  <h3 className="flex items-center gap-3 text-lg font-semibold text-green-800 border-b border-gray-300 pb-1">
+    {field.icon && <span className="text-green-700">{field.icon}</span>}
+    {field.label}
+  </h3>
 
-                        <div className="mt-3 grid sm:grid-cols-2 gap-4">
-                          {feeFields.map(({ key, label, typeKey }) => {
-                            const feeType = formData[typeKey] || "flat";
-                            const feeValue = formData[key] || "";
-                            const handleFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                              let value = e.target.value;
-                              if (value && isNaN(Number(value))) return;
-                              let numValue = Number(value);
-                              if (feeType === "percentage" && numValue > 100) {
-                                numValue = 100;
-                              }
-                              handleChange(key, numValue);
-                            };
+  <div className="mt-3 grid sm:grid-cols-3 gap-2">
+    {feeFields.map(({ key, label, typeKey }) => {
+      const feeType = formData[typeKey] || "flat";
+      const feeValue = formData[key] || "";
 
-                            return (
-                              <div key={key} className="flex flex-col text-left">
-                                <div className="flex  items-center mb-1">
-                                  <label className="font-medium text-gray-700">
-                                    {label} ({feeType === "percentage" ? "%" : "$"})
-                                  </label>
-                                  <FormControlLabel
-                                    control={
-                                      <Switch
-                                        checked={feeType === "percentage"}
-                                        onChange={(e) => {
-                                          const newType = e.target.checked ? "percentage" : "flat";
-                                          handleChange(typeKey, newType);
+      const handleFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value;
+        if (value && isNaN(Number(value))) return;
+        let numValue = Number(value);
+        if (feeType === "percentage" && numValue > 100) numValue = 100;
+        handleChange(key, numValue);
+      };
 
-                                          let currentValue = Number(formData[key] || 0);
-                                          if (newType === "percentage" && currentValue > 100) {
-                                            handleChange(key, 100);
-                                          }
-                                        }}
-                                        color="success"
-                                      />
-                                    }
-                                    label={feeType === "percentage" ? "Percentage" : "Flat"}
-                                    labelPlacement="start"
-                                  />
+      return (
+      <div key={key} className="flex items-center border border-gray-300 rounded-lg px-5 py-2 gap-3">
+         {/* Label */}
+  <label className="font-medium text-gray-700">{label}</label>
 
-                                </div>
+  {/* Left Toggle */}
+  <FormControlLabel
+    control={
+      <Switch
+        checked={feeType === "percentage"}
+        onChange={(e) => {
+          const newType = e.target.checked ? "percentage" : "flat";
+          handleChange(typeKey, newType);
 
-                                <input
-                                  type="number"
-                                  placeholder={label}
-                                  value={feeValue}
-                                  onChange={handleFeeChange}
-                                  min={0}
-                                  max={feeType === "percentage" ? 100 : undefined}
-                                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
-                                />
+          let currentValue = Number(formData[key] || 0);
+          if (newType === "percentage" && currentValue > 100) handleChange(key, 100);
+        }}
+        color="success"
+      />
+    }
+    label={feeType === "percentage" ? "%" : "$"}
+    labelPlacement="start"
+  />
 
-                                {errors[key] && (
-                                  <span className="text-red-600 text-sm">{errors[key]}</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+ 
+  {/* Right Input */}
+ <input
+  type="number"
+  value={feeValue}
+  onChange={handleFeeChange}
+  min={0}
+  max={feeType === "percentage" ? 100 : undefined}
+  className="border border-gray-300 rounded-lg px-2 py-0 w-20 text-left ml-auto focus:ring-2 focus:ring-green-500 focus:outline-none transition no-spinner"
+/>
+
+
+</div>
+
+      );
+    })}
+  </div>
+</div>
+
                     );
                   }
                   return (
@@ -250,33 +246,79 @@ const FormModal = ({
                 if (field.type === "toggle") {
                   if (field.key === "feeType") return null; // skip feeType here
 
-                  if (field.key === "loanTerms") {
-                    return (
-                      <div key={field.key} className="sm:col-span-2 flex flex-col gap-0">
-                        <span className="font-medium text-gray-700">{field.label}</span>
-                        <FormGroup row>
-                          {loanTermOptions.map((month) => (
-                            <FormControlLabel
-                              key={month}
-                              control={
-                                <Switch
-                                  checked={(formData.loanTerms || []).includes(month)}
-                                  onChange={(e) => {
-                                    const updated = e.target.checked
-                                      ? [...(formData.loanTerms || []), month]
-                                      : (formData.loanTerms || []).filter((m: number) => m !== month);
-                                    handleChange("loanTerms", updated);
-                                  }}
-                                  color="success"
-                                />
-                              }
-                              label={`${month} months`}
-                            />
-                          ))}
-                        </FormGroup>
-                      </div>
-                    );
-                  }
+              // Inside your component:
+
+
+if (field.key === "loanTerms") {
+  const loanTermOptions = [6, 12, 18, 24, 30, 36];
+
+  // Convert stored array to get the current max selected
+  const maxSelected =
+    Array.isArray(formData.loanTerms) && formData.loanTerms.length > 0
+      ? Math.max(...formData.loanTerms)
+      : loanTermOptions[0];
+
+  const currentIndex = Math.max(0, loanTermOptions.indexOf(maxSelected));
+
+  const handleSliderChange = (event: Event, value: number | number[]) => {
+    if (typeof value === "number") {
+      const index = Math.round(value);
+      const selected = loanTermOptions[index];
+
+      // Store all values up to the selected index
+      const selectedTerms = loanTermOptions.slice(0, index + 1);
+
+      handleChange("loanTerms", selectedTerms);
+    }
+  };
+
+  return (
+    <div
+      key={field.key}
+      className="flex flex-col items-start gap-3 px-6 py-5 text-sm font-bold text-green-800 border-b border-gray-300 relative"
+      style={{ overflow: "visible" }}
+    >
+      <Typography className="font-medium text-gray-700">
+        {field.label}
+      </Typography>
+
+      <Slider
+        value={currentIndex}
+        onChange={handleSliderChange}
+        step={0.01}
+        min={0}
+        max={loanTermOptions.length - 1}
+        marks={loanTermOptions.map((month, idx) => ({
+          value: idx,
+          label: `${month}m`,
+        }))}
+        valueLabelDisplay="on"
+        valueLabelFormat={(idx) => `${loanTermOptions[idx]}m`}
+        sx={{
+          color: "green",
+          height: 10,
+          "& .MuiSlider-thumb": {
+            backgroundColor: "white",
+            border: "2px solid green",
+          },
+          "& .MuiSlider-valueLabel": {
+            backgroundColor: "green",
+            color: "white",
+            fontSize: "15px",
+            borderRadius: "10px",
+            top: -2,
+          },
+          "& .MuiSlider-track": { border: "none" },
+          "& .MuiSlider-markLabel": {
+            fontSize: "0.75rem",
+            color: "#374151",
+          },
+        }}
+      />
+    </div>
+  );
+}
+
 
                   return (
                     <div key={field.key} className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -286,7 +328,7 @@ const FormModal = ({
                           checked={!!formData[field.key]}
                           onChange={e => handleChange(field.key, e.target.checked)}
                           color="success"
-                        />
+                        />                     
                       )}
                       {errors[field.key] && <span className="text-red-600 text-sm">{errors[field.key]}</span>}
                     </div>
@@ -410,7 +452,7 @@ const FormModal = ({
                   );
                 }
                else{
-                return (
+                 return (
                   <div key={field.key} className="flex flex-col text-left">
                     <label className="mb-2 font-medium text-gray-700">{field.label}</label>
                     <input
@@ -425,9 +467,22 @@ const FormModal = ({
                 );
                }
               })}
+             <div className="sm:col-span-0">
+                        {children?.[0]} {/* safe access */}
+                      </div>         
+
             </div>
 
-            <div className="flex flex-col text-left w-full">{children}</div>
+                  <div className="flex flex-col text-left pt-0">
+             
+                      <div className="grid grid-col sm:grid-cols-2 gap-0">                     
+                       <div className="sm:col-span-2">
+                        {children?.[1]} {/* safe access */}
+                      </div>                     
+                    </div>
+                  </div>
+
+
 
             {initialCustomFields && (
               <div className="sm:col-span-2 flex flex-col gap-3">

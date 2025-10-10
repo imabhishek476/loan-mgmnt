@@ -147,7 +147,7 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
             ]}
             options={{
               paging: true,
-              pageSize: 5,
+              pageSize: 10,
               pageSizeOptions: [5, 10, 20],
               sorting: true,
               search: false,
@@ -169,6 +169,8 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               },
               padding: "dense",
               toolbar: false,
+              paginationType: "stepped",
+
             }}
           />
         ) : (

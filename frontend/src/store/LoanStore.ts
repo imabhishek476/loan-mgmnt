@@ -3,6 +3,7 @@ import {
   fetchLoans,
   createLoan,
   deleteLoan,
+  updateLoan,
   type LoanPayload,
 } from "../services/LoanService";
 
@@ -28,6 +29,24 @@ class LoanStore {
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+
+  // Add this method to LoanStore class
+  async updateLoan(id: string, updates: Partial<Loan>) {
+    this.loading = true;
+    try {
+      const updatedLoan = await updateLoan(id, updates);
+      runInAction(() => {
+        const index = this.loans.findIndex((l) => l._id === id);
+        if (index !== -1) {
+          this.loans[index] = { ...this.loans[index], ...updatedLoan };
+        }
+      });
+      return updatedLoan;
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
   }
 
   async fetchLoans() {
