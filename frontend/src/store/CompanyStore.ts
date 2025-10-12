@@ -5,12 +5,12 @@ import api from "../api/axios";
 export interface Company {
   _id?: string;
   companyName: string;
-  companyCode: string;
+  // companyCode: string;
   description?: string;
   phone?: string;
   email?: string;
   website?: string;
-  ActiveCompany: boolean;
+  activeCompany: boolean;
   address?: string;
 
   interestRate?: {
@@ -70,8 +70,13 @@ class CompanyStore {
       });
 
       return companyWithId;
+    } catch (err) {
+      console.error("Failed to create company:", err);
+      throw err; 
     } finally {
-      runInAction(() => (this.loading = false));
+      runInAction(() => {
+        this.loading = false;
+      });
     }
   }
   async fetchCompany() {

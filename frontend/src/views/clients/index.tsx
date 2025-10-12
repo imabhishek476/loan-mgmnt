@@ -41,7 +41,8 @@ const Clients = observer(() => {
     { label: "Date of Birth", key: "dob", type: "date", required: true },
     { label: "Accident Date", key: "accidentDate", type: "date", required: true },
     { label: "Attorney Name", key: "attorneyName", type: "text", required: true },
-    { label: "Address", key: "address", type: "textarea", fullWidth: true, required: true },
+    { label: "Memo", key: "memo", required: false ,type: "textarea" },
+    { label: "Address", key: "address", type: "textarea", required: true },
   ];
 
   const customFields: { id: number; name: string; value: string | number | boolean; type: "string" | "number"; }[] =
@@ -142,6 +143,7 @@ const Clients = observer(() => {
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           client={viewClient}
+          //@ts-ignore
           loans={viewClient.loans || []}
         />
       )}

@@ -14,24 +14,28 @@ const customFieldSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
-const ClientSchema = new mongoose.Schema({
+const ClientSchema = new mongoose.Schema(
+{
   fullName: {
     type: String,
-    required: true
+    required: true,
   },
   email: {
     type: String,
-    required: true
+    required: true,
   },
   phone: {
     type: String,
-    required: true
+    required: true,
   },
   ssn: String,
   dob: String,
   accidentDate: String,
   address: String,
   attorneyName: String,
+  memo: String,
   customFields: [customFieldSchema],
-});
+},
+{ timestamps: true }
+);
 module.exports.Client = mongoose.model("Client", ClientSchema);

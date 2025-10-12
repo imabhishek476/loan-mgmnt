@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2 } from "lucide-react";
-// import CircularProgress from "@mui/material/CircularProgress";
 
 interface CompaniesDataTableProps {
   companies?: any[];
@@ -32,19 +31,21 @@ const CompaniesDataTable = ({
     debouncedSearch(value);
   };
 
-  // ✅ FIXED: Use 'value', not 'amount'
-  const renderFee = (fee: any) => {
-    if (!fee || fee.value == null) {
-      return "$0.00";
-    }
-
-    const isPercentage = fee.type === "percentage";
-    const displayValue = isPercentage
-      ? `${fee.value}%`
-      : `$${Number(fee.value).toFixed(2)}`;
-
-    return `${displayValue} (${fee.type})`;
+  const capitalizeFirst = (text?: string) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1);
   };
+const renderFee = (fee: any) => {
+  if (!fee || fee.value == null) return "-";
+
+  const isPercentage = fee.type === "percentage";
+  const displayValue = isPercentage
+    ? `${Number(fee.value).toFixed(2)}%`
+    : `$${Number(fee.value).toFixed(2)}`;
+
+  return `${displayValue} (${capitalizeFirst(fee.type)})`;
+};
+
 
   return (
     <div className="w-full">
@@ -76,6 +77,7 @@ const CompaniesDataTable = ({
             {
               title: "Company Name",
               field: "companyName",
+              render: (rowData) => capitalizeFirst(rowData.companyName),
               cellStyle: {
                 padding: "6px 8px",
                 whiteSpace: "nowrap",
@@ -84,37 +86,38 @@ const CompaniesDataTable = ({
               },
             },
             {
-              title: "Code",
-              field: "companyCode",
-              cellStyle: { width: 100, maxWidth: 100, padding: "6px 8px", whiteSpace: "nowrap" },
-            },
-            {
               title: "Interest",
-              render: (rowData) =>
-                rowData.interestRate
-                  ? `${rowData.interestRate.monthlyRate}% (${rowData.interestRate.interestType})`
-                  : "-",
-              cellStyle: { width: 120, padding: "6px 8px" },
+              render: (rowData) => {
+                const interest = rowData.interestRate;
+                if (!interest || interest.monthlyRate == null) return "-";
+
+                const monthlyRate = Number(interest.monthlyRate).toFixed(2);
+                const interestType = capitalizeFirst(
+                  interest.interestType || "N/A"
+                );
+                return `${monthlyRate}% (${interestType})`;
+              },
+              cellStyle: { width: 140, padding: "6px 8px" },
             },
             {
-              title: "Admin Fee",
+              title: "Administrative Fee",
               render: (rowData) => renderFee(rowData.fees?.administrativeFee),
-              cellStyle: { width: 140, textAlign: "left", padding: "6px 8px" },
+              cellStyle: { width: 160, textAlign: "left", padding: "6px 8px" },
             },
             {
               title: "Application Fee",
               render: (rowData) => renderFee(rowData.fees?.applicationFee),
-              cellStyle: { width: 140, textAlign: "left", padding: "6px 8px" },
+              cellStyle: { width: 160, textAlign: "left", padding: "6px 8px" },
             },
             {
               title: "Status",
               render: (rowData) =>
                 rowData.activeCompany ? (
-                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-sm font-semibold rounded-lg">
                     Active
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">
+                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-sm font-semibold rounded-lg">
                     Inactive
                   </span>
                 ),
@@ -138,7 +141,7 @@ const CompaniesDataTable = ({
           ]}
           options={{
             paging: true,
-            pageSize: 5,
+            pageSize: 10,
             pageSizeOptions: [5, 10, 20],
             sorting: true,
             search: false,

@@ -12,25 +12,21 @@ exports.LoansCreate = async (req, res) => {
       });
     }
 
-    // ✅ Build loan data safely
     const loanData = {
       issueDate: body.issueDate || new Date(),
       client: body.client,
       company: body.company,
       loanTerms: Number(body.loanTerms ?? 12),
       baseAmount: Number(body.baseAmount),
-      fees: {
-        administrativeFee: body.fees?.administrativeFee || { value: 0, type: "flat" },
-        applicationFee: body.fees?.applicationFee || { value: 0, type: "flat" },
-        attorneyReviewFee: body.fees?.attorneyReviewFee || { value: 0, type: "flat" },
-        brokerFee: body.fees?.brokerFee || { value: 0, type: "flat" },
-        annualMaintenanceFee: body.fees?.annualMaintenanceFee || { value: 0, type: "flat" },
-      },
+      fees: body.fees || {},
       interestType: body.interestType ?? "flat",
       monthlyRate: Number(body.monthlyRate ?? 0),
       totalLoan: Number(body.totalLoan ?? 0),
       checkNumber: body.checkNumber || "",
-      customFields: body.customFields ?? [],
+      previousLoanAmount: Number(body.previousLoanAmount ?? 0),
+      subTotal: Number(body.subTotal ?? 0),
+      endDate: body.endDate || null,
+      status: body.status || "Fresh Loan Issued",
     };
 
     const newLoan = await Loan.create(loanData);
@@ -51,7 +47,7 @@ exports.LoansCreate = async (req, res) => {
 
 exports.AllLoans = async (req, res) => {
   try {
-    const loans = await Loan.find();
+    const loans = await Loan.find().sort({ createdAt: -1 });
     res.status(200).json({
       success: true,
       data: loans,
@@ -65,27 +61,53 @@ exports.AllLoans = async (req, res) => {
     });
   }
 };
+// exports.updateLoan = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updates = req.body;
 
-exports.deleteLoan = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const loan = await Loan.findByIdAndDelete(id);
+//     const loan = await Loan.findByIdAndUpdate(id, updates, { new: true });
+//     if (!loan) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Loan not found",
+//       });
+//     }
 
-    if (!loan)
-      return res.status(404).json({
-        success: false,
-        message: "Loan not found",
-      });
+//     res.status(200).json({
+//       success: true,
+//       message: "Loan updated successfully",
+//       data: loan,
+//     });
+//   } catch (error) {
+//     console.error("Error in updateLoan:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
 
-    res.status(200).json({
-      success: true,
-      message: "Loan deleted successfully",
-    });
-  } catch (error) {
-    console.error("Error in deleteLoan:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+// exports.deleteLoan = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const loan = await Loan.findByIdAndDelete(id);
+
+//     if (!loan)
+//       return res.status(404).json({
+//         success: false,
+//         message: "Loan not found",
+//       });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Loan deleted successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in deleteLoan:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };

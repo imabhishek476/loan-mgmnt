@@ -26,6 +26,7 @@ export interface Client {
   accidentDate?: string;
   address?: string;
   attorneyName?: string;
+  memo?:string;
   loans?: Loan[];
 }
 

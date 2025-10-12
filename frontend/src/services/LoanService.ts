@@ -1,4 +1,5 @@
 import api from "../api/axios";
+
 export interface LoanPayload {
   issueDate: string;
   client: string;
@@ -16,57 +17,32 @@ export interface LoanPayload {
   monthlyRate?: number;
   totalLoan?: number;
   checkNumber?: string;
-  customFields?: Record<string, unknown>[];
+  previousLoanAmount?: number;
+  subTotal?: number;
+  endDate?: string;
+  status?: string;
 }
 
-export interface Loan {
+export interface Loan extends LoanPayload {
   _id?: string;
-  issueDate: string;
-  client: string;
-  company: string;
-  loanTerms: number;
-  baseAmount: number;
-  fees?: Record<string, any>;
-  interestType?: "flat" | "compound";
-  monthlyRate?: number;
-  totalLoan?: number;
-  checkNumber?: string;
-  
 }
 
 export const fetchLoans = async () => {
-  try {
-    const { data } = await api.get("/loans");
-    return data.data || data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.error || "Failed to fetch loans");
-  }
+  const { data } = await api.get("/loans");
+  return data.data || data;
 };
 
 export const createLoan = async (payload: LoanPayload) => {
-  try {
-    const { data } = await api.post("/loans", payload);
-    return data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.error || "Failed to create loan");
-  }
+  const { data } = await api.post("/loans", payload);
+  return data.data || data;
 };
 
 export const updateLoan = async (id: string, payload: LoanPayload) => {
-  try {
-    const { data } = await api.put(`/loans/${id}`, payload);
-    return data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.error || "Failed to update loan");
-  }
+  const { data } = await api.put(`/loans/${id}`, payload);
+  return data.data || data;
 };
 
-
 export const deleteLoan = async (id: string) => {
-  try {
-    const { data } = await api.delete(`/loans/${id}`);
-    return data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.error || "Failed to delete loan");
-  }
+  const { data } = await api.delete(`/loans/${id}`);
+  return data;
 };
