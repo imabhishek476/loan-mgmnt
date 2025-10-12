@@ -9,17 +9,20 @@ import { Switch, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 const loanTermOptions = [6, 12, 18, 24, 30, 36];
 
 const companyFields: FieldConfig[] = [
-  { label: "Basic Information", key: "basicInformation", type: "section", icon: <Home size={18} /> },
+  // { label: "Basic Information", key: "basicInformation", type: "section", icon: <Home size={18} /> },
   { label: "Company Name", key: "companyName", type: "text", required: true },
-  { label: "Company Code", key: "companyCode", type: "text", required: true },
-  { label: "Description", key: "description", type: "textarea", fullWidth: true, required: true },
-  { label: "Phone", key: "phone", type: "text", required: true },
-  { label: "Email", key: "email", type: "email", required: true },
-  { label: "Website", key: "website", type: "text", required: true },
-  { label: "Active Company", key: "activeCompany", type: "toggle", required: true },
+  // { label: "Company Code", key: "companyCode", type: "text", required: true },
+  // { label: "Description", key: "description", type: "textarea", fullWidth: true, required: true },
+  // { label: "Phone", key: "phone", type: "text", required: true },
+  // { label: "Email", key: "email", type: "email", required: true },
+  // { label: "Website", key: "website", type: "text", required: true },
+  { label: "Active Company", key: "activeCompany", type: "toggle", required: false },
+
+  { label: "Available Loan Terms", key: "loanTerms", type: "toggle", required: true },
   { label: "Color Code", key: "backgroundColor", type: "color", required: true },
 
-  { label: "Address", key: "address", type: "textarea", fullWidth: true, required: true },
+  // { label: "Available Loan Terms", key: "availableLoanTerms", type: "section", icon: <FileText size={18} /> },
+  // { label: "Address", key: "address", type: "textarea", fullWidth: true, required: true },
   { label: "Interest Rate Configuration", key: "interestRateConfiguration", type: "section", icon: <Percent size={18} /> },
   { label: "Interest Rate (%)", key: "interestRate", type: "number", min: 0, max: 100, required: true },
   {
@@ -32,8 +35,7 @@ const companyFields: FieldConfig[] = [
     ],
     required: true,
   },
-  { label: "Available Loan Terms", key: "availableLoanTerms", type: "section", icon: <FileText size={18} /> },
-  { label: "", key: "loanTerms", type: "toggle", required: true },
+
   { label: "Fee Structure", key: "feeStructure", type: "section", icon: <DollarSign size={18} /> },
   {
     label: "Payoff Settings",

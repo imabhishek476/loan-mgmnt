@@ -14,7 +14,8 @@
     "@emotion/styled": "^11.14.1",
     "@material-table/core": "^6.4.4",
     "@mui/icons-material": "^7.3.2",
-    "@mui/material": "^7.3.2",
+    "@mui/material": "^7.3.4",
+    "@mui/x-charts": "^8.14.0",
     "@mui/x-data-grid": "^8.12.1",
     "@mui/x-date-pickers": "^8.11.3",
     "@reduxjs/toolkit": "^2.9.0",
@@ -34,6 +35,7 @@
     "react-select": "^5.10.2",
     "react-tabs": "^6.1.0",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.2.1",
     "redux-persist": "^6.0.0"
   },
   "devDependencies": {

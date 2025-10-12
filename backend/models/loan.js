@@ -7,11 +7,15 @@ const FeeSchema = new mongoose.Schema({
 
 const LoanSchema = new mongoose.Schema(
   {
-    issueDate: { type: Date, default: Date.now },
+    issueDate: { type: String, default: Date.now },
     client: { type: mongoose.Schema.Types.ObjectId, ref: "Client", required: true },
     company: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
     loanTerms: { type: Number, default: 12 },
     baseAmount: { type: Number, required: true },
+    previousLoanAmount: { type: Number, default: 0 },
+    subTotal: { type: Number, default: 0 },
+    totalLoan: { type: Number, default: 0 },
+    paidAmount: { type: Number, default: 0 },
     fees: {
       administrativeFee: { type: FeeSchema, default: () => ({}) },
       applicationFee: { type: FeeSchema, default: () => ({}) },
@@ -21,14 +25,13 @@ const LoanSchema = new mongoose.Schema(
     },
     interestType: { type: String, enum: ["flat", "compound"], default: "flat" },
     monthlyRate: { type: Number, default: 0 },
-    totalLoan: { type: Number, default: 0 },
+    endDate: { type: String },
     checkNumber: { type: String },
-     status: {
+    status: {
       type: String,
-      enum: ["Fresh Loan Issued", "Paid Off", "Partial Payment Received"],
-      default: "Fresh Loan Issued",
+      enum: ["Active", "Paid Off", "Partial Payment"],
+      default: "Active",
     },
-    
   },
   { timestamps: true }
 );
