@@ -44,7 +44,9 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <CircularProgress className="text-green-700" />
-            <span className="ml-3 text-gray-700 font-medium">Loading clients...</span>
+            <span className="ml-3 text-gray-700 font-medium">
+              Loading clients...
+            </span>
           </div>
         ) : clients.length > 0 ? (
           <MaterialTable
@@ -53,13 +55,12 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
             columns={[
               {
                 title: "Sr.no",
-                width: "5%",
                 render: (rowData) => rowData.tableData.id + 1,
               },
               { title: "Name", field: "fullName" },
               { title: "Email", field: "email" },
               { title: "Phone", field: "phone" },
-              { title: "DOB", field: "dob", type: "date" },
+              { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
               { title: "Accident Date", field: "accidentDate", type: "date" },
               { title: "Attorney", field: "attorneyName" },
               { title: "SSN", field: "ssn" },
@@ -107,10 +108,12 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
                 height: 36,
                 padding: "6px 8px",
                 borderBottom: "1px solid #e5e7eb",
+                whiteSpace: "nowrap",
               },
               rowStyle: {
                 fontSize: "13px",
                 height: 38,
+                width: 38,
                 borderBottom: "1px solid #f1f1f1",
                 transition: "background 0.2s",
               },

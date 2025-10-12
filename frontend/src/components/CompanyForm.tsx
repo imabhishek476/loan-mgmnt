@@ -16,7 +16,7 @@ const companyFields: FieldConfig[] = [
   // { label: "Phone", key: "phone", type: "text", required: true },
   // { label: "Email", key: "email", type: "email", required: true },
   // { label: "Website", key: "website", type: "text", required: true },
-  { label: "Active Company", key: "activeCompany", type: "toggle", required: true },
+  { label: "Active Company", key: "activeCompany", type: "toggle", required: false },
 
   { label: "Available Loan Terms", key: "loanTerms", type: "toggle", required: true },
   { label: "Color Code", key: "backgroundColor", type: "color", required: true },

@@ -3,69 +3,101 @@ import { observer } from "mobx-react-lite";
 import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
+import moment from "moment";
 
 interface LoanPaymentModalProps {
   open: boolean;
   onClose: () => void;
   loan: any;
   clientId: string;
-  onPaymentSuccess?: () => void; // callback after successful payment
+  onPaymentSuccess?: () => void;
 }
 
-const LoanPaymentModal = observer(({ open, onClose, loan, clientId, onPaymentSuccess }: LoanPaymentModalProps) => {
-  const [amount, setAmount] = useState<string>("");
-  const [checkNumber, setCheckNumber] = useState("");
-  const [payoffLetter, setPayoffLetter] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [outstanding, setOutstanding] = useState(0);
-  const [error, setError] = useState("");
+const LoanPaymentModal = observer(
+  ({
+    open,
+    onClose,
+    loan,
+    clientId,
+    onPaymentSuccess,
+  }: LoanPaymentModalProps) => {
+    const [amount, setAmount] = useState<string>("");
+    const [checkNumber, setCheckNumber] = useState("");
+    const [payoffLetter, setPayoffLetter] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [outstanding, setOutstanding] = useState(0);
+    const [errors, setErrors] = useState<{
+      amount?: string;
+      checkNumber?: string;
+    }>({});
 
-  useEffect(() => {
-    if (loan) {
-      const totalLoan = loan.totalLoan || 0;
-      const paidAmount = loan.paidAmount || 0;
-      const remaining = totalLoan - paidAmount;
-      setOutstanding(remaining);
-      setAmount(remaining ? remaining.toString() : "");
-      setCheckNumber("");
-      setPayoffLetter("");
-      setError("");
-    }
-  }, [loan]);
+    useEffect(() => {
+      if (loan) {
+        const totalLoan = loan.totalLoan || 0;
+        const paidAmount = loan.paidAmount || 0;
+        const tenureMonths = loan.loanTerms || 0;
+        const remaining = totalLoan - paidAmount;
+        const perMonth = tenureMonths > 0 ? totalLoan / tenureMonths : 0;
+        const startDate = moment(loan.issueDate, "MM-DD-YYYY");
+        const currentDate = moment();
+        let monthsPassed = currentDate.diff(startDate, "months") + 1;
+        if (monthsPassed > tenureMonths) monthsPassed = tenureMonths;
+        const monthsPaid = perMonth > 0 ? Math.floor(paidAmount / perMonth) : 0;
+        const monthsDue = Math.max(0, monthsPassed - monthsPaid);
+        const defaultPayment = perMonth * monthsDue;
 
-  if (!open || !loan) return null;
+        setOutstanding(remaining);
+        setAmount(defaultPayment > 0 ? defaultPayment.toFixed(2) : "");
+        setCheckNumber("");
+        setPayoffLetter("");
+        setErrors({});
+      }
+    }, [loan]);
 
-  const handlePayment = async () => {
-    const numAmount = Number(amount);
-    if (!amount || isNaN(numAmount) || numAmount <= 0) {
-      setError("Enter a valid amount");
-      return;
-    }
-    if (numAmount > outstanding) {
-      setError(`Cannot pay more than outstanding: $${outstanding.toFixed(2)}`);
-      return;
-    }
+    if (!open || !loan) return null;
+
+    const validate = () => {
+      const newErrors: typeof errors = {};
+      const numAmount = Number(amount);
+
+      if (!amount || isNaN(numAmount) || numAmount <= 0) {
+        newErrors.amount = "Paid Amount is required and must be greater than 0";
+      } else if (numAmount > outstanding) {
+        newErrors.amount = `Cannot pay more than outstanding: $${outstanding.toFixed(
+          2
+        )}`;
+      }
+
+      if (!checkNumber.trim()) {
+        newErrors.checkNumber = "Check Number is required";
+      }
+
+      setErrors(newErrors);
+      Object.values(newErrors).forEach((msg) => toast.error(msg));
+      return Object.keys(newErrors).length === 0;
+    };
+
+    const handlePayment = async () => {
+      if (!validate()) return;
 
     setLoading(true);
     try {
       await paymentStore.addPayment({
         loanId: loan._id,
         clientId,
-        paidAmount: numAmount,
+        paidAmount: Number(amount),
         paidDate: new Date(),
         checkNumber,
         payoffLetter,
       });
 
-      await loanStore.fetchLoans(); // refresh loan info
-
-      if (onPaymentSuccess) onPaymentSuccess(); // refresh payments in parent
-
+      await loanStore.fetchLoans();
+       onPaymentSuccess?.();
       toast.success("Payment recorded successfully");
       onClose();
     } catch (err) {
       console.error(err);
-      setError("Payment failed. Try again.");
+        toast.error("Payment failed. Try again.");
     } finally {
       setLoading(false);
     }
@@ -77,50 +109,108 @@ const LoanPaymentModal = observer(({ open, onClose, loan, clientId, onPaymentSuc
         <h2 className="text-xl font-bold text-gray-800 mb-4">Make Payment</h2>
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Paid Amount</label>
+            <label className="block text-gray-700 font-medium mb-1">
+              Paid Amount <span className="text-red-500">*</span>
+            </label>
             <input
               type="number"
               value={amount}
               min={0}
               max={outstanding}
-              onChange={(e) => { setAmount(e.target.value); setError(""); }}
+              onChange={(e) => {
+                  setAmount(e.target.value);
+                  const num = Number(e.target.value);
+                  setErrors((prev) => ({
+                    ...prev,
+                    amount:
+                      !e.target.value || num <= 0
+                        ? "Paid Amount is required and must be greater than 0"
+                        : num > outstanding
+                        ? `Cannot pay more than outstanding: $${outstanding.toFixed(
+                            2
+                          )}`
+                        : "",
+                  }));
+                }}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
-                error ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-green-300"
+               errors.amount
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-300 focus:ring-green-300"
               }`}
-            />
-            <p className="text-sm text-gray-500 mt-1">Outstanding: ${outstanding.toFixed(2)}</p>
-          </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Check Number</label>
-            <input
-              type="text"
-              value={checkNumber}
-              onChange={(e) => setCheckNumber(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-green-300"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Payoff Letter</label>
-            <input
-              type="text"
-              value={payoffLetter}
-              onChange={(e) => setPayoffLetter(e.target.value)}
-              placeholder="Enter payoff letter"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-green-300"
-            />
-          </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-        </div>
+             />
+            {errors.amount && (
+                <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
+              )}
+            <p className="text-sm text-gray-500 mt-1">
+                Outstanding: ${outstanding.toFixed(2)}
+              </p>
+            </div>
 
-        <div className="flex justify-end gap-2 mt-6">
-          <button onClick={onClose} disabled={loading} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">Cancel</button>
-          <button onClick={handlePayment} disabled={loading || !amount} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
-            {loading ? "Processing..." : "Pay"}
-          </button>
+            {/* Check Number */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Check Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={checkNumber}
+                onChange={(e) => {
+                  setCheckNumber(e.target.value);
+                  setErrors((prev) => ({
+                    ...prev,
+                    checkNumber: e.target.value.trim()
+                      ? ""
+                      : "Check Number is required",
+                  }));
+                }}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
+                  errors.checkNumber
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-300 focus:ring-green-300"
+                }`}
+              />
+              {errors.checkNumber && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.checkNumber}
+                </p>
+              )}
+            </div>
+
+            {/* Payoff Letter */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Payoff Letter
+              </label>
+              <input
+                type="text"
+                value={payoffLetter}
+                onChange={(e) => setPayoffLetter(e.target.value)}
+                placeholder="Enter payoff letter"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-green-300"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handlePayment}
+              disabled={loading}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+            >
+              {loading ? "Processing..." : "Pay"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 export default LoanPaymentModal;

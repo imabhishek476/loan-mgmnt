@@ -13,7 +13,8 @@ exports.Clientstore = async (req, res) => {
       accidentDate,
       address,
       attorneyName,
-      customFields
+      memo,
+      customFields,
     } = req.body;
 
     console.log("request coming to controller", req.body);
@@ -52,6 +53,8 @@ exports.Clientstore = async (req, res) => {
       accidentDate: accidentDateStr,
       address: address || "",
       attorneyName: attorneyName || "",
+      memo: memo || "",
+
       customFields: Array.isArray(customFields) ? customFields : [],
       createdBy: req.user ? req.user._id : null,
     });
@@ -102,6 +105,7 @@ exports.searchClients = async (req, res) => {
           dob: 1,
           accidentDate: 1,
           attorneyName: 1,
+          memo: 1,
           address: 1,
           customFields: 1,
           createdAt: 1,

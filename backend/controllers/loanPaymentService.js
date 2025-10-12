@@ -26,7 +26,11 @@ exports.addPayment = async (req, res) => {
     });
 
     loan.paidAmount = (loan.paidAmount || 0) + Number(paidAmount);
-    if (loan.paidAmount >= loan.totalLoan) loan.status = "Partial Payment";
+    if (loan.paidAmount >= loan.totalLoan) {
+      loan.status = "Paid Off"; 
+    } else {
+      loan.status = "Partial Payment";
+    }
     await loan.save();
 
     res.status(201).json({ success: true, message: "Payment recorded successfully", payment });

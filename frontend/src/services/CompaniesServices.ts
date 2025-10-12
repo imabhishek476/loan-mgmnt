@@ -1,7 +1,7 @@
 import api from "../api/axios";
 export interface CompanyPayload {
   companyName: string;
-  companyCode: string;
+  // companyCode: string;
   description?: string;
   phone?: string;
   email?: string;
@@ -43,12 +43,15 @@ export interface CompanyPayload {
 
 
 
-export const createCompany = async (company: CompanyPayload) => {
+export const createCompany = async (company: any) => {
   try {
     const res = await api.post("/companies/store", company);
     return res.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.error || "Failed to create company");
+  } catch (err: any) {
+    if (err.response?.data?.message) {
+      throw err;
+    }
+    throw new Error("Failed to create company");
   }
 };
 

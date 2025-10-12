@@ -7,7 +7,7 @@ exports.CompaniesCreate = async (req, res) => {
 
     const companyData = {
       companyName: body.companyName,
-      companyCode: body.companyCode,
+      // companyCode: body.companyCode,
       description: body.description,
       phone: body.phone,
       email: body.email,
@@ -63,11 +63,13 @@ exports.CompaniesCreate = async (req, res) => {
       },
     };
 
-    const existing = await Company.findOne({ companyCode: companyData.companyCode });
+    const existing = await Company.findOne({
+      companyName: { $regex: `^${companyData.companyName}$`, $options: "i" },
+});
     if (existing) {
       return res.status(400).json({
         success: false,
-        message: "Company with this code already exists",
+      message: "Company with this name already exists",
       });
     }
 
@@ -90,19 +92,19 @@ exports.CompaniesCreate = async (req, res) => {
 exports.AllCompanies = async (req, res) => {
   try {
     const { search } = req.query;
-    let companies;
+    let companiesQuery;
 
     if (search) {
       const regex = new RegExp(search, "i");
-      companies = await Company.find({
+      companiesQuery = Company.find({
         $or: [
           { companyName: regex },
-          { companyCode: regex }
-        ]
+        ],
       });
     } else {
-      companies = await Company.find();
+      companiesQuery = Company.find();
     }
+    const companies = await companiesQuery.sort({ createdAt: -1 });
 
     if (!companies.length) {
       return res.status(200).json({
@@ -137,7 +139,7 @@ exports.updateCompany = async (req, res) => {
 
     const companyData = {
       companyName: body.companyName,
-      companyCode: body.companyCode,
+      // companyCode: body.companyCode,
       description: body.description,
       phone: body.phone,
       email: body.email,

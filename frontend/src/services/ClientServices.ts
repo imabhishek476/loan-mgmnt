@@ -9,6 +9,7 @@ export interface ClientPayload {
   accidentDate?: string;
   address?: string;
   attorneyName?: string;
+  memo?: string;
   customFields?: Record<string, unknown>[];
 }
 

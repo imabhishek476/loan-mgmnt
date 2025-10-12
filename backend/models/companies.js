@@ -14,7 +14,7 @@ const feeSchema = new mongoose.Schema({
 
 const companySchema = new mongoose.Schema({
   companyName: { type: String, required: true },
-  companyCode: { type: String, required: true, unique: true },
+  companyCode: { type: String, required: false, unique: false },
   description: String,
   phone: String,
   email: String,
