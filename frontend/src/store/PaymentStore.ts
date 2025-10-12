@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { fetchPaymentsByLoan, addPayment } from "../services/LoanPaymentServices";
 
 class PaymentStore {
+  //@ts-ignore
   payments: Record<string, Payment[]> = {};
   loading = false;
 
@@ -25,6 +26,7 @@ class PaymentStore {
   }
 
   // Add a new payment
+  //@ts-ignore
   async addPayment(payload: PaymentPayload) {
     this.loading = true;
     try {

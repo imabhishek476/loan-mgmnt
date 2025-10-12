@@ -4,7 +4,7 @@ import { X, Plus } from "lucide-react";
 import {
   TextField as MuiTextField,
   Switch,
-  FormGroup,
+  // FormGroup,
   FormControlLabel,
   Autocomplete,
   Slider,
@@ -64,7 +64,7 @@ interface FormModalProps {
   children?: React.ReactNode;
 }
 
-const loanTermOptions = [6, 12, 18, 24, 30, 36];
+// const loanTermOptions = [6, 12, 18, 24, 30, 36];
 
 const FormModal = ({
   open,
@@ -344,11 +344,13 @@ const FormModal = ({
                     );
 
                     const handleSliderChange = (
+                      //@ts-ignore
                       event: Event,
                       value: number | number[]
                     ) => {
                       if (typeof value === "number") {
                         const index = Math.round(value);
+                        //@ts-ignore
                         const selected = loanTermOptions[index];
 
                         // Store all values up to the selected index

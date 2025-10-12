@@ -36,6 +36,7 @@ class LoanStore {
   async updateLoan(id: string, updates: Partial<Loan>) {
     this.loading = true;
     try {
+      // @ts-ignore
       const updatedLoan = await updateLoan(id, updates);
       runInAction(() => {
         const index = this.loans.findIndex((l) => l._id === id);

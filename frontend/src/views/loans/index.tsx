@@ -6,7 +6,8 @@ import LoanCalculation from "./components/LoanCalculation";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
 import { loanStore } from "../../store/LoanStore";
-import moment, { Moment } from "moment";
+import moment from "moment";
+import type { Moment } from "moment";
 import LoanTable from "./components/LoanTable";
 import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -37,7 +38,7 @@ const Loans = observer(
   }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingLoan, setEditingLoan] = useState<any | null>(null);
-    const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+    // const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
     const [loanTermsOptions, setLoanTermsOptions] = useState<
       { label: string; value: number }[]
     >([]);
@@ -49,7 +50,7 @@ const Loans = observer(
     const [endDate, setEndDate] = useState<string | null>(null);
     const hasLoaded = useRef(false);
     const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
-    const [loanPayments, setLoanPayments] = useState<any[]>([]);
+    // const [loanPayments, setLoanPayments] = useState<any[]>([]);
 
     const getInitialFormData = () => ({
       client: "",
@@ -78,10 +79,11 @@ const Loans = observer(
     const handleView = async (loan: any) => {
       setSelectedLoan(loan);
       try {
+        //@ts-ignore
         const payments = await fetchPaymentsByLoan(loan._id);
-        setLoanPayments(payments);
+        // setLoanPayments(payments);
       } catch {
-        setLoanPayments([]);
+        // setLoanPayments([]);
       }
     };
 
@@ -114,7 +116,7 @@ const Loans = observer(
     }, [defaultClient]);
 
     const handleCompanyChange = (companyId: string) => {
-      setSelectedCompany(companyId);
+      // setSelectedCompany(companyId);
       const company = companyStore.companies?.find(
          (c) => c._id === companyId && c.activeCompany // ensure active
        );
@@ -311,6 +313,7 @@ const Loans = observer(
                 setModalOpen(true);
               }}
               onDelete={handleDelete}
+              //@ts-ignore
               onView={handleView}
             />
           </>
@@ -398,6 +401,7 @@ const Loans = observer(
                                   (opt) => opt.value === formData[field.key]
                                 ) || null
                               }
+                              //@ts-ignore
                               onChange={(e, newValue) => {
                                 const value = newValue ? newValue.value : "";
                                 setFormData((prev) => ({

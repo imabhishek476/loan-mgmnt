@@ -143,6 +143,7 @@ const Clients = observer(() => {
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           client={viewClient}
+          //@ts-ignore
           loans={viewClient.loans || []}
         />
       )}

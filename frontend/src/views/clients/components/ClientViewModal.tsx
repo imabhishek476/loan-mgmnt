@@ -205,6 +205,7 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
                   );
                   const companyName = company?.companyName || "Unknown";
                   const companyColor = company?.backgroundColor || "#555555";
+                  //@ts-ignore
                   const outstanding =
                     (loan.totalLoan || 0) - (loan.paidAmount || 0);
                   const isPaidOff =

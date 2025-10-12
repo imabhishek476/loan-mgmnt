@@ -1,6 +1,6 @@
 import{ useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { Home, Percent, DollarSign, FileText } from "lucide-react";
+import { Percent, DollarSign } from "lucide-react";
 import type { Company } from "../store/CompanyStore";
 import FormModal from "./FormModal";
 import type { FieldConfig } from "./FormModal";
