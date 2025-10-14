@@ -162,7 +162,7 @@ const FormModal = ({
   return (
     <LocalizationProvider dateAdapter={AdapterMoment}>
       <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto ">
-        <div className="bg-white rounded-lg w-full max-w-3xl shadow-lg relative mx-2 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
+        <div className="bg-white rounded-lg w-full max-w-4xl shadow-lg relative mx-2 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
           <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
             <h2 className="text-xl font-bold text-gray-800">{title}</h2>
             <button
@@ -177,10 +177,12 @@ const FormModal = ({
             onSubmit={handleSubmit}
             className="overflow-y-auto px-4 py-4 flex-1 flex flex-col gap-6"
           >
-            <div className="grid sm:grid-cols-2 gap-4">
+            
+            <div className="grid sm:grid-cols-3 gap-4">
               {fields.map((field) => {
                 // --- SECTION ---
                 if (field.type === "section") {
+                  
                   // Special Fee Section
                   if (field.key === "feeStructure") {
                     const feeFields = [
@@ -329,7 +331,7 @@ const FormModal = ({
 
                   // Inside your component:
                   if (field.key === "loanTerms") {
-                    const loanTermOptions = [6, 12, 18, 24, 30, 36];
+                    const loanTermOptions = [6, 12, 18, 24, 30, 36,48];
 
                     // Convert stored array to get the current max selected
                     const maxSelected =
@@ -366,10 +368,10 @@ const FormModal = ({
                     return (
                       <div
                         key={field.key}
-                        className="flex flex-col items-start gap-3  px-0 text-sm font-bold text-green-800 border-b border-gray-300 relative mr-5"
+                        className="col-span-full flex flex-col items-start gap-3 px-0 text-sm font-bold text-green-800 border-b border-gray-300 relative mr-5"
                         style={{ overflow: "visible" }}
                       >
-                        <Typography className="font-bold text-gray-800 ml-0 pl-0 ">
+                        <Typography className="font-bold text-gray-800 ml-0 pl-0 w-full">
                           {field.label}
                         </Typography>
 
@@ -403,7 +405,7 @@ const FormModal = ({
                             "& .MuiSlider-markLabel": {
                               fontSize: "10px",
                               color: "#374151",
-                              paddingLeft: "20px",
+                              paddingLeft: "0px",
                             },
                           }}
                         />
@@ -569,50 +571,65 @@ const FormModal = ({
                     </div>
                   );
                 }
-                if (field.type === "number") {
-                  return (
-                    <div key={field.key} className="flex flex-col text-left">
-                      <label className="mb-2 font-medium text-gray-700">
-                        {field.label}
-                      </label>
-                      <input
-                        type="number"
-                        placeholder={field.label}
-                        value={formData[field.key] ?? ""}
-                        min={field.min ?? 0}
-                        max={field.max ?? undefined}
-                        onChange={(e) => {
-                          const rawValue = e.target.value;
-                          if (rawValue === "") {
-                            handleChange(field.key, null);
-                            return;
-                          }
-                          let value = Number(rawValue);
-                          if (
-                            [
-                              "interestRate",
-                              "earlyPayoffPenalty",
-                              "earlyPayoffDiscount",
-                            ].includes(field.key)
-                          ) {
-                            if (value > 100) value = 100;
-                            if (value < 0) value = 0;
-                          } else {
-                            if (field.max !== undefined && value > field.max)
-                              value = field.max;
-                            if (field.min !== undefined && value < field.min)
-                              value = field.min;
-                          }
+             if (field.type === "number" && field.key === "interestRate") {
+               const interestType = formData.interestType || "flat";
+               const interestValue = formData.interestRate ?? "";
 
-                          handleChange(field.key, value);
-                        }}
-                        className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
-                      />
-                      {errors[field.key] && (
-                        <span className="text-red-600 text-sm">
-                          {errors[field.key]}
-                        </span>
-                      )}
+               const handleInterestChange = (
+                 e: React.ChangeEvent<HTMLInputElement>
+               ) => {
+                 const value = e.target.value;
+                 if (value === "") {
+                   handleChange("interestRate", "");
+                   return;
+                 }
+                 const num = Number(value);
+                 if (!isNaN(num)) {
+                   handleChange("interestRate", num);
+                 }
+               };
+
+               const handleInterestBlur = () => {
+                 let num = Number(formData.interestRate);
+                 if (isNaN(num)) num = 0;
+                 if (num > 100) num = 100;
+                 if (num < 0) num = 0;
+                 handleChange("interestRate", num);
+               };
+
+               return (
+                 <div
+                   key={field.key}
+                   className="flex flex-col sm:flex-row gap-2 items-center"
+                 >
+                   <div className="flex flex-col flex-1">
+                     <label className="font-medium text-gray-700">
+                       Interest Rate (%)
+                     </label>
+                     <input
+                       type="number"
+                       value={interestValue}
+                       onChange={handleInterestChange}
+                       onBlur={handleInterestBlur}
+                       min={0}
+                       max={100}
+                       step={0.01}
+                       className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none w-full"
+                     />
+                   </div>
+                   <div className="flex flex-col w-36">
+                     <label className="font-medium text-gray-700">Type</label>
+                     <select
+                       value={interestType}
+                       onChange={(e) =>
+                         handleChange("interestType", e.target.value)
+                       }
+                       className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none w-full"
+                     >
+                       <option value="flat">Flat</option>
+                       <option value="percentage">Percentage</option>
+                     </select>
+                   </div>
                     </div>
                   );
                 } else {
@@ -625,9 +642,7 @@ const FormModal = ({
                         type={field.type}
                         placeholder={field.label}
                         value={formData[field.key] || ""}
-                        onChange={(e) =>
-                          handleChange(field.key, e.target.value)
-                        }
+                       onChange={(e) => handleChange(field.key, e.target.value)}
                         className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                       />
                       {errors[field.key] && (
