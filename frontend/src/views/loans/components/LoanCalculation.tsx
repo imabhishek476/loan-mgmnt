@@ -197,7 +197,8 @@ const formatDate = (date: Date) =>
   if (!endDate) end.setMonth(end.getMonth() + loanTerm);
 
   return (
-    <div className="rounded-xl shadow-sm px-0" style={bgStyle}>
+    <div className="rounded-xl shadow-sm px-0 min-w-0" style={bgStyle}>
+      {" "}
       {/* Header */}
       <div className="flex items-center gap-2 px-2 py-2 rounded-lg">
         <Calculator className="w-5 h-5 text-white" />
@@ -391,7 +392,8 @@ const formatDate = (date: Date) =>
           className="w-full accent-white cursor-pointer px-2"
         />
         <div className="px-2 py-2">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+          <div className="overflow-x-auto pb-2 -mx-2 px-2">
+            <div className="flex space-x-2 min-w-max">
             {loanTermsOptions.map((term) => {
               const termResult = calculateLoan(
                 currentBase,
@@ -405,7 +407,7 @@ const formatDate = (date: Date) =>
               return (
                 <div
                   key={term}
-                  className={`group px-1 py-1 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
+                  className={`flex-shrink-0 w-32 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
             ${
               isSelected
                 ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
@@ -422,18 +424,16 @@ const formatDate = (date: Date) =>
                     );
                   }}
                 >
-                  <div className="font-medium text-sm font-semibold transition-colors duration-200">
+                  <div className="font-medium text-sm font-semibold">
                     {term} months
                   </div>
-
                   <div
-                    className={`text-sm font-medium mb-1 ${
+                    className={`text-xs font-medium mb-1 ${
                       isSelected ? "text-yellow-300" : "text-gray-700"
                     }`}
                   >
                     Interest: ${termResult.interestAmount.toFixed(2)}
                   </div>
-
                   <div
                     className={`text-xs ${
                       isSelected ? "text-white" : "text-gray-700"
@@ -441,17 +441,10 @@ const formatDate = (date: Date) =>
                   >
                     Date: {formatDate(end)}
                   </div>
-                  {/* <div
-                    className={`text-sm font-medium mb-1 ${
-                      isSelected ? "text-yellow-300" : "text-gray-700"
-                    }`}
-                  >
-                    Total : $
-                    {(termResult.interestAmount + subtotal).toFixed(2)} 
-                  </div> */}
                 </div>
               );
             })}
+          </div>
           </div>
         </div>
       </div>
