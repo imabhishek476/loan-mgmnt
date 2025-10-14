@@ -108,12 +108,22 @@ const Loans = observer(
       }
     }, []);
 
-    useEffect(() => {
-      if (defaultClient) {
-        setFormData((prev) => ({ ...prev, client: defaultClient._id }));
-        setModalOpen(true);
-      }
-    }, [defaultClient]);
+useEffect(() => {
+  if (defaultClient && companyStore.companies?.length) {
+   
+    setFormData((prev) => ({ ...prev, client: defaultClient._id }));
+
+    const defaultCompany = companyStore.companies.find(
+      (c) => c.activeCompany && c.companyName === "Claim Advance"
+    );
+
+    if (defaultCompany) {
+      handleCompanyChange(defaultCompany._id);
+    }
+
+    setModalOpen(true);
+  }
+}, [defaultClient]);
 
     const handleCompanyChange = (companyId: string) => {
       // setSelectedCompany(companyId);
