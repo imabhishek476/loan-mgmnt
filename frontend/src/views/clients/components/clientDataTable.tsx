@@ -60,10 +60,10 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
               { title: "Name", field: "fullName" },
               { title: "Email", field: "email" },
               { title: "Phone", field: "phone" },
-              { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
-              { title: "Accident Date", field: "accidentDate", type: "date" },
+              // { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
+              // { title: "Accident Date", field: "accidentDate", type: "date" },
               { title: "Attorney", field: "attorneyName" },
-              { title: "SSN", field: "ssn" },
+              // { title: "SSN", field: "ssn" },
             ]}
             data={clients}
             actions={[

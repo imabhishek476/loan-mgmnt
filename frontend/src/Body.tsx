@@ -29,7 +29,7 @@ const appRouter = createBrowserRouter([
         element: <Dashboard />,
       },
       {
-        path: "clients",
+        path: "customer",
         element: <Clients />,
       },
       {

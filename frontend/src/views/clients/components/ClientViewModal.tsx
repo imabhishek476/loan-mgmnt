@@ -142,7 +142,7 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
                 <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-200">
                   <FileText size={20} className="text-green-600" />
                   <h3 className="text-lg font-bold text-gray-800">
-                    Client Information
+                    Customer Information
                   </h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700 px-4">
