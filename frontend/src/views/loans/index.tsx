@@ -311,7 +311,16 @@ useEffect(() => {
                   setEditingLoan(null);
                   setModalOpen(true);
                   resetForm();
-                }}
+                   const defaultCompany = companyStore.companies.find(
+                      (c) => c.activeCompany && c.companyName === "Claim Advance"
+                    );
+                    if (defaultCompany) {
+                      setFormData((prev) => ({ ...prev, company: defaultCompany._id }));
+                      handleCompanyChange(defaultCompany._id);
+                    }
+
+                    setModalOpen(true);
+                  }}
               >
                 New Loan
               </Button>
@@ -358,7 +367,7 @@ useEffect(() => {
                 </div>
 
                 {/* Modal Content */}
-                <div className="flex flex-col sm:flex-row gap-2 overflow-y-auto overflow-x-hidden px-2 pt-1 flex-1">
+                <div className="flex flex-col sm:flex-row gap-3 overflow-y-auto overflow-x-hidden px-4 pt-1 flex-1">
                   {/* Left Fields */}
                   <div className="flex-1 space-y-3">
                     {loanFields.map((field) => {

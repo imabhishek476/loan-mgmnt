@@ -636,7 +636,7 @@ const FormModal = ({
                   return (
                     <div key={field.key} className="flex flex-col text-left">
                       <label className="mb-2 font-medium text-gray-700">
-                        {field.label}
+                        {field.label}{field.required && <span className="text-red-600">*</span>}
                       </label>
                       <input
                         type={field.type}

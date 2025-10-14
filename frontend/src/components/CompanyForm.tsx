@@ -6,7 +6,7 @@ import FormModal from "./FormModal";
 import type { FieldConfig } from "./FormModal";
 import { Switch, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 
-const loanTermOptions = [6, 12, 18, 24, 30, 36];
+const loanTermOptions = [6, 12, 18, 24, 30, 36, 48];
 
 const companyFields: FieldConfig[] = [
   // { label: "Basic Information", key: "basicInformation", type: "section", icon: <Home size={18} /> },

@@ -35,14 +35,14 @@ const Clients = observer(() => {
 
   const clientFields: FieldConfig[] = [
     { label: "Full Name", key: "fullName", type: "text", required: true },
-    { label: "Email", key: "email", type: "email", required: true },
-    { label: "Phone", key: "phone", type: "text", required: true },
-    { label: "SSN", key: "ssn", type: "text", required: true },
-    { label: "Date of Birth", key: "dob", type: "date", required: true },
-    { label: "Accident Date", key: "accidentDate", type: "date", required: true },
-    { label: "Attorney Name", key: "attorneyName", type: "text", required: true },
+    { label: "Email", key: "email", type: "email" },
+    { label: "Phone", key: "phone", type: "text" },
+    { label: "SSN", key: "ssn", type: "text" },
+    { label: "Date of Birth", key: "dob", type: "date" },
+    { label: "Accident Date", key: "accidentDate", type: "date" },
+    { label: "Attorney Name", key: "attorneyName", type: "text" },
     { label: "Memo", key: "memo", required: false ,type: "textarea" },
-    { label: "Address", key: "address", type: "textarea", required: true },
+    { label: "Address", key: "address", type: "textarea" },
   ];
 
   const customFields: { id: number; name: string; value: string | number | boolean; type: "string" | "number"; }[] =
