@@ -1,5 +1,6 @@
 const { Loan } = require("../models/loan");
 const { LoanPayment } = require("../models/LoanPayment");
+const createAuditLog = require("../utils/auditLog");
 
 exports.addPayment = async (req, res) => {
   try {
@@ -32,7 +33,14 @@ exports.addPayment = async (req, res) => {
       loan.status = "Partial Payment";
     }
     await loan.save();
-
+    await createAuditLog(
+      req.user?.id || null, 
+      req.user?.userRole || null, 
+      "Create", 
+      "Loan Payment", 
+      payment._id, 
+      { after: payment }
+    );
     res.status(201).json({ success: true, message: "Payment recorded successfully", payment });
   } catch (error) {
     console.error(error);

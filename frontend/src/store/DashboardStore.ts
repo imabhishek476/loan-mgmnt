@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { fetchDashboardStats } from "../services/DashboardService";
+import { fetchDashboardStats, fetchDashboardStatsByDate } from "../services/DashboardService";
 
 class DashboardStore {
     stats = {
@@ -7,9 +7,11 @@ class DashboardStore {
         totalLoans: 0,
         totalCompanies: 0,
         totalLoanAmount: 0,
+        totalPaymentsAmount: 0,
         totalPayments: 0,
         loansByCompany: [],
         loanByClient: [],
+        totalPaidOffLoans: 0, 
     };
     loading = false;
 
@@ -26,8 +28,21 @@ class DashboardStore {
                 this.loading = false;
             });
         } catch (err) {
-            this.loading = false;
             console.error(err);
+            this.loading = false;
+        }
+    }
+    async loadStatsByDate(from, to) {
+        this.loading = true;
+        try {
+            const data = await fetchDashboardStatsByDate(from, to);
+            runInAction(() => {
+                this.stats = data;
+                this.loading = false;
+            });
+        } catch (err) {
+            console.error(err);
+            this.loading = false;
         }
     }
 }

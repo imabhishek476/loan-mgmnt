@@ -1,5 +1,7 @@
 
 const Company = require("../models/companies");
+const { logAction } = require("../middleware/auditLogger.middleware");
+const createAuditLog = require("../utils/auditLog");
 
 exports.CompaniesCreate = async (req, res) => {
   try {
@@ -74,8 +76,15 @@ exports.CompaniesCreate = async (req, res) => {
     }
 
     const newCompany = await Company.create(companyData);
-
-    res.status(201).json({
+    await createAuditLog(
+      req.user?.id || null,
+      req.user?.userRole || null,
+      "New Compnay Create", 
+      "Company", 
+      newCompany._id,
+      { after: newCompany }
+    );
+     res.status(201).json({
       success: true,
       message: "Company created successfully",
       data: newCompany,
@@ -191,7 +200,14 @@ exports.updateCompany = async (req, res) => {
         message: "Company not found",
       });
     }
-
+      await createAuditLog(
+        req.user?.id || null,
+        req.user?.userRole || null,
+        "Company has been update",
+        "Company",
+        updatedCompany._id,
+        { before: beforeUpdate, after: updatedCompany }
+      );
     res.status(200).json({
       success: true,
       message: "Company updated successfully",
@@ -213,8 +229,14 @@ exports.deleteCompany = async (req, res) => {
     if (!company) {
       return res.status(404).json({ success: false, error: "Company not found" });
     }
-
-    res.status(200).json({ success: true, message: "Company deleted" });
+  await createAuditLog(
+    req.user?.id || null,
+    req.user?.userRole || null,
+    "Company has been delete",
+    "Company",
+    company._id,
+    { deleted: company }
+  );    res.status(200).json({ success: true, message: "Company deleted" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

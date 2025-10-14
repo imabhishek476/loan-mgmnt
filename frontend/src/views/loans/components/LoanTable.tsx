@@ -386,7 +386,7 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               onClick={handleClose}
               variant="contained"
               color="success"
-              className="rounded-lg shadow-sm px-5 font-bold"
+              className="px-4 py-2 font-bold bg-green-400 text-white rounded-lg hover:bg-green-700 transition"
             >
               Close
             </Button>

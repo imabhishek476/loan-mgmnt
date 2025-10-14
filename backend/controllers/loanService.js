@@ -1,4 +1,5 @@
 const { Loan } = require("../models/loan");
+const createAuditLog = require("../utils/auditLog");
 
 
 exports.LoansCreate = async (req, res) => {
@@ -30,7 +31,14 @@ exports.LoansCreate = async (req, res) => {
     };
 
     const newLoan = await Loan.create(loanData);
-
+    await createAuditLog(
+      req.user?.id || null,
+      req.user?.userRole || null,
+      "Loan Created ",
+      "Loan",
+      newLoan._id,
+      { after: newLoan }
+    );
     res.status(201).json({
       success: true,
       message: "Loan created successfully",
