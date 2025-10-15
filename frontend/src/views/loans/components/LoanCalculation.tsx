@@ -212,11 +212,12 @@ const formatDate = (date: Date) =>
           </span> */}
         </h3>
       </div>
-
       {/* Base, Interest, Rate */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 px-2">
         <div className="flex flex-col">
-          <label className="text-xs text-white mb-1">Base Amount</label>
+          <label className="text-sm text-white mb-1 font-medium">
+            Base Amount
+          </label>
           <input
             type="number"
             min="0"
@@ -229,7 +230,9 @@ const formatDate = (date: Date) =>
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs text-white mb-1">Interest Type</label>
+          <label className="text-sm text-white mb-1 font-medium">
+            Interest Type
+          </label>
           <select
             value={interestType}
             onChange={handleInterestChange}
@@ -241,7 +244,7 @@ const formatDate = (date: Date) =>
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs text-white mb-1">
+          <label className="text-sm text-white mb-1 font-medium">
             Monthly Interest (%)
           </label>
           <input
@@ -255,9 +258,8 @@ const formatDate = (date: Date) =>
           />
         </div>
       </div>
-
       {/* Fees */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-0 px-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 mb-0 px-2">
         {feeItems.map((item) => {
           const fee = fees[item.key];
           if (!fee) return null;
@@ -288,7 +290,7 @@ const formatDate = (date: Date) =>
                     ></div>
                   </label> */}
                 </div>
-                <span className="text-sm font-semibold text-white pr-16">
+                <span className="text-md font-semibold text-white pr-16">
                   +${contribution.toFixed(2)}
                 </span>
               </div>
@@ -326,8 +328,6 @@ const formatDate = (date: Date) =>
           );
         })}
       </div>
-
-
       <div className="text-sm text-white mt-2 font-semibold px-2">
         <div className="flex justify-between mr-2">
           {/* <span>Total (Base + Fees):</span>
@@ -350,10 +350,9 @@ const formatDate = (date: Date) =>
           </div>
         )}
       </div>
-
       {/* Loan Term Slider */}
       <div className="mt-2 relative  max-w-full ">
-        <label className="text-xs font-semibold text-white mb-2 block px-2">
+        <label className="text-sm font-semibold text-white mb-2 block px-2">
           Select Loan Term (<span className="font-bold">{loanTerm}</span>{" "}
           Months)
         </label>
@@ -362,7 +361,7 @@ const formatDate = (date: Date) =>
           {loanTermsOptions.map((term) => (
             <span
               key={term}
-              className={`text-xs font-semibold ${
+              className={`text-sm font-semibold ${
                 term === loanTerm ? "text-white" : "text-white"
               }`}
             >
@@ -394,57 +393,57 @@ const formatDate = (date: Date) =>
         <div className="px-2 py-2">
           <div className="overflow-x-auto pb-2 -mx-2 px-2">
             <div className="flex space-x-2 min-w-max">
-            {loanTermsOptions.map((term) => {
-              const termResult = calculateLoan(
-                currentBase,
-                fees,
-                interestType,
-                currentRate,
-                term
-              );
-              const isSelected = term === loanTerm;
+              {loanTermsOptions.map((term) => {
+                const termResult = calculateLoan(
+                  currentBase,
+                  fees,
+                  interestType,
+                  currentRate,
+                  term
+                );
+                const isSelected = term === loanTerm;
 
-              return (
-                <div
-                  key={term}
-                  className={`flex-shrink-0 w-32 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
+                return (
+                  <div
+                    key={term}
+                    className={`flex-shrink-0 w-32 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
             ${
               isSelected
                 ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
                 : "bg-white border-gray-200 text-gray-700 hover:border-red-400 hover:shadow-md"
             }`}
-                  onClick={() => {
-                    setLoanTerm(term);
-                    emitChange(
-                      currentBase,
-                      fees,
-                      interestType,
-                      currentRate,
-                      term
-                    );
-                  }}
-                >
-                  <div className="font-medium text-sm font-semibold">
-                    {term} months
-                  </div>
-                  <div
-                    className={`text-xs font-medium mb-1 ${
-                      isSelected ? "text-yellow-300" : "text-gray-700"
-                    }`}
+                    onClick={() => {
+                      setLoanTerm(term);
+                      emitChange(
+                        currentBase,
+                        fees,
+                        interestType,
+                        currentRate,
+                        term
+                      );
+                    }}
                   >
-                    Interest: ${termResult.interestAmount.toFixed(2)}
+                    <div className="font-medium text-sm font-semibold">
+                      {term} months
+                    </div>
+                    <div
+                      className={`text-xs font-medium mb-1 ${
+                        isSelected ? "text-yellow-300" : "text-gray-700"
+                      }`}
+                    >
+                      Interest: ${termResult.interestAmount.toFixed(2)}
+                    </div>
+                    <div
+                      className={`text-xs ${
+                        isSelected ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      Date: {formatDate(end)}
+                    </div>
                   </div>
-                  <div
-                    className={`text-xs ${
-                      isSelected ? "text-white" : "text-gray-700"
-                    }`}
-                  >
-                    Date: {formatDate(end)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

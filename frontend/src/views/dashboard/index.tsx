@@ -121,7 +121,7 @@ const Dashboard = observer(() => {
         <ResponsiveContainer width="100%" height={320}>
           <LineChart
             data={data}
-            margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
+            margin={{ top: 20, right: 20, bottom: 20, left: 30 }}
           >
             <CartesianGrid strokeDasharray="4 4" />
             <XAxis dataKey="name" />
@@ -143,7 +143,7 @@ const Dashboard = observer(() => {
       <ResponsiveContainer width="100%" height={320}>
         <BarChart
           data={data}
-          margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
+          margin={{ top: 20, right: 10, bottom: 20, left: 10 }}
         >
           <CartesianGrid strokeDasharray="4 4" />
           <XAxis dataKey="name" />

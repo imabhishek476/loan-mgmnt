@@ -37,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
 
   const menuItems = [
     { name: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, path: "dashboard" },
-    { name: "Customer", icon: <Users className="w-5 h-5" />, path: "customer" },
+    { name: "Customers", icon: <Users className="w-5 h-5" />, path: "customer" },
     { name: "Loans", icon: <DollarSign className="w-5 h-5" />, path: "loans" },
     { name: "Administration", icon: <Settings className="w-5 h-5" />, path: "administration" },
   ];

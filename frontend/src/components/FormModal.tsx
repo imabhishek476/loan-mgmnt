@@ -1,6 +1,6 @@
 import React, { useState, useEffect, type ReactNode } from "react";
 import { toast } from "react-toastify";
-import { X, Plus } from "lucide-react";
+import { X, Plus, DollarSign, Percent } from "lucide-react";
 import {
   TextField as MuiTextField,
   Switch,
@@ -161,7 +161,7 @@ const FormModal = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterMoment}>
-      <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto ">
+      <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto z-[9999]">
         <div className="bg-white rounded-lg w-full max-w-4xl shadow-lg relative mx-2 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
           <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
             <h2 className="text-xl font-bold text-gray-800">{title}</h2>
@@ -175,14 +175,12 @@ const FormModal = ({
 
           <form
             onSubmit={handleSubmit}
-            className="overflow-y-auto px-4 py-4 flex-1 flex flex-col gap-6"
+            className="overflow-y-auto px-4 py-2 flex-1 flex flex-col gap-2"
           >
-            
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-4 gap-2">
               {fields.map((field) => {
                 // --- SECTION ---
                 if (field.type === "section") {
-                  
                   // Special Fee Section
                   if (field.key === "feeStructure") {
                     const feeFields = [
@@ -214,81 +212,83 @@ const FormModal = ({
                     ];
 
                     return (
-                      <div key={field.key} className=" mt-0 mb-0 col-span-full">
-                        <h3 className="flex items-center gap-3 text-lg font-semibold text-green-800 border-b border-gray-300 pb-1">
-                          {field.icon && (
-                            <span className="text-green-700">{field.icon}</span>
-                          )}
-                          {field.label}
-                        </h3>
+                     <div key={field.key} className="mt-0 mb-0 col-span-full">
+                <h3 className="flex items-center gap-5 text-lg font-semibold text-green-800 border-b pb-2">
+                  {field.icon && <span className="text-green-700">{field.icon}</span>}
+                  {field.label}
+                </h3>
 
-                        <div className="mt-3 grid sm:grid-cols-2 gap-2">
-                          {feeFields.map(({ key, label, typeKey }) => {
-                            const feeType = formData[typeKey] || "flat";
-                            const feeValue = formData[key] || "";
+                <div className="mt-3 grid sm:grid-cols-2 gap-3">
+                  {feeFields.map(({ key, label, typeKey }) => {
+                    const feeType = formData[typeKey] || "flat";
+                    const feeValue = formData[key] || "";
 
-                            const handleFeeChange = (
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) => {
-                              let value = e.target.value;
-                              if (value && isNaN(Number(value))) return;
-                              let numValue = Number(value);
-                              if (feeType === "percentage" && numValue > 100)
-                                numValue = 100;
-                              handleChange(key, numValue);
-                            };
+                    const handleFeeChange = (e) => {
+                      let value = e.target.value;
+                      if (value && isNaN(Number(value))) return;
+                      let numValue = Number(value);
+                      // if (feeType === "percentage" && numValue > 100) numValue = 100;
+                      handleChange(key, numValue);
+                    };
 
-                            return (
-                              <div
-                                key={key}
-                                className="flex items-center justify-between  border border-gray-300 rounded-lg px-3 py-2 gap-2"
-                              >
-                                {/* Label */}
-                                <label className="font-medium text-gray-700 items-start">
-                                  {label}
-                                </label>
+                    const toggleFeeType = (newType) => {
+                      handleChange(typeKey, newType);
+                      // if (newType === "percentage" && Number(formData[key] || 0) > 100) {
+                      //   handleChange(key, 100);
+                      // }
+                    };
 
-                                <input
-                                  type="number"
-                                  value={feeValue}
-                                  onChange={handleFeeChange}
-                                  min={0}
-                                  max={
-                                    feeType === "percentage" ? 100 : undefined
-                                  }
-                                  className="border border-gray-300 rounded-md px-2 py-0 w-20  focus:ring-2 focus:ring-green-500 focus:outline-none transition no-spinner "
-                                />
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between border rounded-lg px-4 py-3 gap-4 bg-white shadow-sm"
+                      >
+                        {/* Label */}
+                        <label className="font-medium text-gray-700 flex-1 text-sm sm:text-base">
+                          {label}
+                        </label>
 
-                                <FormControlLabel
-                                  control={
-                                    <Switch
-                                      checked={feeType === "percentage"}
-                                      onChange={(e) => {
-                                        const newType = e.target.checked
-                                          ? "percentage"
-                                          : "flat";
-                                        handleChange(typeKey, newType);
+                        {/* Amount Input */}
+                        <input
+                          type="number"
+                          value={feeValue}
+                          onChange={handleFeeChange}
+                          min={0}
+                          // max={feeType === "percentage" ? 100 : undefined}
+                          className="border rounded-md px-3 py-2 w-28 text-left focus:ring-2 focus:ring-green-500 focus:outline-none transition no-spinner"
+                        />
 
-                                        let currentValue = Number(
-                                          formData[key] || 0
-                                        );
-                                        if (
-                                          newType === "percentage" &&
-                                          currentValue > 100
-                                        )
-                                          handleChange(key, 100);
-                                      }}
-                                      color="success"
-                                    />
-                                  }
-                                  label={feeType === "percentage" ? "%" : "$"}
-                                  labelPlacement="start"
-                                />
-                              </div>
-                            );
-                          })}
+                        <div className="flex items-center  rounded-md overflow-hidden w-28 h-10 flex-shrink-0 ">
+                          {/* Flat */}
+                          <div
+                            onClick={() => toggleFeeType("flat")}
+                            className={`flex-1 flex items-center justify-center border px-2 py-2 cursor-pointer transition ${
+                              feeType === "flat"
+                                ? "bg-green-500 text-white"
+                                : "text-green-600"
+                            }`}
+                          >
+                            <DollarSign className="w-5 h-5 " />
+                          </div>
+
+                          {/* Percentage */}
+                          <div
+                            onClick={() => toggleFeeType("percentage")}
+                            className={`flex-1 flex items-center justify-center border px-2 py-2 cursor-pointer transition ${
+                              feeType === "percentage"
+                                ? "bg-green-500 text-white"
+                                : "text-green-600"
+                            }`}
+                          >
+                            <Percent className="w-5 h-5" />
+                          </div>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+
                     );
                   }
                   return (
@@ -331,7 +331,7 @@ const FormModal = ({
 
                   // Inside your component:
                   if (field.key === "loanTerms") {
-                    const loanTermOptions = [6, 12, 18, 24, 30, 36,48];
+                    const loanTermOptions = [6, 12, 18, 24, 30, 36, 48];
 
                     // Convert stored array to get the current max selected
                     const maxSelected =
@@ -419,6 +419,9 @@ const FormModal = ({
                     >
                       <span className="font-medium text-gray-700">
                         {field.label}
+                        {field.required && (
+                          <span className="text-red-600">*</span>
+                        )}
                       </span>
                       {renderToggle ? (
                         renderToggle(
@@ -453,6 +456,9 @@ const FormModal = ({
                     >
                       <label className="mb-2 font-medium text-gray-700">
                         {field.label}
+                        {field.required && (
+                          <span className="text-red-600">*</span>
+                        )}
                       </label>
                       <textarea
                         placeholder={field.label}
@@ -481,6 +487,9 @@ const FormModal = ({
                     >
                       <label className="mb-2 font-medium text-gray-700">
                         {field.label}
+                        {field.required && (
+                          <span className="text-red-600">*</span>
+                        )}
                       </label>
                       <DatePicker
                         value={
@@ -517,6 +526,9 @@ const FormModal = ({
                     <div key={field.key} className="flex flex-col text-left">
                       <label className="mb-2 font-medium text-gray-700">
                         {field.label}
+                        {field.required && (
+                          <span className="text-red-600">*</span>
+                        )}
                       </label>
                       <Autocomplete
                         disablePortal
@@ -554,6 +566,9 @@ const FormModal = ({
                     <div key={field.key} className="flex flex-col text-left">
                       <label className="mb-2 font-medium text-gray-700">
                         {field.label}
+                        {field.required && (
+                          <span className="text-red-600">*</span>
+                        )}
                       </label>
                       <input
                         type="color"
@@ -571,78 +586,93 @@ const FormModal = ({
                     </div>
                   );
                 }
-             if (field.type === "number" && field.key === "interestRate") {
-               const interestType = formData.interestType || "flat";
-               const interestValue = formData.interestRate ?? "";
+                if (field.type === "number" && field.key === "interestRate") {
+                  const interestType = formData.interestType || "flat";
+                  const interestValue = formData.interestRate ?? "";
 
-               const handleInterestChange = (
-                 e: React.ChangeEvent<HTMLInputElement>
-               ) => {
-                 const value = e.target.value;
-                 if (value === "") {
-                   handleChange("interestRate", "");
-                   return;
-                 }
-                 const num = Number(value);
-                 if (!isNaN(num)) {
-                   handleChange("interestRate", num);
-                 }
-               };
+                  const handleInterestChange = (
+                    e: React.ChangeEvent<HTMLInputElement>
+                  ) => {
+                    const value = e.target.value;
+                    if (value === "") {
+                      handleChange("interestRate", "");
+                      return;
+                    }
+                    const num = Number(value);
+                    if (!isNaN(num)) {
+                      handleChange("interestRate", num);
+                    }
+                  };
 
-               const handleInterestBlur = () => {
-                 let num = Number(formData.interestRate);
-                 if (isNaN(num)) num = 0;
-                 if (num > 100) num = 100;
-                 if (num < 0) num = 0;
-                 handleChange("interestRate", num);
-               };
+                  const handleInterestBlur = () => {
+                    let num = Number(formData.interestRate);
+                    if (isNaN(num)) num = 0;
+                    if (num > 100) num = 100;
+                    if (num < 0) num = 0;
+                    handleChange("interestRate", num);
+                  };
 
-               return (
-                 <div
-                   key={field.key}
-                   className="flex flex-col sm:flex-row gap-2 items-center"
-                 >
-                   <div className="flex flex-col flex-1">
-                     <label className="font-medium text-gray-700">
-                       Interest Rate (%)
-                     </label>
-                     <input
-                       type="number"
-                       value={interestValue}
-                       onChange={handleInterestChange}
-                       onBlur={handleInterestBlur}
-                       min={0}
-                       max={100}
-                       step={0.01}
-                       className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none w-full"
-                     />
-                   </div>
-                   <div className="flex flex-col w-36">
-                     <label className="font-medium text-gray-700">Type</label>
-                     <select
-                       value={interestType}
-                       onChange={(e) =>
-                         handleChange("interestType", e.target.value)
-                       }
-                       className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none w-full"
-                     >
-                       <option value="flat">Flat</option>
-                       <option value="percentage">Percentage</option>
-                     </select>
-                   </div>
+                  return (
+                    <div
+                      key={field.key}
+                      className="flex flex-col sm:flex-row  gap-2 items-center"
+                    >
+                      <div className="flex flex-col flex-2">
+                        <label className="font-medium text-gray-700 whitespace-nowrap pb-2">
+                          Interest Rate (%){" "}
+                          {field.required && (
+                            <span className="text-red-600">*</span>
+                          )}
+                        </label>
+                        <input
+                          type="number"
+                          value={interestValue}
+                          onChange={handleInterestChange}
+                          onBlur={handleInterestBlur}
+                          min={0}
+                          max={100}
+                          step={0.01}
+                          className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none w-full"
+                        />
+                        {errors[field.key] && (
+                          <span className="text-red-600 text-sm">
+                            {errors[field.key]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col  ">
+                        <label className="font-medium text-gray-700 whitespace-nowrap pb-2">
+                          Interest Type
+                        </label>
+                        <select
+                          value={interestType}
+                          onChange={(e) =>
+                            handleChange("interestType", e.target.value)
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none w-full"
+                        >
+                          <option value="flat">Flat</option>
+                          <option value="percentage">Percentage</option>
+                        </select>
+                      </div>
                     </div>
                   );
                 } else {
                   return (
                     <div key={field.key} className="flex flex-col text-left">
                       <label className="mb-2 font-medium text-gray-700">
-                        {field.label}{field.required && <span className="text-red-600">*</span>}
+                        {field.label}
+                        {field.required && (
+                          <span className="text-red-600">*</span>
+                        )}
                       </label>
                       <input
                         type={field.type}
                         placeholder={field.label}
                         value={formData[field.key] || ""}
-                       onChange={(e) => handleChange(field.key, e.target.value)}
+                        onChange={(e) =>
+                          handleChange(field.key, e.target.value)
+                        }
                         className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                       />
                       {errors[field.key] && (
@@ -654,18 +684,25 @@ const FormModal = ({
                   );
                 }
               })}
-              <div className="sm:col-span-0">
-                {children?.[0]} {/* safe access */}
-              </div>
+            
             </div>
 
-            <div className="flex flex-col text-left pt-0">
-              <div className="grid grid-col sm:grid-cols-2 gap-0">
-                <div className="sm:col-span-2">
-                  {children?.[1]} {/* safe access */}
-                </div>
-              </div>
-            </div>
+           <div className="flex flex-col text-left pt-0">
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+    {children?.[0] && (
+      <div className="sm:col-span-1">
+        {children[0]}
+      </div>
+    )}
+
+    {children?.[1] && (
+      <div className="sm:col-span-2">
+        {children[1]}
+      </div>
+    )}
+  </div>
+</div>
+
 
             {initialCustomFields && (
               <div className="sm:col-span-2 flex flex-col gap-3">

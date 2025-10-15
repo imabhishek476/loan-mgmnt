@@ -6,6 +6,7 @@ import {
   ChevronRight,
   DollarSign,
   Plus,
+  Pencil,
 } from "lucide-react";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -17,21 +18,30 @@ import LoanPaymentModal from "../../../components/PaymentModel";
 import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
 import { Tooltip } from "@mui/material";
 import Loans from "../../loans";
+import { calculateLoanAmounts,calculateDynamicTermAndPayment } from "../../../utils/loanCalculations"; 
 
 interface ClientViewModalProps {
   open: boolean;
   onClose: () => void;
   client: any;
+  onEditClient: (client: any) => void;
 }
 
-const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
+const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModalProps) => {
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
   const [loanPayments, setLoanPayments] = useState<Record<string, any[]>>({});
-  const hasLoaded = useRef(false);
   const [loanModalOpen, setLoanModalOpen] = useState(false);
+  const [showAllTermsMap, setShowAllTermsMap] = useState<
+    Record<string, boolean>
+  >({});
+  const hasLoaded = useRef(false);
   const [selectedClientForLoan, setSelectedClientForLoan] = useState<any>(null);
+  const companyLoanTerms = (loan: any) => {
+    const company = companyStore.companies.find((c) => c._id === loan.company);
+    return company?.loanTerms?.length ? company.loanTerms : [12, 24, 36]; // fallback
+  };
 
   const loadInitialData = async () => {
     try {
@@ -46,7 +56,6 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
     }
   };
 
-  // Refresh payments for a loan after new payment
   const refreshPayments = async (loanId: string) => {
     try {
       const payments = await fetchPaymentsByLoan(loanId);
@@ -65,16 +74,14 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
   }, []);
 
   useEffect(() => {
-    if (client?._id) {
-      loanStore.fetchLoans();
-    }
+    if (client?._id) loanStore.fetchLoans();
   }, [client?._id]);
 
   if (!open) return null;
 
   const clientLoans = Array.isArray(loanStore.loans)
     ? loanStore.loans.filter(
-        (loan) => loan.client?.['_id'] === client._id || loan.client === client._id
+        (loan) => loan.client?._id === client._id || loan.client === client._id
       )
     : [];
 
@@ -86,7 +93,7 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
     setExpandedLoanId(loanId);
 
     try {
-      const payments = await fetchPaymentsByLoan(loanId); // always fetch latest
+      const payments = await fetchPaymentsByLoan(loanId);
       setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
     } catch (err) {
       console.error(err);
@@ -94,12 +101,16 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
     }
   };
 
+  const toggleShowAllTerms = (loanId: string) => {
+    setShowAllTermsMap((prev) => ({ ...prev, [loanId]: !prev[loanId] }));
+  };
+
   const getStatusStyles = (loan: any) => {
     if ((loan.paidAmount || 0) >= (loan.totalLoan || 0))
       return "bg-green-600 text-white";
     const lower = loan.status?.toLowerCase() || "";
     if (lower === "active") return "bg-green-600 text-white";
-    if (lower === "Paid Off") return "bg-gray-600 text-white";
+    if (lower === "paid off") return "bg-gray-600 text-white";
     if (lower === "claim advance") return "bg-red-600 text-white animate-pulse";
     return "bg-yellow-500 text-white";
   };
@@ -144,6 +155,11 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
                   <h3 className="text-lg font-bold text-gray-800">
                     Customer Information
                   </h3>
+                  <Pencil
+                    size={16}
+                    className="text-green-700"
+                    onClick={() => onEditClient(client)}
+                  />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700 px-4">
                   <Info label="Full Name" value={client.fullName} />
@@ -152,7 +168,6 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
                   <Info label="DOB" value={client.dob} />
                   <Info label="Accident Date" value={client.accidentDate} />
                   <Info label="Attorney" value={client.attorneyName} />
-
                   <Info label="SSN" value={client.ssn} />
                   <div className="sm:col-span-2">
                     <p className="text-xs uppercase text-gray-500 font-medium">
@@ -176,7 +191,7 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
           </div>
 
           {/* Loans */}
-          <div className="flex-1 border-r overflow-y-auto relative  ">
+          <div className="flex-1 border-r overflow-y-auto relative">
             <div className="sticky top-0 bg-white z-10 p-3 border-b flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <DollarSign size={20} className="text-green-600" />
@@ -205,23 +220,35 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
                   );
                   const companyName = company?.companyName || "Unknown";
                   const companyColor = company?.backgroundColor || "#555555";
-                  //@ts-ignore
-                  const outstanding =
-                    (loan.totalLoan || 0) - (loan.paidAmount || 0);
                   const isPaidOff =
                     (loan.paidAmount || 0) >= (loan.totalLoan || 0);
-                  // Calculate tenure & month due
-                  const start = moment(loan.issueDate, "MM-DD-YYYY");
-                  const today = moment();
-                  const totalMonths = loan.loanTerms || 0;
-                  let currentMonth = today.diff(start, "months") + 1;
-                  if (currentMonth > totalMonths) currentMonth = totalMonths;
-                  const isMonthDue =
-                    currentMonth >
-                    Math.floor(
-                      (loan.paidAmount || 0) /
-                        ((loan.totalLoan || 0) / totalMonths)
-                    );
+
+                  const {
+                    dynamicTerm,
+                    monthsPassed,
+                    suggestedPayment,
+                    monthsDue,
+                  } = calculateDynamicTermAndPayment(loan);
+
+                  const loanData = calculateLoanAmounts(loan);
+                  if (!loanData) return null;
+
+                  const {
+                    subtotal,
+                    interestAmount,
+                    total,
+                    paidAmount,
+                    remaining,
+                    currentTerm,
+                  } = loanData;
+
+                  const showAllTerms = showAllTermsMap[loan._id] || false;
+                  const loanTermsOptions = loan.loanTermsOptions || [
+                    currentTerm,
+                  ];
+                  const displayedTerms = showAllTerms
+                    ? loanTermsOptions
+                    : [currentTerm];
 
                   return (
                     <div
@@ -238,22 +265,19 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
                           <p className="font-semibold text-gray-900 text-base">
                             {companyName}
                           </p>
-
                           <div className="flex flex-wrap items-center justify-end sm:justify-start gap-3 text-sm text-gray-700">
                             <span>
-                              Base: ${loan.baseAmount?.toLocaleString()} |
-                              Total: ${loan.totalLoan?.toLocaleString()}
+                              Base: ${loan.subTotal?.toLocaleString()}
                             </span>
                             <span
                               className={`ml-2 px-2 py-1 rounded text-white text-xs font-semibold ${
-                                isMonthDue ? "bg-red-600" : "bg-gray-500"
+                                monthsDue > 0 ? "bg-red-600" : "bg-gray-500"
                               }`}
                             >
-                              Month: {currentMonth} / {totalMonths}
+                              Month: {monthsPassed} / {dynamicTerm}
                             </span>
                           </div>
                         </div>
-
                         <span
                           className={`ml-3 px-3 py-1 rounded-md text-sm font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
                             loan
@@ -270,7 +294,17 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
                           <div className="flex-1 border-r pr-4 space-y-3">
                             <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                               Payment History
+                             {loan.status !== "Paid Off" && !loanPayments[loan._id]?.length && (
+  <button
+                                              onClick={() => setPaymentLoan(loan)}
+                                              className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
+                                            >
+                                              <Plus className="w-4 h-4" />
+                                            </button>
+                                          )}
+
                             </h4>
+
                             {loanPayments[loan._id]?.length > 0 ? (
                               loanPayments[loan._id].map((p) => (
                                 <div
@@ -301,107 +335,124 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
 
                           {/* Loan Details */}
                           <div className="flex-1 text-sm text-gray-700 space-y-2">
-                            {(() => {
-                              const tenureMonths = loan.loanTerms || 0;
-                              const monthlyInstallment =
-                                tenureMonths > 0
-                                  ? (loan.totalLoan || 0) / tenureMonths
-                                  : 0;
-                              const paidMonths = Math.floor(
-                                (loan.paidAmount || 0) / monthlyInstallment
-                              );
-                              let displayTenure = tenureMonths;
-                              if (paidMonths >= tenureMonths)
-                                displayTenure = tenureMonths * 2;
-                              const remainingAmount =
-                                (loan.totalLoan || 0) - (loan.paidAmount || 0);
+                            {loan.status !== "Paid Off" ? (
+                              <>
+                                <p>
+                                  <span className="font-semibold">Tenure:</span>{" "}
+                                  {currentTerm} month{currentTerm !== 1 && "s"}{" "}
+                                  (
+                                  {moment(loan.issueDate).format("MMM D, YYYY")}{" "}
+                                  - {moment(loan.endDate).format("MMM D, YYYY")}
+                                  )
+                                </p>
 
-                              return (
-                                <>
-                                  <p>
-                                    <span className="font-semibold">
-                                      Tenure:
-                                    </span>{" "}
-                                    {displayTenure} month
-                                    {displayTenure !== 1 && "s"} (
-                                    {moment(loan.endDate).format("MMM D, YYYY")}
-                                    )
-                                  </p>
-                                  <p>
-                                    <span className="font-semibold">
-                                      Total Amount:
-                                    </span>{" "}
-                                    ${loan.totalLoan?.toLocaleString()}
-                                  </p>
+                                <p>
+                                  <span className="font-semibold">
+                                    {currentTerm} Month Interest:
+                                  </span>{" "}
+                                  ${interestAmount.toLocaleString()} (
+                                  {loan.monthlyRate}%
+                                  {loan.interestType === "compound"
+                                    ? " compound"
+                                    : " flat"}{" "}
+                                  per month)
+                                </p>
 
-                                  <p className="text-red-600 font-medium">
-                                    <span>Remaining Amount:</span> $
-                                    {remainingAmount?.toLocaleString()}
-                                  </p>
-                                  {!isPaidOff &&
-                                    (() => {
-                                      const tenureMonths = loan.loanTerms || 0;
-                                      const perMonth =
-                                        tenureMonths > 0
-                                          ? (loan.totalLoan || 0) / tenureMonths
-                                          : 0;
-                                      const startDate = moment(
-                                        loan.issueDate,
-                                        "MM-DD-YYYY"
-                                      );
-                                      const currentDate = moment();
-                                      let monthsPassed =
-                                        currentDate.diff(startDate, "months") +
-                                        1;
-                                      if (monthsPassed > tenureMonths)
-                                        monthsPassed = tenureMonths;
+                                <p>
+                                  <span className="font-semibold">
+                                    Total Amount:
+                                  </span>{" "}
+                                  ${total.toLocaleString()}
+                                </p>
 
-                                      const monthsPaid =
-                                        perMonth > 0
-                                          ? Math.floor(
-                                              (loan.paidAmount || 0) / perMonth
-                                            )
-                                          : 0;
-                                      const monthsDue = Math.max(
-                                        0,
-                                        monthsPassed - monthsPaid
-                                      );
-                                      const defaultPayment =
-                                        perMonth * monthsDue;
+                                <p>
+                                  <span className="font-semibold">
+                                    Paid Amount:
+                                  </span>{" "}
+                                  ${paidAmount.toLocaleString()} (
+                                  <span className="text-xs text-red-600 rounded-full">
+                                    Outstanding:{" "}
+                                    <strong>${remaining.toFixed(2)}</strong>
+                                  </span>
+                                  )
+                                  {loanPayments[loan._id]?.length && (
+                                    <button
+                                      onClick={() => setPaymentLoan(loan)}
+                                      className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </p>
 
-                                      return (
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
-                                          <div className="flex items-center gap-2">
-                                            <button
+                                {/* Loan Terms Scrollable Container */}
+                                <div className="mt-3">
+                                  <div className="flex items-center">
+                                    <span className="font-semibold text-sm pr-5">
+                                      Loan Terms:
+                                    </span>
+                                    {companyLoanTerms(loan).length > 1 && (
+                                      <button
+                                        onClick={() =>
+                                          toggleShowAllTerms(loan._id)
+                                        }
+                                        className="text-xs text-blue-600 hover:underline"
+                                      >
+                                        {showAllTermsMap[loan._id]
+                                          ? "Show Less"
+                                          : "More..."}
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  <div className="overflow-x-auto w-full">
+                                    <div className="grid grid-flow-col gap-2">
+                                      {companyLoanTerms(loan)
+                                        .filter((term) =>
+                                          showAllTermsMap[loan._id]
+                                            ? true
+                                            : term === currentTerm
+                                        )
+                                        .map((term) => {
+                                          const loanData = calculateLoanAmounts(
+                                            { ...loan, loanTerms: term }
+                                          )!;
+                                          const isSelected =
+                                            term === currentTerm;
+
+                                          return (
+                                            <div
+                                              key={term}
+                                              className={`w-28 p-2 rounded-xl border text-center cursor-pointer flex-shrink-0 ${
+                                                isSelected
+                                                  ? "bg-red-700 border-red-800 text-white shadow-lg"
+                                                  : "bg-white border-gray-200 text-gray-700 hover:border-red-400 hover:shadow-md"
+                                              }`}
                                               onClick={() =>
-                                                setPaymentLoan(loan)
+                                                (currentTerm = term)
                                               }
-                                              className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition"
                                             >
-                                              <Plus className="w-4 h-4" />
-                                            </button>
-                                            {/* <span className="text-red-600 font-medium">
-                                        Remaining: $
-                                        {outstanding?.toLocaleString()}
-                                      </span> */}
-                                          </div>
-
-                                          {defaultPayment > 0 && (
-                                            <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full sm:ml-2">
-                                              Suggested:{" "}
-                                              <strong>
-                                                ${defaultPayment.toFixed(2)}
-                                              </strong>{" "}
-                                              ({monthsDue} month
-                                              {monthsDue !== 1 && "s"} due)
-                                            </span>
-                                          )}
-                                        </div>
-                                      );
-                                    })()}
-                                </>
-                              );
-                            })()}
+                                              <div className="font-medium text-sm">
+                                                {term} months
+                                              </div>
+                                              <div className="text-xs font-bold">
+                                                Interest: $
+                                                {loanData.interestAmount.toFixed(
+                                                  2
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <p className="text-gray-500 italic">
+                                This loan is Paid Off.
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -417,6 +468,7 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
           </div>
         </div>
       </div>
+
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
@@ -426,7 +478,6 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
         />
       )}
 
-      {/* Payment Modal */}
       {paymentLoan && (
         <LoanPaymentModal
           open={!!paymentLoan}
