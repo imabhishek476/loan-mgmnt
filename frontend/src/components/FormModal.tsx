@@ -175,7 +175,7 @@ const FormModal = ({
 
           <form
             onSubmit={handleSubmit}
-            className="overflow-y-auto px-4 py-2 flex-1 flex flex-col gap-2"
+            className="overflow-y-auto px-4 py-0 flex-1 flex flex-col gap-0"
           >
             <div className="grid sm:grid-cols-4 gap-2">
               {fields.map((field) => {
@@ -213,7 +213,7 @@ const FormModal = ({
 
                     return (
                      <div key={field.key} className="mt-0 mb-0 col-span-full">
-                <h3 className="flex items-center gap-5 text-lg font-semibold text-green-800 border-b pb-2">
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-green-800 border-b pb-0">
                   {field.icon && <span className="text-green-700">{field.icon}</span>}
                   {field.label}
                 </h3>
@@ -241,7 +241,7 @@ const FormModal = ({
                     return (
                       <div
                         key={key}
-                        className="flex items-center justify-between border rounded-lg px-4 py-3 gap-4 bg-white shadow-sm"
+                        className="flex items-center justify-between border rounded-lg px-4 py-2 gap-2 bg-white shadow-sm"
                       >
                         {/* Label */}
                         <label className="font-medium text-gray-700 flex-1 text-sm sm:text-base">
@@ -264,8 +264,8 @@ const FormModal = ({
                             onClick={() => toggleFeeType("flat")}
                             className={`flex-1 flex items-center justify-center border px-2 py-2 cursor-pointer transition ${
                               feeType === "flat"
-                                ? "bg-green-500 text-white"
-                                : "text-green-600"
+                                ? "bg-green-700 text-white"
+                                : "text-green-700"
                             }`}
                           >
                             <DollarSign className="w-5 h-5 " />
@@ -276,8 +276,8 @@ const FormModal = ({
                             onClick={() => toggleFeeType("percentage")}
                             className={`flex-1 flex items-center justify-center border px-2 py-2 cursor-pointer transition ${
                               feeType === "percentage"
-                                ? "bg-green-500 text-white"
-                                : "text-green-600"
+                                ? "bg-green-700 text-white"
+                                : "text-green-700"
                             }`}
                           >
                             <Percent className="w-5 h-5" />
@@ -621,7 +621,7 @@ const FormModal = ({
                         <label className="font-medium text-gray-700 whitespace-nowrap pb-2">
                           Interest Rate (%){" "}
                           {field.required && (
-                            <span className="text-red-600">*</span>
+                            <span className="text-red-600 text-sm">*</span>
                           )}
                         </label>
                         <input
@@ -640,7 +640,7 @@ const FormModal = ({
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-col  ">
+                      <div className="flex flex-col flex-2  ">
                         <label className="font-medium text-gray-700 whitespace-nowrap pb-2">
                           Interest Type
                         </label>

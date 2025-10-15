@@ -117,7 +117,8 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50 overflow-auto rounded-md">
-      <div className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-4 sm:mx-6 max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-4 sm:mx-6 flex flex-col"style={{ height: '650px' }}>
+        {" "}
         {/* Header */}
         <div className="flex justify-between items-center py-4  px-4 border-b sticky top-0 bg-white z-20 rounded-md">
           <h2 className="font-bold text-gray-800">{client.fullName}</h2>
@@ -128,7 +129,6 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
             <X className="w-6 h-6" />
           </button>
         </div>
-
         <div className="flex flex-col md:flex-row h-full overflow-hidden">
           {/* Sidebar */}
           <div
@@ -405,7 +405,7 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                                     )}
                                   </div>
 
-                                  <div className="overflow-x-auto w-full">
+                                  <div className="overflow-x-auto w-72">
                                     <div className="grid grid-flow-col gap-2">
                                       {companyLoanTerms(loan)
                                         .filter((term) =>
@@ -423,7 +423,7 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                                           return (
                                             <div
                                               key={term}
-                                              className={`w-28 p-2 rounded-xl border text-center cursor-pointer flex-shrink-0 ${
+                                              className={`w-28 p-2 pb-0 rounded-xl border text-center cursor-pointer flex-shrink-0 ${
                                                 isSelected
                                                   ? "bg-red-700 border-red-800 text-white shadow-lg"
                                                   : "bg-white border-gray-200 text-gray-700 hover:border-red-400 hover:shadow-md"
