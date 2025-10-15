@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { fetchAuditLogs } from "../services/AuditLogService";
+import { fetchAuditLogs, type AuditLog } from "../services/AuditLogService";
 
 class AuditLogStore {
     logs: AuditLog[] = [];

@@ -206,7 +206,7 @@ exports.updateCompany = async (req, res) => {
         "Company has been update",
         "Company",
         updatedCompany._id,
-        { before: beforeUpdate, after: updatedCompany }
+        { after: updatedCompany }
       );
     res.status(200).json({
       success: true,

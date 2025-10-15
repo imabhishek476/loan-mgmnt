@@ -69,32 +69,32 @@ exports.AllLoans = async (req, res) => {
     });
   }
 };
-// exports.updateLoan = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updates = req.body;
+exports.updateLoan = async (req, res) => {
+  try { 
+    const { id } = req.params;
+    const updates = req.body;
 
-//     const loan = await Loan.findByIdAndUpdate(id, updates, { new: true });
-//     if (!loan) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Loan not found",
-//       });
-//     }
+    const loan = await Loan.findByIdAndUpdate(id, updates, { new: true });
+    if (!loan) {
+      return res.status(404).json({
+        success: false,
+        message: "Loan not found",
+      });
+    }
 
-//     res.status(200).json({
-//       success: true,
-//       message: "Loan updated successfully",
-//       data: loan,
-//     });
-//   } catch (error) {
-//     console.error("Error in updateLoan:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
+    res.status(200).json({
+      success: true,
+      message: "Loan updated successfully",
+      data: loan,
+    });
+  } catch (error) {
+    console.error("Error in updateLoan:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // exports.deleteLoan = async (req, res) => {
 //   try {

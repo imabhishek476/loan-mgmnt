@@ -8,6 +8,7 @@ import {
 } from "../services/LoanService";
 
 export interface Loan {
+  // paidAmount: number;
   tableData: any;
   _id?: string;
   issueDate: string;

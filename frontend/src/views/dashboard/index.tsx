@@ -25,9 +25,9 @@ import { fetchDashboardStatsByDate } from "../../services/DashboardService";
 const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
   <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
     <div>
-      <p className="text-sm text-gray-500">{title}</p>
+      <p className="text-sm text-gray-500 whitespace-nowrap">{title}</p>
       <div className="flex items-baseline gap-2">
-        <h2 className="text-2xl font-bold text-gray-800">{value}</h2>
+        <h2 className="text-md font-bold text-gray-800">{value}</h2>
         {subValue && (
           <span className="text-xs text-gray-500 font-medium">{subValue}</span>
         )}
@@ -80,7 +80,7 @@ const Dashboard = observer(() => {
   const COLORS_COMPANY = ["#4f46e5", "#6366f1", "#818cf8", "#a5b4fc"];
   const COLORS_PIE = ["#1E824C", "#48da4e"];
   const formatCurrency = (value: number | undefined) =>
-    `$${(value || 0).toLocaleString()}`;
+    `$${(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const recoveredPercentage =
     stats.totalLoanAmount > 0
@@ -121,7 +121,7 @@ const Dashboard = observer(() => {
         <ResponsiveContainer width="100%" height={320}>
           <LineChart
             data={data}
-            margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
+            margin={{ top: 20, right: 20, bottom: 20, left: 30 }}
           >
             <CartesianGrid strokeDasharray="4 4" />
             <XAxis dataKey="name" />
@@ -143,7 +143,7 @@ const Dashboard = observer(() => {
       <ResponsiveContainer width="100%" height={320}>
         <BarChart
           data={data}
-          margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
+          margin={{ top: 20, right: 10, bottom: 20, left: 10 }}
         >
           <CartesianGrid strokeDasharray="4 4" />
           <XAxis dataKey="name" />
@@ -155,15 +155,20 @@ const Dashboard = observer(() => {
       </ResponsiveContainer>
     );
   };
+useEffect(() => {
+  dashboardStore.loadStats().then(() => {
+    setFilteredLoansByCompany(dashboardStore.stats.loansByCompany || []);
+  });
+}, []);
 
   return (
-    <div className="space-y-8 min-h-screen text-left relative">
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Dashboard</h1>
+    <div className="space-y-5 text-left relative">
+      <h1 className="text-2xl font-bold text-gray-800 mb-0">Dashboard</h1>
 
       {/* Stat Cards */}
       <div className="flex gap-2 flex-wrap">
         <StatCard
-          title="Total Clients"
+          title="Total Customers"
           value={stats.totalClients}
           icon={Users}
           color="bg-green-700"
@@ -201,15 +206,20 @@ const Dashboard = observer(() => {
           <DatePicker
             label="From Date"
             value={fromDate}
+            // @ts-ignore
             onChange={(newValue) => newValue && setFromDate(newValue)}
-            maxDate={new Date()}
+            maxDate={toDate || new Date()}
+            // @ts-ignore
             renderInput={(params) => <TextField {...params} size="small" />}
           />
           <DatePicker
             label="To Date"
             value={toDate}
+            // @ts-ignore
             onChange={(newValue) => newValue && setToDate(newValue)}
+            minDate={fromDate}
             maxDate={new Date()}
+            // @ts-ignore
             renderInput={(params) => <TextField {...params} size="small" />}
           />
           <Search
@@ -256,9 +266,10 @@ const Dashboard = observer(() => {
                   cy="50%"
                   outerRadius={100}
                   labelLine={false}
+                  // @ts-ignore
                   label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
                 >
-                  {paymentPieData.map((entry, index) => (
+                  {paymentPieData.map((_entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS_PIE[index % COLORS_PIE.length]}

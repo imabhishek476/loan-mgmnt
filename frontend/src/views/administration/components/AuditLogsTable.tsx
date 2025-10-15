@@ -4,7 +4,7 @@ import { debounce } from "lodash";
 import { Search, FileText, Eye } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { toast } from "react-toastify";
-import { fetchAuditLogs } from "../../../services/AuditLogService";
+import { fetchAuditLogs, type AuditLog } from "../../../services/AuditLogService";
 import moment from "moment";
 import {
   Dialog,
@@ -224,6 +224,7 @@ const AuditLogsTable: React.FC = () => {
               {
                 icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                 tooltip: "View Details",
+                //@ts-ignore
                 onClick: (event, rowData) => handleView(rowData),
               },
             ]}

@@ -35,14 +35,14 @@ const Clients = observer(() => {
 
   const clientFields: FieldConfig[] = [
     { label: "Full Name", key: "fullName", type: "text", required: true },
-    { label: "Email", key: "email", type: "email", required: true },
-    { label: "Phone", key: "phone", type: "text", required: true },
-    { label: "SSN", key: "ssn", type: "text", required: true },
-    { label: "Date of Birth", key: "dob", type: "date", required: true },
-    { label: "Accident Date", key: "accidentDate", type: "date", required: true },
-    { label: "Attorney Name", key: "attorneyName", type: "text", required: true },
+    { label: "Email", key: "email", type: "email" },
+    { label: "Phone", key: "phone", type: "text" },
+    { label: "SSN", key: "ssn", type: "text" },
+    { label: "Date of Birth", key: "dob", type: "date" },
+    { label: "Accident Date", key: "accidentDate", type: "date" },
+    { label: "Attorney Name", key: "attorneyName", type: "text" },
     { label: "Memo", key: "memo", required: false ,type: "textarea" },
-    { label: "Address", key: "address", type: "textarea", required: true },
+    { label: "Address", key: "address", type: "textarea" },
   ];
 
   const customFields: { id: number; name: string; value: string | number | boolean; type: "string" | "number"; }[] =
@@ -85,8 +85,12 @@ const Clients = observer(() => {
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl  text-gray-800 font-bold ">Client Management</h1>
-          <p className="text-gray-600 text-base">Manage client records and personal information</p>
+          <h1 className="text-2xl  text-gray-800 font-bold ">
+            Customer Management
+          </h1>
+          <p className="text-gray-600 text-base">
+            Manage customer records and personal information
+          </p>
         </div>
 
         <Button
@@ -120,14 +124,18 @@ const Clients = observer(() => {
         }}
         title={editingClient ? "Edit Client" : "New Client"}
         fields={clientFields}
-        //@ts-ignore 
+        //@ts-ignore
         customFields={customFields}
         initialData={editingClient || {}}
-        submitButtonText={editingClient ? "Update Client" : <>
-          <Save size={16} className="inline mr-1" /> Create Client
-        </>
+        submitButtonText={
+          editingClient ? (
+            "Update Client"
+          ) : (
+            <>
+              <Save size={16} className="inline mr-1" /> Create Client
+            </>
+          )
         }
-
         onSubmit={handleSave}
       />
       {loanModalOpen && (
@@ -145,6 +153,10 @@ const Clients = observer(() => {
           client={viewClient}
           //@ts-ignore
           loans={viewClient.loans || []}
+          onEditClient={(client) => {
+            setEditingClient(client);
+            setModalOpen(true);
+          }}
         />
       )}
       {/* Data Table */}
@@ -152,6 +164,7 @@ const Clients = observer(() => {
         clients={clientStore.clients.slice()}
         loading={clientStore.loading}
         onSearch={(query: string) => clientStore.fetchClients(query)}
+        // @ts-ignore
         onEdit={(client) => {
           setEditingClient(client);
           setModalOpen(true);
