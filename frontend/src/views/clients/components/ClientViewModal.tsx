@@ -364,14 +364,14 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                                   <span className="font-semibold">
                                     Total Amount:
                                   </span>{" "}
-                                  ${total.toLocaleString()}
+                                  ${total.toFixed(2)}
                                 </p>
 
                                 <p>
                                   <span className="font-semibold">
                                     Paid Amount:
                                   </span>{" "}
-                                  ${paidAmount.toLocaleString()} (
+                                  ${paidAmount.toFixed(2)} (
                                   <span className="text-xs text-red-600 rounded-full">
                                     Outstanding:{" "}
                                     <strong>${remaining.toFixed(2)}</strong>

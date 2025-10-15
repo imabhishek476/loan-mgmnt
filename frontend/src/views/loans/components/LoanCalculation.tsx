@@ -259,7 +259,7 @@ const formatDate = (date: Date) =>
         </div>
       </div>
       {/* Fees */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 mb-0 px-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mb-0 px-2">
         {feeItems.map((item) => {
           const fee = fees[item.key];
           if (!fee) return null;
