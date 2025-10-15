@@ -1,19 +1,21 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Pencil, Trash2, User, Plus, Eye } from "lucide-react";
+import { Search, Trash2, User, Plus } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
+import { loanStore } from "../../../store/LoanStore";
+// import { clientStore } from "../../../store/ClientStore";
 interface ClientsDataTableProps {
   clients: any[];
   onSearch: (query: string) => void;
-  onEdit: (client: any) => void;
+  // onEdit: (client: any) => void;
   onDelete: (id: string) => void;
   loading: boolean;
   onAddLoan: (client: any) => void;
   onViewClient: (client: any) => void;
 }
 
-const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, onAddLoan,loading }: ClientsDataTableProps) => {
+const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoan,loading }: ClientsDataTableProps) => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useMemo(
     () => debounce((value: string) => onSearch(value), 300),
@@ -24,6 +26,9 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
     setSearch(value);
     debouncedSearch(value);
   };
+  useEffect(() => {
+    loanStore.fetchLoans();
+  }, []);
 
   return (
     <div className="">
@@ -57,13 +62,47 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
                 title: "Sr.no",
                 render: (rowData) => rowData.tableData.id + 1,
               },
-              { title: "Name", field: "fullName" },
+              {
+                title: "Name",
+                field: "fullName",
+                render: (rowData) => (
+                  <span
+                    className="text-green-600 cursor-pointer hover:underline"
+                    onClick={() => onViewClient?.(rowData)}
+                  >
+                    {rowData.fullName}
+                  </span>
+                ),
+              },
               { title: "Email", field: "email" },
               { title: "Phone", field: "phone" },
-              { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
-              { title: "Accident Date", field: "accidentDate", type: "date" },
+              {
+                title: "Active Loans",
+                render: (rowData) => {
+                  return loanStore.loans.filter(
+                    (loan) =>
+                      (loan.client === rowData._id ||
+                        loan.client?.['_id'] === rowData._id) &&
+                      loan.status !== "Paid Off" 
+                  ).length;
+                },
+              },
+
+              {
+                title: "Total Paid Off",
+                render: (rowData) => {
+                  return loanStore.loans.filter(
+                    (loan) =>
+                      (loan.client === rowData._id ||
+                        loan.client?.['_id'] === rowData._id) &&
+                      loan.status === "Paid Off" 
+                  ).length;
+                },
+              },
+              // { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
+              // { title: "Accident Date", field: "accidentDate", type: "date" },
               { title: "Attorney", field: "attorneyName" },
-              { title: "SSN", field: "ssn" },
+              // { title: "SSN", field: "ssn" },
             ]}
             data={clients}
             actions={[
@@ -72,20 +111,14 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
                 tooltip: "Add Loan",
                 //@ts-ignore
                 onClick: (event, rowData: any) => onAddLoan(rowData),
-              },
-             {
-            icon: () => <Eye className="w-5 h-5 text-emerald-600" />,
-            tooltip: "View Client",
-                //@ts-ignore
-            onClick: (event, rowData: any) => onViewClient?.(rowData),
           },
 
-              {
-                icon: () => <Pencil className="w-5 h-5 text-green-600" />,
-                tooltip: "Edit",
-                //@ts-ignore
-                onClick: (event, rowData: any) => onEdit(rowData),
-              },
+              // {
+              //   icon: () => <Pencil className="w-5 h-5 text-green-600" />,
+              //   tooltip: "Edit",
+              //   //@ts-ignore
+              //   onClick: (event, rowData: any) => onEdit(rowData),
+              // },
               {
                 icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
                 tooltip: "Delete",
