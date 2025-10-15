@@ -121,7 +121,8 @@ const LoanPaymentModal = observer(
 
       if (!amount || isNaN(numAmount) || numAmount <= 0) {
         newErrors.amount = "Paid Amount is required and must be greater than 0";
-      } else if (numAmount > outstanding) {
+        //@ts-ignore
+      } else if (numAmount > outstanding.toFixed(2)) {
         newErrors.amount = `Cannot pay more than outstanding: $${outstanding.toFixed(
           2
         )}`;
@@ -148,6 +149,7 @@ const LoanPaymentModal = observer(
           paidDate: new Date(),
           checkNumber,
           payoffLetter,
+          outstanding,
         });
 
         await loanStore.fetchLoans();
