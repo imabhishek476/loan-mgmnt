@@ -137,7 +137,6 @@ const Clients = observer(() => {
           )
         }
         onSubmit={handleSave}
-        
       />
       {loanModalOpen && (
         <Loans
@@ -165,6 +164,7 @@ const Clients = observer(() => {
         clients={clientStore.clients.slice()}
         loading={clientStore.loading}
         onSearch={(query: string) => clientStore.fetchClients(query)}
+        // @ts-ignore
         onEdit={(client) => {
           setEditingClient(client);
           setModalOpen(true);

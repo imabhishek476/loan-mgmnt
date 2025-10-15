@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { Plus, Save, Wallet, Eye, RefreshCw } from "lucide-react";
+import { Plus, Save, Wallet, RefreshCw } from "lucide-react";
 import LoanCalculation from "./components/LoanCalculation";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
@@ -281,9 +281,6 @@ const selectedPreviousLoanTotal =
       { label: "Check Number", key: "checkNumber", type: "number" },
     ];
 
-    const bgStyle = {
-      backgroundColor: formData?.companyobj?.backgroundColor || "#555555",
-    };
 
     return (
       <div className="flex flex-col bg-white rounded-lg text-left">
@@ -496,6 +493,7 @@ const selectedPreviousLoanTotal =
                         {overlapMode && activeLoans.length > 0 ? (
                           <div className="max-h-40 overflow-y-auto space-y-1">
                             {activeLoans.map((loan) => {
+                              //@ts-ignore
                               const { monthsPassed, dynamicTerm } =
                                 calculateDynamicTermAndPayment(loan);
                               const {

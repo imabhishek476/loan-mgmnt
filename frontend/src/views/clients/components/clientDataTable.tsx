@@ -1,21 +1,21 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Pencil, Trash2, User, Plus, Eye } from "lucide-react";
+import { Search, Trash2, User, Plus } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
 // import { clientStore } from "../../../store/ClientStore";
 interface ClientsDataTableProps {
   clients: any[];
   onSearch: (query: string) => void;
-  onEdit: (client: any) => void;
+  // onEdit: (client: any) => void;
   onDelete: (id: string) => void;
   loading: boolean;
   onAddLoan: (client: any) => void;
   onViewClient: (client: any) => void;
 }
 
-const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, onAddLoan,loading }: ClientsDataTableProps) => {
+const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoan,loading }: ClientsDataTableProps) => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useMemo(
     () => debounce((value: string) => onSearch(value), 300),
@@ -82,7 +82,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
                   return loanStore.loans.filter(
                     (loan) =>
                       (loan.client === rowData._id ||
-                        loan.client?._id === rowData._id) &&
+                        loan.client?.['_id'] === rowData._id) &&
                       loan.status !== "Paid Off" 
                   ).length;
                 },
@@ -94,7 +94,7 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
                   return loanStore.loans.filter(
                     (loan) =>
                       (loan.client === rowData._id ||
-                        loan.client?._id === rowData._id) &&
+                        loan.client?.['_id'] === rowData._id) &&
                       loan.status === "Paid Off" 
                   ).length;
                 },

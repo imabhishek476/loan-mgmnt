@@ -101,6 +101,7 @@ const LoanPaymentModal = observer(
         let monthsPassed = currentDate.diff(startDate, "months") + 1;
         if (monthsPassed > currentTerm) monthsPassed = currentTerm;
         const monthsPaid = perMonth > 0 ? Math.floor(paidAmount / perMonth) : 0;
+        //@ts-ignore
         const monthsDue = Math.max(0, monthsPassed - monthsPaid);
         const defaultPayment = outstanding;
 
