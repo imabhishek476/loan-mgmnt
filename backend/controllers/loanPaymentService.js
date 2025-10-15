@@ -3,17 +3,18 @@ const { LoanPayment } = require("../models/LoanPayment");
 const createAuditLog = require("../utils/auditLog");
 const moment = require("moment");
 
-function recalculateLoan(loan) {
-  const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
-  const monthsPassed = moment().diff(issueDate, "months") + 1;
-  const monthlyRate = loan.monthlyRate || 0;
-  const baseAmount = loan.baseAmount || 0;
-  const subTotal = loan.subTotal || 0;
+// function recalculateLoan(loan) {
+//   const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+//   const monthsPassed = moment().diff(issueDate, "months") + 1;
+//   const monthlyRate = loan.monthlyRate || 0;
+//   const baseAmount = loan.baseAmount || 0;
+//   const subTotal = loan.subTotal || 0;
 
-  const interestAmount = (baseAmount * monthlyRate * monthsPassed) / 100;
-  const newTotal = baseAmount + subTotal + interestAmount;
-  return { newTotal };
-}
+//   const interestAmount = (baseAmount * monthlyRate * monthsPassed) / 100;
+//   const newTotal = baseAmount + subTotal + interestAmount;
+//   console.log(newTotal);
+//   return { newTotal };
+// }
 
 exports.addPayment = async (req, res) => {
   try {
@@ -24,6 +25,7 @@ exports.addPayment = async (req, res) => {
       paidDate,
       checkNumber,
       payoffLetter,
+      outstanding,
     } = req.body;
 
     if (!loanId || !clientId || !paidAmount) {
@@ -33,11 +35,11 @@ exports.addPayment = async (req, res) => {
     const loan = await Loan.findById(loanId);
     if (!loan) return res.status(404).json({ message: "Loan not found" });
 
-    const { newTotal } = recalculateLoan(loan);
-    loan.totalLoan = newTotal;
-
-    const outstanding = newTotal - (loan.paidAmount || 0);
-    if (Number(paidAmount) > outstanding) {
+  //   const { newTotal } = recalculateLoan(loan);
+  //   loan.totalLoan = newTotal;
+  // console.log(newTotal, "newTotal");
+    remainingAmount = outstanding.toFixed(2);
+    if (Number(paidAmount) > remainingAmount) {
       return res
         .status(400)
         .json({ message: "Paid amount exceeds outstanding balance" });
@@ -52,7 +54,8 @@ exports.addPayment = async (req, res) => {
     });
 
     loan.paidAmount = (loan.paidAmount || 0) + Number(paidAmount);
-    loan.status = loan.paidAmount >= newTotal ? "Paid Off" : "Partial Payment";
+    loan.status =
+      loan.paidAmount >= remainingAmount ? "Paid Off" : "Partial Payment";
     await loan.save();
 
     await createAuditLog(
@@ -65,6 +68,7 @@ exports.addPayment = async (req, res) => {
         after: payment,
       }
     );
+
     res
       .status(201)
       .json({
