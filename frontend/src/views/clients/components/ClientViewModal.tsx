@@ -294,15 +294,15 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                           <div className="flex-1 border-r pr-4 space-y-3">
                             <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                               Payment History
-                             {loan.status !== "Paid Off" && !loanPayments[loan._id]?.length && (
-  <button
-                                              onClick={() => setPaymentLoan(loan)}
-                                              className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
-                                            >
-                                              <Plus className="w-4 h-4" />
-                                            </button>
-                                          )}
-
+                              {loan.status !== "Paid Off" &&
+                                !loanPayments[loan._id]?.length && (
+                                  <button
+                                    onClick={() => setPaymentLoan(loan)}
+                                    className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </button>
+                                )}
                             </h4>
 
                             {loanPayments[loan._id]?.length > 0 ? (
@@ -375,7 +375,7 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                                     <strong>${remaining.toFixed(2)}</strong>
                                   </span>
                                   )
-                                  {loanPayments[loan._id]?.length && (
+                                  {loanPayments[loan._id]?.length > 0 && (
                                     <button
                                       onClick={() => setPaymentLoan(loan)}
                                       className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
