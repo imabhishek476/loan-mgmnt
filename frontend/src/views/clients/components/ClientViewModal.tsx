@@ -108,8 +108,8 @@ const ClientViewModal = ({ open, onClose, client }: ClientViewModalProps) => {
     <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50 overflow-auto rounded-md">
       <div className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-4 sm:mx-6 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center py-2  px-2 border-b sticky top-0 bg-white z-20 rounded-md">
-          <h2 className="text-md font-bold text-gray-800">{client.fullName}</h2>
+        <div className="flex justify-between items-center py-4  px-4 border-b sticky top-0 bg-white z-20 rounded-md">
+          <h2 className="font-bold text-gray-800">{client.fullName}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-800"

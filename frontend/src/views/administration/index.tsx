@@ -2,22 +2,21 @@ import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
-import { Plus,Building2, User, Settings, Shield } from "lucide-react";
+import { Plus, Building2, User, Settings } from "lucide-react";
 import { Dialog } from "@mui/material";
+
 import { companyStore } from "../../store/CompanyStore";
 import CompanyForm from "../../components/CompanyForm";
 import type { Company } from "../../store/CompanyStore";
 import CompaniesDataTable from "./components/CompaniesTable";
+import AuditLogsTable from "./components/AuditLogsTable";
 import { debounce } from "lodash";
 import SubTabs from "../administration/components/subtab";
 
 const Administration = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  // const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("companies");
-  const hasLoaded = useRef(false);
-
   const debouncedSearchRef = useRef(
     debounce((query: string) => {
       companyStore.searchCompanies(query);
@@ -59,17 +58,14 @@ const Administration = observer(() => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this company?")) return;
-
+    if (!window.confirm("Are you sure you want to delete this company?"))
+      return;
     try {
-      // setLoading(true);
       await companyStore.deleteCompany(id);
       toast.success("Company deleted successfully");
       loadCompanies();
     } catch {
       toast.error("Failed to delete company");
-    } finally {
-      // setLoading(false);
     }
   };
 
@@ -77,12 +73,9 @@ const Administration = observer(() => {
     debouncedSearchRef.current(query);
   };
 
-  useEffect(() => {
-    if (!hasLoaded.current) {
-      loadCompanies();
-      hasLoaded.current = true;
-    }
-  }, []);
+useEffect(() => {
+  loadCompanies();
+}, [])
 
   const renderContent = () => {
     switch (activeTab) {
@@ -90,9 +83,7 @@ const Administration = observer(() => {
         return (
           <div className="flex flex-col rounded-lg shadow-sm">
             <div className="flex justify-between items-center mb-2">
-              <h1 className="text-xl font-bold">
-                Company Management
-              </h1>
+              <h1 className="text-xl font-bold">Company Management</h1>
               <Button
                 variant="contained"
                 startIcon={<Plus />}
@@ -131,19 +122,28 @@ const Administration = observer(() => {
         );
 
       case "users":
-        return <div className="p-6 flex items-center justify-center gap-2">
-          <User size={20} /> User Management (coming soon)
-        </div>
+        return (
+          <div className="p-6 flex items-center justify-center gap-2">
+            <User size={20} /> User Management (coming soon)
+          </div>
+        );
 
       case "system":
-        return <div className="p-6 flex items-center justify-center gap-2">
-          <Settings size={20} /> System Config (coming soon)
-        </div>;
+        return (
+          <div className="p-6 flex items-center justify-center gap-2">
+            <Settings size={20} /> System Config (coming soon)
+          </div>
+        );
 
       case "audit":
-        return <div className="p-6 flex items-center justify-center gap-2">
-          <Shield size={20} /> System Config (coming soon)
-        </div>;
+        return (
+          <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
+            <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2">
+              {/* <Shield size={18} />  */}
+            </h2>
+            <AuditLogsTable />
+          </div>
+        );
 
       default:
         return null;

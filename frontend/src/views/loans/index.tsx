@@ -623,13 +623,13 @@ const Loans = observer(
                       setModalOpen(false);
                       onClose?.();
                     }}
-                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => handleSave(formData)}
-                    className="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 flex items-center font-bold gap-1"
+                    className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-1 w-fit"
                   >
                     <Save size={16} />{" "}
                     {editingLoan ? "Update Loan" : "Create Loan"}
@@ -654,20 +654,21 @@ const Loans = observer(
                    <DialogTitle className="font-semibold text-xl text-green-700 border-b pb-2">
                      Loan Details
                    </DialogTitle>
-         
                    <DialogContent className="p-6">
                      {selectedLoan && (
                        <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
                          {/* Client Info */}
                          <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
+                           <p className="text-gray-500 text-xs uppercase mb-1">
+                      Client
+                    </p>
                            <p className="font-medium">
                              {clientStore.clients.find(
                                (c) => c._id === selectedLoan.client
                              )?.fullName || "-"}
                            </p>
                          </div>
-         
+
                          <div>
                            <p className="text-gray-500 text-xs uppercase mb-1">
                              Company
@@ -678,7 +679,6 @@ const Loans = observer(
                              )?.companyName || "-"}
                            </p>
                          </div>
-         
                          {/* Base & Total Loan */}
                          <div>
                            <p className="text-gray-500 text-xs uppercase mb-1">
@@ -695,7 +695,7 @@ const Loans = observer(
                              )}
                            </p>
                          </div>
-         
+
                          <div>
                            <p className="text-gray-500 text-xs uppercase mb-1">
                              Total Loan
@@ -766,21 +766,23 @@ const Loans = observer(
                              {selectedLoan.interestType || "N/A"}
                            </p>
                          </div>
-         
+
                          <div>
                            <p className="text-gray-500 text-xs uppercase mb-1">
                              Monthly Rate
                            </p>
                            <p className="font-medium">{selectedLoan.monthlyRate}%</p>
                          </div>
-         
+
                          <div>
                            <p className="text-gray-500 text-xs uppercase mb-1">
                              Loan Term
                            </p>
-                           <p className="font-medium">{selectedLoan.loanTerms} months</p>
+                           <p className="font-medium">
+                      {selectedLoan.loanTerms} months
+                    </p>
                          </div>
-         
+
                          <div>
                            <p className="text-gray-500 text-xs uppercase mb-1">
                              Issue Date
@@ -789,9 +791,11 @@ const Loans = observer(
                              {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
                            </p>
                          </div>
-         
-                         <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
-                           <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
+
+                  <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Status
+                    </p>
                            <p
                              className={`font-semibold ${
                                selectedLoan.status === "Fresh Loan Issued"
@@ -807,7 +811,6 @@ const Loans = observer(
                        </div>
                      )}
                    </DialogContent>
-         
                    <DialogActions className="px-6 pb-4">
                      <Button
                        onClick={handleClose}

@@ -2,32 +2,39 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { dashboardStore } from "../../store/DashboardStore";
 import {
-  BarChart,
-  Bar,
   PieChart,
   Pie,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
+  Cell,
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
   CartesianGrid,
-  LabelList,
-  Cell,
+  XAxis,
+  YAxis,
+  Line,
+  BarChart,
+  Bar,
 } from "recharts";
-import { Users, Building2, CreditCard, DollarSign } from "lucide-react";
-import Select from "react-select";
+import { Users, Building2, CreditCard, DollarSign, Search } from "lucide-react";
+import { TextField, Box, MenuItem, Select, FormControl } from "@mui/material";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { fetchDashboardStatsByDate } from "../../services/DashboardService";
 
-const StatCard = ({ title, value, icon: Icon, color }: any) => (
-  <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center w-full sm:w-[500px]">
+const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
+  <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
     <div>
       <p className="text-sm text-gray-500">{title}</p>
-      <h2 className="text-2xl font-bold text-gray-800">{value}</h2>
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-2xl font-bold text-gray-800">{value}</h2>
+        {subValue && (
+          <span className="text-xs text-gray-500 font-medium">{subValue}</span>
+        )}
+      </div>
     </div>
     <div
-      className={`p-3 rounded-full ${color} bg-opacity-20 flex items-center justify-center`}
+      className={`p-2 rounded-full ${color} bg-opacity-20 flex items-center justify-center`}
     >
       <Icon className={`${color.replace("bg-", "text-")} w-6 h-6`} />
     </div>
@@ -35,115 +42,126 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 );
 
 const Dashboard = observer(() => {
-  const [chartType, setChartType] = useState<"pie" | "bar" | "line">("pie");
+  const [fromDate, setFromDate] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  );
+  const [toDate, setToDate] = useState(new Date());
+  const [chartType, setChartType] = useState<"line" | "bar">("line");
+  const [filteredLoansByCompany, setFilteredLoansByCompany] = useState<any[]>(
+    []
+  );
 
   useEffect(() => {
     dashboardStore.loadStats();
   }, []);
 
+  const formatToMMDDYYYY = (date: Date) => {
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    return `${mm}-${dd}-${yyyy}`;
+  };
+
+  const handleFilter = async () => {
+    if (fromDate && toDate) {
+      try {
+        const fromStr = formatToMMDDYYYY(fromDate);
+        const toStr = formatToMMDDYYYY(toDate);
+
+        const data = await fetchDashboardStatsByDate(fromStr, toStr);
+        setFilteredLoansByCompany(data.loansByCompany || []);
+      } catch (err) {
+        console.error("Error fetching filtered loans by company", err);
+      }
+    }
+  };
+
   const stats = dashboardStore.stats;
-
   const COLORS_COMPANY = ["#4f46e5", "#6366f1", "#818cf8", "#a5b4fc"];
-  const COLORS_CLIENT = ["#10b981", "#34d399", "#6ee7b7", "#a7f3d0"];
-  const formatCurrency = (value: number) => `$${value.toLocaleString()}`;
+  const COLORS_PIE = ["#1E824C", "#48da4e"];
+  const formatCurrency = (value: number | undefined) =>
+    `$${(value || 0).toLocaleString()}`;
 
-  const loansByCompanyData = stats.loansByCompany.map((item: any) => ({
-    name: item._id || "Unknown",
-    total: item.totalAmount,
-  }));
+  const recoveredPercentage =
+    stats.totalLoanAmount > 0
+      ? ((stats.totalPaymentsAmount / stats.totalLoanAmount) * 100).toFixed(1)
+      : "0";
 
-  const loansByClientData = stats.loanByClient.map((item: any) => ({
-    name: item._id || "Unknown",
-    total: item.totalAmount,
-  }));
-
-  const chartOptions = [
-    { value: "bar", label: "Bar Chart" },
-    { value: "pie", label: "Pie Chart" },
-    { value: "line", label: "Line Chart" },
+  const paymentPieData = [
+    { name: "Recovered", value: stats.totalPaymentsAmount || 0 },
+    {
+      name: "Pending",
+      value: (stats.totalLoanAmount || 0) - (stats.totalPaymentsAmount || 0),
+    },
   ];
 
-  const renderChart = (
-    type: "bar" | "pie" | "line",
-    data: any,
-    colors: string[]
-  ) => {
-    switch (type) {
-      case "bar":
-        return (
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart
-              data={data}
-              margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
-            >
-              <CartesianGrid strokeDasharray="4 4" vertical={false} />
-              <XAxis dataKey="name" />
-              <YAxis tickFormatter={formatCurrency} />
-              <Tooltip formatter={formatCurrency} />
-              <Legend />
-              <Bar dataKey="total" radius={[8, 8, 0, 0]}>
-                <LabelList
-                  dataKey="total"
-                  formatter={formatCurrency}
-                  position="top"
-                />
-                {data.map((_, index) => (
-                  <Cell key={index} fill={colors[index % colors.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        );
-      case "pie":
-        return (
-          <ResponsiveContainer width="100%" height={320}>
-            <PieChart>
-              <Tooltip formatter={formatCurrency} />
-              <Legend />
-              <Pie
-                data={data}
-                dataKey="total"
-                nameKey="name"
-                outerRadius={120}
-                label={(entry) => entry.name}
-              >
-                {data.map((_, index) => (
-                  <Cell key={index} fill={colors[index % colors.length]} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        );
-      case "line":
-        return (
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart
-              data={data}
-              margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
-            >
-              <CartesianGrid strokeDasharray="4 4" />
-              <XAxis dataKey="name" />
-              <YAxis tickFormatter={formatCurrency} />
-              <Tooltip formatter={formatCurrency} />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="total"
-                stroke={colors[0]}
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        );
+  const allCompaniesData = filteredLoansByCompany.length
+    ? filteredLoansByCompany.map((item) => ({
+        name: item._id,
+        value: item.totalAmount,
+      }))
+    : filteredLoansByCompany.length === 0
+    ? []
+    : stats.loansByCompany.map((item) => ({
+        name: item._id,
+        value: item.totalAmount,
+      }));
+
+  const renderChart = (data: any) => {
+    if (!data || data.length === 0) {
+      return (
+        <div className="flex justify-center items-center h-64 text-gray-400 font-semibold">
+          No data available for this date range
+        </div>
+      );
     }
+
+    if (chartType === "line") {
+      return (
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart
+            data={data}
+            margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
+          >
+            <CartesianGrid strokeDasharray="4 4" />
+            <XAxis dataKey="name" />
+            <YAxis tickFormatter={formatCurrency} />
+            <Tooltip formatter={formatCurrency} />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={COLORS_COMPANY[0]}
+              strokeWidth={2}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      );
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height={320}>
+        <BarChart
+          data={data}
+          margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
+        >
+          <CartesianGrid strokeDasharray="4 4" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={formatCurrency} />
+          <Tooltip formatter={formatCurrency} />
+          <Legend />
+          <Bar dataKey="value" fill={COLORS_COMPANY[0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    );
   };
 
   return (
     <div className="space-y-8 min-h-screen text-left relative">
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">
-        Dashboard Overview
-      </h1>
-      <div className="flex gap-4 justify-between">
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Dashboard</h1>
+
+      {/* Stat Cards */}
+      <div className="flex gap-2 flex-wrap">
         <StatCard
           title="Total Clients"
           value={stats.totalClients}
@@ -158,7 +176,7 @@ const Dashboard = observer(() => {
         />
         <StatCard
           title="Total Loans"
-          value={stats.totalLoans}
+          value={`${stats.totalLoans} (${stats.totalPaidOffLoans} Paid Off)`}
           icon={CreditCard}
           color="bg-green-700"
         />
@@ -168,32 +186,96 @@ const Dashboard = observer(() => {
           icon={DollarSign}
           color="bg-green-700"
         />
-      </div>
-      <div className="w-64 mb-4">
-        <Select
-          options={chartOptions}
-          value={chartOptions.find((opt) => opt.value === chartType)}
-          onChange={(selected) =>
-            setChartType(selected?.value as "bar" | "pie" | "line")
-          }
-          isSearchable
+        <StatCard
+          title="Total Recovered Amount"
+          value={formatCurrency(stats.totalPaymentsAmount)}
+          subValue={`(${recoveredPercentage}%)`}
+          icon={DollarSign}
+          color="bg-green-500"
         />
       </div>
 
+      {/* Date Filter */}
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <Box className="flex gap-4 items-center mb-4">
+          <DatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => newValue && setFromDate(newValue)}
+            maxDate={new Date()}
+            renderInput={(params) => <TextField {...params} size="small" />}
+          />
+          <DatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => newValue && setToDate(newValue)}
+            maxDate={new Date()}
+            renderInput={(params) => <TextField {...params} size="small" />}
+          />
+          <Search
+            size={26}
+            className="text-green-700 cursor-pointer hover:scale-110 transition-transform"
+            onClick={handleFilter}
+          />
+        </Box>
+      </LocalizationProvider>
+
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="font-semibold text-gray-800 mb-6 text-lg">
-            Total Loan by Company
-          </h2>
-          {renderChart(chartType, loansByCompanyData, COLORS_COMPANY)}
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="bg-white rounded-2xl shadow-lg p-6 flex-1">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-semibold text-gray-800 text-lg">
+              Total Loan by Company
+            </h2>
+            <FormControl size="small">
+              <Select
+                value={chartType}
+                onChange={(e) => setChartType(e.target.value as "line" | "bar")}
+              >
+                <MenuItem value="line">Line</MenuItem>
+                <MenuItem value="bar">Bar</MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+          {renderChart(allCompaniesData)}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        {/* Total Loan Recovered Pie Chart */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 flex-1">
           <h2 className="font-semibold text-gray-800 mb-6 text-lg">
-            Total Loan by Client
+            Total Loan Recovered
           </h2>
-          {renderChart(chartType, loansByClientData, COLORS_CLIENT)}
+          {stats.totalLoanAmount > 0 ? (
+            <ResponsiveContainer width="100%" height={320}>
+              <PieChart>
+                <Pie
+                  data={paymentPieData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  labelLine={false}
+                  label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                >
+                  {paymentPieData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS_PIE[index % COLORS_PIE.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number) => `$${value.toLocaleString()}`}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex justify-center items-center h-64 text-gray-400 font-semibold">
+              No payment data available
+            </div>
+          )}
         </div>
       </div>
     </div>

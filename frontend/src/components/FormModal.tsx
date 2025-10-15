@@ -492,13 +492,13 @@ const FormModal = ({
                             date ? date.format("MM-DD-YYYY") : ""
                           )
                         }
-                        slotProps={{
-                          textField: {
-                            error: !!errors[field.key],
-                            helperText: errors[field.key],
-                            size: "small",
-                          },
-                        }}
+                        // slotProps={{
+                        //   textField: {
+                        //     error: !!errors[field.key],
+                        //     helperText: errors[field.key],
+                        //     size: "small",
+                        //   },
+                        // }}
                       />
                       {errors[field.key] && (
                         <span className="text-red-600 text-sm">
