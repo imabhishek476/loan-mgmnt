@@ -113,12 +113,12 @@ const ClientsDataTable = ({ clients, onSearch, onEdit, onDelete,  onViewClient, 
                 onClick: (event, rowData: any) => onAddLoan(rowData),
           },
 
-              {
-                icon: () => <Pencil className="w-5 h-5 text-green-600" />,
-                tooltip: "Edit",
-                //@ts-ignore
-                onClick: (event, rowData: any) => onEdit(rowData),
-              },
+              // {
+              //   icon: () => <Pencil className="w-5 h-5 text-green-600" />,
+              //   tooltip: "Edit",
+              //   //@ts-ignore
+              //   onClick: (event, rowData: any) => onEdit(rowData),
+              // },
               {
                 icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
                 tooltip: "Delete",
