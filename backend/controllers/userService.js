@@ -1,44 +1,48 @@
-// controllers/userController.js
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, userRole } = req.body;
+    const { name, email, password, role } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ error: "Email already in use. Please use a different email." });
+    }
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashed, userRole });
+    const user = await User.create({ name, email, password: hashed, role });
     res.status(201).json(user);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
-exports.getUsers = async (req, res) => {
+exports.getAllUsers = async (req, res) => {
   try {
-    const search = req.query.search || "";
-    const users = await User.find({
-      name: { $regex: search, $options: "i" },
-    }).sort({ createdAt: -1 });
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      const regex = new RegExp(search, "i");
+      query = { $or: [{ name: regex }, { email: regex }, { role: regex }] };
+    }
+    const users = await User.find(query).sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      data: users,
+      message: "Users fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error in getAllUsers:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 exports.updateUser = async (req, res) => {
   try {
     const { password, ...rest } = req.body;
-    let updateData = rest;
+    const updateData = { ...rest };
 
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);

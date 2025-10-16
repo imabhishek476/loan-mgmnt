@@ -14,6 +14,7 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
 import type { Moment } from "moment";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 export interface FieldConfig {
   label: string;
@@ -83,6 +84,7 @@ const FormModal = ({
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   // const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [customFields, setCustomFields] = useState<any[]>(
     initialCustomFields || []
@@ -175,7 +177,7 @@ const FormModal = ({
 
           <form
             onSubmit={handleSubmit}
-            className="overflow-y-auto px-4 py-0 flex-1 flex flex-col gap-0"
+            className="overflow-y-auto px-4 py-2 flex-1 flex flex-col gap-3 "
           >
             <div className="grid sm:grid-cols-4 gap-2">
               {fields.map((field) => {
@@ -666,15 +668,37 @@ const FormModal = ({
                           <span className="text-red-600">*</span>
                         )}
                       </label>
-                      <input
-                        type={field.type}
-                        placeholder={field.label}
-                        value={formData[field.key] || ""}
-                        onChange={(e) =>
-                          handleChange(field.key, e.target.value)
-                        }
-                        className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
-                      />
+                      {field.type === "password" ? (
+                        <div className="relative w-full">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder={field.label}
+                            value={formData[field.key] || ""}
+                            onChange={(e) =>
+                              handleChange(field.key, e.target.value)
+                            }
+                            className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-500 focus:outline-none transition pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </button>
+                        </div>
+                      ) : (
+                        <input
+                          type={field.type}
+                          placeholder={field.label}
+                          value={formData[field.key] || ""}
+                          onChange={(e) =>
+                            handleChange(field.key, e.target.value)
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
+                        />
+                      )}
+
                       {errors[field.key] && (
                         <span className="text-red-600 text-sm">
                           {errors[field.key]}
