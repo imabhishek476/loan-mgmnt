@@ -118,7 +118,10 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50 overflow-auto rounded-md">
-      <div className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-4 sm:mx-6 flex flex-col"style={{ height: '650px' }}>
+      <div
+        className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-4 sm:mx-6 flex flex-col"
+        style={{ height: "650px" }}
+      >
         {" "}
         {/* Header */}
         <div className="flex justify-between items-center py-4  px-4 border-b sticky top-0 bg-white z-20 rounded-md">
@@ -203,13 +206,20 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
 
               <Tooltip title="Add New Loan" arrow>
                 <button
-                  className="flex items-center gap-2 px-3 py-1 text-white rounded"
-                  onClick={() => {
-                    setSelectedClientForLoan(client);
-                    setLoanModalOpen(true);
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!client?._id) {
+                      toast.error("Client data not available");
+                      return;
+                    }
+                    setLoanModalOpen(false);
+                    setTimeout(() => {
+                      setSelectedClientForLoan(client);
+                      setLoanModalOpen(true);
+                    }, 10); 
                   }}
                 >
-                  <Plus size={26} className="text-green-700" />
+                  <Plus size={20} />
                 </button>
               </Tooltip>
             </div>
