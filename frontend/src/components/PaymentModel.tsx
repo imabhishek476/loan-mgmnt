@@ -4,64 +4,7 @@ import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
 import moment from "moment";
-
-const calculateDynamicTotal = (loan: any) => {
-  if (!loan) return { dynamicTotal: 0, currentTerm: 0 };
-
-  const base = loan.baseAmount || 0;
-  const fees = loan.fees || {};
-  const interestType = loan.interestType || "flat";
-  const monthlyRate = loan.monthlyRate || 0;
-  const originalTerm = loan.loanTerms || 0;
-  const issueDate = moment(loan.issueDate, "MM-DD-YYYY").toDate();
-
-  if (base <= 0 || originalTerm <= 0) {
-    return { dynamicTotal: loan.totalLoan || 0, currentTerm: originalTerm };
-  }
-
- 
-  const today = moment();
-  const start = moment(issueDate);
-  const monthsPassed = Math.max(1, today.diff(start, "months") + 1);
-
-  let currentTerm = originalTerm;
-  if (monthsPassed > originalTerm) {
-    const extendedTerms = [6, 12, 18, 24, 30, 36, 48, 60];
-    const nextTerm =
-      extendedTerms.find((t) => t > originalTerm) || originalTerm * 2;
-    currentTerm = Math.max(nextTerm, monthsPassed);
-  }
-
-  const feeKeys = [
-    "administrativeFee",
-    "applicationFee",
-    "attorneyReviewFee",
-    "brokerFee",
-    "annualMaintenanceFee",
-  ];
-  const feeTotal = feeKeys.reduce((sum, key) => {
-    const fee = fees[key];
-    if (!fee) return sum;
-    return fee.type === "percentage"
-      ? sum + (base * (fee.value || 0)) / 100
-      : sum + (fee.value || 0);
-  }, 0);
-
-  const subtotal = base + feeTotal;
-  const rate = monthlyRate / 100;
-  let interest = 0;
-
-  if (interestType === "flat") {
-    interest = subtotal * rate * currentTerm;
-  } else {
-    interest = subtotal * (Math.pow(1 + rate, currentTerm) - 1);
-  }
-
-  return {
-    dynamicTotal: subtotal + interest,
-    currentTerm,
-  };
-};
+import { calculateLoanAmounts } from "../utils/loanCalculations"; 
 
 interface LoanPaymentModalProps {
   open: boolean;
@@ -89,29 +32,19 @@ const LoanPaymentModal = observer(
       checkNumber?: string;
     }>({});
 
-    useEffect(() => {
-      if (loan) {
-       const { dynamicTotal, currentTerm } = calculateDynamicTotal(loan);
-        const paidAmount = loan.paidAmount || 0;
-        const outstanding = Math.max(0, dynamicTotal - paidAmount);
-
-       const perMonth = currentTerm > 0 ? dynamicTotal / currentTerm : 0;
-        const startDate = moment(loan.issueDate, "MM-DD-YYYY");
-        const currentDate = moment();
-        let monthsPassed = currentDate.diff(startDate, "months") + 1;
-        if (monthsPassed > currentTerm) monthsPassed = currentTerm;
-        const monthsPaid = perMonth > 0 ? Math.floor(paidAmount / perMonth) : 0;
-        //@ts-ignore
-        const monthsDue = Math.max(0, monthsPassed - monthsPaid);
-        const defaultPayment = outstanding;
-
-        setOutstanding(outstanding);
-        setAmount(defaultPayment > 0 ? defaultPayment.toFixed(2) : "");
+useEffect(() => {
+  if (!loan) return;
+  const loanData = calculateLoanAmounts(loan);
+  if (!loanData) return;
+  const { remaining } = loanData;
+  setOutstanding(remaining);
+  setAmount(remaining > 0 ? remaining.toFixed(2) : "0.00");
         setCheckNumber("");
         setPayoffLetter("");
         setErrors({});
-      }
-    }, [loan]);
+}, [loan]);
+
+
 
     if (!open || !loan) return null;
 

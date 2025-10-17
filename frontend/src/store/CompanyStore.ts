@@ -51,8 +51,8 @@ class CompanyStore {
   companies: Company[] = [];
   filteredCompanies: Company[] = [];
   loading = false;
-  isCompanyFetched = false;
-  isFetching = false; 
+  // isCompanyFetched = false;
+  // isFetching = false; 
   constructor() {
     makeAutoObservable(this);
   }
@@ -81,9 +81,9 @@ class CompanyStore {
     }
   }
   async fetchCompany() {
-    if (this.isCompanyFetched || this.isFetching) return;
+    // if (this.isCompanyFetched || this.isFetching) return;
 
-    this.isFetching = true;
+    // this.isFetching = true;
     this.loading = true;
 
     try {
@@ -92,14 +92,14 @@ class CompanyStore {
         const validCompanies = (data.data || data.companies || []).filter(Boolean);
         this.companies = validCompanies;
         this.filteredCompanies = validCompanies;
-        this.isCompanyFetched = true;
+        // this.isCompanyFetched = true;
       });
     } catch (err) {
       console.error("Failed to fetch companies:", err);
     } finally {
       runInAction(() => {
         this.loading = false;
-        this.isFetching = false;
+        // this.isFetching = false;
       });
     }
   }

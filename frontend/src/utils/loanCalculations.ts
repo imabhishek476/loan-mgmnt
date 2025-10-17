@@ -8,7 +8,7 @@ export const calculateLoanAmounts = (loan: any) => {
     const interestType = loan.interestType || "flat";
     const monthlyRate = loan.monthlyRate || 0;
     const originalTerm = loan.loanTerms || 0;
-    const issueDate = moment(loan.issueDate, "MM-DD-YYYY").toDate();
+    const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
     const paidAmount = loan.paidAmount || 0;
 
     const feeKeys = [
@@ -28,27 +28,25 @@ export const calculateLoanAmounts = (loan: any) => {
 
     const subtotal = base + feeTotal;
     const today = moment();
-    const start = moment(issueDate);
-    const monthsPassed = Math.max(1, today.diff(start, "months") + 1);
+    const monthsPassed = today.diff(issueDate, "months") + 1;
 
-    let currentTerm = originalTerm;
     const allowedTerms = [6, 12, 18, 24, 30, 36, 48, 60];
-    if (monthsPassed > originalTerm) {
-        currentTerm =
-            allowedTerms.find((t) => t >= monthsPassed) || originalTerm * 2;
-    }
+    const dynamicTerm =
+        originalTerm && allowedTerms.includes(originalTerm)
+            ? originalTerm
+            : allowedTerms.find((t) => t >= monthsPassed) || originalTerm;
 
     const rate = monthlyRate / 100;
     let interestAmount = 0;
+
     if (interestType === "flat") {
-        interestAmount = subtotal * rate * currentTerm;
+        interestAmount = subtotal * rate * dynamicTerm;
     } else if (interestType === "compound") {
-        interestAmount = subtotal * (Math.pow(1 + rate, currentTerm) - 1);
+        interestAmount = subtotal * (Math.pow(1 + rate, dynamicTerm) - 1);
     }
 
     const total = subtotal + interestAmount;
     const remaining = Math.max(0, total - paidAmount);
-    const suggestedPayment = remaining;
 
     return {
         subtotal,
@@ -57,8 +55,8 @@ export const calculateLoanAmounts = (loan: any) => {
         paidAmount,
         remaining,
         monthsPassed,
-        currentTerm,
-        suggestedPayment,
+        currentTerm: dynamicTerm,
+        dynamicTerm,
     };
 };
 

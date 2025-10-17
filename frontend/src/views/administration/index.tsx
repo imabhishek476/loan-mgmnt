@@ -33,26 +33,23 @@ const Administration = observer(() => {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  // ✅ Load companies & users once on mount
 useEffect(() => {
   companyStore.fetchCompany();
   userStore.fetchUsers();
 }, [companyStore, userStore]);
 
 
-  // Debounced search (updated whenever activeTab changes)
   const debouncedSearch = useMemo(
     () =>
       debounce((query: string) => {
         if (activeTab === "companies") companyStore.searchCompanies(query);
-        else userStore.searchUsers(query);
+        else if (activeTab === "users") userStore.searchUsers(query);
       }, 300),
     [activeTab]
   );
 
-  const handleSearchChange = (query: string) => {
+  const handleSearchChange = (query: string) => 
     debouncedSearch(query);
-  };
 
   // --- Company Handlers ---
   const handleCompanyOpen = (company?: Company) => {
@@ -65,17 +62,27 @@ useEffect(() => {
   };
   const handleCompanySubmit = async (data: Company) => {
     try {
-      if (editingCompany) {
+      let response;
+      if (editingCompany){
         await companyStore.updateCompany(editingCompany._id!, data);
-        toast.success("Company updated successfully");
       } else {
         await companyStore.createCompany(data);
-        toast.success("Company added successfully");
+      if (response?.success === false) {
+        toast.error(response?.message || "Failed to save company");
+        return;
       }
+      toast.success(
+        `Company ${editingCompany ? "updated" : "added"} successfully`
+      );
       handleCompanyClose();
       await companyStore.fetchCompany();
-    } catch {
-      toast.error("Failed to save company");
+    }
+  } catch (err: any) {
+      console.error("Error saving company:", err);
+      const errorMessage =
+        err?.response?.data?.message || "Failed to save company";
+      toast.error(errorMessage);
+      return { success: false };
     }
   };
   const handleCompanyDelete = async (id: string) => {
@@ -102,14 +109,14 @@ useEffect(() => {
     try {
       if (editingUser) {
         await userStore.updateUser(editingUser._id, data);
-        toast.success("User updated successfully");
-      } else {
-        await userStore.createUser(data);
-        toast.success("User added successfully");
       }
+      else {
+        await userStore.createUser(data);
+        toast.success(`User ${editingUser ? "updated" : "added"} successfully`);
       handleUserClose();
       await userStore.fetchUsers();
-    } catch {
+    }
+   } catch {
       toast.error("Failed to save user");
     }
   };
@@ -224,14 +231,14 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* ✅ SubTabs Navigation */}
+      {/* SubTabs Navigation */}
       <SubTabs onTabChange={setActiveTab} />
 
-      {/* ✅ Tab Content */}
+      {/* Tab Content */}
       {renderContent()}
 
       {/* Modal Form */}
-      <Dialog open={modalOpen} onClose={handleClose}>
+      <Dialog open={companyModalOpen} onClose={handleCompanyClose}>
         <CompanyForm
           initialData={editingCompany || undefined}
           onSubmit={handleCompanySubmit}
