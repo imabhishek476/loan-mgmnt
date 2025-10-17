@@ -77,28 +77,68 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
               { title: "Email", field: "email" },
               { title: "Phone", field: "phone" },
               {
-                title: "Active Loans",
+                title: "Total Loan",
                 render: (rowData) => {
-                  return loanStore.loans.filter(
+                    const clientLoans = loanStore.loans.filter(
                     (loan) =>
-                      (loan.client === rowData._id ||
-                        loan.client?.['_id'] === rowData._id) &&
-                      loan.status !== "Paid Off" 
-                  ).length;
-                },
-              },
+                      loan.client === rowData._id || loan.client?._id === rowData._id
+                    );
 
-              {
-                title: "Total Paid Off",
-                render: (rowData) => {
-                  return loanStore.loans.filter(
-                    (loan) =>
-                      (loan.client === rowData._id ||
-                        loan.client?.['_id'] === rowData._id) &&
-                      loan.status === "Paid Off" 
-                  ).length;
+                    const totalGiven = clientLoans.reduce(
+                      (acc, loan) => acc + (loan.subTotal || 0),
+                      0
+                    );
+
+                    return (
+                      <span className="font-semibold text-green-700">
+                        ${totalGiven.toLocaleString()}
+                      </span>
+                    );
+                  },
                 },
-              },
+                {
+                  title: "Pending Loan",
+                render: (rowData) => {
+                    const clientLoans = loanStore.loans.filter(
+                    (loan) =>
+                        loan.client === rowData._id || loan.client?._id === rowData._id
+                    );
+
+                    const pending = clientLoans.reduce(
+                      (acc, loan) => acc + ((loan.subTotal || 0) - (loan.paidAmount || 0)),
+                      0
+                    );
+
+                    return (
+                      <span className="font-semibold text-red-600">
+                        ${pending.toLocaleString()}
+                      </span>
+                    );
+                  },
+                },
+              // {
+              //   title: "Active Loans",
+              //   render: (rowData) => {
+              //     return loanStore.loans.filter(
+              //       (loan) =>
+              //         (loan.client === rowData._id ||
+              //           loan.client?.["_id"] === rowData._id) &&
+              //         loan.status !== "Paid Off"
+              //     ).length;
+              //   },
+              // },
+
+              // {
+              //   title: "Total Paid Off",
+              //   render: (rowData) => {
+              //     return loanStore.loans.filter(
+              //       (loan) =>
+              //         (loan.client === rowData._id ||
+              //           loan.client?.["_id"] === rowData._id) &&
+              //         loan.status === "Paid Off"
+              //     ).length;
+              //   },
+              // },
               // { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
               // { title: "Accident Date", field: "accidentDate", type: "date" },
               { title: "Attorney", field: "attorneyName" },
