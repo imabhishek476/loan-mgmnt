@@ -87,9 +87,9 @@ class CompanyStore {
     this.loading = true;
 
     try {
-      const { data } = await api.get("/companies/allcompanies");
+      const  companies  = await  fetchCompanies();
       runInAction(() => {
-        const validCompanies = (data.data || data.companies || []).filter(Boolean);
+        const validCompanies = (companies || []).filter(Boolean);
         this.companies = validCompanies;
         this.filteredCompanies = validCompanies;
         // this.isCompanyFetched = true;

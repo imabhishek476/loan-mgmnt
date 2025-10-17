@@ -32,13 +32,13 @@ const Administration = observer(() => {
   // Editing items
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-
+  async function fetchData() {
+    await companyStore.fetchCompany();
+    await userStore.fetchUsers();
+  }
 useEffect(() => {
-  companyStore.fetchCompany();
-  userStore.fetchUsers();
-}, [companyStore, userStore]);
-
-
+  fetchData();
+}, []);
   const debouncedSearch = useMemo(
     () =>
       debounce((query: string) => {
