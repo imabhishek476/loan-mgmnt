@@ -23,11 +23,11 @@ exports.Clientstore = async (req, res) => {
     if (!fullName) {
       return res.status(400).json({
         success: false,
-        error: "Full name, email, and phone are required",
+        error: "Full name are required",
       });
     }
 
-    const trimEmail = email.trim().toLowerCase();
+    const trimEmail = email?.trim().toLowerCase();
     console.log("normalized email =>", trimEmail);
 
 
@@ -47,7 +47,7 @@ exports.Clientstore = async (req, res) => {
     const newClient = await Client.create({
       fullName: fullName.trim(),
       email: trimEmail,
-      phone: phone.trim(),
+      phone: phone?.trim(),
       ssn: ssn || "",
       dob: dobStr,
       accidentDate: accidentDateStr,
