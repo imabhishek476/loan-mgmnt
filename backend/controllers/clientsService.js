@@ -20,7 +20,7 @@ exports.Clientstore = async (req, res) => {
     } = req.body;
 
 
-    if (!fullName || !email || !phone) {
+    if (!fullName) {
       return res.status(400).json({
         success: false,
         error: "Full name, email, and phone are required",
