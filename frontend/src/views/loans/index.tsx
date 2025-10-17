@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { Plus, Save, Wallet, RefreshCw } from "lucide-react";
+import { Plus, Save, Wallet, RefreshCw, X } from "lucide-react";
 import LoanCalculation from "./components/LoanCalculation";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
@@ -52,7 +52,9 @@ const Loans = observer(
     const hasLoaded = useRef(false);
     const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
     // const [loanPayments, setLoanPayments] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
 
+    const [saving, setSaving] = useState(false);
     const getInitialFormData = () => ({
       client: "",
       company: "",
@@ -196,6 +198,8 @@ const selectedPreviousLoanTotal =
 
 
     const handleSave = async (data: any) => {
+        if (saving) return;
+        setSaving(true);
       const payload = {
         ...data,
         baseAmount: formData.baseAmount,
@@ -231,6 +235,8 @@ const selectedPreviousLoanTotal =
         resetForm();
       } catch {
         toast.error("Failed to save loan");
+      } finally {
+        setSaving(false);
       }
     };
  useEffect(() => {
@@ -366,7 +372,7 @@ const selectedPreviousLoanTotal =
                       onClose?.();
                     }}
                   >
-                    ✕
+                    <X />
                   </button>
                 </div>
 
@@ -381,7 +387,7 @@ const selectedPreviousLoanTotal =
                         return (
                           <div
                             key={field.key}
-                            className="flex flex-col text-left py-1"
+                            className="flex flex-col text-left py-1 z-20 "
                           >
                             <label className="mb-1 font-medium text-gray-700">
                               {field.label}
@@ -644,10 +650,20 @@ const selectedPreviousLoanTotal =
                   </button>
                   <button
                     onClick={() => handleSave(formData)}
-                    className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-1 w-fit"
+                    className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 w-fit"
+                    disabled={saving}
                   >
-                    <Save size={16} />{" "}
-                    {editingLoan ? "Update Loan" : "Create Loan"}
+                    {saving ? (
+                      <div className="flex items-center gap-2">
+                        <div className="loader-button border-t-2 border-white border-solid rounded-full w-4 h-4 animate-spin"></div>
+                        Saving...
+                      </div>
+                    ) : (
+                      <>
+                        <Save size={16} />
+                        {editingLoan ? "Update Loan" : "Create Loan"}
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

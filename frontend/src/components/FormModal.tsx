@@ -83,7 +83,7 @@ const FormModal = ({
 }: FormModalProps) => {
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [customFields, setCustomFields] = useState<any[]>(
@@ -148,14 +148,14 @@ const FormModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    // setLoading(true);
+    setLoading(true);
     try {
       await onSubmit({ ...formData, customFields });
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Failed to save data");
     } finally {
-      // setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -711,22 +711,17 @@ const FormModal = ({
             
             </div>
 
-           <div className="flex flex-col text-left pt-0">
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
-    {children?.[0] && (
-      <div className="sm:col-span-1">
-        {children[0]}
-      </div>
-    )}
+            <div className="flex flex-col text-left pt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+                {children?.[0] && (
+                  <div className="sm:col-span-1">{children[0]}</div>
+                )}
 
-    {children?.[1] && (
-      <div className="sm:col-span-2">
-        {children[1]}
-      </div>
-    )}
-  </div>
-</div>
-
+                {children?.[1] && (
+                  <div className="sm:col-span-2">{children[1]}</div>
+                )}
+              </div>
+            </div>
 
             {initialCustomFields && (
               <div className="sm:col-span-2 flex flex-col gap-3">
@@ -811,9 +806,13 @@ const FormModal = ({
             <button
               type="submit"
               onClick={handleSubmit}
-              className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition"
+              disabled={loading}
+              className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition flex items-center gap-2"
             >
-              {submitButtonText || "Save"}
+              {loading ? (
+                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+              ) : null}
+              {loading ? "Saving..." : submitButtonText || "Save"}
             </button>
           </div>
         </div>
