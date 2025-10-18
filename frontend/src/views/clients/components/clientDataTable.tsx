@@ -81,7 +81,8 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
                 render: (rowData) => {
                     const clientLoans = loanStore.loans.filter(
                     (loan) =>
-                      loan.client === rowData._id || loan.client?._id === rowData._id
+                      loan.client === rowData._id ||
+                      loan.client?._id === rowData._id
                     );
 
                     const totalGiven = clientLoans.reduce(
@@ -97,21 +98,30 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
                   },
                 },
                 {
-                  title: "Pending Loan",
+                  title: "Paid Loan",
                 render: (rowData) => {
                     const clientLoans = loanStore.loans.filter(
                     (loan) =>
-                        loan.client === rowData._id || loan.client?._id === rowData._id
+                        loan.client === rowData._id ||
+                      loan.client?._id === rowData._id
                     );
-
                     const pending = clientLoans.reduce(
-                      (acc, loan) => acc + ((loan.subTotal || 0) - (loan.paidAmount || 0)),
+                      (acc, loan) => acc + (loan.paidAmount || 0),
                       0
                     );
+                  const allPaidOff = clientLoans.every(
+                    (loan) => loan.status === "Paid Off"
+                  );
 
                     return (
-                      <span className="font-semibold text-red-600">
-                        ${pending.toLocaleString()}
+                    <span
+                      className={`font-semibold ${
+                        allPaidOff ? "text-green-600" : "text-blue-600"
+                      }`}
+                    >
+                      {allPaidOff
+                        ? `$ ${pending.toLocaleString()} (Paid Off) `
+                        : `$${pending.toLocaleString()}`}
                       </span>
                     );
                   },
@@ -146,12 +156,12 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
             ]}
             data={clients}
             actions={[
-               {
+              {
                 icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
                 tooltip: "Add Loan",
                 //@ts-ignore
                 onClick: (event, rowData: any) => onAddLoan(rowData),
-          },
+              },
 
               // {
               //   icon: () => <Pencil className="w-5 h-5 text-green-600" />,
