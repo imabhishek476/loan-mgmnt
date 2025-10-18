@@ -485,7 +485,7 @@ const FormModal = ({
                   return (
                     <div
                       key={field.key}
-                      className="flex flex-col text-left py-0"
+                      className="flex flex-col text-left py-0 "
                     >
                       <label className="mb-2 font-medium text-gray-700">
                         {field.label}
@@ -505,13 +505,21 @@ const FormModal = ({
                             date ? date.format("MM-DD-YYYY") : ""
                           )
                         }
-                        // slotProps={{
-                        //   textField: {
-                        //     error: !!errors[field.key],
-                        //     helperText: errors[field.key],
-                        //     size: "small",
-                        //   },
-                        // }}
+                        slotProps={{
+                          popper: {
+                            modifiers: [
+                              {
+                                name: "zIndex",
+                                enabled: true,
+                                phase: "write",
+                                fn({ state }) {
+                                  //@ts-ignore
+                                  state.styles.popper.zIndex = 9999;
+                                },
+                              },
+                            ],
+                          },
+                        }}
                       />
                       {errors[field.key] && (
                         <span className="text-red-600 text-sm">
