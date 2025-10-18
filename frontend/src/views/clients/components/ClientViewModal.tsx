@@ -8,6 +8,7 @@ import {
   Plus,
   Pencil,
   PencilIcon,
+  AlertCircle,
 } from "lucide-react";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -19,7 +20,7 @@ import LoanPaymentModal from "../../../components/PaymentModel";
 import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
 import { Tooltip } from "@mui/material";
 import Loans from "../../loans";
-import { calculateLoanAmounts,calculateDynamicTermAndPayment } from "../../../utils/loanCalculations"; 
+import { calculateLoanAmounts } from "../../../utils/loanCalculations"; 
 
 interface ClientViewModalProps {
   open: boolean;
@@ -263,14 +264,6 @@ useEffect(() => {
                   const companyColor = company?.backgroundColor || "#555555";
                   const isPaidOff =
                     (loan.paidAmount || 0) >= (loan.totalLoan || 0);
-
-                  const {
-                    dynamicTerm,
-                    monthsPassed,
-                    // suggestedPayment,
-                    monthsDue,
-                  } = calculateDynamicTermAndPayment(loan);
-
                   const loanData = calculateLoanAmounts(loan);
                   if (!loanData) return null;
 
@@ -303,19 +296,20 @@ useEffect(() => {
                   return (
                     <div
                       key={loan._id}
-                      className="border rounded-lg shadow-sm hover:shadow-lg transition-all overflow-hidden bg-white"
+                      style={{ borderLeft: `6px solid ${companyColor}` }}
+                      className="border rounded-lg shadow-sm hover:shadow-lg justify-items-stretch transition-all overflow-hidden bg-white "
                     >
-                      {/* Header */}
-                      <div
-                        className="grid grid-cols-[1fr_auto_auto_auto] items-center p-3 cursor-pointer border-b gap-8"
-                        style={{ borderLeft: `6px solid ${companyColor}` }}
+                      <tr
+                        className="cursor-pointer  border-b hover:bg-gray-50"
                         onClick={() => handleToggleLoan(loan._id)}
                       >
-                        <p className="font-semibold text-gray-700 text-base truncate">
+                        <td className="px-3 py-2  font-semibold text-gray-700 text-base text-left">
                           {companyName}
-                        </p>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 justify-start text-sm text-gray-700">
-                          <span className="text-xs font-semibold">
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <div className="inline-block">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+                          <span className="text-xs font-semibold first-letter:block">
                             Loan Amount: ${loan.subTotal?.toFixed(2)}
                           </span>
                           <span
@@ -328,17 +322,38 @@ useEffect(() => {
                             Month: {selectedDynamicTerm}
                           </span>
                         </div>
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-right w-2/6">
                         <span
-                          className={`px-3 py-1 rounded-md text-sm font-semibold shadow-sm whitespace-nowrap justify-self-end ${getStatusStyles(
+                          className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
                             loan
                           )}`}
                         >
                           {isPaidOff ? "Paid Off" : loan.status}
                         </span>
-                        <span className="px-0 py-1 justify-self-end">
-                          <PencilIcon size={16} className="text-green-700" />
-                        </span>
-                      </div>
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <PencilIcon
+                            size={16}
+                            className="text-green-700 inline-block"
+                            onClick={(e) => {
+                              e.stopPropagation(); 
+                              setSelectedClientForLoan(client);
+                              loanStore.selectedLoan = loan; 
+                              setLoanModalOpen(true);
+                            }}
+                          />
+                        </td>
+                        <td className="px-3 py-2 justify-end">
+                          {isDelayed && (
+                            <AlertCircle
+                              size={16}
+                              className="text-red-600 inline-block"
+                            />
+                          )}
+                        </td>
+                      </tr>
 
                       {/* Content */}
                       {expandedLoanId === loan._id && (
