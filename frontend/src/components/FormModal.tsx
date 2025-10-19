@@ -29,7 +29,8 @@ export interface FieldConfig {
     | "select"
     | "array"
     | "section"
-    | "color";
+    | "color"
+    | "custom";
   required?: boolean;
   fullWidth?: boolean;
   options?: { label: string; value: any }[];

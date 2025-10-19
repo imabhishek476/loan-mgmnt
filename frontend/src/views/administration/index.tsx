@@ -11,7 +11,7 @@ import { userStore } from "../../store/UserStore";
 
 import SubTabs from "./components/subtab";
 import CompaniesDataTable from "./components/CompaniesTable";
-import UsersDataTable from "../administration/UserManagement";
+import UsersDataTable from "./components/UsersDataTable";
 import AuditLogsTable from "./components/AuditLogsTable";
 import CompanyForm from "../../components/CompanyForm";
 import UserForm from "../../components/UsersForm";
@@ -109,15 +109,18 @@ useEffect(() => {
     try {
       if (editingUser) {
         await userStore.updateUser(editingUser._id, data);
-      }
-      else {
+      setActiveTab("users");
+      toast.success("User updated successfully");
+    } else {
         await userStore.createUser(data);
-        toast.success(`User ${editingUser ? "updated" : "added"} successfully`);
+      // setActiveTab("users");
+      toast.success("User added successfully");
+    }
       handleUserClose();
       await userStore.fetchUsers();
-    }
-   } catch {
-      toast.error("Failed to save user");
+   } catch (err: any) {
+    console.error("Error saving user:", err);
+    toast.error(err?.response?.data?.message || "Failed to save user");
     }
   };
   const handleUserDelete = async (id: string) => {
@@ -198,12 +201,12 @@ useEffect(() => {
           </div>
         );
 
-      case "system":
-        return (
-          <div className="p-6 flex items-center gap-2">
-            <Settings /> System Config (coming soon)
-          </div>
-        );
+      // case "system":
+      //   return (
+      //     <div className="p-6 flex items-center gap-2">
+      //       <Settings /> System Config (coming soon)
+      //     </div>
+      //   );
 
       case "audit":
         return (

@@ -262,8 +262,8 @@ useEffect(() => {
                   );
                   const companyName = company?.companyName || "Unknown";
                   const companyColor = company?.backgroundColor || "#555555";
-                  const isPaidOff =
-                    (loan.paidAmount || 0) >= (loan.totalLoan || 0);
+                  // const isPaidOff =
+                  //   (loan.paidAmount || 0) >= (loan.totalLoan || 0);
                   const loanData = calculateLoanAmounts(loan);
                   if (!loanData) return null;
 
@@ -291,8 +291,19 @@ useEffect(() => {
                     ...loan,
                     loanTerms: selectedDynamicTerm,
                   })!;
-                  const isDelayed =
-                    selectedLoanData.monthsPassed > loan.loanTerms;
+                    const today = moment();                  
+                    const totalLoan =
+                      loan.interestType === "flat"
+                        ? loanData.subtotal +
+                          loanData.subtotal * (loan.monthlyRate / 100) * selectedDynamicLoanData
+                        : loanData.subtotal *
+                          Math.pow(1 + loan.monthlyRate / 100, selectedDynamicLoanData);
+                          const endDate = moment(loan.issueDate).add(loan.loanTerm, "months");
+                          const isDelayed = endDate.endOf("day").isBefore(today);
+                          const isPaidOff = paidAmount >= totalLoan;
+                  
+                  // const isDelayed =
+                  //   selectedLoanData.monthsPassed != loan.loanTerms;
                   return (
                     <div
                       key={loan._id}
@@ -308,45 +319,45 @@ useEffect(() => {
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="inline-block">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-                          <span className="text-xs font-semibold first-letter:block">
-                            Loan Amount: ${loan.subTotal?.toFixed(2)}
-                          </span>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-semibold ${
-                              isDelayed
-                                ? "bg-red-500 text-white shadow-lg"
-                                : "text-gray-700"
-                            }`}
-                          >
-                            Month: {selectedDynamicTerm}
-                          </span>
-                        </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+                              <span className="text-xs font-semibold first-letter:block">
+                                Loan Amount: ${loan.subTotal?.toFixed(2)}
+                              </span>
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-semibold ${
+                                  isDelayed
+                                    ? "bg-red-500 text-white shadow-lg"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                Month: {selectedDynamicTerm}
+                              </span>
+                            </div>
                           </div>
                         </td>
                         <td className="px-2 py-2 text-right w-2/6">
-                        <span
-                          className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
-                            loan
-                          )}`}
-                        >
-                          {isPaidOff ? "Paid Off" : loan.status}
-                        </span>
+                          <span
+                            className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
+                              loan
+                            )}`}
+                          >
+                            {isPaidOff ? "Paid Off" : loan.status}
+                          </span>
                         </td>
                         <td className="px-3 py-2 text-right">
                           <PencilIcon
                             size={16}
                             className="text-green-700 inline-block"
                             onClick={(e) => {
-                              e.stopPropagation(); 
+                              e.stopPropagation();
                               setSelectedClientForLoan(client);
-                              loanStore.selectedLoan = loan; 
+                              loanStore.selectedLoan = loan;
                               setLoanModalOpen(true);
                             }}
                           />
                         </td>
                         <td className="px-3 py-2 justify-end">
-                          {isDelayed && (
+                          {isDelayed && loan.status !== "Paid Off" && (
                             <AlertCircle
                               size={16}
                               className="text-red-600 inline-block"
@@ -424,7 +435,8 @@ useEffect(() => {
                                             >
                                               ( {selectedTerm} month
                                               {selectedTerm !== 1 && "s"})
-                                            </span>
+                                            </span> <br />
+                                            {loan.endDate}
                                             {isDelayed && (
                                               <span className="ml-2 text-xs text-red-600 font-semibold">
                                                 • Delayed
@@ -559,12 +571,6 @@ useEffect(() => {
                   ? "bg-red-600 text-white shadow-md"
                   : "bg-gray-50 text-gray-800 hover:bg-red-100"
               }`}
-                                            onClick={() =>
-                                              setCurrentTermMap((prev) => ({
-                                                ...prev,
-                                                [loan._id]: term,
-                                              }))
-                                            }
                                           >
                                             <div className="font-semibold">
                                               {term} months

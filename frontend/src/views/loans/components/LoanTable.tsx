@@ -127,16 +127,16 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                   ),
               },
               {
-                title: "Base Amount ($)",
+                title: "Loan Amount ($)",
                 width: "15%",
                 render: (rowData) =>
-                  `$${Number(rowData.baseAmount || 0).toLocaleString()}`,
+                  `$${Number(rowData.subTotal || 0).toLocaleString()}`,
               },
-              {
-                title: "Total Loan ($)",
-                render: (rowData) =>
-                  `$${Number(rowData.totalLoan || 0).toLocaleString()}`,
-              },
+              // {
+              //   title: "Total Loan ($)",
+              //   render: (rowData) =>
+              //     `$${Number(rowData.totalLoan || 0).toLocaleString()}`,
+              // },
               { title: "Term (months)", field: "loanTerms" },
               {
                 title: "Issue Date",
@@ -166,14 +166,13 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                 icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                 tooltip: "View Details",
                 //@ts-ignore
-                onClick: (event:any,rowData: any) => handleView(rowData),
+                onClick: (event: any, rowData: any) => handleView(rowData),
               },
               // {
               //   icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
               //   tooltip: "Delete",
               //   onClick: (event, rowData: any) => onDelete(rowData._id),
               // },
-
             ]}
             options={{
               paging: true,
@@ -200,7 +199,6 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               padding: "dense",
               toolbar: false,
               paginationType: "stepped",
-
             }}
           />
         ) : (
@@ -304,14 +302,15 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                     Remaining Amount
                   </p>
                   <p className="font-semibold text-red-700">
-                    $
-                    {(
-                      (selectedLoan.totalLoan || 0) -
-                      (selectedLoan.paidAmount || 0)
-                    ).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    {selectedLoan.status === "Paid Off"
+                      ? "0.00"
+                      : (
+                          (selectedLoan.totalLoan || 0) -
+                          (selectedLoan.paidAmount || 0)
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                   </p>
                 </div>
                 <div className="sm:col-span-2 mt-2">
@@ -323,9 +322,11 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                       className="h-2 rounded-full bg-green-600"
                       style={{
                         width: `${
-                          ((selectedLoan.paidAmount || 0) /
-                            (selectedLoan.totalLoan || 1)) *
-                          100
+                          selectedLoan.status === "Paid Off"
+                            ? 100
+                            : ((selectedLoan.paidAmount || 0) /
+                                (selectedLoan.totalLoan || 1)) *
+                              100
                         }%`,
                       }}
                     />
@@ -367,9 +368,9 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                   <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
                   <p
                     className={`font-semibold ${
-                      selectedLoan.status === "Fresh Loan Issued"
+                      selectedLoan.status === "Paid Off"
                         ? "text-green-700"
-                        : selectedLoan.status === "Payment Received"
+                        : selectedLoan.status === "Partial Payment"
                         ? "text-blue-700"
                         : "text-yellow-700"
                     }`}

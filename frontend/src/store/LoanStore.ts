@@ -8,6 +8,7 @@ import {
 } from "../services/LoanService";
 
 export interface Loan {
+  paidAmount: number;
   subTotal: any;
   // paidAmount: number;
   tableData: any;

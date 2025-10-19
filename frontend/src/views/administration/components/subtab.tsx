@@ -7,7 +7,7 @@ const SubTabs = ({ onTabChange }: { onTabChange: (tab: string) => void }) => {
   const tabs = [
     { key: "companies", label: "Companies", icon: <Building2 size={18} /> },
     { key: "users", label: "Users", icon: <User size={18} /> },
-    { key: "system", label: "System", icon: <Settings size={18} /> },
+    // { key: "system", label: "System", icon: <Settings size={18} /> },
     { key: "audit", label: "Audit Logs", icon: <Shield size={18} /> },
   ];
 

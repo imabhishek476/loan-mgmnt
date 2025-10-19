@@ -34,6 +34,8 @@ import { loanStore } from "../../store/LoanStore";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
 import moment from "moment";
+import { calculateLoanAmounts } from "../../utils/loanCalculations";
+import ClientViewModal from "../clients/components/ClientViewModal";
 
 const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
   <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
@@ -55,9 +57,9 @@ const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
 );
 
 const payoffOptions = [
+  { label: "Today", value: "day" },
   { label: "This Week", value: "week" },
   { label: "This Month", value: "month" },
-  { label: "This Year", value: "year" },
   { label: "All", value: "all" },
 ];
 const capitalizeFirst = (str: string) =>
@@ -79,6 +81,19 @@ const Dashboard = observer(() => {
   const [loadingGraph, setLoadingGraph] = useState(false);
 
   const stats = dashboardStore.stats;
+  const [viewClientModalOpen, setViewClientModalOpen] = useState(false);
+  const [selectedClientForView, setSelectedClientForView] = useState<any>(null);
+const handleViewClient = async (clientName: string) => {
+  try {
+    const client = clientStore.clients.find((c) => c.fullName === clientName);
+    if (!client) return;
+    const loans = loanStore.loans.filter((loan) => loan.client === client._id);
+    setSelectedClientForView({ ...client, loans });
+    setViewClientModalOpen(true);
+  } catch (error) {
+    console.error("Failed to fetch client data", error);
+  }
+};
 
   const formatCurrency = (value: number | undefined) =>
     `$${(value || 0).toLocaleString(undefined, {
@@ -130,11 +145,13 @@ const Dashboard = observer(() => {
 
   const loadUpcomingPayoffs = async () => {
     try {
-      await loanStore.fetchLoans();
-      await clientStore.fetchClients();
-      await companyStore.fetchCompany();
+      await Promise.all([
+      loanStore.fetchLoans(),
+      clientStore.fetchClients(),
+      companyStore.fetchCompany(),
+    ]);
 
-      const today = moment();
+    const today = moment();
 
       const data = loanStore.loans
         .filter((loan) => loan.status !== "Paid Off")
@@ -144,71 +161,94 @@ const Dashboard = observer(() => {
             (c) => c._id === loan.company
           );
 
-          const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
-          const endDate = loan.endDate
-            ? moment(loan.endDate, "MM-DD-YYYY")
-            : moment(issueDate).add(loan.loanTerms, "months");
+        const loanData = calculateLoanAmounts(loan);
+        if (!loanData) {
+          console.warn("Skipped loan (no loanData):", loan._id);
+          return null;
+        }
 
-          const isDelayed = endDate.isBefore(today);
+          const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+        if (!issueDate.isValid()) {
+          console.warn("Invalid issueDate:", loan._id, loan.issueDate);
+          return null;
+        }
+
+        const monthsSinceIssue = today.diff(issueDate, "months") + 1;
+        const tenureSteps: number[] = company?.loanTerms || [
+          6, 12, 18, 24, 30, 36,
+        ];
+        const currentTenure =
+          tenureSteps.find((step) => monthsSinceIssue <= step) ||
+          tenureSteps[tenureSteps.length - 1];
+
+        const loanTerm = loan.loanTerms || currentTenure;
+
+          const totalLoan =
+            loan.interestType === "flat"
+              ? loanData.subtotal +
+                loanData.subtotal * (loan.monthlyRate / 100) * currentTenure
+              : loanData.subtotal *
+                Math.pow(1 + loan.monthlyRate / 100, currentTenure);
+
+        const paidAmount = loan.paidAmount || 0;
+        const remaining = Math.max(0, totalLoan - paidAmount);
+        const endDate = moment(issueDate).add(loanTerm, "months");
+        const isDelayed = endDate.endOf("day").isBefore(today);
+        const isPaidOff = paidAmount >= totalLoan;
 
           return {
+          srNo: 0,
             id: loan._id,
             clientName: client?.fullName || "Unknown",
             companyName: company?.companyName || "Unknown",
-            subTotal: loan.subTotal,
-            loanTerms: loan.loanTerms,
+          companyObject: company,
+          subTotal: loanData.subtotal,
+          total: totalLoan,
+          paidAmount,
+          remaining,
+          loanTerms: currentTenure,
+          originalTerm: loanTerm,
             issueDate: issueDate.format("MM-DD-YYYY"),
             endDate: endDate.format("MM-DD-YYYY"),
-            status: isDelayed ? "Delayed" : "Active",
-          };
-        });
-
-      const sorted = data.sort(
+          monthsPassed: loanData.monthsPassed,
+          status: isPaidOff ? "Paid Off" : isDelayed ? "Delayed" : "Active",
+          monthlyRate: loan.monthlyRate || 0,
+          interestAmount: totalLoan - loanData.subtotal,
+        };
+      })
+      .filter(Boolean)
+      .sort(
         (a, b) =>
           moment(a.endDate, "MM-DD-YYYY").valueOf() -
           moment(b.endDate, "MM-DD-YYYY").valueOf()
-      );
+      )
+      .map((item, index) => ({ ...item, srNo: index + 1 }));
 
-      setUpcomingPayoffs(sorted);
+    console.log("Upcoming Payoffs Data:", data);
+    setUpcomingPayoffs(data);
     } catch (error) {
       console.error("Error loading upcoming payoffs", error);
     }
-  };
+};
 
-  const handleView = (rowData: any) => {
-    console.log("View loan", rowData);
-  };
   const filteredUpcomingPayoffs = upcomingPayoffs.filter((loan) => {
     const end = moment(loan.endDate, "MM-DD-YYYY").startOf("day");
     const today = moment().startOf("day");
 
     switch (payoffFilter) {
+    case "day":
+      return end.isSame(today, "day");
       case "week":
-        return end.isBetween(
-          today.clone().startOf("week"),
-          today.clone().endOf("week"),
-          "day",
-          "[]"
-        );
+        return end.isSame(today, "week");
       case "month":
-        return end.isBetween(
-          today.clone().startOf("month"),
-          today.clone().endOf("month"),
-          "day",
-          "[]"
-        );
+        return end.isSame(today, "month");
       case "year":
-        return end.isBetween(
-          today.clone().startOf("year"),
-          today.clone().endOf("year"),
-          "day",
-          "[]"
-        );
+        return end.isSame(today, "year");
       case "all":
       default:
-        return end.isSameOrAfter(today, "day");
+        return true;
     }
-  });
+});
   const filteredUpcomingPayoffsWithSrNo = filteredUpcomingPayoffs.map(
     (item, index) => ({
       ...item,
@@ -319,7 +359,6 @@ const Dashboard = observer(() => {
             value={fromDate}
             onChange={(newValue) => newValue && setFromDate(newValue)}
             maxDate={toDate || new Date()}
-            renderInput={(params) => <TextField {...params} size="small" />}
           />
           <DatePicker
             label="To Date"
@@ -327,7 +366,6 @@ const Dashboard = observer(() => {
             onChange={(newValue) => newValue && setToDate(newValue)}
             minDate={fromDate}
             maxDate={new Date()}
-            renderInput={(params) => <TextField {...params} size="small" />}
           />
           <div
             className="flex items-center gap-1 cursor-pointer text-green-700 hover:bg-green-700 hover:text-white px-2 py-1 rounded transition-colors duration-200"
@@ -382,7 +420,14 @@ const Dashboard = observer(() => {
               { title: "Sr.no", field: "srNo", width: "5%" },
               {
                 title: "Client",
-                render: (rowData) => capitalizeFirst(rowData.clientName),
+                render: (rowData) => (
+                  <span
+                    className="text-green-600 cursor-pointer hover:underline"
+                    onClick={() => handleViewClient(rowData.clientName)}
+                  >
+                    {capitalizeFirst(rowData.clientName)}
+                  </span>
+                ),
               },
               {
                 title: "Company",
@@ -391,9 +436,38 @@ const Dashboard = observer(() => {
               {
                 title: "Loan Amount ($)",
                 render: (rowData) =>
-                  `$${Number(rowData.subTotal || 0).toLocaleString()}`,
+                  `$${Number(rowData.subTotal || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`,
+                width: "13%",
               },
-              { title: "Term (months)", field: "loanTerms" },
+              {
+                title: "Remaining ($)",
+                render: (rowData) =>
+                  `$${Number(rowData.remaining || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`,
+              },
+              {
+                title: "Current Tenure (months)",
+                render: (rowData) => {
+                  const issue = moment(rowData.issueDate, "MM-DD-YYYY");
+                  const today = moment();
+                  const monthsPassed = today.diff(issue, "months") + 1;
+
+                  const company = rowData.companyObject;
+                  const tenureSteps: number[] = company?.loanTerms;
+                  const currentTenure =
+                    tenureSteps.find((step) => monthsPassed <= step) ||
+                    tenureSteps[tenureSteps.length - 1];
+
+                  return currentTenure;
+                },
+              },
+
+              { title: "Term (months)", field: "originalTerm" },
               {
                 title: "Issue Date",
                 render: (rowData) =>
@@ -411,21 +485,24 @@ const Dashboard = observer(() => {
                   const color =
                     status === "Delayed"
                       ? "text-white bg-red-600 py-1 px-2 rounded-lg"
+                      : status === "Paid off" || status === "Paid Off"
+                      ? "text-white bg-gray-600 py-1 px-2 rounded-lg"
                       : "text-white bg-green-600 py-1 px-2 rounded-lg";
                   return (
-                    <span className={`font-semibold ${color}`}>{status}</span>
+                    <div className="flex flex-col items-start">
+                      <span className={`font-semibold ${color}`}>{status}</span>
+                      {rowData.overdueMonths > 0 && (
+                        <small className="text-xs text-red-600">
+                          Overdue {rowData.overdueMonths} mo — Extra Interest: $
+                          {Number(rowData.overdueInterest || 0).toFixed(2)}
+                        </small>
+                      )}
+                    </div>
                   );
                 },
               },
             ]}
             data={filteredUpcomingPayoffsWithSrNo}
-            actions={[
-              {
-                icon: () => <Eye className="w-5 h-5 text-blue-600" />,
-                tooltip: "View Details",
-                onClick: (e, rowData) => handleView(rowData),
-              },
-            ]}
             options={{
               paging: true,
               pageSize: 10,
@@ -453,6 +530,19 @@ const Dashboard = observer(() => {
             }}
           />
       </div>
+      )}
+      {viewClientModalOpen && selectedClientForView && (
+        <ClientViewModal
+          open={viewClientModalOpen}
+          onClose={() => setViewClientModalOpen(false)}
+          client={selectedClientForView}
+          //@ts-ignore
+          loans={selectedClientForView.loans || []}
+          onEditClient={(client) => {
+            // Optional: edit logic if needed
+            setSelectedClientForView(client);
+          }}
+        />
       )}
     </div>
   );

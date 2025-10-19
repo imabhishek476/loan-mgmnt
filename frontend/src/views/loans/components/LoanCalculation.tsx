@@ -272,29 +272,14 @@ const formatDate = (date: Date) =>
           return (
             <div key={item.key} className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
                   <span className="text-sm text-white font-medium">
                     {item.label}
                   </span>
-                  {/* <label className="relative inline-flex items-center no-wrap cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isPercentage}
-                      onChange={() => handleFeeTypeToggle(item.key)}
-                      className="sr-only w-20"
-                    />
-                    <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                    <div
-                      className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform ${isPercentage ? "translate-x-5" : ""
-                        }`}
-                    ></div>
-                  </label> */}
-                </div>
-                <span className="text-md font-semibold text-white pr-16">
+                <span className="text-md font-semibold text-gray-900 px-2 rounded-md bg-white">
                   +${contribution.toFixed(2)}
                 </span>
               </div>
-              <div className="relative flex items-center gap-1">
+              <div className="relative flex items-center gap-2">
                 <input
                   type="number"
                   min="0"
@@ -303,25 +288,36 @@ const formatDate = (date: Date) =>
                   onChange={(e) =>
                     handleFeeValueChange(item.key, e.target.value)
                   }
-                  className="w-full h-8 px-3 py-2 border rounded-md bg-white text-gray-800  no-spinner"
-                  placeholder="0.00"
+                  className="w-full h-8 px-3 py-2 border rounded-md bg-white text-gray-800 no-spinner"
+                  placeholder={isPercentage ? "0.00 %" : "0.00 $"}
                 />
-                <span className="absolute right-[60px] top-1/2 transform -translate-y-1/2 text-red-400 font-semibold">
+                <span className="absolute right-[70px] top-1/2 transform -translate-y-1/2 text-red-400 font-semibold">
                   {isPercentage ? "%" : "$"}
                 </span>
-                <label className="relative inline-flex items-center no-wrap cursor-pointer">
+                <label className="relative inline-flex items-center cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={isPercentage}
                     onChange={() => handleFeeTypeToggle(item.key)}
-                    className="sr-only w-20"
+                    className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
+                  <div className="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-gray-400 transition-colors relative">
                   <div
-                    className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform ${
-                      isPercentage ? "translate-x-5" : ""
+                    className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md flex items-center justify-center transition-transform duration-300 ${
+                      isPercentage ? "translate-x-7" : ""
                     }`}
-                  ></div>
+                    >
+                      {isPercentage ? (
+                        <span className="text-sm font-bold text-gray-700">
+                          %
+                        </span>
+                      ) : (
+                        <span className="text-sm font-bold text-gray-700">
+                          $
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </label>
               </div>
             </div>

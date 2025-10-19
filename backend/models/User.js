@@ -8,7 +8,6 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: false },
     userRole: {
       type: String,
-      enum: ["admin"],
       default: "admin",
     },
   },
@@ -23,7 +22,6 @@ UserSchema.pre("save", async function (next) {
 
 UserSchema.methods.toJSON = function () {
   const obj = this.toObject();
-  delete obj.password;
   return obj;
 };
 
