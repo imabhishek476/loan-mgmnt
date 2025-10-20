@@ -344,7 +344,7 @@ useEffect(() => {
                             {isPaidOff ? "Paid Off" : loan.status}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        {/* <td className="px-3 py-2 text-right">
                           <PencilIcon
                             size={16}
                             className="text-green-700 inline-block"
@@ -355,7 +355,7 @@ useEffect(() => {
                               setLoanModalOpen(true);
                             }}
                           />
-                        </td>
+                        </td> */}
                         <td className="px-3 py-2 justify-end">
                           {isDelayed && loan.status !== "Paid Off" && (
                             <AlertCircle
