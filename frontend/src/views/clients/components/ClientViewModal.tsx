@@ -368,7 +368,7 @@ useEffect(() => {
 
                       {/* Content */}
                       {expandedLoanId === loan._id && (
-                        <div className="p-4 bg-gray-50 flex flex-col sm:flex-row gap-6">
+                        <div className="px-4 pb-1 bg-gray-50 flex flex-col sm:flex-row gap-6">
                           {/* Payment History */}
                           <div className="flex-1 border-r pr-4 space-y-3">
                             <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
@@ -385,13 +385,16 @@ useEffect(() => {
                             </h4>
 
                             {loanPayments[loan._id]?.length > 0 ? (
-                              loanPayments[loan._id].map((p) => (
+                              <div className="mt-2 max-h-48 overflow-y-auto border rounded-md">
+                                {loanPayments[loan._id].map((p) => (
                                 <div
                                   key={p._id}
-                                  className="flex justify-between items-center text-sm text-gray-700 border-b pb-1"
+                                  className="flex justify-between items-center text-sm text-gray-700 border-b pb-1 px-1"
                                 >
                                   <span className="font-medium">
-                                    {moment(p.paidDate).format("MMM DD, YYYY")}
+                                    {moment(p.paidDate).format(
+                                        "MMM DD, YYYY"
+                                      )}
                                   </span>
                                   <span className="text-right">
                                     <span>
@@ -404,7 +407,8 @@ useEffect(() => {
                                     )}
                                   </span>
                                 </div>
-                              ))
+                              ))}
+                              </div>
                             ) : (
                               <p className="text-gray-500 text-sm italic">
                                 No payments recorded yet.
@@ -420,11 +424,11 @@ useEffect(() => {
                                   return (
                                     <table className="w-full text-sm text-gray-700 border-collapse">
                                       <tbody>
-                                        <tr className="border-b">
-                                          <td className="font-semibold py-2">
+                                        <tr className="">
+                                          <td className="font-semibold py-0">
                                             Tenure:
                                           </td>
-                                          <td className="py-2">
+                                          <td className="py-0">
                                             {selectedDynamicTerm} month {""}
                                             <span
                                               className={`${
@@ -435,7 +439,8 @@ useEffect(() => {
                                             >
                                               ( {selectedTerm} month
                                               {selectedTerm !== 1 && "s"})
-                                            </span> <br />
+                                            </span>{" "}
+                                            <br />
                                             {loan.endDate}
                                             {isDelayed && (
                                               <span className="ml-2 text-xs text-red-600 font-semibold">
@@ -445,20 +450,20 @@ useEffect(() => {
                                           </td>
                                         </tr>
 
-                                        <tr className="border-b">
-                                          <td className="font-semibold py-2">
+                                        <tr className="">
+                                          <td className="font-semibold py-0">
                                             Loan Amount:
                                           </td>
-                                          <td className="py-2">
+                                          <td className="py-0">
                                             ${loan.subTotal?.toFixed(2)}
                                           </td>
                                         </tr>
 
-                                        <tr className="border-b">
-                                          <td className="font-semibold py-2">
+                                        <tr className="">
+                                          <td className="font-semibold py-0">
                                             Interest:
                                           </td>
-                                          <td className="py-2">
+                                          <td className="py-0">
                                             <span
                                               className={`${
                                                 isDelayed
@@ -478,24 +483,24 @@ useEffect(() => {
                                             per month)
                                           </td>
                                         </tr>
-                                        <tr className="border-b">
-                                          <td className="font-semibold py-2">
+                                        <tr className="">
+                                          <td className="font-semibold py-0 whitespace-nowrap">
                                             Total Loan Amount:
                                           </td>
-                                          <td className="py-2">
+                                          <td className="py-0">
                                             {selectedLoanData.total.toFixed(2)}
                                           </td>
                                         </tr>
                                         <tr>
-                                          <td className="font-semibold py-2">
+                                          <td className="font-semibold py-0">
                                             Paid Amount:
                                           </td>
-                                          <td className="py-2 flex items-center gap-2">
+                                          <td className="py-0 flex items-center gap-2">
                                             $
                                             {selectedLoanData.paidAmount.toFixed(
                                               2
                                             )}
-                                            <span className="text-xs text-red-600 rounded-full">
+                                            <span className="text-xs text-red-600 rounded-full whitespace-nowrap">
                                               Outstanding:{" "}
                                               <strong>
                                                 $
@@ -510,18 +515,18 @@ useEffect(() => {
                                                 onClick={() =>
                                                   setPaymentLoan(loan)
                                                 }
-                                                className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
+                                                className="p-1 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
                                               >
                                                 <Plus className="w-4 h-4" />
                                               </button>
                                             )}
                                           </td>
                                         </tr>
-                                        <tr className="border-b">
-                                          <td className="font-semibold py-2">
+                                        <tr className="">
+                                          <td className="font-semibold py-0">
                                             Loan Terms:
                                           </td>
-                                          <td className="py-2">
+                                          <td className="py-0">
                                             {companyLoanTerms(loan).length >
                                               1 && (
                                               <button
@@ -531,7 +536,7 @@ useEffect(() => {
                                                 className="text-xs text-blue-600 hover:underline"
                                               >
                                                 {showAllTermsMap[loan._id]
-                                                  ? "Show Less"
+                                                  ? "Less..."
                                                   : "More..."}
                                               </button>
                                             )}
@@ -542,8 +547,10 @@ useEffect(() => {
                                   );
                                 })()}
                                 <div
-                                  className={`mt-3 overflow-y-auto transition-all duration-300 ${
+                                  className={`mt-0 overflow-y-auto transition-all duration-300 ${
                                     showAllTermsMap[loan._id]
+                                      ? "max-h-20"
+                                      : "max-h-[20px]"
                                   }`}
                                 >
                                   <ul className="space-y-2 ">
@@ -565,12 +572,12 @@ useEffect(() => {
                                         return (
                                           <li
                                             key={term}
-                                            className={`flex justify-between items-center  rounded-lg cursor-pointer transition py-1 px-1
-              ${
-                isSelected
-                  ? "bg-red-600 text-white shadow-md"
-                  : "bg-gray-50 text-gray-800 hover:bg-red-100"
-              }`}
+                                            className={`flex justify-between items-center  rounded-lg cursor-pointer transition py-0 px-1
+                                              ${
+                                                isSelected
+                                                  ? "bg-red-600 text-white shadow-md"
+                                                  : "bg-gray-50 text-gray-800 "
+                                              }`}
                                           >
                                             <div className="font-semibold">
                                               {term} months

@@ -36,6 +36,8 @@ import { companyStore } from "../../store/CompanyStore";
 import moment from "moment";
 import { calculateLoanAmounts } from "../../utils/loanCalculations";
 import ClientViewModal from "../clients/components/ClientViewModal";
+import { toast } from "react-toastify";
+import FormModal from "../../components/FormModal";
 
 const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
   <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
@@ -83,6 +85,9 @@ const Dashboard = observer(() => {
   const stats = dashboardStore.stats;
   const [viewClientModalOpen, setViewClientModalOpen] = useState(false);
   const [selectedClientForView, setSelectedClientForView] = useState<any>(null);
+  const [editClientModalOpen, setEditClientModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  const [viewClient, setViewClient] = useState(null);
 const handleViewClient = async (clientName: string) => {
   try {
     const client = clientStore.clients.find((c) => c.fullName === clientName);
@@ -230,6 +235,34 @@ const handleViewClient = async (clientName: string) => {
       console.error("Error loading upcoming payoffs", error);
     }
 };
+const handleClientUpdate = async (id: string, data: any) => {
+  try {
+    if (editingClient) {
+      await clientStore.updateClient(editingClient._id, data);
+      await clientStore.fetchClients();
+      const refreshedClient = clientStore.clients.find(
+        (c) => c._id === editingClient._id
+      );
+      if (refreshedClient) {
+        toast.success("Client updated successfully");
+        setSelectedClientForView((prev: any) => ({
+          ...refreshedClient,
+          loans: prev?.loans || [],
+        }));
+        setViewClient(refreshedClient);
+      }
+      setEditingClient(null);
+      setEditClientModalOpen(false);
+    } else {
+      await clientStore.createClient(data);
+      await clientStore.fetchClients();
+      toast.success("New client added successfully");
+    }
+  } catch (error: any) {
+    toast.error(error.response?.data?.error || "Failed to save client ❌");
+  }
+};
+
 
   const filteredUpcomingPayoffs = upcomingPayoffs.filter((loan) => {
     const end = moment(loan.endDate, "MM-DD-YYYY").startOf("day");
@@ -301,12 +334,12 @@ const handleViewClient = async (clientName: string) => {
       </ResponsiveContainer>
     );
   };
-
+  useEffect(() => {
+    clientStore.fetchClients();
+  }, []);
   return (
     <div className="space-y-5 text-left relative">
       <h1 className="text-2xl font-bold text-gray-800 mb-0">Dashboard</h1>
-
-      {/* Stat Cards */}
       <div className="flex gap-2 flex-wrap">
         <StatCard
           title="Total Customers"
@@ -346,7 +379,7 @@ const handleViewClient = async (clientName: string) => {
           exclusive
           onChange={(e, newMode) => newMode && setViewMode(newMode)}
         >
-          <ToggleButton value="graph">Graph View</ToggleButton>
+          <ToggleButton value="graph">Companies Performalce</ToggleButton>
           <ToggleButton value="upcoming">Upcoming Payoff</ToggleButton>
         </ToggleButtonGroup>
       </div>
@@ -417,7 +450,11 @@ const handleViewClient = async (clientName: string) => {
           <MaterialTable
             title={null}
             columns={[
-              { title: "Sr.no", field: "srNo", width: "5%" },
+              { title: "Sr.no",
+                field: "srNo",
+                width: "2%",
+                cellStyle: { whiteSpace: "nowrap" },
+              },
               {
                 title: "Client",
                 render: (rowData) => (
@@ -428,10 +465,12 @@ const handleViewClient = async (clientName: string) => {
                     {capitalizeFirst(rowData.clientName)}
                   </span>
                 ),
+                cellStyle: { whiteSpace: "normal", wordBreak: "break-word" },
               },
               {
                 title: "Company",
                 render: (rowData) => capitalizeFirst(rowData.companyName),
+                cellStyle: { whiteSpace: "normal", wordBreak: "break-word" },
               },
               {
                 title: "Loan Amount ($)",
@@ -440,43 +479,54 @@ const handleViewClient = async (clientName: string) => {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}`,
-                width: "13%",
+                width: "20%",
+                cellStyle: { whiteSpace: "nowrap" },
               },
               {
                 title: "Remaining ($)",
+                width: "13%",
                 render: (rowData) =>
                   `$${Number(rowData.remaining || 0).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}`,
+                cellStyle: { whiteSpace: "nowrap" },
               },
               {
                 title: "Current Tenure (months)",
+                width: "25%",
                 render: (rowData) => {
                   const issue = moment(rowData.issueDate, "MM-DD-YYYY");
                   const today = moment();
                   const monthsPassed = today.diff(issue, "months") + 1;
-
                   const company = rowData.companyObject;
-                  const tenureSteps: number[] = company?.loanTerms;
+                  const tenureSteps = company?.loanTerms;
                   const currentTenure =
                     tenureSteps.find((step) => monthsPassed <= step) ||
                     tenureSteps[tenureSteps.length - 1];
-
                   return currentTenure;
                 },
+                cellStyle: { whiteSpace: "nowrap" },
               },
-
-              { title: "Term (months)", field: "originalTerm" },
+              {
+                title: "Term (months)",
+                field: "originalTerm",
+                width: "20%",
+                cellStyle: { whiteSpace: "nowrap" },
+              },
               {
                 title: "Issue Date",
+                width: "15%",
                 render: (rowData) =>
                   moment(rowData.issueDate, "MM-DD-YYYY").format("DD MMM YYYY"),
+                cellStyle: { whiteSpace: "nowrap" },
               },
               {
                 title: "End Date",
+                width: "15%",
                 render: (rowData) =>
                   moment(rowData.endDate, "MM-DD-YYYY").format("DD MMM YYYY"),
+                cellStyle: { whiteSpace: "nowrap" },
               },
               {
                 title: "Status",
@@ -500,6 +550,7 @@ const handleViewClient = async (clientName: string) => {
                     </div>
                   );
                 },
+                cellStyle: { whiteSpace: "normal", wordBreak: "break-word" },
               },
             ]}
             data={filteredUpcomingPayoffsWithSrNo}
@@ -518,6 +569,7 @@ const handleViewClient = async (clientName: string) => {
                 height: 36,
                 padding: "6px 8px",
                 borderBottom: "1px solid #e5e7eb",
+                whiteSpace: "nowrap",
               },
               rowStyle: {
                 fontSize: "13px",
@@ -536,12 +588,39 @@ const handleViewClient = async (clientName: string) => {
           open={viewClientModalOpen}
           onClose={() => setViewClientModalOpen(false)}
           client={selectedClientForView}
-          //@ts-ignore
-          loans={selectedClientForView.loans || []}
           onEditClient={(client) => {
-            // Optional: edit logic if needed
-            setSelectedClientForView(client);
+            setEditingClient(client);
+            setEditClientModalOpen(true); 
           }}
+        />
+      )}
+      {editClientModalOpen && editingClient && (
+        <FormModal
+          open={editClientModalOpen}
+          onClose={() => {
+            setEditClientModalOpen(false);
+            setEditingClient(null);
+          }}
+          title="Edit Client"
+          fields={[
+            {
+              label: "Full Name",
+              key: "fullName",
+              type: "text",
+              required: true,
+            },
+            { label: "Email", key: "email", type: "email" },
+            { label: "Phone", key: "phone", type: "text" },
+            { label: "SSN", key: "ssn", type: "text" },
+            { label: "Date of Birth", key: "dob", type: "date" },
+            { label: "Accident Date", key: "accidentDate", type: "date" },
+            { label: "Attorney Name", key: "attorneyName", type: "text" },
+            { label: "Memo", key: "memo", type: "textarea" },
+            { label: "Address", key: "address", type: "textarea" },
+          ]}
+          initialData={editingClient}
+          submitButtonText="Update Client"
+          onSubmit={async (data) => handleClientUpdate(editingClient._id, data)}
         />
       )}
     </div>

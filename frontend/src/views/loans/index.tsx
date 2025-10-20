@@ -200,6 +200,7 @@ const selectedPreviousLoanTotal =
 
 
     const handleSave = async (data: any) => {
+      try {
         if (saving) return;
         setSaving(true);
       const payload = {
@@ -216,8 +217,6 @@ const selectedPreviousLoanTotal =
         previousLoanAmount,
         status: "Active",
       };
-
-      try {
         if (!editingLoan) {
           await loanStore.createLoan(payload);
           const selectedIds =
