@@ -258,7 +258,7 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                   </p>
                   <p className="font-semibold text-green-700">
                     $
-                    {Number(selectedLoan.baseAmount || 0).toLocaleString(
+                    {Number(selectedLoan.subTotal || 0).toLocaleString(
                       undefined,
                       {
                         minimumFractionDigits: 2,

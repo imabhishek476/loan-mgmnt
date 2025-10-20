@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { Plus, Save, Wallet, RefreshCw, X } from "lucide-react";
+import { Plus, Save, Wallet, RefreshCw, X, Eye } from "lucide-react";
 import LoanCalculation from "./components/LoanCalculation";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
@@ -22,6 +22,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Checkbox,
+  IconButton,
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
 
@@ -515,14 +517,7 @@ const selectedPreviousLoanTotal =
                               return (
                                 <div
                                   key={loan._id}
-                                  onClick={() => {
-                                    setSelectedLoanIds((prev) =>
-                                      isSelected
-                                        ? prev.filter((id) => id !== loan._id)
-                                        : [...prev, loan._id]
-                                    );
-                                  }}
-                                  className={`flex justify-between items-center p-3 border rounded-lg shadow-sm cursor-pointer transition
+                                  className={`flex justify-between items-center p-3 border rounded-lg shadow-sm transition
                                 ${
                                   isSelected
                                     ? "bg-green-100 border-green-400"
@@ -531,26 +526,37 @@ const selectedPreviousLoanTotal =
                                     : "bg-white hover:bg-gray-50"
                                 }`}
                                 >
-                                  {/* Left Side */}
+                                  <div className="flex items-start gap-2 flex-1">
+                                    <Checkbox
+                                      size="small"
+                                      checked={isSelected}
+                                      onChange={(e) => {
+                                        setSelectedLoanIds((prev) =>
+                                          e.target.checked
+                                            ? [...prev, loan._id]
+                                            : prev.filter(
+                                                (id) => id !== loan._id
+                                              )
+                                        );
+                                      }}
+                                      sx={{ padding: 0, marginRight: 1 }}
+                                    />
                                   <div className="flex flex-col gap-1 text-xs sm:text-sm">
-                                    <span className="font-semibold text-white px-2 py-1 rounded-md bg-green-600 w-fit">
+                                    <span className="font-semibold text-white px-2 py-1 rounded-md bg-green-600 w-fit ">
                                       Issue Date:{" "}
                                       {moment(loan.issueDate).format(
                                         "MMM DD, YYYY"
                                       )}
                                     </span>
                                     <span>
-                                      Original Term:{" "}
+                                        {/* Original Term:{" "}
                                       <b>{loan.loanTerms} Months</b>
-                                      <br />
-                                      Current Term: <b>{currentTerm} Months</b>
-                                      <br />
-                                      Months Passed: <b>{monthsPassed}</b>
+                                      <br /> */}
+                                       Terms:{" "}
+                                       <b>{currentTerm} Months</b>
+                                      {/* <br />
+                                      Months Passed: <b>{monthsPassed}</b> */}
                                     </span>
-                                  </div>
-
-                                  {/* Right Side */}
-                                  <div className="flex flex-col text-right text-xs sm:text-sm">
                                     <span className="text-green-700 font-bold">
                                       Total: $
                                       {totalLoan.toLocaleString(undefined, {
@@ -568,6 +574,19 @@ const selectedPreviousLoanTotal =
                                         }
                                       )}
                                     </span>
+                                  </div>
+                                </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex flex-col text-right text-xs sm:text-sm"></div>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleView(loan);
+                                      }}
+                                    >
+                                      <Eye size={18} />
+                                    </IconButton>
                                   </div>
                                 </div>
                               );
@@ -690,16 +709,13 @@ const selectedPreviousLoanTotal =
                 <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
                   {/* Client Info */}
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Client
-                    </p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
                     <p className="font-medium">
                       {clientStore.clients.find(
                         (c) => c._id === selectedLoan.client
                       )?.fullName || "-"}
                     </p>
                   </div>
-
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Company
@@ -710,14 +726,13 @@ const selectedPreviousLoanTotal =
                       )?.companyName || "-"}
                     </p>
                   </div>
-                  {/* Base & Total Loan */}
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Base Amount
                     </p>
                     <p className="font-semibold text-green-700">
                       $
-                      {Number(selectedLoan.baseAmount || 0).toLocaleString(
+                      {Number(selectedLoan.subTotal || 0).toLocaleString(
                         undefined,
                         {
                           minimumFractionDigits: 2,
@@ -726,7 +741,6 @@ const selectedPreviousLoanTotal =
                       )}
                     </p>
                   </div>
-
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Total Loan
@@ -762,8 +776,9 @@ const selectedPreviousLoanTotal =
                       Remaining Amount
                     </p>
                     <p className="font-semibold text-red-700">
-                      $
-                      {(
+                      {selectedLoan.status === "Paid Off"
+                               ? "0.00"
+                               : (
                         (selectedLoan.totalLoan || 0) -
                         (selectedLoan.paidAmount || 0)
                       ).toLocaleString(undefined, {
@@ -781,7 +796,9 @@ const selectedPreviousLoanTotal =
                         className="h-2 rounded-full bg-green-600"
                         style={{
                           width: `${
-                            ((selectedLoan.paidAmount || 0) /
+                                   selectedLoan.status === "Paid Off"
+                                     ? 100
+                                     : ((selectedLoan.paidAmount || 0) /
                               (selectedLoan.totalLoan || 1)) *
                             100
                           }%`,
@@ -797,23 +814,18 @@ const selectedPreviousLoanTotal =
                       {selectedLoan.interestType || "N/A"}
                     </p>
                   </div>
-
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Monthly Rate
                     </p>
                     <p className="font-medium">{selectedLoan.monthlyRate}%</p>
                   </div>
-
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Loan Term
                     </p>
-                    <p className="font-medium">
-                      {selectedLoan.loanTerms} months
-                    </p>
+                    <p className="font-medium">{selectedLoan.loanTerms} months</p>
                   </div>
-
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Issue Date
@@ -822,16 +834,13 @@ const selectedPreviousLoanTotal =
                       {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
                     </p>
                   </div>
-
                   <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Status
-                    </p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
                     <p
                       className={`font-semibold ${
-                        selectedLoan.status === "Fresh Loan Issued"
+                        selectedLoan.status === "Paid Off"
                           ? "text-green-700"
-                          : selectedLoan.status === "Payment Received"
+                          : selectedLoan.status === "Partial Payment"
                           ? "text-blue-700"
                           : "text-yellow-700"
                       }`}
@@ -847,7 +856,7 @@ const selectedPreviousLoanTotal =
                 onClick={handleClose}
                 variant="contained"
                 color="success"
-                className="rounded-lg shadow-sm px-5 font-bold"
+                className="px-4 py-2 font-bold bg-green-400 text-white rounded-lg hover:bg-green-700 transition"
               >
                 Close
               </Button>

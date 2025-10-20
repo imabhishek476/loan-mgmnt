@@ -347,7 +347,7 @@ const formatDate = (date: Date) =>
         )}
       </div>
       {/* Loan Term Slider */}
-      <div className="mt-2 relative  max-w-full ">
+      <div className="mt-2 relative max-w-full">
         <label className="text-sm font-semibold text-white mb-2 block px-2">
           Select Loan Term (<span className="font-bold">{loanTerm}</span>{" "}
           Months)
@@ -358,7 +358,7 @@ const formatDate = (date: Date) =>
             <span
               key={term}
               className={`text-sm font-semibold ${
-                term === loanTerm ? "text-white" : "text-white"
+                term <= loanTerm ? "text-yellow-300 font-bold" : "text-white"
               }`}
             >
               {term}
@@ -397,7 +397,7 @@ const formatDate = (date: Date) =>
                   currentRate,
                   term
                 );
-                const isSelected = term === loanTerm;
+                const isSelected = term <= loanTerm;
 
                 return (
                   <div
