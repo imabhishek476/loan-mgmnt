@@ -5,19 +5,16 @@ import api from "../api/axios";
 export interface Company {
   _id?: string;
   companyName: string;
-  // companyCode: string;
   description?: string;
   phone?: string;
   email?: string;
   website?: string;
   activeCompany: boolean;
   address?: string;
-
   interestRate?: {
     monthlyRate: number;
     interestType: "flat" | "compound";
   };
-
   fees?: {
     administrativeFee?: { value: number; type: "flat" | "percentage" };
     applicationFee?: { value: number; type: "flat" | "percentage" };
@@ -25,17 +22,8 @@ export interface Company {
     brokerFee?: { value: number; type: "flat" | "percentage" };
     annualMaintenanceFee?: { value: number; type: "flat" | "percentage" };
   };
-
   backgroundColor?: string;
   loanTerms?: number[];
-
-  freshLoanRules?: {
-    enabled: boolean;
-    minMonthsBetweenLoans?: number;
-    allowOverlappingLoans?: boolean;
-    requireFullPayoff?: boolean;
-  };
-
   payoffSettings?: {
     allowEarlyPayoff?: boolean;
     earlyPayoffPenalty?: number;
@@ -51,6 +39,7 @@ class CompanyStore {
   companies: Company[] = [];
   filteredCompanies: Company[] = [];
   loading = false;
+  activeCompany: Company | null = null;
   // isCompanyFetched = false;
   // isFetching = false; 
   constructor() {

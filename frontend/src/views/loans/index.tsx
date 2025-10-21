@@ -12,7 +12,10 @@ import LoanTable from "./components/LoanTable";
 import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { calculateLoanAmounts,calculateDynamicTermAndPayment } from "../../utils/loanCalculations"; 
+import {
+ calculateLoanAmounts,
+calculateDynamicTermAndPayment,
+} from "../../utils/loanCalculations";
 import {
   Button,
   Switch,
@@ -106,30 +109,27 @@ const Loans = observer(
       }
     };
 
-   
+    useEffect(() => {
+      if (defaultClient && companyStore.companies?.length) {
+        setFormData((prev) => ({ ...prev, client: defaultClient._id }));
 
-useEffect(() => {
-  if (defaultClient && companyStore.companies?.length) {
-   
-    setFormData((prev) => ({ ...prev, client: defaultClient._id }));
+        const defaultCompany = companyStore.companies.find(
+          (c) => c.activeCompany && c.companyName === "Claim Advance"
+        );
 
-    const defaultCompany = companyStore.companies.find(
-      (c) => c.activeCompany && c.companyName === "Claim Advance"
-    );
+        if (defaultCompany) {
+          handleCompanyChange(defaultCompany._id);
+        }
 
-    if (defaultCompany) {
-      handleCompanyChange(defaultCompany._id);
-    }
-
-    setModalOpen(true);
-  }
-}, [defaultClient]);
+        setModalOpen(true);
+      }
+    }, [defaultClient]);
 
     const handleCompanyChange = (companyId: string) => {
       // setSelectedCompany(companyId);
       const company = companyStore.companies?.find(
-         (c) => c._id === companyId && c.activeCompany // ensure active
-       );
+        (c) => c._id === companyId && c.activeCompany // ensure active
+      );
 
       const terms = company?.loanTerms?.length ? company.loanTerms : [12];
       setLoanTermsOptions(
@@ -167,7 +167,8 @@ useEffect(() => {
             (loan) =>
               loan?.client === formData.client &&
               loan?.company === formData.company &&
-              loan?.status !== "Paid Off"
+              loan?.status !== "Paid Off" &&
+              loan?.status !== "Merged"
           ) || [];
         setActiveLoans(loans);
         setSelectedLoanIds([]);
@@ -188,16 +189,40 @@ useEffect(() => {
       setOverlapMode(false);
       setEditingLoan(null);
     };
-const selectedPreviousLoanTotal =
-  activeLoans
-    ?.filter((loan) => selectedLoanIds.includes(loan?._id))
-    ?.reduce((sum, loan) => {
-      const loanCalc = calculateLoanAmounts(loan);
-      if (!loanCalc) return sum;
-      return sum + loanCalc.remaining; 
-    }, 0) || 0;
+    const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
+    const getLoanRunningDetails = (loan: any) => {
+      const { monthsPassed } = calculateDynamicTermAndPayment(loan);
+      const runningTenure =
+        ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
 
+      const loanCalc = calculateLoanAmounts({
+        ...loan,
+        loanTerms: runningTenure,
+      });
 
+      return {
+        monthsPassed,
+        runningTenure,
+        total: loanCalc?.total || 0,
+        remaining: loanCalc?.remaining || 0,
+      };
+    };
+    const selectedPreviousLoanTotal =
+      activeLoans
+        ?.filter((loan) => selectedLoanIds.includes(loan?._id))
+        ?.reduce(
+          (sum, loan) => sum + getLoanRunningDetails(loan).remaining,
+          0
+        ) || 0;
+useEffect(() => {
+  const total =
+    activeLoans
+      ?.filter((loan) => selectedLoanIds.includes(loan._id))
+      ?.reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining, 0) ||
+    0;
+
+  setPreviousLoanAmount(total);
+}, [selectedLoanIds, activeLoans]);
 
     const handleSave = async (data: any) => {
       try {
@@ -205,7 +230,7 @@ const selectedPreviousLoanTotal =
         setSaving(true);
       const payload = {
         ...data,
-        baseAmount: formData.baseAmount,
+        baseAmount: formData.baseAmount + previousLoanAmount,
         checkNumber: formData.checkNumber || null,
         fees: formData.fees,
         interestType: formData.interestType,
@@ -225,7 +250,7 @@ const selectedPreviousLoanTotal =
               ?.map((loan) => loan._id) || [];
 
           for (const id of selectedIds) {
-            await loanStore.updateLoan(id, { status: "Paid Off" });
+            await loanStore.updateLoan(id, { status: "Merged" });
           }
             loadInitialData();
 
@@ -287,7 +312,6 @@ const selectedPreviousLoanTotal =
       { label: "Issue Date", key: "issueDate", type: "date", required: true },
       { label: "Check Number", key: "checkNumber", type: "number" },
     ];
-
 
     return (
       <div className="flex flex-col bg-white rounded-lg text-left">
@@ -479,8 +503,8 @@ const selectedPreviousLoanTotal =
                       );
                     })}
                     {/* 🆕 Overlap Mode */}
-                    {formData?.company && (
-                      <div className="mt-4 p-2 bg-green-50 border-l-4 border-yellow-500 rounded">
+                    {formData?.company && activeLoans.length > 0 && (
+                      <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
                         <div className="flex gap-3 mb-3 items-center">
                           <Switch
                             checked={overlapMode}
@@ -497,107 +521,79 @@ const selectedPreviousLoanTotal =
                           </label>
                         </div>
 
-                        {overlapMode && activeLoans.length > 0 ? (
-                          <div className="max-h-40 overflow-y-auto space-y-1">
-                            {activeLoans.map((loan) => {
-                              //@ts-ignore
-                              const { monthsPassed, dynamicTerm } =
-                                calculateDynamicTermAndPayment(loan);
-                              const {
-                                total: totalLoan,
-                                remaining: outstandingAmt,
-                                currentTerm,
-                              } = calculateLoanAmounts(loan);
+                        {overlapMode &&
+                          activeLoans.map((loan) => {
+                            const {
+                              runningTenure,
+                              total,
+                              remaining,
+                            } = getLoanRunningDetails(loan);
 
-                              const isSelected = selectedLoanIds.includes(
-                                loan._id
-                              );
+                            const isSelected = selectedLoanIds.includes(
+                              loan._id
+                            );
 
-                              return (
-                                <div
-                                  key={loan._id}
-                                  className={`flex justify-between items-center p-3 border rounded-lg shadow-sm transition
-                                ${
-                                  isSelected
-                                    ? "bg-green-100 border-green-400"
-                                    : monthsPassed >= 6
-                                    ? "bg-yellow-50 border-yellow-400"
-                                    : "bg-white hover:bg-gray-50"
-                                }`}
-                                >
-                                  <div className="flex items-start gap-2 flex-1">
-                                    <Checkbox
-                                      size="small"
-                                      checked={isSelected}
-                                      onChange={(e) => {
-                                        setSelectedLoanIds((prev) =>
-                                          e.target.checked
-                                            ? [...prev, loan._id]
-                                            : prev.filter(
-                                                (id) => id !== loan._id
-                                              )
-                                        );
-                                      }}
-                                      sx={{ padding: 0, marginRight: 1 }}
-                                    />
-                                  <div className="flex flex-col gap-1 text-xs sm:text-sm">
-                                    <span className="font-semibold text-white px-2 py-1 rounded-md bg-green-600 w-fit ">
+                            return (
+                              <div
+                                key={loan._id}
+                                onClick={() =>
+                                  setSelectedLoanIds((prev) =>
+                                    isSelected
+                                      ? prev.filter((id) => id !== loan._id)
+                                      : [...prev, loan._id]
+                                  )
+                                }
+                                className={`flex justify-between items-center p-3 border rounded-lg shadow-sm cursor-pointer transition
+    ${
+      isSelected ? "bg-green-100 border-green-400" : "bg-white hover:bg-gray-50"
+    }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-col text-xs sm:text-sm">
+                                    <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
                                       Issue Date:{" "}
                                       {moment(loan.issueDate).format(
                                         "MMM DD, YYYY"
                                       )}
                                     </span>
-                                    <span>
-                                        {/* Original Term:{" "}
-                                      <b>{loan.loanTerms} Months</b>
-                                      <br /> */}
-                                       Terms:{" "}
-                                       <b>{currentTerm} Months</b>
-                                      {/* <br />
-                                      Months Passed: <b>{monthsPassed}</b> */}
+                                    <span className="font-semibold">
+                                      Current Tenure:{" "}
+                                      <b>{runningTenure} Months</b>
                                     </span>
-                                    <span className="text-green-700 font-bold">
+                                    <span className="text-green-700 font-bold ">
                                       Total: $
-                                      {totalLoan.toLocaleString(undefined, {
+                                      {total.toLocaleString(undefined, {
                                         minimumFractionDigits: 2,
                                         maximumFractionDigits: 2,
-                                      })}
-                                    </span>
-                                    <span className="text-red-600 font-bold">
-                                      Remaining: $
-                                      {outstandingAmt.toLocaleString(
-                                        undefined,
-                                        {
+                                      })}{" "}
+                                      ({" "}
+                                      <span className="text-red-600 font-bold">
+                                        Remaining: $
+                                        {remaining.toLocaleString(undefined, {
                                           minimumFractionDigits: 2,
                                           maximumFractionDigits: 2,
-                                        }
-                                      )}
+                                        })}
+                                      </span>
+                                      )
                                     </span>
                                   </div>
                                 </div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex flex-col text-right text-xs sm:text-sm"></div>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleView(loan);
-                                      }}
-                                    >
-                                      <Eye size={18} />
-                                    </IconButton>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          overlapMode && (
-                            <p className="text-sm text-gray-500 px-2 italic">
-                              No active previous loans found for this client.
-                            </p>
-                          )
-                        )}
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() =>
+                                    setSelectedLoanIds((prev) =>
+                                      isSelected
+                                        ? prev.filter((id) => id !== loan._id)
+                                        : [...prev, loan._id]
+                                    )
+                                  }
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 m-2 accent-green-600 cursor-pointer"
+                                />
+                              </div>
+                            );
+                          })}
                       </div>
                     )}
                   </div>
@@ -708,7 +704,9 @@ const selectedPreviousLoanTotal =
                 <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
                   {/* Client Info */}
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Client
+                    </p>
                     <p className="font-medium">
                       {clientStore.clients.find(
                         (c) => c._id === selectedLoan.client
@@ -823,7 +821,9 @@ const selectedPreviousLoanTotal =
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Loan Term
                     </p>
-                    <p className="font-medium">{selectedLoan.loanTerms} months</p>
+                    <p className="font-medium">
+                      {selectedLoan.loanTerms} months
+                    </p>
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
@@ -834,7 +834,9 @@ const selectedPreviousLoanTotal =
                     </p>
                   </div>
                   <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
-                    <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Status
+                    </p>
                     <p
                       className={`font-semibold ${
                         selectedLoan.status === "Paid Off"

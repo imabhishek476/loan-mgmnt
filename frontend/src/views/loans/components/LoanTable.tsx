@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Eye, Wallet } from "lucide-react";
+import { Search, Eye, Wallet, Trash2 } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -16,6 +16,7 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import { toast } from "react-toastify";
 
 interface LoanTableProps {
   onDelete: (id: string) => void;
@@ -74,6 +75,24 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
   useEffect(() => {
     if (clientId) clientStore.fetchClientLoans(clientId);
   }, [clientId]);
+  const handleDelete = async (id: string) => {
+       if (!window.confirm("Are you sure you want to delete this loan?")) return;
+       try {
+         await loanStore.deleteLoan(id);
+         toast.success("Loan deleted successfully");
+       } catch {
+         toast.error("Failed to delete loan");
+       }
+     };
+  const handleRecover = async (loan: any) => {
+  try {
+    await loanStore.recoverLoan(loan._id);
+    toast.success(`Loan for ${loan.client?.fullName || "client"} recovered!`);
+  } catch (err) {
+    toast.error("Failed to recover loan");
+  }
+};
+
 
   return (
     <div>
@@ -162,17 +181,25 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
             ]}
             data={filteredLoans}
             actions={[
-              {
+              (rowData: any) => ({
                 icon: () => <Eye className="w-5 h-5 text-blue-600" />,
-                tooltip: "View Details",
-                //@ts-ignore
-                onClick: (event: any, rowData: any) => handleView(rowData),
-              },
-              // {
-              //   icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
-              //   tooltip: "Delete",
-              //   onClick: (event, rowData: any) => onDelete(rowData._id),
-              // },
+                tooltip: "View Loan",
+                hidden: false,
+                onClick: (event, row) => handleView(row),
+              }),
+              (rowData: any) => ({
+                icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
+                tooltip: "Deactivate Loan",
+                hidden: rowData.status !== "Active",
+                onClick: (event, row) => handleDelete(row._id),
+              }),
+              (rowData: any) => ({
+                icon: () => <Wallet className="w-5 h-5 text-green-600" />,
+                tooltip: "Recover Loan",
+                hidden:
+                  rowData.status === "Active" || rowData.status === "Merged",
+                onClick: (event, row) => handleRecover(row),
+              }),
             ]}
             options={{
               paging: true,
@@ -302,7 +329,8 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                     Remaining Amount
                   </p>
                   <p className="font-semibold text-red-700">
-                    {selectedLoan.status === "Paid Off"
+                    {selectedLoan.status === "Paid Off" ||
+                    selectedLoan.status === "Merged"
                       ? "0.00"
                       : (
                           (selectedLoan.totalLoan || 0) -

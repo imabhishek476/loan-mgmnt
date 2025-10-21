@@ -259,7 +259,7 @@ const formatDate = (date: Date) =>
         </div>
       </div>
       {/* Fees */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mb-0 px-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 mb-0 px-2">
         {feeItems.map((item) => {
           const fee = fees[item.key];
           if (!fee) return null;
@@ -270,16 +270,16 @@ const formatDate = (date: Date) =>
             : fee.value;
 
           return (
-            <div key={item.key} className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                  <span className="text-sm text-white font-medium">
-                    {item.label}
-                  </span>
-                <span className="text-md font-semibold text-gray-900 px-2 rounded-md bg-white">
+            <div key={item.key} className="flex flex-col gap-2 ">
+              <div className="flex items-center justify-between w-2/2">
+                <span className="text-sm text-white font-medium whitespace-nowrap">
+                  {item.label}
+                </span>
+                <span className="text-md font-semibold text-green-700 bg-white  px-1 py-0 rounded-md shadow-md">
                   +${contribution.toFixed(2)}
                 </span>
               </div>
-              <div className="relative flex items-center gap-2">
+              <div className="relative flex items-center  gap-2 w-2/2">
                 <input
                   type="number"
                   min="0"
@@ -288,7 +288,7 @@ const formatDate = (date: Date) =>
                   onChange={(e) =>
                     handleFeeValueChange(item.key, e.target.value)
                   }
-                  className="w-full h-8 px-3 py-2 border rounded-md bg-white text-gray-800 no-spinner"
+                  className=" w-full h-8 px-3 py-2 border rounded-md bg-white text-gray-800 no-spinner"
                   placeholder={isPercentage ? "0.00 %" : "0.00 $"}
                 />
                 <span className="absolute right-[70px] top-1/2 transform -translate-y-1/2 text-red-400 font-semibold">
@@ -329,22 +329,18 @@ const formatDate = (date: Date) =>
           {/* <span>Total (Base + Fees):</span>
           <span>${subtotal.toFixed(2)}</span> */}
         </div>
-        <div className="flex justify-between">
-          <span> Total Loan Amount:</span>
-          <span>
-            $
-            {(
-              totalWithInterest + (includePreviousLoans ? previousLoanTotal : 0)
-            ).toFixed(2)}
-          </span>
-        </div>
-
         {includePreviousLoans && previousLoanTotal > 0 && (
           <div className="flex justify-between text-yellow-300">
             <span>Previous Loan Amount Carry Forward:</span>
             <span>${previousLoanTotal.toFixed(2)}</span>
           </div>
         )}
+        <div className="flex   justify-between ">
+          <span>Loan Amount :</span>
+          <span className="text-md text-green-700 px-2 rounded-md text-md bg-white">
+            ${(subtotal + previousLoanTotal).toFixed(2)}
+          </span>
+        </div>
       </div>
       {/* Loan Term Slider */}
       <div className="mt-2 relative max-w-full">
@@ -428,6 +424,18 @@ const formatDate = (date: Date) =>
                       }`}
                     >
                       Interest: ${termResult.interestAmount.toFixed(2)}
+                    </div>
+                    <div
+                      className={`text-xs font-medium mb-1 ${
+                        isSelected ? "text-yellow-300" : "text-gray-700"
+                      }`}
+                    >
+                      Total: $
+                      {(
+                        termResult.interestAmount +
+                        subtotal +
+                        (includePreviousLoans ? previousLoanTotal : 0)
+                      ).toFixed(2)}
                     </div>
                     <div
                       className={`text-xs ${

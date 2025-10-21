@@ -78,7 +78,7 @@ const Dashboard = observer(() => {
   const [upcomingPayoffs, setUpcomingPayoffs] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<"graph" | "upcoming">("graph");
   const [payoffFilter, setPayoffFilter] = useState<
-    "week" | "month" | "year" | "all"
+    "day"|"week" | "month" | "all"
   >("all");
   const [loadingGraph, setLoadingGraph] = useState(false);
 
@@ -204,8 +204,8 @@ const handleViewClient = async (clientName: string) => {
           return {
           srNo: 0,
             id: loan._id,
-            clientName: client?.fullName || "Unknown",
-            companyName: company?.companyName || "Unknown",
+            clientName: client?.fullName || "",
+            companyName: company?.companyName || "",
           companyObject: company,
           subTotal: loanData.subtotal,
           total: totalLoan,
@@ -228,8 +228,6 @@ const handleViewClient = async (clientName: string) => {
           moment(b.endDate, "MM-DD-YYYY").valueOf()
       )
       .map((item, index) => ({ ...item, srNo: index + 1 }));
-
-    console.log("Upcoming Payoffs Data:", data);
     setUpcomingPayoffs(data);
     } catch (error) {
       console.error("Error loading upcoming payoffs", error);
@@ -275,8 +273,6 @@ const handleClientUpdate = async (id: string, data: any) => {
         return end.isSame(today, "week");
       case "month":
         return end.isSame(today, "month");
-      case "year":
-        return end.isSame(today, "year");
       case "all":
       default:
         return true;
@@ -289,7 +285,7 @@ const handleClientUpdate = async (id: string, data: any) => {
     })
   );
   const combinedData = filteredLoansByCompany.map((item) => ({
-    name: item._id || "Unknown",
+    name: item._id || "",
     totalLoan: item.totalAmount || 0,
     recovered:
       stats.totalLoanAmount > 0
@@ -428,9 +424,9 @@ const handleClientUpdate = async (id: string, data: any) => {
       )}
       {viewMode === "upcoming" && (
         <div className="bg-white rounded-2xl shadow-lg p-5 mt-6 w-full mx-auto">
-          <h2 className="font-semibold text-gray-800 text-lg mb-4">
+          {/* <h2 className="font-semibold text-gray-800 text-lg mb-4">
             Upcoming Payoffs
-          </h2>
+          </h2> */}
           <div className="flex gap-2 items-center mb-4 w-full max-w-xs">
             <Autocomplete
               fullWidth
@@ -439,7 +435,7 @@ const handleClientUpdate = async (id: string, data: any) => {
               onChange={(event, newValue) =>
                 newValue &&
                 setPayoffFilter(
-                  newValue.value as "week" | "month" | "year" | "all"
+                  newValue.value as "day" |"week" | "month"| "all"
                 )
               }
               getOptionLabel={(option) => option.label}

@@ -20,7 +20,7 @@ import LoanPaymentModal from "../../../components/PaymentModel";
 import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
 import { Tooltip } from "@mui/material";
 import Loans from "../../loans";
-import { calculateLoanAmounts } from "../../../utils/loanCalculations"; 
+import { calculateLoanAmounts } from "../../../utils/loanCalculations";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -106,7 +106,6 @@ useEffect(() => {
 
   if (!open) return null;
 
-
   const handleToggleLoan = async (loanId: string) => {
     if (expandedLoanId === loanId) {
       setExpandedLoanId(null);
@@ -134,8 +133,7 @@ useEffect(() => {
       return "bg-green-600 text-white";
     const lower = loan.status?.toLowerCase() || "";
     if (lower === "active") return "bg-green-600 text-white";
-    if (lower === "paid off") return "bg-green-600 text-white";
-    if (lower === "claim advance") return "bg-red-600 text-white animate-pulse";
+    if (lower === "paid off" || lower === "merged") return "bg-green-600 text-white";
     return "bg-yellow-500 text-white";
   };
 
@@ -295,20 +293,28 @@ useEffect(() => {
                     const totalLoan =
                       loan.interestType === "flat"
                         ? loanData.subtotal +
-                          loanData.subtotal * (loan.monthlyRate / 100) * selectedDynamicLoanData
+                          loanData.subtotal *
+                          (loan.monthlyRate / 100) *
+                          selectedDynamicLoanData
                         : loanData.subtotal *
-                          Math.pow(1 + loan.monthlyRate / 100, selectedDynamicLoanData);
-                          const endDate = moment(loan.issueDate).add(loan.loanTerm, "months");
+                          Math.pow(
+                          1 + loan.monthlyRate / 100,
+                          selectedDynamicLoanData
+                        );
+                  const endDate = moment(loan.issueDate).add(
+                    loan.loanTerm,
+                    "months"
+                  );
                           const isDelayed = endDate.endOf("day").isBefore(today);
                           const isPaidOff = paidAmount >= totalLoan;
-                  
+
                   // const isDelayed =
                   //   selectedLoanData.monthsPassed != loan.loanTerms;
                   return (
                     <div
                       key={loan._id}
                       style={{ borderLeft: `6px solid ${companyColor}` }}
-                      className="border rounded-lg shadow-sm hover:shadow-lg justify-items-stretch transition-all overflow-hidden bg-white "
+                      className="border rounded-lg shadow-sm hover:shadow-lg  transition-all overflow-hidden bg-white "
                     >
                       <tr
                         className="cursor-pointer  border-b hover:bg-gray-50"
@@ -321,7 +327,7 @@ useEffect(() => {
                           <div className="inline-block">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end sm:gap-2">
                               <span className="text-xs font-semibold first-letter:block">
-                                Loan Amount: ${loan.subTotal?.toFixed(2)}
+                                Loan Amount: ${loan.subTotal.toFixed(2)}
                               </span>
                               <span
                                 className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -373,7 +379,7 @@ useEffect(() => {
                           <div className="flex-1 border-r pr-4 space-y-3">
                             <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                               PayOff History
-                              {loan.status !== "Paid Off" &&
+                              {(loan.status === "Active"|| loan.status === "Partial Payment") &&
                                 !loanPayments[loan._id]?.length && (
                                   <button
                                     onClick={() => setPaymentLoan(loan)}
@@ -418,7 +424,7 @@ useEffect(() => {
 
                           {/* Loan Details */}
                           <div className="flex-1 text-sm text-gray-700 space-y-2">
-                            {loan.status !== "Paid Off" ? (
+                            {loan.status !== "Paid Off" && loan.status !== "Merged" ? (
                               <>
                                 {(() => {
                                   return (
@@ -553,7 +559,7 @@ useEffect(() => {
                                       : "max-h-[20px]"
                                   }`}
                                 >
-                                  <ul className="space-y-2 ">
+                                  <ul className="space-y-0  ">
                                     {companyLoanTerms(loan)
                                       .filter((term) =>
                                         showAllTermsMap[loan._id]
@@ -598,9 +604,13 @@ useEffect(() => {
                                   </ul>
                                 </div>
                               </>
+                            ) : loan.status === "Paid Off" ? (
+                              <p className="text-gray-500 italic">
+                                This loan has been fully paid off.
+                              </p>
                             ) : (
                               <p className="text-gray-500 italic">
-                                This loan is Paid Off.
+                                This loan has been merged with a new loan.
                               </p>
                             )}
                           </div>

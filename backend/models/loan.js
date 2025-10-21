@@ -29,7 +29,7 @@ const LoanSchema = new mongoose.Schema(
     checkNumber: { type: String },
     status: {
       type: String,
-      enum: ["Active", "Paid Off", "Partial Payment"],
+      enum: ["Active", "Paid Off", "Partial Payment", "Merged"],
       default: "Active",
     },
   },

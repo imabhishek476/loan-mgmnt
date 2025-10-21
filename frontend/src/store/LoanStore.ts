@@ -4,6 +4,7 @@ import {
   createLoan,
   deleteLoan,
   updateLoan,
+  recoverLoan,
   type LoanPayload,
 } from "../services/LoanService";
 
@@ -79,17 +80,38 @@ class LoanStore {
   async deleteLoan(id: string) {
     this.loading = true;
     try {
-      await deleteLoan(id);
+      const updated = await deleteLoan(id);
       runInAction(() => {
-        this.loans = this.loans.filter((l) => l._id !== id);
+        const index = this.loans.findIndex((l) => l._id === id);
+        if (index !== -1) {
+          this.loans[index].status = "Deactivated";
+        }
       });
+      return updated;
     } catch (err) {
-      console.error("Error deleting loan:", err);
+      console.error("Error deactivating loan:", err);
     } finally {
       runInAction(() => (this.loading = false));
     }
   }
 
+  async recoverLoan(id: string) {
+    this.loading = true;
+    try {
+      const recovered = await recoverLoan(id);
+      runInAction(() => {
+        const index = this.loans.findIndex((l) => l._id === id);
+        if (index !== -1) {
+          this.loans[index].status = "Active";
+        }
+      });
+      return recovered;
+    } catch (err) {
+      console.error("Error recovering loan:", err);
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
   getLoansByClient(clientId: string) {
     return this.loans.filter((l) => l.client === clientId);
   }
