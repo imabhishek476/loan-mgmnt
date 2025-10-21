@@ -110,7 +110,7 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
                       0
                     );
                   const allPaidOff = clientLoans.every(
-                    (loan) => loan.status === "Paid Off"
+                    (loan) => loan.status === "Paid Off" || "Merged"
                   );
 
                     return (
@@ -120,7 +120,7 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
                       }`}
                     >
                       {allPaidOff
-                        ? `$ ${pending.toLocaleString()} (Paid Off) `
+                        ? `$ ${pending.toLocaleString()} `
                         : `$${pending.toLocaleString()}`}
                       </span>
                     );

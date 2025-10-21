@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Eye, Wallet, Trash2 } from "lucide-react";
+import { Search, Eye, Wallet, Trash2, RefreshCcw } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -17,6 +17,7 @@ import {
   Button,
 } from "@mui/material";
 import { toast } from "react-toastify";
+import { calculateDynamicTermAndPayment, calculateLoanAmounts } from "../../../utils/loanCalculations";
 
 interface LoanTableProps {
   onDelete: (id: string) => void;
@@ -92,8 +93,33 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
     toast.error("Failed to recover loan");
   }
 };
+   const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
+    const getLoanRunningDetails = (loan: any) => {
+      const { monthsPassed } = calculateDynamicTermAndPayment(loan);
+      const runningTenure =
+        ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
 
+      const loanCalc = calculateLoanAmounts({
+        ...loan,
+        loanTerms: runningTenure,
+      });
 
+      return {
+        monthsPassed,
+        runningTenure,
+        total: loanCalc?.total || 0,
+        remaining: loanCalc?.remaining || 0,
+      };
+    };
+ let runningTenure = 0;
+ let remaining = 0;
+ let total = 0;
+ if (selectedLoan) {
+   const details = getLoanRunningDetails(selectedLoan);
+   runningTenure = details.runningTenure;
+   remaining = details.remaining;
+   total = details.total;
+ }
   return (
     <div>
       {/* Search Input */}
@@ -190,14 +216,14 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               (rowData: any) => ({
                 icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
                 tooltip: "Deactivate Loan",
-                hidden: rowData.status !== "Active",
+                hidden: rowData.status !== "Active" && rowData.status !== "Partial Payment",
                 onClick: (event, row) => handleDelete(row._id),
               }),
               (rowData: any) => ({
-                icon: () => <Wallet className="w-5 h-5 text-green-600" />,
+                icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
                 tooltip: "Recover Loan",
                 hidden:
-                  rowData.status === "Active" || rowData.status === "Merged",
+                  rowData.status === "Active" || rowData.status === "Merged" || rowData.status === "Partial Payment",
                 onClick: (event, row) => handleRecover(row),
               }),
             ]}
@@ -255,9 +281,7 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
           <DialogTitle className="font-semibold text-xl text-green-700 border-b pb-2">
             Loan Details
           </DialogTitle>
-
           <DialogContent className="p-6">
-            {selectedLoan && (
               <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
                 {/* Client Info */}
                 <div>
@@ -268,11 +292,8 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                     )?.fullName || "-"}
                   </p>
                 </div>
-
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Company
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Company</p>
                   <p className="font-medium">
                     {companyStore.companies.find(
                       (c) => c._id === selectedLoan.company
@@ -280,118 +301,56 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Base Amount
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Base Amount</p>
                   <p className="font-semibold text-green-700">
-                    $
-                    {Number(selectedLoan.subTotal || 0).toLocaleString(
-                      undefined,
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }
-                    )}
+                              ${Number(selectedLoan.subTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Total Loan
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Total Loan</p>
                   <p className="font-semibold text-green-700">
-                    $
-                    {Number(selectedLoan.totalLoan || 0).toLocaleString(
-                      undefined,
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }
-                    )}
+                              ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Paid Amount
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Paid Amount</p>
                   <p className="font-semibold text-blue-700">
-                    $
-                    {Number(selectedLoan.paidAmount || 0).toLocaleString(
-                      undefined,
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }
-                    )}
+                 ${Number(selectedLoan.paidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Remaining Amount
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Remaining Amount</p>
                   <p className="font-semibold text-red-700">
-                    {selectedLoan.status === "Paid Off" ||
-                    selectedLoan.status === "Merged"
-                      ? "0.00"
-                      : (
-                          (selectedLoan.totalLoan || 0) -
-                          (selectedLoan.paidAmount || 0)
-                        ).toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+              ${remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="sm:col-span-2 mt-2">
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Progress
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Progress</p>
                   <div className="w-full bg-gray-200 h-2 rounded-full">
                     <div
                       className="h-2 rounded-full bg-green-600"
                       style={{
-                        width: `${
-                          selectedLoan.status === "Paid Off"
-                            ? 100
-                            : ((selectedLoan.paidAmount || 0) /
-                                (selectedLoan.totalLoan || 1)) *
-                              100
-                        }%`,
+                        width: `${((selectedLoan.paidAmount || 0) / (total || 1)) * 100}%`,
                       }}
                     />
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Interest Type
-                  </p>
-                  <p className="font-medium capitalize">
-                    {selectedLoan.interestType || "N/A"}
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Interest Type</p>
+                  <p className="font-medium capitalize">{selectedLoan.interestType || "N/A"}</p>
                 </div>
-
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Monthly Rate
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Monthly Rate</p>
                   <p className="font-medium">{selectedLoan.monthlyRate}%</p>
                 </div>
-
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Loan Term
-                  </p>
-                  <p className="font-medium">{selectedLoan.loanTerms} months</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Loan Term</p>
+                  <p className="font-medium"><b>{runningTenure} Months</b></p>
                 </div>
-
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Issue Date
-                  </p>
-                  <p className="font-medium">
-                    {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
-                  </p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Issue Date</p>
+                  <p className="font-medium">{moment(selectedLoan.issueDate).format("MMM DD, YYYY")}</p>
                 </div>
-
                 <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
                   <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
                   <p
@@ -407,7 +366,6 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                   </p>
                 </div>
               </div>
-            )}
           </DialogContent>
 
           <DialogActions className="px-6 pb-4">

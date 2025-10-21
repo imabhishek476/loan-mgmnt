@@ -159,34 +159,36 @@ const handleViewClient = async (clientName: string) => {
     const today = moment();
 
       const data = loanStore.loans
-        .filter((loan) => loan.status !== "Paid Off")
+        .filter(
+          (loan) => loan.status !== "Paid Off" && loan.status !== "Merged"
+        )
         .map((loan) => {
           const client = clientStore.clients.find((c) => c._id === loan.client);
           const company = companyStore.companies.find(
             (c) => c._id === loan.company
           );
 
-        const loanData = calculateLoanAmounts(loan);
-        if (!loanData) {
-          console.warn("Skipped loan (no loanData):", loan._id);
-          return null;
-        }
+          const loanData = calculateLoanAmounts(loan);
+          if (!loanData) {
+            console.warn("Skipped loan (no loanData):", loan._id);
+            return null;
+          }
 
           const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
-        if (!issueDate.isValid()) {
-          console.warn("Invalid issueDate:", loan._id, loan.issueDate);
-          return null;
-        }
+          if (!issueDate.isValid()) {
+            console.warn("Invalid issueDate:", loan._id, loan.issueDate);
+            return null;
+          }
 
-        const monthsSinceIssue = today.diff(issueDate, "months") + 1;
-        const tenureSteps: number[] = company?.loanTerms || [
-          6, 12, 18, 24, 30, 36,
-        ];
-        const currentTenure =
-          tenureSteps.find((step) => monthsSinceIssue <= step) ||
-          tenureSteps[tenureSteps.length - 1];
+          const monthsSinceIssue = today.diff(issueDate, "months") + 1;
+          const tenureSteps: number[] = company?.loanTerms || [
+            6, 12, 18, 24, 30, 36,40
+          ];
+          const currentTenure =
+            tenureSteps.find((step) => monthsSinceIssue <= step) ||
+            tenureSteps[tenureSteps.length - 1];
 
-        const loanTerm = loan.loanTerms || currentTenure;
+          const loanTerm = loan.loanTerms || currentTenure;
 
           const totalLoan =
             loan.interestType === "flat"
@@ -195,39 +197,39 @@ const handleViewClient = async (clientName: string) => {
               : loanData.subtotal *
                 Math.pow(1 + loan.monthlyRate / 100, currentTenure);
 
-        const paidAmount = loan.paidAmount || 0;
-        const remaining = Math.max(0, totalLoan - paidAmount);
-        const endDate = moment(issueDate).add(loanTerm, "months");
-        const isDelayed = endDate.endOf("day").isBefore(today);
-        const isPaidOff = paidAmount >= totalLoan;
+          const paidAmount = loan.paidAmount || 0;
+          const remaining = Math.max(0, totalLoan - paidAmount);
+          const endDate = moment(issueDate).add(loanTerm, "months");
+          const isDelayed = endDate.endOf("day").isBefore(today);
+          const isPaidOff = paidAmount >= totalLoan;
 
           return {
-          srNo: 0,
+            srNo: 0,
             id: loan._id,
             clientName: client?.fullName || "",
             companyName: company?.companyName || "",
-          companyObject: company,
-          subTotal: loanData.subtotal,
-          total: totalLoan,
-          paidAmount,
-          remaining,
-          loanTerms: currentTenure,
-          originalTerm: loanTerm,
+            companyObject: company,
+            subTotal: loanData.subtotal,
+            total: totalLoan,
+            paidAmount,
+            remaining,
+            loanTerms: currentTenure,
+            originalTerm: loanTerm,
             issueDate: issueDate.format("MM-DD-YYYY"),
             endDate: endDate.format("MM-DD-YYYY"),
-          monthsPassed: loanData.monthsPassed,
-          status: isPaidOff ? "Paid Off" : isDelayed ? "Delayed" : "Active",
-          monthlyRate: loan.monthlyRate || 0,
-          interestAmount: totalLoan - loanData.subtotal,
-        };
-      })
-      .filter(Boolean)
-      .sort(
-        (a, b) =>
-          moment(a.endDate, "MM-DD-YYYY").valueOf() -
-          moment(b.endDate, "MM-DD-YYYY").valueOf()
-      )
-      .map((item, index) => ({ ...item, srNo: index + 1 }));
+            monthsPassed: loanData.monthsPassed,
+            status: isPaidOff ? "Paid Off" : isDelayed ? "Delayed" : "Active",
+            monthlyRate: loan.monthlyRate || 0,
+            interestAmount: totalLoan - loanData.subtotal,
+          };
+        })
+        .filter(Boolean)
+        .sort(
+          (a, b) =>
+            moment(a.endDate, "MM-DD-YYYY").valueOf() -
+            moment(b.endDate, "MM-DD-YYYY").valueOf()
+        )
+        .map((item, index) => ({ ...item, srNo: index + 1 }));
     setUpcomingPayoffs(data);
     } catch (error) {
       console.error("Error loading upcoming payoffs", error);

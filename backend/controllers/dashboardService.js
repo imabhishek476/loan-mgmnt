@@ -17,7 +17,7 @@ const calculateStats = async () => {
     {
       $group: {
         _id: "$companyData.companyName",
-        totalAmount: { $sum: "$totalLoan" },
+        totalAmount: { $sum: "$subTotal" },
         count: { $sum: 1 },
       },
     },
@@ -29,18 +29,21 @@ const calculateStats = async () => {
   const totalPaymentsAmount = totalPaymentsAgg[0]?.total || 0;
 
     const totalLoanAmountAgg = await Loan.aggregate([
-      { $group: { _id: null, total: { $sum: "$totalLoan" } } },
+  { $match: { status: { $nin: ["Paid Off", "Merged"] } } },
+  { $group: { _id: null, total: { $sum: "$subTotal" } } },
     ]);
     const totalLoanAmount = totalLoanAmountAgg[0]?.total || 0;
 
-  const totalPaidOffLoans = await Loan.countDocuments({ status: "Paid Off" });
+  const totalPaidOrMergedLoans = await Loan.countDocuments({
+ status: { $in: ["Paid Off", "Merged"] },
+});
   return {
     totalClients: await Client.countDocuments(),
     totalCompanies: await Company.countDocuments(),
     totalLoans: await Loan.countDocuments(),
     totalLoanAmount,
     totalPaymentsAmount,
-    totalPaidOffLoans,
+    totalPaidOffLoans: totalPaidOrMergedLoans,
     loansByCompany,
     loanByClient: [],
   };
