@@ -320,10 +320,10 @@ useEffect(() => {
                         className="cursor-pointer  border-b hover:bg-gray-50"
                         onClick={() => handleToggleLoan(loan._id)}
                       >
-                        <td className="px-3 py-2  font-semibold text-gray-700 text-base text-left">
+                        <td className="px-3 py-1  font-semibold text-gray-700 text-base w-52 text-left">
                           {companyName}
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-3 py-2 text-right w-38 ">
                           <div className="inline-block">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end sm:gap-2">
                               <span className="text-xs font-semibold first-letter:block">
@@ -341,9 +341,9 @@ useEffect(() => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-2 py-2 text-right w-2/6">
+                        <td className="px-0 py-2 items-center text-right w-2/6 w-52">
                           <span
-                            className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
+                            className={`px-7 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
                               loan
                             )}`}
                           >
@@ -379,7 +379,8 @@ useEffect(() => {
                           <div className="flex-1 border-r pr-4 space-y-3">
                             <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                               PayOff History
-                              {(loan.status === "Active"|| loan.status === "Partial Payment") &&
+                              {(loan.status === "Active" ||
+                                loan.status === "Partial Payment") &&
                                 !loanPayments[loan._id]?.length && (
                                   <button
                                     onClick={() => setPaymentLoan(loan)}
@@ -393,27 +394,27 @@ useEffect(() => {
                             {loanPayments[loan._id]?.length > 0 ? (
                               <div className="mt-2 max-h-48 overflow-y-auto border rounded-md">
                                 {loanPayments[loan._id].map((p) => (
-                                <div
-                                  key={p._id}
-                                  className="flex justify-between items-center text-sm text-gray-700 border-b pb-1 px-1"
-                                >
-                                  <span className="font-medium">
-                                    {moment(p.paidDate).format(
+                                  <div
+                                    key={p._id}
+                                    className="flex justify-between items-center text-sm text-gray-700 border-b pb-1 px-1"
+                                  >
+                                    <span className="font-medium">
+                                      {moment(p.paidDate).format(
                                         "MMM DD, YYYY"
                                       )}
-                                  </span>
-                                  <span className="text-right">
-                                    <span>
-                                      ${p.paidAmount?.toFixed(2)} Received
                                     </span>
-                                    {p.checkNumber && (
-                                      <span className="ml-1 text-gray-500 whitespace-nowrap">
-                                        (Check No: {p.checkNumber})
+                                    <span className="text-right">
+                                      <span>
+                                        ${p.paidAmount?.toFixed(2)} Received
                                       </span>
-                                    )}
-                                  </span>
-                                </div>
-                              ))}
+                                      {p.checkNumber && (
+                                        <span className="ml-1 text-gray-500 whitespace-nowrap">
+                                          (Check No: {p.checkNumber})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                ))}
                               </div>
                             ) : (
                               <p className="text-gray-500 text-sm italic">
@@ -424,7 +425,8 @@ useEffect(() => {
 
                           {/* Loan Details */}
                           <div className="flex-1 text-sm text-gray-700 space-y-2">
-                            {loan.status !== "Paid Off" && loan.status !== "Merged" ? (
+                            {loan.status !== "Paid Off" &&
+                            loan.status !== "Merged" ? (
                               <>
                                 {(() => {
                                   return (
