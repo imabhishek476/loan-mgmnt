@@ -164,12 +164,28 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               {
                 title: "Company",
                 cellStyle: { width: 140, minWidth: 140 },
-                render: (rowData) =>
-                  capitalizeFirst(
-                    companyStore.companies.find(
-                      (c) => c._id === rowData.company
-                    )?.companyName || ""
-                  ),
+                render: (rowData) => {
+                  const company = companyStore.companies.find(
+                    (c) => c._id === rowData.company
+                  );
+                  const companyName = company?.companyName || "";
+                  const color = company?.backgroundColor || "#555555";
+                  return (
+                    <span
+                      style={{  
+                        color: color,
+                        padding: "4px 10px",
+                        borderRadius: "20px",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                        display: "inline-block",
+                        textTransform: "capitalize",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {companyName}
+                    </span>
+                  );},
               },
               {
                 title: "Loan Amount ($)",

@@ -445,7 +445,7 @@ const handleClientUpdate = async (id: string, data: any) => {
               onChange={(event, newValue) =>
                 newValue &&
                 setPayoffFilter(
-                  newValue.value as "day" |"week" | "month"| "all"
+                  newValue.value as "day" | "week" | "month" | "all"
                 )
               }
               getOptionLabel={(option) => option.label}
@@ -456,7 +456,7 @@ const handleClientUpdate = async (id: string, data: any) => {
           <MaterialTable
             title={null}
             columns={[
-              { title: "Sr.no",
+              {title: "Sr.no",
                 field: "srNo",
                 width: "2%",
                 cellStyle: { whiteSpace: "nowrap" },
@@ -475,8 +475,20 @@ const handleClientUpdate = async (id: string, data: any) => {
               },
               {
                 title: "Company",
-                render: (rowData) => capitalizeFirst(rowData.companyName),
-                cellStyle: { whiteSpace: "normal", wordBreak: "break-word" },
+                render: (rowData) => (
+                  <span
+                    style={{
+                      // backgroundColor: `${rowData.companyObject?.backgroundColor}20`,
+                      color: rowData.companyObject?.backgroundColor,
+                      padding: "4px 0px",
+                      borderRadius: "20px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {rowData.companyName}
+                  </span>
+                ),
+                cellStyle: { width: 150, minWidth: 150 },
               },
               {
                 title: "Loan Amount ($)",
