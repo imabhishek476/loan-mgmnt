@@ -46,21 +46,32 @@ const calculateLoan = (
   fees: Record<string, Fee>,
   type: "flat" | "compound",
   rate: number | string,
-  term: number | string
+  term: number | string,
+  previousLoanTotal: number = 0
 ) => {
-  const num = (val: any): number => (typeof val === "string" ? parseFloat(val) || 0 : val || 0);
-  const baseNum = num(base);
-  if (baseNum <= 0) return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
+  const num = (val: any): number =>
+    typeof val === "string" ? parseFloat(val) || 0 : val || 0;
+
+  const baseNum = num(base) + num(previousLoanTotal); // include previous loan
+  if (baseNum <= 0)
+    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
 
   const rateNum = num(rate);
   const termNum = Math.max(0, Math.floor(num(term)));
-
-  const feeKeys = ["administrativeFee", "applicationFee", "attorneyReviewFee", "brokerFee", "annualMaintenanceFee"];
+  const feeKeys = [
+    "administrativeFee",
+    "applicationFee",
+    "attorneyReviewFee",
+    "brokerFee",
+    "annualMaintenanceFee",
+  ];
   const feeTotal = feeKeys.reduce((sum, key) => {
     const fee = fees[key];
     if (!fee) return sum;
     const value = num(fee.value);
-    return fee.type === "percentage" ? sum + (baseNum * value) / 100 : sum + value;
+    return fee.type === "percentage"
+      ? sum + (baseNum * value) / 100
+      : sum + value;
   }, 0);
 
   const subtotal = baseNum + feeTotal;
@@ -71,7 +82,11 @@ const calculateLoan = (
         : subtotal * (Math.pow(1 + rateNum / 100, termNum) - 1)
       : 0;
 
-  return { subtotal, interestAmount: interest, totalWithInterest: subtotal + interest };
+  return {
+    subtotal,
+    interestAmount: interest,
+    totalWithInterest: subtotal + interest,
+  };
 };
 
 const LoanCalculation: React.FC<LoanCalculationProps> = ({
@@ -114,7 +129,8 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
     fees,
     interestType,
     currentRate,
-    loanTerm
+    loanTerm,
+    includePreviousLoans ? previousLoanTotal : 0
   );
 
   const emitChange = (
@@ -124,11 +140,19 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
     newRate: number,
     newTerm: number
   ) => {
-    const result = calculateLoan(newBase, newFees, newType, newRate, newTerm);
+    const result = calculateLoan(
+      newBase,
+      newFees,
+      newType,
+      newRate,
+      newTerm,
+      includePreviousLoans ? previousLoanTotal : 0
+    );
 
     const start = issueDate ? new Date(issueDate) : new Date();
     const end = endDate ? new Date(endDate) : new Date(start);
     if (!endDate) end.setMonth(end.getMonth() + newTerm);
+
     onChange({
       baseAmount: newBase,
       fees: newFees,
@@ -136,12 +160,11 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
       monthlyRate: newRate,
       loanTermMonths: newTerm,
       subtotal: result.subtotal,
-      totalLoan: result.totalWithInterest + (includePreviousLoans ? previousLoanTotal : 0),
+      totalLoan: result.totalWithInterest,
       previousLoanTotal: includePreviousLoans ? previousLoanTotal : 0,
       startDate: start.toISOString(),
       endDate: end.toISOString(),
     });
-
   };
 
   const handleBaseChange = (value: string) => {
@@ -338,7 +361,7 @@ const formatDate = (date: Date) =>
         <div className="flex   justify-between ">
           <span>Loan Amount :</span>
           <span className="text-md text-green-700 px-2 rounded-md text-md bg-white">
-            ${(subtotal + previousLoanTotal).toFixed(2)}
+            ${(subtotal).toFixed(2)}
           </span>
         </div>
       </div>
@@ -391,7 +414,8 @@ const formatDate = (date: Date) =>
                   fees,
                   interestType,
                   currentRate,
-                  term
+                  term,
+                includePreviousLoans ? previousLoanTotal : 0 
                 );
                 const isSelected = term <= loanTerm;
 
@@ -433,8 +457,7 @@ const formatDate = (date: Date) =>
                       Total: $
                       {(
                         termResult.interestAmount +
-                        subtotal +
-                        (includePreviousLoans ? previousLoanTotal : 0)
+                        subtotal
                       ).toFixed(2)}
                     </div>
                     <div

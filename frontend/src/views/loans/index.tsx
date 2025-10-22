@@ -54,10 +54,8 @@ const Loans = observer(
     const [calculatedSubTotal, setCalculatedSubTotal] = useState(0);
     const [previousLoanAmount, setPreviousLoanAmount] = useState(0);
     const [endDate, setEndDate] = useState<string | null>(null);
-    const hasLoaded = useRef(false);
     const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
     // const [loanPayments, setLoanPayments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
 
     const [saving, setSaving] = useState(false);
     const getInitialFormData = () => ({
@@ -156,7 +154,7 @@ const Loans = observer(
         interestType: company?.interestRate?.interestType || "flat",
         monthlyRate: company?.interestRate?.monthlyRate || 0,
         loanTerms: defaultTerm,
-        status: "Fresh Loan Issued",
+        status: "Active",
       }));
     };
 
@@ -255,7 +253,7 @@ useEffect(() => {
         }
       const payload = {
         ...data,
-        baseAmount: formData.baseAmount + previousLoanAmount,
+        baseAmount: (formData.baseAmount + previousLoanAmount).toFixed(2),
         checkNumber: formData.checkNumber || null,
         fees: formData.fees,
         interestType: formData.interestType,
@@ -263,7 +261,7 @@ useEffect(() => {
         loanTerms: formData.loanTerms,
         totalLoan: formData.totalLoan,
         endDate,
-        subTotal: calculatedSubTotal,
+        subTotal: (calculatedSubTotal + previousLoanAmount).toFixed(2),
         previousLoanAmount,
         status: "Active",
       };
@@ -507,7 +505,7 @@ useEffect(() => {
                       return (
                         <div
                           key={field.key}
-                          className="flex flex-col text-left py-1"
+                          className="flex flex-col text-left py-1 "
                         >
                           <label className="mb-1 font-medium text-gray-700">
                             {field.label}
@@ -531,7 +529,7 @@ useEffect(() => {
                     })}
                     {/* 🆕 Overlap Mode */}
                     {formData?.company && activeLoans.length > 0 && (
-                      <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
+                      <div className="mt-4 p-2 bg-green-100 border-l-4  border-yellow-500 rounded ">
                         <div className="flex gap-3 mb-3 items-center">
                           <Switch
                             checked={overlapMode}
@@ -547,15 +545,17 @@ useEffect(() => {
                             Previous Loan
                           </label>
                         </div>
-
+                        <div
+                          className={`transition-all duration-700 ease-in-out overflow-auto ${
+                            overlapMode
+                              ? "max-h-40 opacity-100"
+                            : "max-h-0 opacity-0"
+                        }`}
+                      >
                         {overlapMode &&
                           activeLoans.map((loan) => {
-                            const {
-                              runningTenure,
-                              total,
-                              remaining,
-                            } = getLoanRunningDetails(loan);
-
+                            const { runningTenure, total, remaining } =
+                              getLoanRunningDetails(loan);
                             const isSelected = selectedLoanIds.includes(
                               loan._id
                             );
@@ -570,13 +570,13 @@ useEffect(() => {
                                       : [...prev, loan._id]
                                   )
                                 }
-                                className={`flex justify-between items-center p-3 border rounded-lg shadow-sm cursor-pointer transition
+                                className={`flex justify-between  items-center p-3  border rounded-lg shadow-sm cursor-pointer transition
     ${
       isSelected ? "bg-green-100 border-green-400" : "bg-white hover:bg-gray-50"
     }`}
                               >
                                 <div className="flex items-center gap-2">
-                                  <div className="flex flex-col text-xs sm:text-sm">
+                                  <div className="flex flex-col text-xs sm:text-xs">
                                     <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
                                       Issue Date:{" "}
                                       {moment(loan.issueDate).format(
@@ -593,7 +593,7 @@ useEffect(() => {
                                         minimumFractionDigits: 2,
                                         maximumFractionDigits: 2,
                                       })}{" "}
-                                      ({" "}
+                                      ({" "} 
                                       <span className="text-red-600 font-bold">
                                         Remaining: $
                                         {remaining.toLocaleString(undefined, {
@@ -605,7 +605,7 @@ useEffect(() => {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
                                   <div className="flex flex-col text-right text-xs sm:text-sm"></div>
                                   <IconButton
                                     size="small"
@@ -629,11 +629,12 @@ useEffect(() => {
                                     )
                                   }
                                   onClick={(e) => e.stopPropagation()}
-                                  className="w-4 h-4 m-2 accent-green-600 cursor-pointer"
+                                  className="w-4 h-4 m-0 accent-green-600 cursor-pointer"
                                 />
                               </div>
                             );
                           })}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -751,7 +752,9 @@ useEffect(() => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Company</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Company
+                  </p>
                     <p className="font-medium">
                       {companyStore.companies.find(
                         (c) => c._id === selectedLoan.company
@@ -759,55 +762,97 @@ useEffect(() => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Base Amount</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Base Amount
+                  </p>
                     <p className="font-semibold text-green-700">
-                      ${Number(selectedLoan.subTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      $
+                    {Number(selectedLoan.subTotal || 0).toLocaleString(
+                      undefined,
+                      { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                    )}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Total Loan</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Total Loan
+                  </p>
                     <p className="font-semibold text-green-700">
-                      ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      $
+                    {total.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Paid Amount</p>
-                    <p className="font-semibold text-blue-700">
-                   ${Number(selectedLoan.paidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Paid Amount
+                  </p>
+                  <p className="font-semibold text-blue-700">
+                    $
+                    {Number(selectedLoan.paidAmount || 0).toLocaleString(
+                      undefined,
+                      { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                    )}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Remaining Amount</p>
-                    <p className="font-semibold text-red-700">
-                ${remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Remaining Amount
+                  </p>
+                   <p className="font-semibold text-red-700">
+                    $
+                    {remaining.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                     </p>
                   </div>
                   <div className="sm:col-span-2 mt-2">
-                    <p className="text-gray-500 text-xs uppercase mb-1">Progress</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Progress
+                  </p>
                     <div className="w-full bg-gray-200 h-2 rounded-full">
                       <div
                         className="h-2 rounded-full bg-green-600"
                         style={{
-                          width: `${((selectedLoan.paidAmount || 0) / (total || 1)) * 100}%`,
+                          width: `${
+                          ((selectedLoan.paidAmount || 0) / (total || 1)) * 100
+                        }%`,
                         }}
                       />
                     </div>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Interest Type</p>
-                    <p className="font-medium capitalize">{selectedLoan.interestType || "N/A"}</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Interest Type
+                  </p>
+                    <p className="font-medium capitalize">
+                    {selectedLoan.interestType || "N/A"}
+                  </p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Monthly Rate</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Monthly Rate
+                  </p>
                     <p className="font-medium">{selectedLoan.monthlyRate}%</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Loan Term</p>
-                    <p className="font-medium"><b>{runningTenure} Months</b></p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Loan Term
+                    </p>
+                    <p className="font-medium">
+                      <b>{runningTenure} Months</b>
+                      </p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Issue Date</p>
-                    <p className="font-medium">{moment(selectedLoan.issueDate).format("MMM DD, YYYY")}</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Issue Date
+                  </p>
+                  <p className="font-medium">
+                    {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
+                  </p>
                   </div>
                   <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
                     <p className="text-gray-500 text-xs uppercase mb-1">Status</p>

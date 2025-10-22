@@ -10,6 +10,7 @@ export const calculateLoanAmounts = (loan: any) => {
     const originalTerm = loan.loanTerms || 0;
     const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
     const paidAmount = loan.paidAmount || 0;
+    const subtotal = loan.subTotal || 0;
 
     const feeKeys = [
         "administrativeFee",
@@ -25,8 +26,6 @@ export const calculateLoanAmounts = (loan: any) => {
             ? sum + (base * (fee.value || 0)) / 100
             : sum + (fee.value || 0);
     }, 0);
-
-    const subtotal = base + feeTotal;
     const today = moment();
     const monthsPassed = today.diff(issueDate, "months") + 1;
 
