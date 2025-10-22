@@ -577,10 +577,21 @@ const handleClientUpdate = async (id: string, data: any) => {
                 borderBottom: "1px solid #e5e7eb",
                 whiteSpace: "nowrap",
               },
-              rowStyle: {
+              rowStyle: (rowData) => {
+                const borderColor =
+                  rowData.companyObject?.backgroundColor || "#555555";
+                return {
                 fontSize: "13px",
-                height: 38,
+                height: 44,
                 borderBottom: "1px solid #f1f1f1",
+                  backgroundColor: "#fff",
+                  borderLeft: `6px solid ${borderColor}`,
+                  borderRadius: "50px",
+                  boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)",
+                  margin: "4px 0",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                };
               },
               padding: "dense",
               toolbar: false,
@@ -596,7 +607,7 @@ const handleClientUpdate = async (id: string, data: any) => {
           client={selectedClientForView}
           onEditClient={(client) => {
             setEditingClient(client);
-            setEditClientModalOpen(true); 
+            setEditClientModalOpen(true);
           }}
         />
       )}

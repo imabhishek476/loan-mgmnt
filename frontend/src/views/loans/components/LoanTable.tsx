@@ -216,14 +216,18 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               (rowData: any) => ({
                 icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
                 tooltip: "Deactivate Loan",
-                hidden: rowData.status !== "Active" && rowData.status !== "Partial Payment",
+                hidden:
+                  rowData.status !== "Active" &&
+                  rowData.status !== "Partial Payment",
                 onClick: (event, row) => handleDelete(row._id),
               }),
               (rowData: any) => ({
                 icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
                 tooltip: "Recover Loan",
                 hidden:
-                  rowData.status === "Active" || rowData.status === "Merged" || rowData.status === "Partial Payment",
+                  rowData.status === "Active" ||
+                  rowData.status === "Merged" ||
+                  rowData.status === "Partial Payment",
                 onClick: (event, row) => handleRecover(row),
               }),
             ]}
@@ -241,13 +245,26 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                 fontSize: "13px",
                 height: 36,
                 padding: "6px 8px",
-                borderBottom: "1px solid #e5e7eb",
+                borderBottom: "1px solid #e5e7eb",                
               },
-              rowStyle: {
+              rowStyle: (rowData) => {
+                const company = companyStore.companies.find(
+                  (c) => c._id === rowData.company
+                );
+                const borderColor = company?.backgroundColor || "#555555";
+
+                  return {
                 fontSize: "13px",
-                height: 38,
+                height: 44,
                 borderBottom: "1px solid #f1f1f1",
-                transition: "background 0.2s",
+                    backgroundColor: "#ffffff",
+                    transition: "all 0.25s ease",
+                    borderLeft: `6px solid ${borderColor}`,
+                    borderRadius: "20px", // ✅ soft corners
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)", // ✅ subtle shadow
+                    margin: "50px 0", // ✅ adds space between rows
+                    cursor: "pointer",
+                  };
               },
               padding: "dense",
               toolbar: false,
@@ -301,27 +318,51 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Base Amount</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Base Amount
+                </p>
                   <p className="font-semibold text-green-700">
-                              ${Number(selectedLoan.subTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  $
+                  {Number(selectedLoan.subTotal || 0).toLocaleString(
+                    undefined,
+                    { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                  )}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Total Loan</p>
-                  <p className="font-semibold text-green-700">
-                              ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Total Loan
+                </p>
+                <p className="font-semibold text-green-700">
+                  $
+                  {total.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Paid Amount</p>
-                  <p className="font-semibold text-blue-700">
-                 ${Number(selectedLoan.paidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Paid Amount
+                </p>
+                <p className="font-semibold text-blue-700">
+                  $
+                  {Number(selectedLoan.paidAmount || 0).toLocaleString(
+                    undefined,
+                    { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                  )}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Remaining Amount</p>
-                  <p className="font-semibold text-red-700">
-              ${remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Remaining Amount
+                </p>
+                <p className="font-semibold text-red-700">
+                  $
+                  {remaining.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                   </p>
                 </div>
                 <div className="sm:col-span-2 mt-2">
@@ -330,26 +371,42 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                     <div
                       className="h-2 rounded-full bg-green-600"
                       style={{
-                        width: `${((selectedLoan.paidAmount || 0) / (total || 1)) * 100}%`,
+                        width: `${
+                        ((selectedLoan.paidAmount || 0) / (total || 1)) * 100
+                      }%`,
                       }}
                     />
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Interest Type</p>
-                  <p className="font-medium capitalize">{selectedLoan.interestType || "N/A"}</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Interest Type
+                </p>
+                <p className="font-medium capitalize">
+                  {selectedLoan.interestType || "N/A"}
+                </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Monthly Rate</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Monthly Rate
+                </p>
                   <p className="font-medium">{selectedLoan.monthlyRate}%</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Loan Term</p>
-                  <p className="font-medium"><b>{runningTenure} Months</b></p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Loan Term
+                </p>
+                <p className="font-medium">
+                  <b>{runningTenure} Months</b>
+                </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Issue Date</p>
-                  <p className="font-medium">{moment(selectedLoan.issueDate).format("MMM DD, YYYY")}</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Issue Date
+                </p>
+                <p className="font-medium">
+                  {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
+                </p>
                 </div>
                 <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
                   <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
