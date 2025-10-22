@@ -286,15 +286,23 @@ const handleClientUpdate = async (id: string, data: any) => {
       srNo: index + 1,
     })
   );
-  const combinedData = filteredLoansByCompany.map((item) => ({
+  const combinedData = filteredLoansByCompany.map((item) => {
+  const company = companyStore.companies.find(
+    (c) => c.companyName === item._id
+  );
+  if (!company)
+    return { name: item._id, totalLoan: item.totalAmount, recovered: 0 };
+  const companyLoans = loanStore.getLoansByCompany(company._id);
+  const totalRecovered = companyLoans.reduce(
+    (sum, loan) => sum + (loan.paidAmount || 0),
+    0
+  );
+  return {
     name: item._id || "",
     totalLoan: item.totalAmount || 0,
-    recovered:
-      stats.totalLoanAmount > 0
-        ? ((item.totalAmount || 0) / stats.totalLoanAmount) *
-          stats.totalPaymentsAmount
-        : 0,
-  }));
+    recovered: totalRecovered,
+  };
+});
 
   const renderBarChart = (data: any[]) => {
     if (!data || data.length === 0) {
@@ -409,7 +417,7 @@ const handleClientUpdate = async (id: string, data: any) => {
       </LocalizationProvider>
 
           <div className="flex flex-wrap gap-4">
-    <div className="bg-white rounded-2xl shadow-lg flex-1 w-1/2 p-3">
+    <div className="bg-white rounded-2xl shadow-lg flex-1  p-3">
         <h2 className="font-semibold text-gray-800 text-lg mb-4">
           Total Loan and Recovered by Company
         </h2>
