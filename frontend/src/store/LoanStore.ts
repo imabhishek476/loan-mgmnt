@@ -5,6 +5,7 @@ import {
   deleteLoan,
   updateLoan,
   recoverLoan,
+  activeLoans,
   type LoanPayload,
 } from "../services/LoanService";
 
@@ -25,6 +26,7 @@ export interface Loan {
   totalLoan?: number;
   checkNumber?: string;
   status?: string;
+  loanStatus: string;
 }
 
 class LoanStore {
@@ -65,7 +67,17 @@ class LoanStore {
       runInAction(() => (this.loading = false));
     }
   }
-
+  async fetchActiveLoans() {
+    this.loading = true;
+    try {
+      const data = await activeLoans();
+      runInAction(() => (this.loans = data));
+    } catch (err) {
+      console.error("Error fetching loans:", err);
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
   async createLoan(payload: LoanPayload) {
     this.loading = true;
     try {
@@ -84,7 +96,7 @@ class LoanStore {
       runInAction(() => {
         const index = this.loans.findIndex((l) => l._id === id);
         if (index !== -1) {
-          this.loans[index].status = "Deactivated";
+          this.loans[index].loanStatus = "Deactivated";
         }
       });
       return updated;
@@ -102,7 +114,7 @@ class LoanStore {
       runInAction(() => {
         const index = this.loans.findIndex((l) => l._id === id);
         if (index !== -1) {
-          this.loans[index].status = "Active";
+          this.loans[index].loanStatus = "Active";
         }
       });
       return recovered;

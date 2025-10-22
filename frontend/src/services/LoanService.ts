@@ -31,7 +31,10 @@ export const fetchLoans = async () => {
   const { data } = await api.get("/loans");
   return data.data || data;
 };
-
+export const activeLoans = async () => {
+  const { data } = await api.get("/loans/activeLoans");
+  return data.data || data;
+};
 export const createLoan = async (payload: LoanPayload) => {
   const { data } = await api.post("/loans", payload);
   return data.data || data;

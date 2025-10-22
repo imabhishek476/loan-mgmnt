@@ -8,8 +8,16 @@ const FeeSchema = new mongoose.Schema({
 const LoanSchema = new mongoose.Schema(
   {
     issueDate: { type: String, default: Date.now },
-    client: { type: mongoose.Schema.Types.ObjectId, ref: "Client", required: true },
-    company: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Client",
+      required: true,
+    },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+    },
     loanTerms: { type: Number, default: 12 },
     baseAmount: { type: Number, required: true },
     previousLoanAmount: { type: Number, default: 0 },
@@ -30,6 +38,11 @@ const LoanSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["Active", "Paid Off", "Partial Payment", "Merged"],
+      default: "Active",
+    },
+    loanStatus: {
+      type: String,
+      enum: ["Active", "Deactivated"],
       default: "Active",
     },
   },

@@ -149,7 +149,7 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
             columns={[
               {
                 title: "Sr.no",
-                render: (rowData) => rowData?.["tableData"]?.["id"] + 1,
+                render: (rowData) => (rowData?.tableData?.id ?? 0) + 1,
                 width: "5%",
               },
               {
@@ -174,18 +174,19 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                     <span
                       style={{  
                         color: color,
-                        padding: "4px 10px",
                         borderRadius: "20px",
                         fontWeight: 600,
                         fontSize: "13px",
                         display: "inline-block",
                         textTransform: "capitalize",
                         whiteSpace: "nowrap",
+                        textAlign: "left",
                       }}
                     >
                       {companyName}
                     </span>
-                  );},
+                  );
+                },
               },
               {
                 title: "Loan Amount ($)",
@@ -209,16 +210,17 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               {
                 title: "Status",
                 cellStyle: { whiteSpace: "nowrap" },
-                render: (rowData) => {
-                  const status = capitalizeFirst(rowData.status);
-                  let color = "text-white bg-green-600 py-1 px-2 rounded-lg";
-                  if (status === "Payment received") color = "text-blue-700";
-                  else if (status === "Partial Payment")
-                    color = "text-white bg-yellow-600 py-1 px-2 rounded-lg";
-                  return (
-                    <span className={`font-semibold ${color}`}>{status}</span>
-                  );
-                },
+                render: (rowData: any) => (
+                  <span
+                    className={`px-2 py-1 rounded-lg text-white text-sm ${
+                      rowData.loanStatus === "Active"
+                     ? "bg-green-600"
+                        : "bg-red-500"
+                    }`}
+                  >
+                    {rowData.loanStatus}
+                  </span>
+                ),
               },
             ]}
             data={filteredLoans}
@@ -232,18 +234,14 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
               (rowData: any) => ({
                 icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
                 tooltip: "Deactivate Loan",
-                hidden:
-                  rowData.status !== "Active" &&
-                  rowData.status !== "Partial Payment",
+                // Show Delete only if loan is not deactivated
+                hidden: rowData.loanStatus === "Deactivated",
                 onClick: (event, row) => handleDelete(row._id),
               }),
               (rowData: any) => ({
                 icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
                 tooltip: "Recover Loan",
-                hidden:
-                  rowData.status === "Active" ||
-                  rowData.status === "Merged" ||
-                  rowData.status === "Partial Payment",
+                hidden: rowData.loanStatus !== "Deactivated",
                 onClick: (event, row) => handleRecover(row),
               }),
             ]}
@@ -260,8 +258,8 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                 color: "#374151",
                 fontSize: "13px",
                 height: 36,
-                padding: "6px 8px",
-                borderBottom: "1px solid #e5e7eb",                
+                padding: "0px 8px",
+                borderBottom: "1px solid #e5e7eb",
               },
               rowStyle: (rowData) => {
                 const company = companyStore.companies.find(
@@ -275,10 +273,7 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                 borderBottom: "1px solid #f1f1f1",
                     backgroundColor: "#ffffff",
                     transition: "all 0.25s ease",
-                    borderLeft: `6px solid ${borderColor}`,
-                    borderRadius: "20px", // ✅ soft corners
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)", // ✅ subtle shadow
-                    margin: "50px 0", // ✅ adds space between rows
+                    borderLeft: `6px solid ${borderColor}`,                  
                     cursor: "pointer",
                   };
               },
@@ -425,12 +420,13 @@ const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
                 </p>
                 </div>
                 <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
-                  <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                  Loan Status</p>
                   <p
                     className={`font-semibold ${
-                      selectedLoan.status === "Paid Off"
+                      selectedLoan.loanStatus === "Paid Off"
                         ? "text-green-700"
-                        : selectedLoan.status === "Partial Payment"
+                        : selectedLoan.loanStatus === "Partial Payment"
                         ? "text-blue-700"
                         : "text-yellow-700"
                     }`}

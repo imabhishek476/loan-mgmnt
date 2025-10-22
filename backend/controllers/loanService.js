@@ -69,6 +69,25 @@ exports.AllLoans = async (req, res) => {
     });
   }
 };
+exports.activeLoans = async (req, res) => {
+  try {
+    const loans = await Loan.find({ loanStatus: "Active" }).sort({
+      createdAt: -1,
+    });
+    console.log(loans, "loans");
+    res.status(200).json({
+      success: true,
+      data: loans,
+      message: "Active loans fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error in AllLoans:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 exports.updateLoan = async (req, res) => {
   try { 
     const { id } = req.params;
@@ -102,7 +121,7 @@ exports.updateLoan = async (req, res) => {
 
     const loan = await Loan.findByIdAndUpdate(
       id,
-      { status: "Deactivated" },
+      { loanStatus: "Deactivated" },
       { new: true }
     );
 
@@ -129,17 +148,18 @@ exports.recoverLoan = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const loan = await Loan.findByIdAndUpdate(
-      id,
-      { status: "Active" },
-      { new: true }
-    );
-    if (!loan) {
+    const existingLoan = await Loan.findById(id);
+    if (!existingLoan) {
       return res.status(404).json({
         success: false,
         message: "Loan not found",
       });
     }
+    const loan = await Loan.findByIdAndUpdate(
+      id,
+      { loanStatus: "Active" },
+      { new: true } 
+    );
     res.status(200).json({
       success: true,
       message: "Loan recovered successfully",

@@ -151,7 +151,7 @@ const handleViewClient = async (clientName: string) => {
   const loadUpcomingPayoffs = async () => {
     try {
       await Promise.all([
-      loanStore.fetchLoans(),
+      loanStore.fetchActiveLoans(),
       clientStore.fetchClients(),
       companyStore.fetchCompany(),
     ]);
