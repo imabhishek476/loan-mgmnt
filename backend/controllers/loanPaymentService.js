@@ -25,7 +25,7 @@ exports.addPayment = async (req, res) => {
       paidDate,
       checkNumber,
       payoffLetter,
-      outstanding,
+      formated_Outstanding,
     } = req.body;
 
     if (!loanId || !clientId || !paidAmount) {
@@ -37,8 +37,7 @@ exports.addPayment = async (req, res) => {
 
   //   const { newTotal } = recalculateLoan(loan);
   //   loan.totalLoan = newTotal;
-  // console.log(newTotal, "newTotal");
-    remainingAmount = outstanding.toFixed(2);
+    remainingAmount = formated_Outstanding;
     if (Number(paidAmount) > remainingAmount) {
       return res
         .status(400)

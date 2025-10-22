@@ -69,6 +69,7 @@ useEffect(() => {
       Object.values(newErrors).forEach((msg) => toast.error(msg));
       return Object.keys(newErrors).length === 0;
     };
+    const formated_Outstanding = outstanding.toFixed(2);
 
     const handlePayment = async () => {
       if (!validate()) return;
@@ -82,7 +83,7 @@ useEffect(() => {
           paidDate: new Date(),
           checkNumber,
           payoffLetter,
-          outstanding,
+          formated_Outstanding,
         });
 
         await loanStore.fetchLoans();
