@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { Plus, Save, Wallet, Eye, RefreshCw } from "lucide-react";
+import { Plus, Save, Wallet, RefreshCw, X, Eye } from "lucide-react";
 import LoanCalculation from "./components/LoanCalculation";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
@@ -13,6 +13,10 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import {
+ calculateLoanAmounts,
+calculateDynamicTermAndPayment,
+} from "../../utils/loanCalculations";
+import {
   Button,
   Switch,
   Autocomplete,
@@ -21,6 +25,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
 
@@ -48,10 +53,10 @@ const Loans = observer(
     const [calculatedSubTotal, setCalculatedSubTotal] = useState(0);
     const [previousLoanAmount, setPreviousLoanAmount] = useState(0);
     const [endDate, setEndDate] = useState<string | null>(null);
-    const hasLoaded = useRef(false);
     const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
     // const [loanPayments, setLoanPayments] = useState<any[]>([]);
 
+    const [saving, setSaving] = useState(false);
     const getInitialFormData = () => ({
       client: "",
       company: "",
@@ -102,15 +107,17 @@ const Loans = observer(
     };
 
     useEffect(() => {
-      if (!hasLoaded.current) {
-        loadInitialData();
-        hasLoaded.current = true;
-      }
-    }, []);
-
-    useEffect(() => {
-      if (defaultClient) {
+      if (defaultClient && companyStore.companies?.length) {
         setFormData((prev) => ({ ...prev, client: defaultClient._id }));
+
+        const defaultCompany = companyStore.companies.find(
+          (c) => c.activeCompany && c.companyName === "Claim Advance"
+        );
+
+        if (defaultCompany) {
+          handleCompanyChange(defaultCompany._id);
+        }
+
         setModalOpen(true);
       }
     }, [defaultClient]);
@@ -118,8 +125,8 @@ const Loans = observer(
     const handleCompanyChange = (companyId: string) => {
       // setSelectedCompany(companyId);
       const company = companyStore.companies?.find(
-         (c) => c._id === companyId && c.activeCompany // ensure active
-       );
+        (c) => c._id === companyId && c.activeCompany // ensure active
+      );
 
       const terms = company?.loanTerms?.length ? company.loanTerms : [12];
       setLoanTermsOptions(
@@ -146,7 +153,7 @@ const Loans = observer(
         interestType: company?.interestRate?.interestType || "flat",
         monthlyRate: company?.interestRate?.monthlyRate || 0,
         loanTerms: defaultTerm,
-        status: "Fresh Loan Issued",
+        status: "Active",
       }));
     };
 
@@ -157,7 +164,9 @@ const Loans = observer(
             (loan) =>
               loan?.client === formData.client &&
               loan?.company === formData.company &&
-              loan?.status !== "Paid Off"
+              loan?.status !== "Paid Off" &&
+              loan?.status !== "Merged" &&
+              loan?.status !== "Deactivated"
           ) || [];
         setActiveLoans(loans);
         setSelectedLoanIds([]);
@@ -178,19 +187,73 @@ const Loans = observer(
       setOverlapMode(false);
       setEditingLoan(null);
     };
+    const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
+    const getLoanRunningDetails = (loan: any) => {
+      const { monthsPassed } = calculateDynamicTermAndPayment(loan);
+      const runningTenure =
+        ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
 
+      const loanCalc = calculateLoanAmounts({
+        ...loan,
+        loanTerms: runningTenure,
+      });
+
+      return {
+        monthsPassed,
+        runningTenure,
+        total: loanCalc?.total || 0,
+        remaining: loanCalc?.remaining || 0,
+      };
+    };
     const selectedPreviousLoanTotal =
-       activeLoans
-     ?.filter((loan) => selectedLoanIds.includes(loan?._id))
-    ?.reduce(
-      (sum, loan) => sum + ((loan?.totalLoan || 0) - (loan?.paidAmount || 0)),
-      0
-    ) || 0;
+      activeLoans
+        ?.filter((loan) => selectedLoanIds.includes(loan?._id))
+        ?.reduce(
+          (sum, loan) => sum + getLoanRunningDetails(loan).remaining,
+          0
+        ) || 0;
+useEffect(() => {
+  const total =
+    activeLoans
+      ?.filter((loan) => selectedLoanIds.includes(loan._id))
+      ?.reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining, 0) ||
+    0;
+
+  setPreviousLoanAmount(total);
+}, [selectedLoanIds, activeLoans]);
+    let runningTenure = 0;
+    let remaining = 0;
+    let total = 0;
+    if (selectedLoan) {
+      const details = getLoanRunningDetails(selectedLoan);
+      runningTenure = details.runningTenure;
+      remaining = details.remaining;
+      total = details.total;
+    }
 
     const handleSave = async (data: any) => {
+      try {
+        if (saving) return;
+        setSaving(true);
+        if (!data.client) {
+          toast.error("Please select a client");
+          return;
+        }
+        if (!data.company) {
+          toast.error("Please select a company");
+          return;
+        }
+        if (!data.baseAmount || data.baseAmount <= 0) {
+          toast.error("Base amount must be greater than 0");
+          return;
+        }
+        if (!data.loanTerms || data.loanTerms <= 0) {
+          toast.error("Please enter valid loan terms");
+          return;
+        }
       const payload = {
         ...data,
-        baseAmount: formData.baseAmount,
+        baseAmount: (formData.baseAmount + previousLoanAmount).toFixed(2),
         checkNumber: formData.checkNumber || null,
         fees: formData.fees,
         interestType: formData.interestType,
@@ -198,12 +261,10 @@ const Loans = observer(
         loanTerms: formData.loanTerms,
         totalLoan: formData.totalLoan,
         endDate,
-        subTotal: calculatedSubTotal,
+        subTotal: (calculatedSubTotal + previousLoanAmount).toFixed(2),
         previousLoanAmount,
         status: "Active",
       };
-
-      try {
         if (!editingLoan) {
           await loanStore.createLoan(payload);
           const selectedIds =
@@ -212,19 +273,29 @@ const Loans = observer(
               ?.map((loan) => loan._id) || [];
 
           for (const id of selectedIds) {
-            await loanStore.updateLoan(id, { status: "Paid Off" });
+            await loanStore.updateLoan(id, { status: "Merged" });
           }
 
           toast.success("Loan created successfully");
+          // loadInitialData();
         }
         await loanStore.fetchLoans();
         setModalOpen(false);
         resetForm();
-      } catch {
-        toast.error("Failed to save loan");
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to save loan";
+        toast.error(message);
+        console.error("Error saving loan:", error);
+      } finally {
+        setSaving(false);
       }
     };
-
+ useEffect(() => {
+     loadInitialData();
+ }, []);
     const handleDelete = async (id: string) => {
       if (!window.confirm("Are you sure you want to delete this loan?")) return;
       try {
@@ -267,10 +338,6 @@ const Loans = observer(
       { label: "Check Number", key: "checkNumber", type: "number" },
     ];
 
-    const bgStyle = {
-      backgroundColor: formData?.companyobj?.backgroundColor || "#555555",
-    };
-
     return (
       <div className="flex flex-col bg-white rounded-lg text-left">
         {/* Header & Table */}
@@ -301,6 +368,18 @@ const Loans = observer(
                   setEditingLoan(null);
                   setModalOpen(true);
                   resetForm();
+                  const defaultCompany = companyStore.companies.find(
+                    (c) => c.activeCompany && c.companyName === "Claim Advance"
+                  );
+                  if (defaultCompany) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      company: defaultCompany._id,
+                    }));
+                    handleCompanyChange(defaultCompany._id);
+                  }
+
+                  setModalOpen(true);
                 }}
               >
                 New Loan
@@ -343,12 +422,12 @@ const Loans = observer(
                       onClose?.();
                     }}
                   >
-                    ✕
+                    <X />
                   </button>
                 </div>
 
                 {/* Modal Content */}
-                <div className="flex flex-col sm:flex-row gap-2 overflow-y-auto overflow-x-hidden px-2 pt-1 flex-1">
+                <div className="flex flex-col sm:flex-row gap-3 overflow-y-auto overflow-x-hidden px-4 pt-1 flex-1">
                   {/* Left Fields */}
                   <div className="flex-1 space-y-3">
                     {loanFields.map((field) => {
@@ -358,7 +437,7 @@ const Loans = observer(
                         return (
                           <div
                             key={field.key}
-                            className="flex flex-col text-left py-1"
+                            className="flex flex-col text-left py-1 z-20 "
                           >
                             <label className="mb-1 font-medium text-gray-700">
                               {field.label}
@@ -426,7 +505,7 @@ const Loans = observer(
                       return (
                         <div
                           key={field.key}
-                          className="flex flex-col text-left py-1"
+                          className="flex flex-col text-left py-1 "
                         >
                           <label className="mb-1 font-medium text-gray-700">
                             {field.label}
@@ -448,10 +527,9 @@ const Loans = observer(
                         </div>
                       );
                     })}
-
-                    {/* Overlap Toggle */}
-                    {formData?.company && (
-                      <div className="mt-4 p-2 bg-green-50 border-l-4 border-yellow-500 rounded">
+                    {/* 🆕 Overlap Mode */}
+                    {formData?.company && activeLoans.length > 0 && (
+                      <div className="mt-4 p-2 bg-green-100 border-l-4  border-yellow-500 rounded ">
                         <div className="flex gap-3 mb-3 items-center">
                           <Switch
                             checked={overlapMode}
@@ -467,98 +545,96 @@ const Loans = observer(
                             Previous Loan
                           </label>
                         </div>
+                        <div
+                          className={`transition-all duration-700 ease-in-out overflow-auto ${
+                            overlapMode
+                              ? "max-h-40 opacity-100"
+                            : "max-h-0 opacity-0"
+                        }`}
+                      >
+                        {overlapMode &&
+                          activeLoans.map((loan) => {
+                            const { runningTenure, total, remaining } =
+                              getLoanRunningDetails(loan);
+                            const isSelected = selectedLoanIds.includes(
+                              loan._id
+                            );
 
-                        {overlapMode && activeLoans.length > 0 ? (
-                          <div className="max-h-40 overflow-y-auto space-y-1">
-                            {activeLoans.map((loan) => {
-                              const isSelected = selectedLoanIds.includes(
-                                loan._id
-                              );
-                              const ExpiryDate = loan?.endDate || null;
-                              const totalLoan = loan?.totalLoan || 0;
-                              const outstandingAmt =
-                                (loan.totalLoan || 0) - (loan.paidAmount || 0);
-
-                              return (
-                                <div
-                                  key={loan._id}
-                                  onClick={() => {
-                                    if (isSelected)
-                                      setSelectedLoanIds(
-                                        selectedLoanIds.filter(
-                                          (id) => id !== loan._id
-                                        )
-                                      );
-                                    else
-                                      setSelectedLoanIds([
-                                        ...selectedLoanIds,
-                                        loan._id,
-                                      ]);
-                                  }}
-                                  className={`flex justify-between items-center p-3 border rounded-lg shadow-sm cursor-pointer transition ${
+                            return (
+                              <div
+                                key={loan._id}
+                                onClick={() =>
+                                  setSelectedLoanIds((prev) =>
                                     isSelected
-                                      ? "bg-green-100 border-green-400"
-                                      : "bg-white hover:bg-gray-50"
-                                  }`}
-                                >
-                                  <div className="flex flex-col gap-1 text-xs sm:text-sm">
-                                    <span
-                                      className="font-semibold text-white px-2 py-1 rounded-md"
-                                      style={bgStyle}
-                                    >
+                                      ? prev.filter((id) => id !== loan._id)
+                                      : [...prev, loan._id]
+                                  )
+                                }
+                                className={`flex justify-between  items-center p-3  border rounded-lg shadow-sm cursor-pointer transition
+    ${
+      isSelected ? "bg-green-100 border-green-400" : "bg-white hover:bg-gray-50"
+    }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-col text-xs sm:text-xs">
+                                    <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
                                       Issue Date:{" "}
                                       {moment(loan.issueDate).format(
                                         "MMM DD, YYYY"
                                       )}
                                     </span>
-                                    <span>
-                                      Terms: <b>{loan.loanTerms} Months</b>
-                                      <br />
-                                      {moment(ExpiryDate).format(
-                                        "MMM DD, YYYY"
-                                      )}
+                                    <span className="font-semibold">
+                                      Current Tenure:{" "}
+                                      <b>{runningTenure} Months</b>
                                     </span>
-                                    <span className="text-green-700 font-bold text-sm">
+                                    <span className="text-green-700 font-bold ">
                                       Total: $
-                                      {totalLoan.toLocaleString(undefined, {
+                                      {total.toLocaleString(undefined, {
                                         minimumFractionDigits: 2,
                                         maximumFractionDigits: 2,
-                                      })}
-                                    </span>
-                                    <span className="text-green-700 font-bold text-sm">
-                                      Remaining: $
-                                      {outstandingAmt.toLocaleString(
-                                        undefined,
-                                        {
+                                      })}{" "}
+                                      ({" "} 
+                                      <span className="text-red-600 font-bold">
+                                        Remaining: $
+                                        {remaining.toLocaleString(undefined, {
                                           minimumFractionDigits: 2,
                                           maximumFractionDigits: 2,
-                                        }
-                                      )}
+                                        })}
+                                      </span>
+                                      )
                                     </span>
                                   </div>
-
-                                  <button
-                                    type="button"
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <div className="flex flex-col text-right text-xs sm:text-sm"></div>
+                                  <IconButton
+                                    size="small"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setSelectedLoan(loan);
+                                      handleView(loan);
                                     }}
-                                    className="text-blue-600 hover:text-blue-800 flex-shrink-0"
-                                    title="View Details"
                                   >
                                     <Eye size={18} />
-                                  </button>
+                                  </IconButton>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          overlapMode && (
-                            <div className="text-sm text-gray-500 italic text-center py-4">
-                              No active loans available for this client.
-                            </div>
-                          )
-                        )}
+
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() =>
+                                    setSelectedLoanIds((prev) =>
+                                      isSelected
+                                        ? prev.filter((id) => id !== loan._id)
+                                        : [...prev, loan._id]
+                                    )
+                                  }
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 m-0 accent-green-600 cursor-pointer"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -623,202 +699,188 @@ const Loans = observer(
                       setModalOpen(false);
                       onClose?.();
                     }}
-                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => handleSave(formData)}
-                    className="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 flex items-center font-bold gap-1"
+                    className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 w-fit"
+                    disabled={saving}
                   >
-                    <Save size={16} />{" "}
-                    {editingLoan ? "Update Loan" : "Create Loan"}
+                    {saving ? (
+                      <div className="flex items-center gap-2">
+                        <div className="loader-button border-t-2 border-white border-solid rounded-full w-4 h-4 animate-spin"></div>
+                        Saving...
+                      </div>
+                    ) : (
+                      <>
+                        <Save size={16} />
+                        {editingLoan ? "Update Loan" : "Create Loan"}
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
             </div>
           </LocalizationProvider>
         )}
-          {/* View Loan Modal */}
+        {/* View Loan Modal */}
         {selectedLoan && (
-            <Dialog
-                   open={!!selectedLoan}
-                   onClose={handleClose}
-                   maxWidth="sm"
-                   fullWidth
-                   PaperProps={{
-                     className:
-                       "rounded-2xl shadow-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50",
-                   }}
-                 >
-                   <DialogTitle className="font-semibold text-xl text-green-700 border-b pb-2">
-                     Loan Details
-                   </DialogTitle>
-         
-                   <DialogContent className="p-6">
-                     {selectedLoan && (
-                       <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
-                         {/* Client Info */}
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
-                           <p className="font-medium">
-                             {clientStore.clients.find(
-                               (c) => c._id === selectedLoan.client
-                             )?.fullName || "-"}
-                           </p>
-                         </div>
-         
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Company
-                           </p>
-                           <p className="font-medium">
-                             {companyStore.companies.find(
-                               (c) => c._id === selectedLoan.company
-                             )?.companyName || "-"}
-                           </p>
-                         </div>
-         
-                         {/* Base & Total Loan */}
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Base Amount
-                           </p>
-                           <p className="font-semibold text-green-700">
-                             $
-                             {Number(selectedLoan.baseAmount || 0).toLocaleString(
-                               undefined,
-                               {
-                                 minimumFractionDigits: 2,
-                                 maximumFractionDigits: 2,
-                               }
-                             )}
-                           </p>
-                         </div>
-         
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Total Loan
-                           </p>
-                           <p className="font-semibold text-green-700">
-                             $
-                             {Number(selectedLoan.totalLoan || 0).toLocaleString(
-                               undefined,
-                               {
-                                 minimumFractionDigits: 2,
-                                 maximumFractionDigits: 2,
-                               }
-                             )}
-                           </p>
-                         </div>
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Paid Amount
-                           </p>
-                           <p className="font-semibold text-blue-700">
-                             $
-                             {Number(selectedLoan.paidAmount || 0).toLocaleString(
-                               undefined,
-                               {
-                                 minimumFractionDigits: 2,
-                                 maximumFractionDigits: 2,
-                               }
-                             )}
-                           </p>
-                         </div>
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Remaining Amount
-                           </p>
-                           <p className="font-semibold text-red-700">
-                             $
-                             {(
-                               (selectedLoan.totalLoan || 0) -
-                               (selectedLoan.paidAmount || 0)
-                             ).toLocaleString(undefined, {
-                               minimumFractionDigits: 2,
-                               maximumFractionDigits: 2,
-                             })}
-                           </p>
-                         </div>
-                         <div className="sm:col-span-2 mt-2">
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Progress
-                           </p>
-                           <div className="w-full bg-gray-200 h-2 rounded-full">
-                             <div
-                               className="h-2 rounded-full bg-green-600"
-                               style={{
-                                 width: `${
-                                   ((selectedLoan.paidAmount || 0) /
-                                     (selectedLoan.totalLoan || 1)) *
-                                   100
-                                 }%`,
-                               }}
-                             />
-                           </div>
-                         </div>
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Interest Type
-                           </p>
-                           <p className="font-medium capitalize">
-                             {selectedLoan.interestType || "N/A"}
-                           </p>
-                         </div>
-         
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Monthly Rate
-                           </p>
-                           <p className="font-medium">{selectedLoan.monthlyRate}%</p>
-                         </div>
-         
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Loan Term
-                           </p>
-                           <p className="font-medium">{selectedLoan.loanTerms} months</p>
-                         </div>
-         
-                         <div>
-                           <p className="text-gray-500 text-xs uppercase mb-1">
-                             Issue Date
-                           </p>
-                           <p className="font-medium">
-                             {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
-                           </p>
-                         </div>
-         
-                         <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
-                           <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
-                           <p
-                             className={`font-semibold ${
-                               selectedLoan.status === "Fresh Loan Issued"
-                                 ? "text-green-700"
-                                 : selectedLoan.status === "Payment Received"
-                                 ? "text-blue-700"
-                                 : "text-yellow-700"
-                             }`}
-                           >
-                             {selectedLoan.status}
-                           </p>
-                         </div>
-                       </div>
-                     )}
-                   </DialogContent>
-         
-                   <DialogActions className="px-6 pb-4">
-                     <Button
-                       onClick={handleClose}
-                       variant="contained"
-                       color="success"
-                       className="rounded-lg shadow-sm px-5 font-bold"
-                     >
-                       Close
-                     </Button>
-                   </DialogActions>
-                 </Dialog>
+          <Dialog
+            open={!!selectedLoan}
+            onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              className:
+                "rounded-2xl shadow-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50",
+            }}
+          >
+            <DialogTitle className="font-semibold text-xl text-green-700 border-b pb-2">
+              Loan Details
+            </DialogTitle>
+            <DialogContent className="p-6">
+                <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
+                  {/* Client Info */}
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
+                    <p className="font-medium">
+                      {clientStore.clients.find(
+                        (c) => c._id === selectedLoan.client
+                      )?.fullName || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Company
+                  </p>
+                    <p className="font-medium">
+                      {companyStore.companies.find(
+                        (c) => c._id === selectedLoan.company
+                      )?.companyName || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Base Amount
+                  </p>
+                    <p className="font-semibold text-green-700">
+                      $
+                    {Number(selectedLoan.subTotal || 0).toLocaleString(
+                      undefined,
+                      { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                    )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Total Loan
+                  </p>
+                    <p className="font-semibold text-green-700">
+                      $
+                    {total.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Paid Amount
+                  </p>
+                  <p className="font-semibold text-blue-700">
+                    $
+                    {Number(selectedLoan.paidAmount || 0).toLocaleString(
+                      undefined,
+                      { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                    )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Remaining Amount
+                  </p>
+                   <p className="font-semibold text-red-700">
+                    $
+                    {remaining.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2 mt-2">
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Progress
+                  </p>
+                    <div className="w-full bg-gray-200 h-2 rounded-full">
+                      <div
+                        className="h-2 rounded-full bg-green-600"
+                        style={{
+                          width: `${
+                          ((selectedLoan.paidAmount || 0) / (total || 1)) * 100
+                        }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Interest Type
+                  </p>
+                    <p className="font-medium capitalize">
+                    {selectedLoan.interestType || "N/A"}
+                  </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Monthly Rate
+                  </p>
+                    <p className="font-medium">{selectedLoan.monthlyRate}%</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Loan Term
+                    </p>
+                    <p className="font-medium">
+                      <b>{runningTenure} Months</b>
+                      </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                    Issue Date
+                  </p>
+                  <p className="font-medium">
+                    {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
+                  </p>
+                  </div>
+                  <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
+                    <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
+                    <p
+                      className={`font-semibold ${
+                        selectedLoan.status === "Paid Off"
+                          ? "text-green-700"
+                          : selectedLoan.status === "Partial Payment"
+                          ? "text-blue-700"
+                          : "text-yellow-700"
+                      }`}
+                    >
+                      {selectedLoan.status}
+                    </p>
+                  </div>
+                </div>
+            </DialogContent>
+            <DialogActions className="px-6 pb-4">
+              <Button
+                onClick={handleClose}
+                variant="contained"
+                color="success"
+                className="px-4 py-2 font-bold bg-green-400 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                Close
+              </Button>
+            </DialogActions>
+          </Dialog>
         )}
       </div>
     );

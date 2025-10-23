@@ -5,19 +5,16 @@ import api from "../api/axios";
 export interface Company {
   _id?: string;
   companyName: string;
-  // companyCode: string;
   description?: string;
   phone?: string;
   email?: string;
   website?: string;
   activeCompany: boolean;
   address?: string;
-
   interestRate?: {
     monthlyRate: number;
     interestType: "flat" | "compound";
   };
-
   fees?: {
     administrativeFee?: { value: number; type: "flat" | "percentage" };
     applicationFee?: { value: number; type: "flat" | "percentage" };
@@ -25,17 +22,8 @@ export interface Company {
     brokerFee?: { value: number; type: "flat" | "percentage" };
     annualMaintenanceFee?: { value: number; type: "flat" | "percentage" };
   };
-
   backgroundColor?: string;
   loanTerms?: number[];
-
-  freshLoanRules?: {
-    enabled: boolean;
-    minMonthsBetweenLoans?: number;
-    allowOverlappingLoans?: boolean;
-    requireFullPayoff?: boolean;
-  };
-
   payoffSettings?: {
     allowEarlyPayoff?: boolean;
     earlyPayoffPenalty?: number;
@@ -51,7 +39,9 @@ class CompanyStore {
   companies: Company[] = [];
   filteredCompanies: Company[] = [];
   loading = false;
-
+  activeCompany: Company | null = null;
+  // isCompanyFetched = false;
+  // isFetching = false; 
   constructor() {
     makeAutoObservable(this);
   }
@@ -80,18 +70,26 @@ class CompanyStore {
     }
   }
   async fetchCompany() {
+    // if (this.isCompanyFetched || this.isFetching) return;
+
+    // this.isFetching = true;
     this.loading = true;
+
     try {
-      const { data } = await api.get("/companies/allcompanies");
+      const  companies  = await  fetchCompanies();
       runInAction(() => {
-        const validCompanies = (data.data || data.companies || []).filter(Boolean); // removes undefined/null
+        const validCompanies = (companies || []).filter(Boolean);
         this.companies = validCompanies;
         this.filteredCompanies = validCompanies;
+        // this.isCompanyFetched = true;
       });
     } catch (err) {
       console.error("Failed to fetch companies:", err);
     } finally {
-      runInAction(() => (this.loading = false));
+      runInAction(() => {
+        this.loading = false;
+        // this.isFetching = false;
+      });
     }
   }
 

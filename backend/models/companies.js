@@ -35,7 +35,7 @@ const companySchema = new mongoose.Schema({
     annualMaintenanceFee: { type: feeSchema, default: () => ({}) }
   },
 
-  loanTerms: [{ type: Number, enum: [6, 12, 18, 24, 30, 36] }],
+  loanTerms: [{ type: Number, enum: [6, 12, 18, 24, 30, 36, 48] }],
 
   freshLoanRules: {
     enabled: { type: Boolean, default: false },

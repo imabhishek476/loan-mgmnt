@@ -1,34 +1,73 @@
-import { Client } from "../models/Client.js";
-import { Loan } from "../models/loan.js";
-import Company from "../models/companies.js";
+const { Client } = require("../models/Client");
+const { Loan } = require("../models/loan");
+const Company = require("../models/companies");
+const { LoanPayment } = require("../models/LoanPayment");
 
-export const getDashboardStats = async (req, res) => {
-  try {
-    
-    const totalClientsAgg = await Client.aggregate([
-      { $count: "totalClients" },
-    ]);
-    const totalClients = totalClientsAgg[0]?.totalClients || 0;
-    const totalLoansAgg = await Loan.aggregate([{ $count: "totalLoans" }]);
-    const totalLoans = totalLoansAgg[0]?.totalLoans || 0;
+const calculateStats = async () => {
+  const loansByCompany = await Loan.aggregate([
+    {
+      $lookup: {
+        from: "companies",
+        localField: "company",
+        foreignField: "_id",
+        as: "companyData",
+      },
+    },
+    { $unwind: "$companyData" },
+    {
+      $group: {
+        _id: "$companyData.companyName",
+        totalAmount: { $sum: "$subTotal" },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
 
-   
-    const totalCompaniesAgg = await Company.aggregate([
-      { $count: "totalCompanies" },
-    ]);
-    const totalCompanies = totalCompaniesAgg[0]?.totalCompanies || 0;
+  const totalPaymentsAgg = await LoanPayment.aggregate([
+    { $group: { _id: null, total: { $sum: "$paidAmount" } } },
+  ]);
+  const totalPaymentsAmount = totalPaymentsAgg[0]?.total || 0;
 
     const totalLoanAmountAgg = await Loan.aggregate([
-      { $group: { _id: null, total: { $sum: "$totalLoan" } } },
+  { $group: { _id: null, total: { $sum: "$subTotal" } } },
     ]);
     const totalLoanAmount = totalLoanAmountAgg[0]?.total || 0;
 
-    const totalPaymentsAgg = await Loan.aggregate([
-      { $group: { _id: null, total: { $sum: "$paidAmount" } } },
-    ]);
-    const totalPayments = totalPaymentsAgg[0]?.total || 0;
+  const totalPaidOrMergedLoans = await Loan.countDocuments({
+ status: { $in: ["Paid Off", "Merged"] },
+});
+  return {
+    totalClients: await Client.countDocuments(),
+    totalCompanies: await Company.countDocuments(),
+    totalLoans: await Loan.countDocuments(),
+    totalLoanAmount,
+    totalPaymentsAmount,
+    totalPaidOffLoans: totalPaidOrMergedLoans,
+    loansByCompany,
+    loanByClient: [],
+  };
+};
+
+const getLoansByCompanyByDate = async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    if (!from || !to) {
+      return res
+        .status(400)
+        .json({ message: "Please provide from and to dates" });
+    }
+    const allLoans = await Loan.find();
+    // console.log(
+    //   "All loans in DB:",
+    //   allLoans.map((l) => ({ id: l._id, issueDate: l.issueDate }))
+    // );
 
     const loansByCompany = await Loan.aggregate([
+      {
+        $match: {
+          issueDate: { $gte: from, $lte: to }, 
+        },
+      },
       {
         $lookup: {
           from: "companies",
@@ -47,35 +86,56 @@ export const getDashboardStats = async (req, res) => {
       },
     ]);
 
-    const loanByClient = await Loan.aggregate([
+    const payments = await LoanPayment.aggregate([
       {
-        $lookup: {
-          from: "clients",
-          localField: "client",
-          foreignField: "_id",
-          as: "clientData",
+        $match: {
+          paidDate: { $gte: from, $lte: to },
         },
       },
-      { $unwind: "$clientData" },
       {
         $group: {
-          _id: "$clientData.fullName",
-          totalAmount: { $sum: "$totalLoan" },
+          _id: null,
+          totalPaid: { $sum: "$paidAmount" },
+          count: { $sum: 1 },
         },
       },
     ]);
 
     res.json({
-      totalClients,
-      totalLoans,
-      totalCompanies,
-      totalLoanAmount,
-      totalPayments,
       loansByCompany,
-      loanByClient,
+      totalPaymentsAmount: payments[0]?.totalPaid || 0,
+      totalPaymentsCount: payments[0]?.count || 0,
     });
-  } catch (error) {
-    console.error("Error fetching dashboard stats:", error);
-    res.status(500).json({ message: "Error fetching dashboard stats" });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching data" });
   }
+};
+const getDashboardStatsByDate = async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    if (!from || !to) {
+      return res
+        .status(400)
+        .json({ message: "Please provide from and to dates" });
+    }
+
+    const stats = await calculateStats();
+    res.json(stats);
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Error fetching filtered dashboard stats" });
+  }
+};
+
+const getDashboardStats = async (req, res) => {
+  const stats = await calculateStats();
+  res.json(stats);
+};
+
+module.exports = {
+  getLoansByCompanyByDate,
+  getDashboardStatsByDate,
+  getDashboardStats,
 };

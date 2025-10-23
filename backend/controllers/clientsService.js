@@ -1,6 +1,8 @@
+const AuditLog = require("../models/AuditLog");
 const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
 const moment = require("moment");
+const createAuditLog = require("../utils/auditLog");
 
 exports.Clientstore = async (req, res) => {
   try {
@@ -17,17 +19,15 @@ exports.Clientstore = async (req, res) => {
       customFields,
     } = req.body;
 
-    console.log("request coming to controller", req.body);
 
-
-    if (!fullName || !email || !phone) {
+    if (!fullName) {
       return res.status(400).json({
         success: false,
-        error: "Full name, email, and phone are required",
+        error: "Full name are required",
       });
     }
 
-    const trimEmail = email.trim().toLowerCase();
+    const trimEmail = email?.trim().toLowerCase();
     console.log("normalized email =>", trimEmail);
 
 
@@ -47,7 +47,7 @@ exports.Clientstore = async (req, res) => {
     const newClient = await Client.create({
       fullName: fullName.trim(),
       email: trimEmail,
-      phone: phone.trim(),
+      phone: phone?.trim(),
       ssn: ssn || "",
       dob: dobStr,
       accidentDate: accidentDateStr,
@@ -56,9 +56,16 @@ exports.Clientstore = async (req, res) => {
       memo: memo || "",
 
       customFields: Array.isArray(customFields) ? customFields : [],
-      createdBy: req.user ? req.user._id : null,
+      createdBy: req.user ? req.user.id : null,
     });
-
+    await createAuditLog(
+      req.user?.id || null,
+      req.user?.userRole || null,
+      "Create Client", 
+      "Client",
+      newClient._id,
+      { after: newClient }
+    );
     res.status(201).json({
       success: true,
       message: "Client added successfully",
@@ -135,7 +142,14 @@ exports.updateClient = async (req, res) => {
     if (!client) {
       return res.status(404).json({ success: false, error: "Client not found" });
     }
-
+  await createAuditLog(
+    req.user?.id || null,
+    req.user?.userRole || null,
+    "Client has been Updated",
+    "Client",
+    client._id,
+    { before: client, after: client }
+  );
     res.status(200).json({ success: true, message: "Client updated", client });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -147,11 +161,26 @@ exports.deleteClient = async (req, res) => {
     const { id } = req.params;
     const client = await Client.findByIdAndDelete(id);
     if (!client) {
-      return res.status(404).json({ success: false, error: "Client not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Client not found" });
     }
+    const deletedLoans = await Loan.deleteMany({ client: id });
+    await createAuditLog(
+      req.user?.id || null,
+      req.user?.userRole || null,
+      `Client and related loans deleted (${deletedLoans.deletedCount} loans)`,
+      "Client",
+      client._id,
+      { deletedClient: client, deletedLoansCount: deletedLoans.deletedCount }
+    );
 
-    res.status(200).json({ success: true, message: "Client deleted" });
+    res.status(200).json({
+      success: true,
+      message: `Client deleted successfully along with ${deletedLoans.deletedCount} related loan(s)`,
+    });
   } catch (error) {
+    console.error("Error deleting client and loans:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

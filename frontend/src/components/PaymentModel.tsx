@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
-import moment from "moment";
+import { calculateLoanAmounts } from "../utils/loanCalculations"; 
 
 interface LoanPaymentModalProps {
   open: boolean;
@@ -31,28 +31,19 @@ const LoanPaymentModal = observer(
       checkNumber?: string;
     }>({});
 
-    useEffect(() => {
-      if (loan) {
-        const totalLoan = loan.totalLoan || 0;
-        const paidAmount = loan.paidAmount || 0;
-        const tenureMonths = loan.loanTerms || 0;
-        const remaining = totalLoan - paidAmount;
-        const perMonth = tenureMonths > 0 ? totalLoan / tenureMonths : 0;
-        const startDate = moment(loan.issueDate, "MM-DD-YYYY");
-        const currentDate = moment();
-        let monthsPassed = currentDate.diff(startDate, "months") + 1;
-        if (monthsPassed > tenureMonths) monthsPassed = tenureMonths;
-        const monthsPaid = perMonth > 0 ? Math.floor(paidAmount / perMonth) : 0;
-        const monthsDue = Math.max(0, monthsPassed - monthsPaid);
-        const defaultPayment = perMonth * monthsDue;
-
-        setOutstanding(remaining);
-        setAmount(defaultPayment > 0 ? defaultPayment.toFixed(2) : "");
+useEffect(() => {
+  if (!loan) return;
+  const loanData = calculateLoanAmounts(loan);
+  if (!loanData) return;
+  const { remaining } = loanData;
+  setOutstanding(remaining);
+  setAmount(remaining > 0 ? remaining.toFixed(2) : "0.00");
         setCheckNumber("");
         setPayoffLetter("");
         setErrors({});
-      }
-    }, [loan]);
+}, [loan]);
+
+
 
     if (!open || !loan) return null;
 
@@ -62,7 +53,8 @@ const LoanPaymentModal = observer(
 
       if (!amount || isNaN(numAmount) || numAmount <= 0) {
         newErrors.amount = "Paid Amount is required and must be greater than 0";
-      } else if (numAmount > outstanding) {
+        //@ts-ignore
+      } else if (numAmount > outstanding.toFixed(2)) {
         newErrors.amount = `Cannot pay more than outstanding: $${outstanding.toFixed(
           2
         )}`;
@@ -76,48 +68,51 @@ const LoanPaymentModal = observer(
       Object.values(newErrors).forEach((msg) => toast.error(msg));
       return Object.keys(newErrors).length === 0;
     };
+    const formated_Outstanding = outstanding.toFixed(2);
 
     const handlePayment = async () => {
       if (!validate()) return;
 
-    setLoading(true);
-    try {
-      await paymentStore.addPayment({
-        loanId: loan._id,
-        clientId,
-        paidAmount: Number(amount),
-        paidDate: new Date(),
-        checkNumber,
-        payoffLetter,
-      });
+      setLoading(true);
+      try {
+        await paymentStore.addPayment({
+          loanId: loan._id,
+          clientId,
+          paidAmount: Number(amount),
+          paidDate: new Date(),
+          checkNumber,
+          payoffLetter,
+          formated_Outstanding,
+          currentTerm: loan.loanTerms,
+        });
 
-      await loanStore.fetchLoans();
-       onPaymentSuccess?.();
-      toast.success("Payment recorded successfully");
-      onClose();
-    } catch (err) {
-      console.error(err);
+        await loanStore.fetchLoans();
+        onPaymentSuccess?.();
+        toast.success("Payment recorded successfully");
+        onClose();
+      } catch (err) {
+        console.error(err);
         toast.error("Payment failed. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Make Payment</h2>
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Paid Amount <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={amount}
-              min={0}
-              max={outstanding}
-              onChange={(e) => {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Make Payment</h2>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Paid Amount <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                value={amount}
+                min={0}
+                step="0.01"
+                onChange={(e) => {
                   setAmount(e.target.value);
                   const num = Number(e.target.value);
                   setErrors((prev) => ({
@@ -132,16 +127,16 @@ const LoanPaymentModal = observer(
                         : "",
                   }));
                 }}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
-               errors.amount
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
+                  errors.amount
                     ? "border-red-500 focus:ring-red-300"
                     : "border-gray-300 focus:ring-green-300"
-              }`}
-             />
-            {errors.amount && (
+                }`}
+              />
+              {errors.amount && (
                 <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
               )}
-            <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 Outstanding: ${outstanding.toFixed(2)}
               </p>
             </div>

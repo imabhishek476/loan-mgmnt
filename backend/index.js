@@ -8,6 +8,8 @@ const companiesRouter = require("./routes/companies.router");
 const loanRouter = require("./routes/loans.router");
 const loanPaymentRouter = require("./routes/loanPayment.router");
 const dashboardRoutes = require("./routes/dashbaord.router")
+const auditRouter = require("./routes/auditLog.router");
+const userRouter = require("./routes/users.router");
 const app = express();
 
 // Middleware
@@ -40,6 +42,9 @@ app.use("/api/companies", companiesRouter);
 app.use("/api/loans", loanRouter);
 app.use("/api/payments", loanPaymentRouter);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/logs", auditRouter);
+app.use("/api/users", userRouter);
+
 // Seed admin user
 const seedAdmin = require("./admin");
 seedAdmin();
