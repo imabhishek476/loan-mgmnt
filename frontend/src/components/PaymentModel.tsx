@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
-import moment from "moment";
 import { calculateLoanAmounts } from "../utils/loanCalculations"; 
 
 interface LoanPaymentModalProps {
@@ -84,6 +83,7 @@ useEffect(() => {
           checkNumber,
           payoffLetter,
           formated_Outstanding,
+          currentTerm: loan.loanTerms,
         });
 
         await loanStore.fetchLoans();

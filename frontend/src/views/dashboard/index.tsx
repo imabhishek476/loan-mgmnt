@@ -511,7 +511,7 @@ const handleClientUpdate = async (id: string, data: any) => {
                 cellStyle: { whiteSpace: "nowrap" },
               },
               {
-                title: "Current Tenure (months)",
+                title: "Current Tenure (Mo.)",
                 width: "25%",
                 render: (rowData) => {
                   const issue = moment(rowData.issueDate, "MM-DD-YYYY");
@@ -527,7 +527,7 @@ const handleClientUpdate = async (id: string, data: any) => {
                 cellStyle: { whiteSpace: "nowrap" },
               },
               {
-                title: "Term (months)",
+                title: "Term (Mo.)",
                 field: "originalTerm",
                 width: "20%",
                 cellStyle: { whiteSpace: "nowrap" },
@@ -541,7 +541,7 @@ const handleClientUpdate = async (id: string, data: any) => {
               },
               {
                 title: "End Date",
-                width: "15%",
+                width: "10%",
                 render: (rowData) =>
                   moment(rowData.endDate, "MM-DD-YYYY").format("DD MMM YYYY"),
                 cellStyle: { whiteSpace: "nowrap" },

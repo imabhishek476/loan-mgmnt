@@ -74,7 +74,6 @@ exports.activeLoans = async (req, res) => {
     const loans = await Loan.find({ loanStatus: "Active" }).sort({
       createdAt: -1,
     });
-    console.log(loans, "loans");
     res.status(200).json({
       success: true,
       data: loans,
