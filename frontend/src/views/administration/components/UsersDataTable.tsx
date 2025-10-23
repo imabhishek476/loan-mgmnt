@@ -1,29 +1,42 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2 } from "lucide-react";
 
-interface CompaniesDataTableProps {
-  companies?: any[];
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  userRole: string;
+}
+
+interface UsersDataTableProps {
+  users?: User[];
   onSearch: (query: string) => void;
-  onEdit: (company: any) => void;
+  onEdit: (user: User) => void;
   onDelete: (id: string) => void;
   loading: boolean;
 }
 
-const CompaniesDataTable = ({
-  companies = [],
+const UsersDataTable = ({
+  users = [],
   onSearch,
   onEdit,
   onDelete,
   loading,
-}: CompaniesDataTableProps) => {
+}: UsersDataTableProps) => {
   const [search, setSearch] = useState("");
 
   const debouncedSearch = useMemo(
     () => debounce((value: string) => onSearch(value), 300),
     [onSearch]
   );
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -35,35 +48,24 @@ const CompaniesDataTable = ({
     if (!text) return "";
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
-const renderFee = (fee: any) => {
-  if (!fee || fee.value == null) return "-";
-
-  const isPercentage = fee.type === "percentage";
-  const displayValue = isPercentage
-    ? `${Number(fee.value).toFixed(2)}%`
-    : `$${Number(fee.value).toFixed(2)}`;
-
-  return `${displayValue} (${capitalizeFirst(fee.type)})`;
-};
-
 
   return (
     <div className="w-full">
-      {/* Search Input */}
+      {/* 🔍 Search */}
       <div className="mb-4 relative w-full">
         <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <Search className="w-5 h-5 text-gray-400" />
         </span>
         <input
           type="text"
-          placeholder="Search by company name or code"
+          placeholder="Search by name or email"
           value={search}
           onChange={handleSearchChange}
           className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
         />
       </div>
 
-      {/* Table */}
+      {/* 📊 Table */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
         <MaterialTable
           isLoading={loading}
@@ -72,71 +74,37 @@ const renderFee = (fee: any) => {
             {
               title: "Sr.no",
               width: "5%",
+              //@ts-ignore
               render: (rowData) => (rowData.tableData?.id ?? 0) + 1,
             },
             {
-              title: "Company Name",
-              field: "companyName",
-              render: (rowData) => capitalizeFirst(rowData.companyName),
-              cellStyle: {
-                padding: "6px 8px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              },
+              title: "Name",
+              field: "name",
+              render: (rowData) => capitalizeFirst(rowData.name),
             },
             {
-              title: "Interest",
-              render: (rowData) => {
-                const interest = rowData.interestRate;
-                if (!interest || interest.monthlyRate == null) return "-";
-
-                const monthlyRate = Number(interest.monthlyRate).toFixed(2);
-                const interestType = capitalizeFirst(
-                  interest.interestType || "N/A"
-                );
-                return `${monthlyRate}% (${interestType})`;
-              },
-              cellStyle: { width: 140, padding: "6px 8px" },
+              title: "Email",
+              field: "email",
             },
             {
-              title: "Administrative Fee",
-              render: (rowData) => renderFee(rowData.fees?.administrativeFee),
-              cellStyle: { width: 160, textAlign: "left", padding: "6px 8px" },
-            },
-            {
-              title: "Application Fee",
-              render: (rowData) => renderFee(rowData.fees?.applicationFee),
-              cellStyle: { width: 160, textAlign: "left", padding: "6px 8px" },
-            },
-            {
-              title: "Status",
-              render: (rowData) =>
-                rowData.activeCompany ? (
-                  <span className="px-2 py-0.5 bg-green-700 text-white text-sm font-semibold rounded-lg">
-                    Active
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-sm font-semibold rounded-lg">
-                    Inactive
-                  </span>
-                ),
-              cellStyle: { width: 100, textAlign: "left", padding: "6px" },
+              title: "Role",
+              field: "userRole",
+              render: (rowData) => capitalizeFirst(rowData.userRole),
             },
           ]}
-          data={companies}
+          data={users}
           actions={[
             {
               icon: () => <Pencil className="w-4 h-4 text-green-600" />,
               tooltip: "Edit",
               //@ts-ignore
-              onClick: (event, rowData: any) => onEdit(rowData),
+              onClick: (event, rowData) => onEdit(rowData as User),
             },
             {
               icon: () => <Trash2 className="w-4 h-4 text-red-600" />,
               tooltip: "Delete",
               //@ts-ignore
-              onClick: (event, rowData: any) => onDelete(rowData._id),
+              onClick: (event, rowData) => onDelete((rowData as User)._id),
             },
           ]}
           options={{
@@ -163,17 +131,16 @@ const renderFee = (fee: any) => {
               fontSize: "13px",
               height: 38,
               borderBottom: "1px solid #f1f1f1",
-              transition: "background 0.2s",
             },
             emptyRowsWhenPaging: false,
           }}
           localization={{
             body: {
               emptyDataSourceMessage: loading
-                ? "Loading companies..."
+                ? "Loading users..."
                 : search
-                  ? `No results found for "${search}"`
-                  : "No companies available.",
+                ? `No results found for "${search}"`
+                : "No users available.",
             },
           }}
         />
@@ -182,4 +149,4 @@ const renderFee = (fee: any) => {
   );
 };
 
-export default CompaniesDataTable;
+export default UsersDataTable;

@@ -22,11 +22,11 @@ const ClientSchema = new mongoose.Schema(
   },
   email: {
     type: String,
-    required: true,
+    required: false,
   },
   phone: {
     type: String,
-    required: true,
+    required: false,
   },
   ssn: String,
   dob: String,

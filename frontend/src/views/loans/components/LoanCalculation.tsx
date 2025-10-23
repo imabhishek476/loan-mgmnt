@@ -46,21 +46,32 @@ const calculateLoan = (
   fees: Record<string, Fee>,
   type: "flat" | "compound",
   rate: number | string,
-  term: number | string
+  term: number | string,
+  previousLoanTotal: number = 0
 ) => {
-  const num = (val: any): number => (typeof val === "string" ? parseFloat(val) || 0 : val || 0);
-  const baseNum = num(base);
-  if (baseNum <= 0) return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
+  const num = (val: any): number =>
+    typeof val === "string" ? parseFloat(val) || 0 : val || 0;
+
+  const baseNum = num(base) + num(previousLoanTotal); // include previous loan
+  if (baseNum <= 0)
+    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
 
   const rateNum = num(rate);
   const termNum = Math.max(0, Math.floor(num(term)));
-
-  const feeKeys = ["administrativeFee", "applicationFee", "attorneyReviewFee", "brokerFee", "annualMaintenanceFee"];
+  const feeKeys = [
+    "administrativeFee",
+    "applicationFee",
+    "attorneyReviewFee",
+    "brokerFee",
+    "annualMaintenanceFee",
+  ];
   const feeTotal = feeKeys.reduce((sum, key) => {
     const fee = fees[key];
     if (!fee) return sum;
     const value = num(fee.value);
-    return fee.type === "percentage" ? sum + (baseNum * value) / 100 : sum + value;
+    return fee.type === "percentage"
+      ? sum + (baseNum * value) / 100
+      : sum + value;
   }, 0);
 
   const subtotal = baseNum + feeTotal;
@@ -71,7 +82,11 @@ const calculateLoan = (
         : subtotal * (Math.pow(1 + rateNum / 100, termNum) - 1)
       : 0;
 
-  return { subtotal, interestAmount: interest, totalWithInterest: subtotal + interest };
+  return {
+    subtotal,
+    interestAmount: interest,
+    totalWithInterest: subtotal + interest,
+  };
 };
 
 const LoanCalculation: React.FC<LoanCalculationProps> = ({
@@ -114,7 +129,8 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
     fees,
     interestType,
     currentRate,
-    loanTerm
+    loanTerm,
+    includePreviousLoans ? previousLoanTotal : 0
   );
 
   const emitChange = (
@@ -124,11 +140,19 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
     newRate: number,
     newTerm: number
   ) => {
-    const result = calculateLoan(newBase, newFees, newType, newRate, newTerm);
+    const result = calculateLoan(
+      newBase,
+      newFees,
+      newType,
+      newRate,
+      newTerm,
+      includePreviousLoans ? previousLoanTotal : 0
+    );
 
     const start = issueDate ? new Date(issueDate) : new Date();
     const end = endDate ? new Date(endDate) : new Date(start);
     if (!endDate) end.setMonth(end.getMonth() + newTerm);
+
     onChange({
       baseAmount: newBase,
       fees: newFees,
@@ -136,12 +160,11 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
       monthlyRate: newRate,
       loanTermMonths: newTerm,
       subtotal: result.subtotal,
-      totalLoan: result.totalWithInterest + (includePreviousLoans ? previousLoanTotal : 0),
+      totalLoan: result.totalWithInterest,
       previousLoanTotal: includePreviousLoans ? previousLoanTotal : 0,
       startDate: start.toISOString(),
       endDate: end.toISOString(),
     });
-
   };
 
   const handleBaseChange = (value: string) => {
@@ -270,31 +293,16 @@ const formatDate = (date: Date) =>
             : fee.value;
 
           return (
-            <div key={item.key} className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-white font-medium">
-                    {item.label}
-                  </span>
-                  {/* <label className="relative inline-flex items-center no-wrap cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isPercentage}
-                      onChange={() => handleFeeTypeToggle(item.key)}
-                      className="sr-only w-20"
-                    />
-                    <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                    <div
-                      className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform ${isPercentage ? "translate-x-5" : ""
-                        }`}
-                    ></div>
-                  </label> */}
-                </div>
-                <span className="text-md font-semibold text-white pr-16">
+            <div key={item.key} className="flex flex-col gap-2 ">
+              <div className="flex items-center justify-between w-2/2">
+                <span className="text-sm text-white font-medium whitespace-nowrap">
+                  {item.label}
+                </span>
+                <span className="text-md font-semibold text-green-700 bg-white  px-1 py-0 rounded-md shadow-md">
                   +${contribution.toFixed(2)}
                 </span>
               </div>
-              <div className="relative flex items-center gap-1">
+              <div className="relative flex items-center  gap-2 w-2/2">
                 <input
                   type="number"
                   min="0"
@@ -303,25 +311,36 @@ const formatDate = (date: Date) =>
                   onChange={(e) =>
                     handleFeeValueChange(item.key, e.target.value)
                   }
-                  className="w-full h-8 px-3 py-2 border rounded-md bg-white text-gray-800  no-spinner"
-                  placeholder="0.00"
+                  className=" w-full h-8 px-3 py-2 border rounded-md bg-white text-gray-800 no-spinner"
+                  placeholder={isPercentage ? "0.00 %" : "0.00 $"}
                 />
-                <span className="absolute right-[60px] top-1/2 transform -translate-y-1/2 text-red-400 font-semibold">
+                <span className="absolute right-[70px] top-1/2 transform -translate-y-1/2 text-red-400 font-semibold">
                   {isPercentage ? "%" : "$"}
                 </span>
-                <label className="relative inline-flex items-center no-wrap cursor-pointer">
+                <label className="relative inline-flex items-center cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={isPercentage}
                     onChange={() => handleFeeTypeToggle(item.key)}
-                    className="sr-only w-20"
+                    className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
+                  <div className="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-gray-400 transition-colors relative">
                   <div
-                    className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform ${
-                      isPercentage ? "translate-x-5" : ""
+                    className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md flex items-center justify-center transition-transform duration-300 ${
+                      isPercentage ? "translate-x-7" : ""
                     }`}
-                  ></div>
+                    >
+                      {isPercentage ? (
+                        <span className="text-sm font-bold text-gray-700">
+                          %
+                        </span>
+                      ) : (
+                        <span className="text-sm font-bold text-gray-700">
+                          $
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </label>
               </div>
             </div>
@@ -333,25 +352,21 @@ const formatDate = (date: Date) =>
           {/* <span>Total (Base + Fees):</span>
           <span>${subtotal.toFixed(2)}</span> */}
         </div>
-        <div className="flex justify-between">
-          <span> Total Loan Amount:</span>
-          <span>
-            $
-            {(
-              totalWithInterest + (includePreviousLoans ? previousLoanTotal : 0)
-            ).toFixed(2)}
-          </span>
-        </div>
-
         {includePreviousLoans && previousLoanTotal > 0 && (
           <div className="flex justify-between text-yellow-300">
             <span>Previous Loan Amount Carry Forward:</span>
             <span>${previousLoanTotal.toFixed(2)}</span>
           </div>
         )}
+        <div className="flex   justify-between ">
+          <span>Loan Amount :</span>
+          <span className="text-md text-green-700 px-2 rounded-md text-md bg-white">
+            ${(subtotal).toFixed(2)}
+          </span>
+        </div>
       </div>
       {/* Loan Term Slider */}
-      <div className="mt-2 relative  max-w-full ">
+      <div className="mt-2 relative max-w-full">
         <label className="text-sm font-semibold text-white mb-2 block px-2">
           Select Loan Term (<span className="font-bold">{loanTerm}</span>{" "}
           Months)
@@ -362,7 +377,7 @@ const formatDate = (date: Date) =>
             <span
               key={term}
               className={`text-sm font-semibold ${
-                term === loanTerm ? "text-white" : "text-white"
+                term <= loanTerm ? "text-yellow-300 font-bold" : "text-white"
               }`}
             >
               {term}
@@ -399,9 +414,10 @@ const formatDate = (date: Date) =>
                   fees,
                   interestType,
                   currentRate,
-                  term
+                  term,
+                includePreviousLoans ? previousLoanTotal : 0 
                 );
-                const isSelected = term === loanTerm;
+                const isSelected = term <= loanTerm;
 
                 return (
                   <div
@@ -432,6 +448,17 @@ const formatDate = (date: Date) =>
                       }`}
                     >
                       Interest: ${termResult.interestAmount.toFixed(2)}
+                    </div>
+                    <div
+                      className={`text-xs font-medium mb-1 ${
+                        isSelected ? "text-yellow-300" : "text-gray-700"
+                      }`}
+                    >
+                      Total: $
+                      {(
+                        termResult.interestAmount +
+                        subtotal
+                      ).toFixed(2)}
                     </div>
                     <div
                       className={`text-xs ${
