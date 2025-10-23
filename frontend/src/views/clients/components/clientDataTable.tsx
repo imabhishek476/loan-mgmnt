@@ -65,6 +65,7 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
               {
                 title: "Name",
                 field: "fullName",
+                cellStyle:{fontWeight:500},
                 render: (rowData) => (
                   <span
                     className="text-green-600 cursor-pointer hover:underline"

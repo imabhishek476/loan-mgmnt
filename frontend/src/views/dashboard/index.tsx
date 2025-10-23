@@ -473,7 +473,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
                     {capitalizeFirst(rowData.clientName)}
                   </span>
                 ),
-                cellStyle: { whiteSpace: "normal", wordBreak: "break-word" },
+                cellStyle: { whiteSpace: "normal", wordBreak: "break-word",fontWeight: 500 },
               },
               {
                 title: "Company",

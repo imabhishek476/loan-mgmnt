@@ -156,7 +156,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
 
               {
                 title: "Client",
-                cellStyle: { width: 80, minWidth: 120 },
+                cellStyle: { width: 80, minWidth: 120 ,fontWeight:600},
                 render: (rowData) =>
                   capitalizeFirst(
                     clientStore.clients.find((c) => c._id === rowData.client)
@@ -209,7 +209,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
                   moment(rowData.issueDate).format("DD MMM YYYY"),
               },
               {
-                title: "Payment Status",
+                title: "Payment Status",                                                          
                 cellStyle: { whiteSpace: "nowrap" },
                 render: (rowData: any) => {
                   let bgColor = "";
