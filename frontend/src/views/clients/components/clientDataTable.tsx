@@ -82,7 +82,7 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
                     const clientLoans = loanStore.loans.filter(
                     (loan) =>
                       loan.client === rowData._id ||
-                      loan.client?._id === rowData._id
+                      loan.client?.['_id'] === rowData._id
                     );
 
                     const totalGiven = clientLoans.reduce(
@@ -103,7 +103,7 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
                     const clientLoans = loanStore.loans.filter(
                     (loan) =>
                         loan.client === rowData._id ||
-                      loan.client?._id === rowData._id
+                      loan.client?.['_id'] === rowData._id
                     );
                     const pending = clientLoans.reduce(
                       (acc, loan) => acc + (loan.paidAmount || 0),

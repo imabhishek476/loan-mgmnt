@@ -17,7 +17,6 @@ import {
  CreditCard,
  DollarSign,
  Search,
-Eye,
 } from "lucide-react";
 import {
   TextField,
@@ -87,7 +86,7 @@ const Dashboard = observer(() => {
   const [selectedClientForView, setSelectedClientForView] = useState<any>(null);
   const [editClientModalOpen, setEditClientModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
-  const [viewClient, setViewClient] = useState(null);
+  const [ setViewClient] = useState(null);
 const handleViewClient = async (clientName: string) => {
   try {
     const client = clientStore.clients.find((c) => c.fullName === clientName);
@@ -235,7 +234,7 @@ const handleViewClient = async (clientName: string) => {
       console.error("Error loading upcoming payoffs", error);
     }
 };
-const handleClientUpdate = async (id: string, data: any) => {
+const handleClientUpdate = async (_id: string, data: any) => {
   try {
     if (editingClient) {
       await clientStore.updateClient(editingClient._id, data);
@@ -383,7 +382,7 @@ const handleClientUpdate = async (id: string, data: any) => {
         <ToggleButtonGroup
           value={viewMode}
           exclusive
-          onChange={(e, newMode) => newMode && setViewMode(newMode)}
+          onChange={(_e, newMode) => newMode && setViewMode(newMode)}
         >
           <ToggleButton value="graph">Companies Performalce</ToggleButton>
           <ToggleButton value="upcoming">Upcoming Payoff</ToggleButton>
@@ -392,35 +391,37 @@ const handleClientUpdate = async (id: string, data: any) => {
       {viewMode === "graph" && (
         <>
           <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <Box className="flex gap-4 items-center mb-4 flex-wrap">
-          <DatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => newValue && setFromDate(newValue)}
-            maxDate={toDate || new Date()}
-          />
-          <DatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => newValue && setToDate(newValue)}
-            minDate={fromDate}
-            maxDate={new Date()}
-          />
-          <div
-            className="flex items-center gap-1 cursor-pointer text-green-700 hover:bg-green-700 hover:text-white px-2 py-1 rounded transition-colors duration-200"
-            onClick={handleFilter}
-          >
-            <Search size={26} />
-            <span className="font-medium">Search</span>
-          </div>
-        </Box>
-      </LocalizationProvider>
+            <Box className="flex gap-4 items-center mb-4 flex-wrap">
+              <DatePicker
+                label="From Date"
+                value={fromDate}
+                //@ts-ignore
+                onChange={(newValue) => newValue && setFromDate(newValue)}
+                maxDate={toDate || new Date()}
+              />
+              <DatePicker
+                label="To Date"
+                value={toDate}
+                //@ts-ignore
+                onChange={(newValue) => newValue && setToDate(newValue)}
+                minDate={fromDate}
+                maxDate={new Date()}
+              />
+              <div
+                className="flex items-center gap-1 cursor-pointer text-green-700 hover:bg-green-700 hover:text-white px-2 py-1 rounded transition-colors duration-200"
+                onClick={handleFilter}
+              >
+                <Search size={26} />
+                <span className="font-medium">Search</span>
+              </div>
+            </Box>
+          </LocalizationProvider>
 
           <div className="flex flex-wrap gap-4">
-    <div className="bg-white rounded-2xl shadow-lg flex-1  p-3">
-        <h2 className="font-semibold text-gray-800 text-lg mb-4">
-          Total Loan and Recovered by Company
-        </h2>
+            <div className="bg-white rounded-2xl shadow-lg flex-1  p-3">
+              <h2 className="font-semibold text-gray-800 text-lg mb-4">
+                Total Loan and Recovered by Company
+              </h2>
               {loadingGraph ? (
                 <div className="flex justify-center items-center h-64 text-gray-500 font-medium">
                   Loading...
@@ -442,7 +443,7 @@ const handleClientUpdate = async (id: string, data: any) => {
               fullWidth
               options={payoffOptions}
               value={payoffOptions.find((o) => o.value === payoffFilter)}
-              onChange={(event, newValue) =>
+              onChange={(_event, newValue) =>
                 newValue &&
                 setPayoffFilter(
                   newValue.value as "day" | "week" | "month" | "all"
@@ -456,7 +457,8 @@ const handleClientUpdate = async (id: string, data: any) => {
           <MaterialTable
             title={null}
             columns={[
-              {title: "Sr.no",
+              {
+                title: "Sr.no",
                 field: "srNo",
                 width: "2%",
                 cellStyle: { whiteSpace: "nowrap" },
@@ -593,9 +595,9 @@ const handleClientUpdate = async (id: string, data: any) => {
                 const borderColor =
                   rowData.companyObject?.backgroundColor || "#555555";
                 return {
-                fontSize: "13px",
-                height: 44,
-                borderBottom: "1px solid #f1f1f1",
+                  fontSize: "13px",
+                  height: 44,
+                  borderBottom: "1px solid #f1f1f1",
                   backgroundColor: "#fff",
                   borderLeft: `6px solid ${borderColor}`,
                   borderRadius: "50px",
@@ -610,7 +612,7 @@ const handleClientUpdate = async (id: string, data: any) => {
               paginationType: "stepped",
             }}
           />
-      </div>
+        </div>
       )}
       {viewClientModalOpen && selectedClientForView && (
         <ClientViewModal

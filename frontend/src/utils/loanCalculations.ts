@@ -3,29 +3,12 @@ import moment from "moment";
 export const calculateLoanAmounts = (loan: any) => {
     if (!loan) return null;
 
-    const base = loan.baseAmount || 0;
-    const fees = loan.fees || {};
     const interestType = loan.interestType || "flat";
     const monthlyRate = loan.monthlyRate || 0;
     const originalTerm = loan.loanTerms || 0;
     const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
     const paidAmount = loan.paidAmount || 0;
     const subtotal = loan.subTotal || 0;
-
-    const feeKeys = [
-        "administrativeFee",
-        "applicationFee",
-        "attorneyReviewFee",
-        "brokerFee",
-        "annualMaintenanceFee",
-    ];
-    const feeTotal = feeKeys.reduce((sum, key) => {
-        const fee = fees[key];
-        if (!fee) return sum;
-        return fee.type === "percentage"
-            ? sum + (base * (fee.value || 0)) / 100
-            : sum + (fee.value || 0);
-    }, 0);
     const today = moment();
     const monthsPassed = today.diff(issueDate, "months") + 1;
 

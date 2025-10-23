@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { Building2, User, Settings, Shield } from "lucide-react";
+import { Building2, User, Shield } from "lucide-react";
 
-const SubTabs = ({ onTabChange }: { onTabChange: (tab: string) => void }) => {
-  const [activeTab, setActiveTab] = useState("companies");
+type TabType = "system" | "companies" | "users" | "audit";
+interface SubTabsProps {
+  onTabChange: (tab: TabType) => void;
+}
+const SubTabs = ({ onTabChange }: SubTabsProps) => {
+  const [activeTab, setActiveTab] = useState<TabType>("companies");
 
-  const tabs = [
+  const tabs: { key: TabType; label: string; icon: JSX.Element }[] = [
     { key: "companies", label: "Companies", icon: <Building2 size={18} /> },
     { key: "users", label: "Users", icon: <User size={18} /> },
     // { key: "system", label: "System", icon: <Settings size={18} /> },
     { key: "audit", label: "Audit Logs", icon: <Shield size={18} /> },
   ];
 
-  const handleClick = (key: string) => {
+  const handleClick = (key: TabType) => {
     setActiveTab(key);
     onTabChange(key);
   };

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Eye, Wallet, Trash2, RefreshCcw, Pencil } from "lucide-react";
+import { Search, Eye, Wallet, Trash2, RefreshCcw} from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -24,7 +24,7 @@ interface LoanTableProps {
   clientId?: string;
   onEdit?: (loan: any) => void;
 }
-
+// @ts-ignore
 const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
   const { loans, loading } = loanStore;
   const [search, setSearch] = useState("");
@@ -81,7 +81,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
     if (!window.confirm("Are you sure you want to delete this loan?")) return;
     try {
       await loanStore.deleteLoan(id);
-      toast.success("Loan deleted successfully");
+      toast.success("Loan Deactivated successfully");
     } catch {
       toast.error("Failed to delete loan");
     }
@@ -215,7 +215,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
                   let bgColor = "";
                   switch (rowData.status) {
                     case "Paid Off":
-                      bgColor = "bg-green-600";
+                      bgColor = "bg-green-700";
                       break;
                     case "Merged":
                       bgColor = "bg-indigo-600";
@@ -225,7 +225,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
                       break;
                     case "Active":
                     default:
-                      bgColor = "bg-green-500";
+                      bgColor = "bg-green-700";
                       break;
                   }
 
@@ -245,7 +245,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
                   <span
                     className={`px-2 py-1 rounded-lg text-white text-sm ${
                       rowData.loanStatus === "Active"
-                        ? "bg-green-600"
+                        ? "bg-green-700"
                         : "bg-red-500"
                     }`}
                   >
@@ -262,23 +262,24 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
               //   hidden: rowData.loanStatus === "Deactivated",
               //   onClick: (event, row) => onEdit?.(row),
               // }),
+              // @ts-ignore
               (rowData: any) => ({
                 icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                 tooltip: "View Loan",
                 hidden: false,
-                onClick: (event, row) => handleView(row),
+                onClick: (_event, row) => handleView(row),
               }),
               (rowData: any) => ({
-                icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
+                icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
                 tooltip: "Deactivate Loan",
                 hidden: rowData.loanStatus === "Deactivated",
-                onClick: (event, row) => handleDelete(row._id),
+                onClick: (_event, row) => handleDelete(row._id),
               }),
               (rowData: any) => ({
                 icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
                 tooltip: "Recover Loan",
                 hidden: rowData.loanStatus !== "Deactivated",
-                onClick: (event, row) => handleRecover(row),
+                onClick: (_event, row) => handleRecover(row),
               }),
             ]}
             options={{
@@ -302,16 +303,16 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
                   (c) => c._id === rowData.company
                 );
                 const borderColor = company?.backgroundColor || "#555555";
-                const showRibbon = [
-                  "Paid Off",
-                  "Merged",
-                  "Partial Payment",
-                ].includes(rowData.status);
-                let ribbonColor = "";
-                if (rowData.status === "Paid Off") ribbonColor = "#22c55e";
-                else if (rowData.status === "Merged") ribbonColor = "#6366f1";
-                else if (rowData.status === "Partial Payment")
-                  ribbonColor = "#3b82f6";
+                // const showRibbon = [
+                //   "Paid Off",
+                //   "Merged",
+                //   "Partial Payment",
+                // ].includes(rowData.status);
+                // let ribbonColor = "";
+                // if (rowData.status === "Paid Off") ribbonColor = "#22c55e";
+                // else if (rowData.status === "Merged") ribbonColor = "#6366f1";
+                // else if (rowData.status === "Partial Payment")
+                //   ribbonColor = "#3b82f6";
 
                 return {
                   fontSize: "13px",

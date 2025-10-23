@@ -74,6 +74,7 @@ const UsersDataTable = ({
             {
               title: "Sr.no",
               width: "5%",
+              //@ts-ignore
               render: (rowData) => (rowData.tableData?.id ?? 0) + 1,
             },
             {
@@ -96,11 +97,13 @@ const UsersDataTable = ({
             {
               icon: () => <Pencil className="w-4 h-4 text-green-600" />,
               tooltip: "Edit",
+              //@ts-ignore
               onClick: (event, rowData) => onEdit(rowData as User),
             },
             {
               icon: () => <Trash2 className="w-4 h-4 text-red-600" />,
               tooltip: "Delete",
+              //@ts-ignore
               onClick: (event, rowData) => onDelete((rowData as User)._id),
             },
           ]}

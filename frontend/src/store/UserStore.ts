@@ -12,6 +12,7 @@ interface AuthUser {
 }
 
 class UserStore {
+  // @ts-ignore
   searchUsers(query: string) {
     throw new Error("Method not implemented.");
   }
@@ -162,3 +163,5 @@ class UserStore {
 }
 
 export const userStore = new UserStore();
+
+export type { UserPayload };

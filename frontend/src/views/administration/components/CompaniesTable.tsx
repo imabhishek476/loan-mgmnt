@@ -113,7 +113,7 @@ const renderFee = (fee: any) => {
               title: "Status",
               render: (rowData) =>
                 rowData.activeCompany ? (
-                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-sm font-semibold rounded-lg">
+                  <span className="px-2 py-0.5 bg-green-700 text-white text-sm font-semibold rounded-lg">
                     Active
                   </span>
                 ) : (

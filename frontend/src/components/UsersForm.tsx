@@ -68,6 +68,7 @@ const UserForm = observer(
         initialData={formData}
         onSubmit={handleSubmit}
         onFormDataChange={setFormData}
+        // @ts-ignore
         renderField={(field, value, onChange) => {
           if (field.key === "userRole") {
             return (

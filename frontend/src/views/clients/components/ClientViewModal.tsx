@@ -7,7 +7,6 @@ import {
   DollarSign,
   Plus,
   Pencil,
-  PencilIcon,
   AlertCircle,
 } from "lucide-react";
 import { loanStore } from "../../../store/LoanStore";
@@ -72,7 +71,7 @@ const [editingLoan, setEditingLoan] = useState<any>(null);
 const clientLoans = useMemo(() => {
   return Array.isArray(loanStore.loans)
     ? loanStore.loans.filter(
-        (loan) => loan.client?._id === client._id || loan.client === client._id
+        (loan) => loan.client?.['_id'] === client._id || loan.client === client._id
       )
     : [];
 }, [loanStore.loans, client?._id]);
@@ -267,17 +266,17 @@ useEffect(() => {
 
                   const {
                     // subtotal,
-                    interestAmount,
-                    total,
+                    // interestAmount,
+                    // total,
                     paidAmount,
-                    remaining,
-                    currentTerm,
+                    // remaining,
+                    // currentTerm,
                   } = loanData;
 
-                  const showAllTerms = showAllTermsMap[loan._id] || false;
-                  const loanTermsOptions = loan.loanTermsOptions || [
-                    currentTerm,
-                  ];
+                  // const showAllTerms = showAllTermsMap[loan._id] || false;
+                  // const loanTermsOptions = loan.loanTermsOptions || [
+                  //   currentTerm,
+                  // ];
                   const selectedTerm = loan.loanTerms;
                   const selectedDynamicTerm = currentTermMap[loan._id];
 
@@ -289,24 +288,26 @@ useEffect(() => {
                     ...loan,
                     loanTerms: selectedDynamicTerm,
                   })!;
-                    const today = moment();                  
-                    const totalLoan =
-                      loan.interestType === "flat"
-                        ? loanData.subtotal +
-                          loanData.subtotal *
+                  const today = moment();
+                  const totalLoan =
+                    loan.interestType === "flat"
+                      ? loanData.subtotal +
+                        loanData.subtotal *
                           (loan.monthlyRate / 100) *
+                          // @ts-ignore
                           selectedDynamicLoanData
-                        : loanData.subtotal *
-                          Math.pow(
+                      : loanData.subtotal *
+                        Math.pow(
                           1 + loan.monthlyRate / 100,
+                          // @ts-ignore
                           selectedDynamicLoanData
                         );
                   const endDate = moment(loan.issueDate).add(
                     loan.loanTerms,
                     "months"
-                    );
-                      const isDelayed = today.isAfter(endDate, "day");  
-                        const isPaidOff = paidAmount >= totalLoan;
+                  );
+                  const isDelayed = today.isAfter(endDate, "day");
+                  const isPaidOff = paidAmount >= totalLoan;
 
                   // const isDelayed =
                   //   selectedLoanData.monthsPassed != loan.loanTerms;
@@ -643,6 +644,7 @@ useEffect(() => {
           }}
           showTable={false}
           fromClientPage={true}
+          // @ts-ignore
           editingLoanProp={editingLoan}
         />
       )}

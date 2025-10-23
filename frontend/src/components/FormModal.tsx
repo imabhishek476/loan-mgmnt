@@ -30,7 +30,8 @@ export interface FieldConfig {
     | "array"
     | "section"
     | "color"
-    | "custom";
+    | "custom"
+    | "password";
   required?: boolean;
   fullWidth?: boolean;
   options?: { label: string; value: any }[];
