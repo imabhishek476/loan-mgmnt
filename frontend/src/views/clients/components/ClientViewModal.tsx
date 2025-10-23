@@ -45,7 +45,7 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
     return company?.loanTerms?.length ? company.loanTerms : [12, 24, 36]; // fallback
   };
 const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({});
-
+const [editingLoan, setEditingLoan] = useState<any>(null);
   const loadInitialData = async () => {
     try {
       await Promise.all([
@@ -302,11 +302,11 @@ useEffect(() => {
                           selectedDynamicLoanData
                         );
                   const endDate = moment(loan.issueDate).add(
-                    loan.loanTerm,
+                    loan.loanTerms,
                     "months"
-                  );
-                          const isDelayed = endDate.endOf("day").isBefore(today);
-                          const isPaidOff = paidAmount >= totalLoan;
+                    );
+                      const isDelayed = today.isAfter(endDate, "day");  
+                        const isPaidOff = paidAmount >= totalLoan;
 
                   // const isDelayed =
                   //   selectedLoanData.monthsPassed != loan.loanTerms;
@@ -353,12 +353,15 @@ useEffect(() => {
                         {/* <td className="px-3 py-2 text-right">
                           <PencilIcon
                             size={16}
-                            className="text-green-700 inline-block"
+                            className="text-green-700 inline-block cursor-pointer hover:text-green-900"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedClientForLoan(client);
-                              loanStore.selectedLoan = loan;
                               setLoanModalOpen(true);
+                              setTimeout(() => {
+                                const event = new CustomEvent('editLoanFromClient', { detail: loan });
+                                window.dispatchEvent(event);
+                              }, 10);
                             }}
                           />
                         </td> */}
@@ -634,9 +637,13 @@ useEffect(() => {
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
-          onClose={() => setLoanModalOpen(false)}
+          onClose={() => {
+            setLoanModalOpen(false);
+            setEditingLoan(null);
+          }}
           showTable={false}
           fromClientPage={true}
+          editingLoanProp={editingLoan}
         />
       )}
 
