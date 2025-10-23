@@ -31,7 +31,10 @@ export const fetchLoans = async () => {
   const { data } = await api.get("/loans");
   return data.data || data;
 };
-
+export const activeLoans = async () => {
+  const { data } = await api.get("/loans/activeLoans");
+  return data.data || data;
+};
 export const createLoan = async (payload: LoanPayload) => {
   const { data } = await api.post("/loans", payload);
   return data.data || data;
@@ -45,4 +48,8 @@ export const updateLoan = async (id: string, payload: LoanPayload) => {
 export const deleteLoan = async (id: string) => {
   const { data } = await api.delete(`/loans/${id}`);
   return data;
+};
+export const recoverLoan = async (id: string) => {
+  const { data } = await api.put(`/loans/${id}/recover`);
+  return data.data || data;
 };

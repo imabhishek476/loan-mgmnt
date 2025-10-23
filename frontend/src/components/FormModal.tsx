@@ -14,6 +14,7 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
 import type { Moment } from "moment";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 export interface FieldConfig {
   label: string;
@@ -28,7 +29,9 @@ export interface FieldConfig {
     | "select"
     | "array"
     | "section"
-    | "color";
+    | "color"
+    | "custom"
+    | "password";
   required?: boolean;
   fullWidth?: boolean;
   options?: { label: string; value: any }[];
@@ -82,7 +85,8 @@ const FormModal = ({
 }: FormModalProps) => {
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [customFields, setCustomFields] = useState<any[]>(
     initialCustomFields || []
@@ -146,14 +150,14 @@ const FormModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    // setLoading(true);
+    setLoading(true);
     try {
       await onSubmit({ ...formData, customFields });
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Failed to save data");
     } finally {
-      // setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -175,7 +179,7 @@ const FormModal = ({
 
           <form
             onSubmit={handleSubmit}
-            className="overflow-y-auto px-4 py-0 flex-1 flex flex-col gap-0"
+            className="overflow-y-auto px-4 py-2 flex-1 flex flex-col gap-3 "
           >
             <div className="grid sm:grid-cols-4 gap-2">
               {fields.map((field) => {
@@ -214,7 +218,7 @@ const FormModal = ({
                     return (
                      <div key={field.key} className="mt-0 mb-0 col-span-full">
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-green-800 border-b pb-0">
-                  {field.icon && <span className="text-green-700">{field.icon}</span>}
+                  {field.icon && (<span className="text-green-700">{field.icon}</span>)}
                   {field.label}
                 </h3>
 
@@ -227,15 +231,11 @@ const FormModal = ({
                       let value = e.target.value;
                       if (value && isNaN(Number(value))) return;
                       let numValue = Number(value);
-                      // if (feeType === "percentage" && numValue > 100) numValue = 100;
                       handleChange(key, numValue);
                     };
 
                     const toggleFeeType = (newType) => {
                       handleChange(typeKey, newType);
-                      // if (newType === "percentage" && Number(formData[key] || 0) > 100) {
-                      //   handleChange(key, 100);
-                      // }
                     };
 
                     return (
@@ -248,18 +248,23 @@ const FormModal = ({
                           {label}
                         </label>
 
-                        {/* Amount Input */}
+                                <div className="relative w-28">
                         <input
                           type="number"
                           value={feeValue}
                           onChange={handleFeeChange}
                           min={0}
-                          // max={feeType === "percentage" ? 100 : undefined}
-                          className="border rounded-md px-3 py-2 w-28 text-left focus:ring-2 focus:ring-green-500 focus:outline-none transition no-spinner"
-                        />
-
-                        <div className="flex items-center  rounded-md overflow-hidden w-28 h-10 flex-shrink-0 ">
-                          {/* Flat */}
+                           className="border rounded-md pl-1 pr-4 py-2 w-full text-left focus:ring-2 focus:ring-green-500 focus:outline-none transition no-spinner"
+                                  />
+                                  <span className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-500">
+                                    {feeType === "flat" ? (
+                                      <DollarSign className="w-4 h-4" />
+                                    ) : (
+                                      <Percent className="w-4 h-4" />
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex items-center rounded-md overflow-hidden w-28 h-10 flex-shrink-0">
                           <div
                             onClick={() => toggleFeeType("flat")}
                             className={`flex-1 flex items-center justify-center border px-2 py-2 cursor-pointer transition ${
@@ -268,10 +273,9 @@ const FormModal = ({
                                 : "text-green-700"
                             }`}
                           >
-                            <DollarSign className="w-5 h-5 " />
+                            <DollarSign className="w-5 h-5" />
                           </div>
 
-                          {/* Percentage */}
                           <div
                             onClick={() => toggleFeeType("percentage")}
                             className={`flex-1 flex items-center justify-center border px-2 py-2 cursor-pointer transition ${
@@ -483,7 +487,7 @@ const FormModal = ({
                   return (
                     <div
                       key={field.key}
-                      className="flex flex-col text-left py-0"
+                      className="flex flex-col text-left py-0 "
                     >
                       <label className="mb-2 font-medium text-gray-700">
                         {field.label}
@@ -503,13 +507,21 @@ const FormModal = ({
                             date ? date.format("MM-DD-YYYY") : ""
                           )
                         }
-                        // slotProps={{
-                        //   textField: {
-                        //     error: !!errors[field.key],
-                        //     helperText: errors[field.key],
-                        //     size: "small",
-                        //   },
-                        // }}
+                        slotProps={{
+                          popper: {
+                            modifiers: [
+                              {
+                                name: "zIndex",
+                                enabled: true,
+                                phase: "write",
+                                fn({ state }) {
+                                  //@ts-ignore
+                                  state.styles.popper.zIndex = 9999;
+                                },
+                              },
+                            ],
+                          },
+                        }}
                       />
                       {errors[field.key] && (
                         <span className="text-red-600 text-sm">
@@ -652,7 +664,7 @@ const FormModal = ({
                           className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none w-full"
                         >
                           <option value="flat">Flat</option>
-                          <option value="percentage">Percentage</option>
+                          <option value="compound">Compound</option>
                         </select>
                       </div>
                     </div>
@@ -666,15 +678,37 @@ const FormModal = ({
                           <span className="text-red-600">*</span>
                         )}
                       </label>
-                      <input
-                        type={field.type}
-                        placeholder={field.label}
-                        value={formData[field.key] || ""}
-                        onChange={(e) =>
-                          handleChange(field.key, e.target.value)
-                        }
-                        className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
-                      />
+                      {field.type === "password" ? (
+                        <div className="relative w-full">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder={field.label}
+                            value={formData[field.key] || ""}
+                            onChange={(e) =>
+                              handleChange(field.key, e.target.value)
+                            }
+                            className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-500 focus:outline-none transition pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </button>
+                        </div>
+                      ) : (
+                        <input
+                          type={field.type}
+                          placeholder={field.label}
+                          value={formData[field.key] || ""}
+                          onChange={(e) =>
+                            handleChange(field.key, e.target.value)
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
+                        />
+                      )}
+
                       {errors[field.key] && (
                         <span className="text-red-600 text-sm">
                           {errors[field.key]}
@@ -687,22 +721,17 @@ const FormModal = ({
             
             </div>
 
-           <div className="flex flex-col text-left pt-0">
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
-    {children?.[0] && (
-      <div className="sm:col-span-1">
-        {children[0]}
-      </div>
-    )}
+            <div className="flex flex-col text-left pt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+                {children?.[0] && (
+                  <div className="sm:col-span-1">{children[0]}</div>
+                )}
 
-    {children?.[1] && (
-      <div className="sm:col-span-2">
-        {children[1]}
-      </div>
-    )}
-  </div>
-</div>
-
+                {children?.[1] && (
+                  <div className="sm:col-span-2">{children[1]}</div>
+                )}
+              </div>
+            </div>
 
             {initialCustomFields && (
               <div className="sm:col-span-2 flex flex-col gap-3">
@@ -787,9 +816,13 @@ const FormModal = ({
             <button
               type="submit"
               onClick={handleSubmit}
-              className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition"
+              disabled={loading}
+              className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition flex items-center gap-2"
             >
-              {submitButtonText || "Save"}
+              {loading ? (
+                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+              ) : null}
+              {loading ? "Saving..." : submitButtonText || "Save"}
             </button>
           </div>
         </div>

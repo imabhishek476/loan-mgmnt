@@ -57,7 +57,13 @@ const Clients = observer(() => {
     try {
       if (editingClient) {
         await clientStore.updateClient(editingClient._id, data);
+          const refreshedClient = clientStore.clients.find(
+            (c) => c._id === editingClient._id
+          );
         toast.success("Client updated successfully 🎉");
+          if (refreshedClient) {
+            setViewClient(refreshedClient); 
+          }
         setEditingClient(null);
       } else {
         await clientStore.createClient(data);

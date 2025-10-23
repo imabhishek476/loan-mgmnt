@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   X,
   FileText,
@@ -7,6 +7,7 @@ import {
   DollarSign,
   Plus,
   Pencil,
+  AlertCircle,
 } from "lucide-react";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -18,7 +19,7 @@ import LoanPaymentModal from "../../../components/PaymentModel";
 import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
 import { Tooltip } from "@mui/material";
 import Loans from "../../loans";
-import { calculateLoanAmounts,calculateDynamicTermAndPayment } from "../../../utils/loanCalculations"; 
+import { calculateLoanAmounts } from "../../../utils/loanCalculations";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -42,7 +43,8 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
     const company = companyStore.companies.find((c) => c._id === loan.company);
     return company?.loanTerms?.length ? company.loanTerms : [12, 24, 36]; // fallback
   };
-
+const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({});
+const [editingLoan, setEditingLoan] = useState<any>(null);
   const loadInitialData = async () => {
     try {
       await Promise.all([
@@ -66,6 +68,23 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
     }
   };
 
+const clientLoans = useMemo(() => {
+  return Array.isArray(loanStore.loans)
+    ? loanStore.loans.filter(
+        (loan) => loan.client?.['_id'] === client._id || loan.client === client._id
+      )
+    : [];
+}, [loanStore.loans, client?._id]);
+
+  const getDefaultLoanTerm = (loan: any) => {
+    const loanData = calculateLoanAmounts(loan);
+    const allowedTerms = [6, 12, 18, 24, 30, 36, 48, 60];
+    return (
+      allowedTerms.find((t) => t >= loanData.monthsPassed) ||
+      loanData.dynamicTerm
+    );
+  };
+
   useEffect(() => {
     if (!hasLoaded.current) {
       loadInitialData();
@@ -76,15 +95,15 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
   useEffect(() => {
     if (client?._id) loanStore.fetchLoans();
   }, [client?._id]);
+useEffect(() => {
+  const newMap: Record<string, number> = {};
+  clientLoans.forEach((loan) => {
+    newMap[loan._id] = getDefaultLoanTerm(loan);
+  });
+  setCurrentTermMap(newMap);
+}, [clientLoans]);
 
   if (!open) return null;
-
-  const clientLoans = Array.isArray(loanStore.loans)
-    ? loanStore.loans.filter(
-      // @ts-ignore
-        (loan) => loan.client?._id === client._id || loan.client === client._id
-      )
-    : [];
 
   const handleToggleLoan = async (loanId: string) => {
     if (expandedLoanId === loanId) {
@@ -102,6 +121,8 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
     }
   };
 
+
+
   const toggleShowAllTerms = (loanId: string) => {
     setShowAllTermsMap((prev) => ({ ...prev, [loanId]: !prev[loanId] }));
   };
@@ -111,14 +132,16 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
       return "bg-green-600 text-white";
     const lower = loan.status?.toLowerCase() || "";
     if (lower === "active") return "bg-green-600 text-white";
-    if (lower === "paid off") return "bg-gray-600 text-white";
-    if (lower === "claim advance") return "bg-red-600 text-white animate-pulse";
+    if (lower === "paid off" || lower === "merged") return "bg-green-600 text-white";
     return "bg-yellow-500 text-white";
   };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50 overflow-auto rounded-md">
-      <div className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-4 sm:mx-6 flex flex-col"style={{ height: '650px' }}>
+      <div
+        className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-4 sm:mx-6 flex flex-col"
+        style={{ height: "650px" }}
+      >
         {" "}
         {/* Header */}
         <div className="flex justify-between items-center py-4  px-4 border-b sticky top-0 bg-white z-20 rounded-md">
@@ -170,6 +193,13 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                   <Info label="Accident Date" value={client.accidentDate} />
                   <Info label="Attorney" value={client.attorneyName} />
                   <Info label="SSN" value={client.ssn} />
+                  <Info
+                    label="Custom Fields"
+                    value={client.customFields
+                      .map((field) => `${field.name}: ${field.value}`)
+                      .join(", ")}
+                  />
+
                   <div className="sm:col-span-2">
                     <p className="text-xs uppercase text-gray-500 font-medium">
                       Address
@@ -178,11 +208,12 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                       {client.address || "—"}
                     </p>
                   </div>
+
                   <div className="sm:col-span-2">
                     <p className="text-xs uppercase text-gray-500 font-medium mb-1">
                       Memo
                     </p>
-                    <div className="bg-red-50 border-l-4 border-red-600 p-5 rounded shadow-sm text-sm text-gray-800">
+                    <div className="bg-yellow-100 border-l-4 border-yellow-600 p-5 rounded shadow-sm text-sm text-gray-800">
                       {client.memo || "—"}
                     </div>
                   </div>
@@ -203,13 +234,20 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
 
               <Tooltip title="Add New Loan" arrow>
                 <button
-                  className="flex items-center gap-2 px-3 py-1 text-white rounded"
-                  onClick={() => {
-                    setSelectedClientForLoan(client);
-                    setLoanModalOpen(true);
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!client?._id) {
+                      toast.error("Client data not available");
+                      return;
+                    }
+                    setLoanModalOpen(false);
+                    setTimeout(() => {
+                      setSelectedClientForLoan(client);
+                      setLoanModalOpen(true);
+                    }, 10);
                   }}
                 >
-                  <Plus size={26} className="text-green-700" />
+                  <Plus size={20} />
                 </button>
               </Tooltip>
             </div>
@@ -221,82 +259,132 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                   );
                   const companyName = company?.companyName || "Unknown";
                   const companyColor = company?.backgroundColor || "#555555";
-                  const isPaidOff =
-                    (loan.paidAmount || 0) >= (loan.totalLoan || 0);
-
-                  const {
-                    dynamicTerm,
-                    monthsPassed,
-                    // suggestedPayment,
-                    monthsDue,
-                  } = calculateDynamicTermAndPayment(loan);
-
+                  // const isPaidOff =
+                  //   (loan.paidAmount || 0) >= (loan.totalLoan || 0);
                   const loanData = calculateLoanAmounts(loan);
                   if (!loanData) return null;
 
                   const {
                     // subtotal,
-                    interestAmount,
-                    total,
+                    // interestAmount,
+                    // total,
                     paidAmount,
-                    remaining,
-                    currentTerm,
+                    // remaining,
+                    // currentTerm,
                   } = loanData;
 
-                  const showAllTerms = showAllTermsMap[loan._id] || false;
-                  const loanTermsOptions = loan.loanTermsOptions || [
-                    currentTerm,
-                  ];
-                  // @ts-ignore
-                  const displayedTerms = showAllTerms
-                    ? loanTermsOptions
-                    : [currentTerm];
+                  // const showAllTerms = showAllTermsMap[loan._id] || false;
+                  // const loanTermsOptions = loan.loanTermsOptions || [
+                  //   currentTerm,
+                  // ];
+                  const selectedTerm = loan.loanTerms;
+                  const selectedDynamicTerm = currentTermMap[loan._id];
 
+                  const selectedLoanData = calculateLoanAmounts({
+                    ...loan,
+                    loanTerms: selectedDynamicTerm,
+                  })!;
+                  const selectedDynamicLoanData = calculateLoanAmounts({
+                    ...loan,
+                    loanTerms: selectedDynamicTerm,
+                  })!;
+                  const today = moment();
+                  const totalLoan =
+                    loan.interestType === "flat"
+                      ? loanData.subtotal +
+                        loanData.subtotal *
+                          (loan.monthlyRate / 100) *
+                          // @ts-ignore
+                          selectedDynamicLoanData
+                      : loanData.subtotal *
+                        Math.pow(
+                          1 + loan.monthlyRate / 100,
+                          // @ts-ignore
+                          selectedDynamicLoanData
+                        );
+                  const endDate = moment(loan.issueDate).add(
+                    loan.loanTerms,
+                    "months"
+                  );
+                  const isDelayed = today.isAfter(endDate, "day");
+                  const isPaidOff = paidAmount >= totalLoan;
+
+                  // const isDelayed =
+                  //   selectedLoanData.monthsPassed != loan.loanTerms;
                   return (
                     <div
                       key={loan._id}
-                      className="border rounded-lg shadow-sm hover:shadow-lg transition-all overflow-hidden bg-white"
+                      style={{ borderLeft: `6px solid ${companyColor}` }}
+                      className="border rounded-lg shadow-sm hover:shadow-lg  transition-all overflow-hidden bg-white "
                     >
-                      {/* Header */}
-                      <div
-                        className="flex justify-between items-center p-4 cursor-pointer border-b"
-                        style={{ borderLeft: `6px solid ${companyColor}` }}
+                      <tr
+                        className="cursor-pointer  border-b hover:bg-gray-50"
                         onClick={() => handleToggleLoan(loan._id)}
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 w-full justify-between">
-                          <p className="font-semibold text-gray-900 text-base">
-                            {companyName}
-                          </p>
-                          <div className="flex flex-wrap items-center justify-end sm:justify-start gap-3 text-sm text-gray-700">
-                            <span>
-                              Base: ${loan.subTotal?.toLocaleString()}
-                            </span>
-                            <span
-                              className={`ml-2 px-2 py-1 rounded text-white text-xs font-semibold ${
-                                monthsDue > 0 ? "bg-red-600" : "bg-gray-500"
-                              }`}
-                            >
-                              Month: {monthsPassed} / {dynamicTerm}
-                            </span>
+                        <td className="px-3 py-1  font-semibold text-gray-700 text-base w-52 text-left">
+                          {companyName}
+                        </td>
+                        <td className="px-3 py-2 text-right w-38 ">
+                          <div className="inline-block">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+                              <span className="text-xs font-semibold first-letter:block">
+                                Loan Amount: ${loan.subTotal.toFixed(2)}
+                              </span>
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-semibold ${
+                                  isDelayed
+                                    ? "bg-red-500 text-white shadow-lg"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                Month: {selectedDynamicTerm}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <span
-                          className={`ml-3 px-3 py-1 rounded-md text-sm font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
-                            loan
-                          )}`}
-                        >
-                          {isPaidOff ? "Paid Off" : loan.status}
-                        </span>
-                      </div>
+                        </td>
+                        <td className="px-0 py-2 items-center text-right w-2/6 w-52">
+                          <span
+                            className={`px-7 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
+                              loan
+                            )}`}
+                          >
+                            {isPaidOff ? "Paid Off" : loan.status}
+                          </span>
+                        </td>
+                        {/* <td className="px-3 py-2 text-right">
+                          <PencilIcon
+                            size={16}
+                            className="text-green-700 inline-block cursor-pointer hover:text-green-900"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedClientForLoan(client);
+                              setLoanModalOpen(true);
+                              setTimeout(() => {
+                                const event = new CustomEvent('editLoanFromClient', { detail: loan });
+                                window.dispatchEvent(event);
+                              }, 10);
+                            }}
+                          />
+                        </td> */}
+                        <td className="px-3 py-2 justify-end">
+                          {isDelayed && loan.status !== "Paid Off" && (
+                            <AlertCircle
+                              size={16}
+                              className="text-red-600 inline-block"
+                            />
+                          )}
+                        </td>
+                      </tr>
 
                       {/* Content */}
                       {expandedLoanId === loan._id && (
-                        <div className="p-4 bg-gray-50 flex flex-col sm:flex-row gap-6">
+                        <div className="px-4 pb-1 bg-gray-50 flex flex-col sm:flex-row gap-6">
                           {/* Payment History */}
                           <div className="flex-1 border-r pr-4 space-y-3">
                             <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                              Payment History
-                              {loan.status !== "Paid Off" &&
+                              PayOff History
+                              {(loan.status === "Active" ||
+                                loan.status === "Partial Payment") &&
                                 !loanPayments[loan._id]?.length && (
                                   <button
                                     onClick={() => setPaymentLoan(loan)}
@@ -308,26 +396,30 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
                             </h4>
 
                             {loanPayments[loan._id]?.length > 0 ? (
-                              loanPayments[loan._id].map((p) => (
-                                <div
-                                  key={p._id}
-                                  className="flex justify-between items-center text-sm text-gray-700 border-b pb-1"
-                                >
-                                  <span className="font-medium">
-                                    {moment(p.paidDate).format("MMM DD, YYYY")}
-                                  </span>
-                                  <span className="text-right">
-                                    <span>
-                                      ${p.paidAmount?.toLocaleString()} Received
+                              <div className="mt-2 max-h-48 overflow-y-auto border rounded-md">
+                                {loanPayments[loan._id].map((p) => (
+                                  <div
+                                    key={p._id}
+                                    className="flex justify-between items-center text-sm text-gray-700 border-b pb-1 px-1"
+                                  >
+                                    <span className="font-medium">
+                                      {moment(p.paidDate).format(
+                                        "MMM DD, YYYY"
+                                      )}
                                     </span>
-                                    {p.checkNumber && (
-                                      <span className="ml-1 text-gray-500 whitespace-nowrap">
-                                        (Check No: {p.checkNumber})
+                                    <span className="text-right">
+                                      <span>
+                                        ${p.paidAmount?.toFixed(2)} Received
                                       </span>
-                                    )}
-                                  </span>
-                                </div>
-                              ))
+                                      {p.checkNumber && (
+                                        <span className="ml-1 text-gray-500 whitespace-nowrap">
+                                          (Check No: {p.checkNumber})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             ) : (
                               <p className="text-gray-500 text-sm italic">
                                 No payments recorded yet.
@@ -337,123 +429,194 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
 
                           {/* Loan Details */}
                           <div className="flex-1 text-sm text-gray-700 space-y-2">
-                            {loan.status !== "Paid Off" ? (
+                            {loan.status !== "Paid Off" &&
+                            loan.status !== "Merged" ? (
                               <>
-                                <p>
-                                  <span className="font-semibold">Tenure:</span>{" "}
-                                  {currentTerm} month{currentTerm !== 1 && "s"}{" "}
-                                  (
-                                  {moment(loan.issueDate).format("MMM D, YYYY")}{" "}
-                                  - {moment(loan.endDate).format("MMM D, YYYY")}
-                                  )
-                                </p>
-
-                                <p>
-                                  <span className="font-semibold">
-                                    {currentTerm} Month Interest:
-                                  </span>{" "}
-                                  ${interestAmount.toLocaleString()} (
-                                  {loan.monthlyRate}%
-                                  {loan.interestType === "compound"
-                                    ? " compound"
-                                    : " flat"}{" "}
-                                  per month)
-                                </p>
-
-                                <p>
-                                  <span className="font-semibold">
-                                    Total Amount:
-                                  </span>{" "}
-                                  ${total.toFixed(2)}
-                                </p>
-
-                                <p>
-                                  <span className="font-semibold">
-                                    Paid Amount:
-                                  </span>{" "}
-                                  ${paidAmount.toFixed(2)} (
-                                  <span className="text-xs text-red-600 rounded-full">
-                                    Outstanding:{" "}
-                                    <strong>${remaining.toFixed(2)}</strong>
-                                  </span>
-                                  )
-                                  {loanPayments[loan._id]?.length > 0 && (
-                                    <button
-                                      onClick={() => setPaymentLoan(loan)}
-                                      className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                </p>
-
-                                {/* Loan Terms Scrollable Container */}
-                                <div className="mt-3">
-                                  <div className="flex items-center">
-                                    <span className="font-semibold text-sm pr-5">
-                                      Loan Terms:
-                                    </span>
-                                    {companyLoanTerms(loan).length > 1 && (
-                                      <button
-                                        onClick={() =>
-                                          toggleShowAllTerms(loan._id)
-                                        }
-                                        className="text-xs text-blue-600 hover:underline"
-                                      >
-                                        {showAllTermsMap[loan._id]
-                                          ? "Show Less"
-                                          : "More..."}
-                                      </button>
-                                    )}
-                                  </div>
-
-                                  <div className="overflow-x-auto w-72">
-                                    <div className="grid grid-flow-col gap-2">
-                                      {companyLoanTerms(loan)
-                                        .filter((term) =>
-                                          showAllTermsMap[loan._id]
-                                            ? true
-                                            : term === currentTerm
-                                        )
-                                        .map((term) => {
-                                          const loanData = calculateLoanAmounts(
-                                            { ...loan, loanTerms: term }
-                                          )!;
-                                          const isSelected =
-                                            term === currentTerm;
-
-                                          return (
-                                            <div
-                                              key={term}
-                                              className={`w-28 p-2 pb-0 rounded-xl border text-center cursor-pointer flex-shrink-0 ${
-                                                isSelected
-                                                  ? "bg-red-700 border-red-800 text-white shadow-lg"
-                                                  : "bg-white border-gray-200 text-gray-700 hover:border-red-400 hover:shadow-md"
+                                {(() => {
+                                  return (
+                                    <table className="w-full text-sm text-gray-700 border-collapse">
+                                      <tbody>
+                                        <tr className="">
+                                          <td className="font-semibold py-0">
+                                            Tenure:
+                                          </td>
+                                          <td className="py-0">
+                                            {selectedDynamicTerm} month {""}
+                                            <span
+                                              className={`${
+                                                isDelayed
+                                                  ? "text-red-400 font-bold animate-pulse"
+                                                  : ""
                                               }`}
-                                              onClick={() =>
-                                                // @ts-ignore
-                                                (currentTerm = term)
-                                              }
                                             >
-                                              <div className="font-medium text-sm">
-                                                {term} months
-                                              </div>
-                                              <div className="text-xs font-bold">
-                                                Interest: $
-                                                {loanData.interestAmount.toFixed(
+                                              ( {selectedTerm} month
+                                              {selectedTerm !== 1 && "s"})
+                                            </span>{" "}
+                                            <br />
+                                            {loan.endDate}
+                                            {isDelayed && (
+                                              <span className="ml-2 text-xs text-red-600 font-semibold">
+                                                • Delayed
+                                              </span>
+                                            )}
+                                          </td>
+                                        </tr>
+
+                                        <tr className="">
+                                          <td className="font-semibold py-0">
+                                            Loan Amount:
+                                          </td>
+                                          <td className="py-0">
+                                            ${loan.subTotal?.toFixed(2)}
+                                          </td>
+                                        </tr>
+
+                                        <tr className="">
+                                          <td className="font-semibold py-0">
+                                            Interest:
+                                          </td>
+                                          <td className="py-0">
+                                            <span
+                                              className={`${
+                                                isDelayed
+                                                  ? "text-red-600 font-bold animate-pulse"
+                                                  : ""
+                                              }`}
+                                            >
+                                              $
+                                              {selectedDynamicLoanData.interestAmount.toFixed(
+                                                2
+                                              )}
+                                            </span>{" "}
+                                            ({loan.monthlyRate}%{" "}
+                                            {loan.interestType === "compound"
+                                              ? "compound"
+                                              : "flat"}{" "}
+                                            per month)
+                                          </td>
+                                        </tr>
+                                        <tr className="">
+                                          <td className="font-semibold py-0 whitespace-nowrap">
+                                            Total Loan Amount:
+                                          </td>
+                                          <td className="py-0">
+                                            {selectedLoanData.total.toFixed(2)}
+                                          </td>
+                                        </tr>
+                                        <tr>
+                                          <td className="font-semibold py-0">
+                                            Paid Amount:
+                                          </td>
+                                          <td className="py-0 flex items-center gap-2">
+                                            $
+                                            {selectedLoanData.paidAmount.toFixed(
+                                              2
+                                            )}
+                                            <span className="text-xs text-red-600 rounded-full whitespace-nowrap">
+                                              Outstanding:{" "}
+                                              <strong>
+                                                $
+                                                {selectedLoanData.remaining.toFixed(
                                                   2
                                                 )}
-                                              </div>
+                                              </strong>
+                                            </span>
+                                            {loanPayments[loan._id]?.length >
+                                              0 && (
+                                              <button
+                                                onClick={() =>
+                                                  setPaymentLoan(loan)
+                                                }
+                                                className="p-1 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
+                                              >
+                                                <Plus className="w-4 h-4" />
+                                              </button>
+                                            )}
+                                          </td>
+                                        </tr>
+                                        <tr className="">
+                                          <td className="font-semibold py-0">
+                                            Loan Terms:
+                                          </td>
+                                          <td className="py-0">
+                                            {companyLoanTerms(loan).length >
+                                              1 && (
+                                              <button
+                                                onClick={() =>
+                                                  toggleShowAllTerms(loan._id)
+                                                }
+                                                className="text-xs text-blue-600 hover:underline"
+                                              >
+                                                {showAllTermsMap[loan._id]
+                                                  ? "Less..."
+                                                  : "More..."}
+                                              </button>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  );
+                                })()}
+                                <div
+                                  className={`mt-0 overflow-y-auto transition-all duration-300 ${
+                                    showAllTermsMap[loan._id]
+                                      ? "max-h-20"
+                                      : "max-h-[20px]"
+                                  }`}
+                                >
+                                  <ul className="space-y-0  ">
+                                    {companyLoanTerms(loan)
+                                      .filter((term) =>
+                                        showAllTermsMap[loan._id]
+                                          ? true
+                                          : term === currentTermMap[loan._id]
+                                      )
+                                      .map((term) => {
+                                        const loanTermData =
+                                          calculateLoanAmounts({
+                                            ...loan,
+                                            loanTerms: term,
+                                          })!;
+                                        const isSelected =
+                                          term === currentTermMap[loan._id];
+
+                                        return (
+                                          <li
+                                            key={term}
+                                            className={`flex justify-between items-center  rounded-lg cursor-pointer transition py-0 px-1
+                                              ${
+                                                isSelected
+                                                  ? "bg-red-600 text-white shadow-md"
+                                                  : "bg-gray-50 text-gray-800 "
+                                              }`}
+                                          >
+                                            <div className="font-semibold">
+                                              {term} months
                                             </div>
-                                          );
-                                        })}
-                                    </div>
-                                  </div>
+                                            <div className="flex flex-col items-end text-sm">
+                                              <span>
+                                                Interest: $
+                                                {loanTermData.interestAmount.toFixed(
+                                                  2
+                                                )}{" "}
+                                                {""}| Total: $
+                                                {loanTermData.total.toFixed(2)}
+                                              </span>
+                                            </div>
+                                          </li>
+                                        );
+                                      })}
+                                  </ul>
                                 </div>
                               </>
+                            ) : loan.status === "Paid Off" ? (
+                              <p className="text-gray-500 italic">
+                                This loan has been fully paid off.
+                              </p>
                             ) : (
                               <p className="text-gray-500 italic">
-                                This loan is Paid Off.
+                                This loan has been merged with a new loan.
                               </p>
                             )}
                           </div>
@@ -475,9 +638,14 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
-          onClose={() => setLoanModalOpen(false)}
+          onClose={() => {
+            setLoanModalOpen(false);
+            setEditingLoan(null);
+          }}
           showTable={false}
           fromClientPage={true}
+          // @ts-ignore
+          editingLoanProp={editingLoan}
         />
       )}
 
@@ -485,7 +653,10 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
         <LoanPaymentModal
           open={!!paymentLoan}
           onClose={() => setPaymentLoan(null)}
-          loan={paymentLoan}
+          loan={{
+            ...paymentLoan,
+            loanTerms: currentTermMap[paymentLoan._id], // selected term
+          }}
           clientId={client._id}
           onPaymentSuccess={() => refreshPayments(paymentLoan._id)}
         />

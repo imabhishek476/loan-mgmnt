@@ -69,6 +69,24 @@ exports.AllLoans = async (req, res) => {
     });
   }
 };
+exports.activeLoans = async (req, res) => {
+  try {
+    const loans = await Loan.find({ loanStatus: "Active" }).sort({
+      createdAt: -1,
+    });
+    res.status(200).json({
+      success: true,
+      data: loans,
+      message: "Active loans fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error in AllLoans:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 exports.updateLoan = async (req, res) => {
   try { 
     const { id } = req.params;
@@ -96,26 +114,62 @@ exports.updateLoan = async (req, res) => {
   }
 };
 
-// exports.deleteLoan = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const loan = await Loan.findByIdAndDelete(id);
+ exports.deleteLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-//     if (!loan)
-//       return res.status(404).json({
-//         success: false,
-//         message: "Loan not found",
-//       });
+    const loan = await Loan.findByIdAndUpdate(
+      id,
+      { loanStatus: "Deactivated" },
+      { new: true }
+    );
 
-//     res.status(200).json({
-//       success: true,
-//       message: "Loan deleted successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error in deleteLoan:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
+    if (!loan)
+      return res.status(404).json({
+        success: false,
+        message: "Loan not found",
+      });
+
+    res.status(200).json({
+      success: true,
+      message: "Loan status set to Deactivated",
+      data: loan,
+    });
+  } catch (error) {
+    console.error("Error in deleteLoan:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+exports.recoverLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existingLoan = await Loan.findById(id);
+    if (!existingLoan) {
+      return res.status(404).json({
+        success: false,
+        message: "Loan not found",
+      });
+    }
+    const loan = await Loan.findByIdAndUpdate(
+      id,
+      { loanStatus: "Active" },
+      { new: true } 
+    );
+    res.status(200).json({
+      success: true,
+      message: "Loan recovered successfully",
+      data: loan,
+    });
+  } catch (error) {
+    console.error("Error in recoverLoan:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+

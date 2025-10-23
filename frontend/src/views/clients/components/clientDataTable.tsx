@@ -65,6 +65,7 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
               {
                 title: "Name",
                 field: "fullName",
+                cellStyle:{fontWeight:500},
                 render: (rowData) => (
                   <span
                     className="text-green-600 cursor-pointer hover:underline"
@@ -77,28 +78,78 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
               { title: "Email", field: "email" },
               { title: "Phone", field: "phone" },
               {
-                title: "Active Loans",
+                title: "Total Loan",
                 render: (rowData) => {
-                  return loanStore.loans.filter(
+                    const clientLoans = loanStore.loans.filter(
                     (loan) =>
-                      (loan.client === rowData._id ||
-                        loan.client?.['_id'] === rowData._id) &&
-                      loan.status !== "Paid Off" 
-                  ).length;
-                },
-              },
+                      loan.client === rowData._id ||
+                      loan.client?.['_id'] === rowData._id
+                    );
 
-              {
-                title: "Total Paid Off",
-                render: (rowData) => {
-                  return loanStore.loans.filter(
-                    (loan) =>
-                      (loan.client === rowData._id ||
-                        loan.client?.['_id'] === rowData._id) &&
-                      loan.status === "Paid Off" 
-                  ).length;
+                    const totalGiven = clientLoans.reduce(
+                      (acc, loan) => acc + (loan.subTotal || 0),
+                      0
+                    );
+
+                    return (
+                      <span className="font-semibold text-green-700">
+                        ${totalGiven.toLocaleString()}
+                      </span>
+                    );
+                  },
                 },
-              },
+                {
+                  title: "Paid Loan",
+                render: (rowData) => {
+                    const clientLoans = loanStore.loans.filter(
+                    (loan) =>
+                        loan.client === rowData._id ||
+                      loan.client?.['_id'] === rowData._id
+                    );
+                    const pending = clientLoans.reduce(
+                      (acc, loan) => acc + (loan.paidAmount || 0),
+                      0
+                    );
+                  const allPaidOff = clientLoans.every(
+                    (loan) => loan.status === "Paid Off" || "Merged"
+                  );
+
+                    return (
+                    <span
+                      className={`font-semibold ${
+                        allPaidOff ? "text-green-600" : "text-blue-600"
+                      }`}
+                    >
+                      {allPaidOff
+                        ? `$ ${pending.toLocaleString()} `
+                        : `$${pending.toLocaleString()}`}
+                      </span>
+                    );
+                  },
+                },
+              // {
+              //   title: "Active Loans",
+              //   render: (rowData) => {
+              //     return loanStore.loans.filter(
+              //       (loan) =>
+              //         (loan.client === rowData._id ||
+              //           loan.client?.["_id"] === rowData._id) &&
+              //         loan.status !== "Paid Off"
+              //     ).length;
+              //   },
+              // },
+
+              // {
+              //   title: "Total Paid Off",
+              //   render: (rowData) => {
+              //     return loanStore.loans.filter(
+              //       (loan) =>
+              //         (loan.client === rowData._id ||
+              //           loan.client?.["_id"] === rowData._id) &&
+              //         loan.status === "Paid Off"
+              //     ).length;
+              //   },
+              // },
               // { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
               // { title: "Accident Date", field: "accidentDate", type: "date" },
               { title: "Attorney", field: "attorneyName" },
@@ -106,12 +157,12 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
             ]}
             data={clients}
             actions={[
-               {
+              {
                 icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
                 tooltip: "Add Loan",
                 //@ts-ignore
                 onClick: (event, rowData: any) => onAddLoan(rowData),
-          },
+              },
 
               // {
               //   icon: () => <Pencil className="w-5 h-5 text-green-600" />,
