@@ -24,14 +24,7 @@ export interface Company {
   };
   backgroundColor?: string;
   loanTerms?: number[];
-  payoffSettings?: {
-    allowEarlyPayoff?: boolean;
-    earlyPayoffPenalty?: number;
-    earlyPayoffDiscount?: number;
-    gracePeriodDays?: number;
-    lateFeeAmount?: number;
-    lateFeeGraceDays?: number;
-  };
+
 }
 
 

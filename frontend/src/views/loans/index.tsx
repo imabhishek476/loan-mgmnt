@@ -657,6 +657,7 @@ useEffect(() => {
                               name: selected.companyName,
                               backgroundColor:
                                 selected.backgroundColor || "#555555",
+                              loanTerms: selected.loanTerms,
                             }}
                             issueDate={formData.issueDate}
                             monthlyRate={formData.monthlyRate}
