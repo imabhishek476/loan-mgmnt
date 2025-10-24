@@ -31,7 +31,9 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
   const { loans, loading } = loanStore;
   const [search, setSearch] = useState("");
   const [selectedLoan, setSelectedLoan] = useState(null);
-const [issueDateFilter, setIssueDateFilter] = useState<moment.Moment | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [issueDateFilterInput, setIssueDateFilterInput] = useState<moment.Moment | null>(null);
+  const [issueDateFilter, setIssueDateFilter] = useState<moment.Moment | null>(null);
   const capitalizeFirst = (text?: string) => {
     if (!text) return "";
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -134,34 +136,60 @@ return data;
   return (
     <div>
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <div className="mb-3 flex gap-2">
+        <div className="mb-3 flex flex-wrap gap-2 items-center">
           {/* Search input */}
-          <div className="relative flex-1">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Search className="w-5 h-5 text-gray-400" />
+          <div className="justify-between flex flex-grid">
+          <div className="relative flex-1 px-3">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none">
+              <Search className="w-5 h-5 text-green-700" />
             </span>
             <input
               type="text"
-              placeholder="Search loans by client or company..."
-              className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-              onChange={handleSearchChange}
-            />
+              placeholder="Search by Customer or Company"
+              className="w-96 pl-10 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
+            <button
+              className="flex items-center gap-1 text-white bg-green-800 hover:bg-green-900 px-2 py-0 rounded transition-all duration-200 hover:shadow-lg"
+              onClick={() => setSearch(searchInput)}
+            >
+              <Search size={15} />
+              <span className="font-sm">Search</span>
+            </button>
           </div>
-
-          {/* MUI DatePicker */}
           <DatePicker
             label="Issue Date"
-            value={issueDateFilter}
-            //@ts-ignore
-            onChange={(newValue) => setIssueDateFilter(newValue)}
-            //@ts-ignore
+            value={issueDateFilterInput}
+            onChange={(newValue) => setIssueDateFilterInput(newValue)}
             renderInput={(params) => (
               <input
-                {...params}
-                className="w-44 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                {...params.inputProps}
+                value={params.inputProps?.value || ""}
+                onChange={params.inputProps?.onChange}
+                className="w-44 border px-5 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
               />
             )}
           />
+          <button
+            className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-1 rounded transition-colors duration-200"
+            onClick={() => setIssueDateFilter(issueDateFilterInput)}
+          >
+            <Search size={20} />
+            <span className="font-medium">Filter</span>
+          </button>
+          <button
+            className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded transition-colors duration-200"
+            onClick={() => {
+              setSearchInput("");
+              setSearch("");
+              setIssueDateFilterInput(null);
+              setIssueDateFilter(null);
+            }}
+          >
+            <span className="font-medium">Reset</span>
+          </button>
         </div>
       </LocalizationProvider>
 
