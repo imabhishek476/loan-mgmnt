@@ -166,7 +166,7 @@ const Loans = observer(
               loan?.company === formData.company &&
               loan?.status !== "Paid Off" &&
               loan?.status !== "Merged" &&
-              loan?.status !== "Deactivated"
+              loan?.loanStatus !== "Deactivated"
           ) || [];
         setActiveLoans(loans);
         setSelectedLoanIds([]);

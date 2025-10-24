@@ -128,6 +128,7 @@ useEffect(() => {
   };
 
   const getStatusStyles = (loan: any) => {
+    if (loan.loanStatus === "Deactivated") return "bg-gray-400 text-white"; 
     if ((loan.paidAmount || 0) >= (loan.totalLoan || 0))
       return "bg-green-600 text-white";
     const lower = loan.status?.toLowerCase() || "";
@@ -348,7 +349,11 @@ useEffect(() => {
                               loan
                             )}`}
                           >
-                            {isPaidOff ? "Paid Off" : loan.status}
+                            {loan.loanStatus === "Deactivated"
+                              ? "Deactivated"
+                              : isPaidOff
+                              ? "Paid Off"
+                              : loan.status}
                           </span>
                         </td>
                         {/* <td className="px-3 py-2 text-right">
@@ -379,6 +384,12 @@ useEffect(() => {
                       {/* Content */}
                       {expandedLoanId === loan._id && (
                         <div className="px-4 pb-1 bg-gray-50 flex flex-col sm:flex-row gap-6">
+                          {loan.loanStatus === "Deactivated" ? (
+                            <p className="text-gray-500 italic">
+                              This loan has been deactivated.
+                            </p>
+                          ) : (
+                            <>
                           {/* Payment History */}
                           <div className="flex-1 border-r pr-4 space-y-3">
                             <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
@@ -500,7 +511,9 @@ useEffect(() => {
                                             Total Loan Amount:
                                           </td>
                                           <td className="py-0">
-                                            {selectedLoanData.total.toFixed(2)}
+                                            {selectedLoanData.total.toFixed(
+                                                  2
+                                                )}
                                           </td>
                                         </tr>
                                         <tr>
@@ -521,8 +534,8 @@ useEffect(() => {
                                                 )}
                                               </strong>
                                             </span>
-                                            {loanPayments[loan._id]?.length >
-                                              0 && (
+                                            {loanPayments[loan._id]
+                                                  ?.length > 0 && (
                                               <button
                                                 onClick={() =>
                                                   setPaymentLoan(loan)
@@ -543,7 +556,9 @@ useEffect(() => {
                                               1 && (
                                               <button
                                                 onClick={() =>
-                                                  toggleShowAllTerms(loan._id)
+                                                  toggleShowAllTerms(
+                                                        loan._id
+                                                      )
                                                 }
                                                 className="text-xs text-blue-600 hover:underline"
                                               >
@@ -570,7 +585,8 @@ useEffect(() => {
                                       .filter((term) =>
                                         showAllTermsMap[loan._id]
                                           ? true
-                                          : term === currentTermMap[loan._id]
+                                          : term ===
+                                                currentTermMap[loan._id]
                                       )
                                       .map((term) => {
                                         const loanTermData =
@@ -620,6 +636,8 @@ useEffect(() => {
                               </p>
                             )}
                           </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
