@@ -463,7 +463,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
               onChange={(_event, newValue) =>
                 newValue &&
                 setPayoffFilter(
-                  newValue.value as "day" | "week" | "month" | "all"
+                  newValue.value as "day" | "week" | "month"
                 )
               }
               getOptionLabel={(option) => option.label}
