@@ -751,7 +751,7 @@ const FormModal = ({
               </div>
             </div>
 
-            {customFields.length > 0 && (
+            {initialCustomFields && (
               <div className="sm:col-span-2 flex flex-col gap-3">
                 <h3 className="font-semibold text-gray-800">Custom Fields</h3>
                 {customFields.map((field) => (
