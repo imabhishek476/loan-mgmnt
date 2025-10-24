@@ -89,17 +89,24 @@ const FormModal = ({
   const [showPassword, setShowPassword] = useState(false);
 
   const [customFields, setCustomFields] = useState<any[]>(
-    initialCustomFields || []
+    initialCustomFields && initialCustomFields.length > 0
+    ? initialCustomFields
+    : [{ id: 1, name: "", value: "", type: "string" }]
   );
   const [fieldCounter, setFieldCounter] = useState(
-    initialCustomFields?.length || 1
+    initialCustomFields && initialCustomFields.length > 0
+    ? initialCustomFields.length + 1
+    : 2
   );
 
   useEffect(() => {
     setFormData(initialData || {});
-    if (initialData?.customFields && Array.isArray(initialData.customFields)) {
+    if (initialData?.customFields && initialData.customFields.length > 0) {
       setCustomFields(initialData.customFields);
       setFieldCounter(initialData.customFields.length + 1);
+  } else {
+    setCustomFields([{ id: 1, name: "", value: "", type: "string" }]);
+    setFieldCounter(2);
     }
   }, [initialData]);
 
@@ -210,7 +217,7 @@ const FormModal = ({
                       },
                       {
                         key: "maintenanceFee",
-                        label: "Maintenance Fee",
+                        label: "Annual Maintenance Fee",
                         typeKey: "maintenanceFeeType",
                       },
                     ];
@@ -218,20 +225,29 @@ const FormModal = ({
                     return (
                      <div key={field.key} className="mt-0 mb-0 col-span-full">
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-green-800 border-b pb-0">
-                  {field.icon && (<span className="text-green-700">{field.icon}</span>)}
+                  {field.icon && (
+                            <span className="text-green-700">{field.icon}</span>
+                          )}
                   {field.label}
                 </h3>
 
                 <div className="mt-3 grid sm:grid-cols-2 gap-3">
                   {feeFields.map(({ key, label, typeKey }) => {
                     const feeType = formData[typeKey] || "flat";
-                    const feeValue = formData[key] || "";
+                    const feeValue =
+                              formData[key] != null
+                                ? String(formData[key])
+                                : "0";
 
                     const handleFeeChange = (e) => {
-                      let value = e.target.value;
-                      if (value && isNaN(Number(value))) return;
-                      let numValue = Number(value);
-                      handleChange(key, numValue);
+                            const value = e.target.value;
+                      if (value === "" || /^\d*$/.test(value)) {
+                                handleChange(key, value);
+                              }
+                            };
+                    const handleFeeBlur = () => {
+                      const numericValue = Number(feeValue) || 0;
+                      handleChange(key, String(numericValue));
                     };
 
                     const toggleFeeType = (newType) => {
@@ -250,9 +266,11 @@ const FormModal = ({
 
                                 <div className="relative w-28">
                         <input
-                          type="number"
-                          value={feeValue}
+                          type="text"
+                          inputMode="decimal"
+                          value={feeValue ?? "0"}
                           onChange={handleFeeChange}
+                          onBlur={handleFeeBlur}
                           min={0}
                            className="border rounded-md pl-1 pr-4 py-2 w-full text-left focus:ring-2 focus:ring-green-500 focus:outline-none transition no-spinner"
                                   />
@@ -733,7 +751,7 @@ const FormModal = ({
               </div>
             </div>
 
-            {initialCustomFields && (
+            {customFields.length > 0 && (
               <div className="sm:col-span-2 flex flex-col gap-3">
                 <h3 className="font-semibold text-gray-800">Custom Fields</h3>
                 {customFields.map((field) => (
