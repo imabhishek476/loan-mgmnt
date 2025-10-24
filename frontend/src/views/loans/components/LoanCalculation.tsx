@@ -112,7 +112,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
   const [interestType, setInterestType] = useState<"flat" | "compound">(
     interestTypeProp
   );
-  const defaultTermSet = React.useRef(false);
+  const defaultTermSet = React.useRef<{ [companyName: string]: boolean }>({});
   const [loanTerm, setLoanTerm] = useState<number>(24);
   const ALL_LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
@@ -169,6 +169,16 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
       endDate: end.toISOString(),
     });
   };
+useEffect(() => {
+  const defaultTerm = company?.loanTerms?.at(-1) || 24;
+  if (!company || !company.loanTerms?.length) return;
+  setLoanTerm(defaultTerm);
+  emitChange(parseNumberInput(baseInput), fees, interestType, parseNumberInput(rateInput), defaultTerm);
+  //@ts-ignore
+  defaultTermSet.current[company.name || "Claim Advance"] = defaultTerm;
+}, [company?.name, company?.loanTerms]);
+
+
 
   const handleBaseChange = (value: string) => {
     setBaseInput(value);
@@ -238,24 +248,6 @@ const formatDate = (date: Date) =>
   const start = issueDate ? new Date(issueDate) : new Date();
   const end = endDate ? new Date(endDate) : new Date(start);
   if (!endDate) end.setMonth(end.getMonth() + loanTerm);
- ///////
- useEffect(() => {
-    if (!defaultTermSet.current && company?.loanTerms?.length) {
-      const lastTerm = company.loanTerms[company.loanTerms.length - 1]; // ya first term agar aap chaho
-      setLoanTerm(lastTerm);
-      setTimeout(() => {
-        emitChange(
-          parseNumberInput(baseInput),
-          fees,
-          interestType,
-          parseNumberInput(rateInput),
-          lastTerm
-        );
-      }, 0);
-
-      defaultTermSet.current = true;
-    }
-  }, [company]); 
 
   return (
     <div className="rounded-xl shadow-sm px-0 min-w-0" style={bgStyle}>
@@ -469,7 +461,7 @@ const formatDate = (date: Date) =>
             ${
               isSelected
                 ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
-                : "bg-white border-gray-200 text-gray-700 hover:border-red-400 hover:shadow-md"
+                : "bg-white border-gray-200 text-gray-700"
             }`}
                     onClick={() => {
                       setLoanTerm(term);

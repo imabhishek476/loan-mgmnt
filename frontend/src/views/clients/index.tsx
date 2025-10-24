@@ -90,14 +90,14 @@ const Clients = observer(() => {
   return (
     <div className="text-left flex flex-col bg-white transition-all duration-300">
       {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="mb-5 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl  text-gray-800 font-bold ">
             Customer Management
           </h1>
-          <p className="text-gray-600 text-base">
+          {/* <p className="text-gray-600 text-base">
             Manage customer records and personal information
-          </p>
+          </p> */}
         </div>
 
         <Button
