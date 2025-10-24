@@ -166,7 +166,7 @@ const Loans = observer(
               loan?.company === formData.company &&
               loan?.status !== "Paid Off" &&
               loan?.status !== "Merged" &&
-              loan?.status !== "Deactivated"
+              loan?.loanStatus !== "Deactivated"
           ) || [];
         setActiveLoans(loans);
         setSelectedLoanIds([]);
@@ -275,11 +275,11 @@ useEffect(() => {
           for (const id of selectedIds) {
             await loanStore.updateLoan(id, { status: "Merged" });
           }
+          await loanStore.fetchLoans();
 
           toast.success("Loan created successfully");
           // loadInitialData();
         }
-        await loanStore.fetchLoans();
         setModalOpen(false);
         resetForm();
       } catch (error: any) {

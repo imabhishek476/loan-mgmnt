@@ -61,7 +61,6 @@ const payoffOptions = [
   { label: "Today", value: "day" },
   { label: "This Week", value: "week" },
   { label: "This Month", value: "month" },
-  { label: "All", value: "all" },
 ];
 const capitalizeFirst = (str: string) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
@@ -75,10 +74,8 @@ const Dashboard = observer(() => {
     []
   );
   const [upcomingPayoffs, setUpcomingPayoffs] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<"graph" | "upcoming">("graph");
-  const [payoffFilter, setPayoffFilter] = useState<
-    "day"|"week" | "month" | "all"
-  >("all");
+  const [viewMode, setViewMode] = useState<"graph" | "upcoming">("upcoming");
+  const [payoffFilter, setPayoffFilter] = useState<"day" | "week" | "month">("week");
   const [loadingGraph, setLoadingGraph] = useState(false);
 
   const stats = dashboardStore.stats;
@@ -130,6 +127,12 @@ const handleViewClient = async (clientName: string) => {
       setLoadingGraph(false);
     }
   };
+const getLoanEndDate = (issueDate: string, termMonths: number) => {
+  if (!issueDate || !termMonths) return "-";
+  return moment(issueDate, "MM-DD-YYYY")
+    .add(termMonths * 30, "days")
+    .format("DD MMM YYYY");
+};
 
   const handleFilter = async () => {
     if (fromDate && toDate) {
@@ -179,9 +182,10 @@ const handleViewClient = async (clientName: string) => {
             return null;
           }
 
-          const monthsSinceIssue = today.diff(issueDate, "months") + 1;
+          const daysPassed = today.diff(issueDate, "days");
+          const monthsSinceIssue = Math.floor(daysPassed / 30) + 1;
           const tenureSteps: number[] = company?.loanTerms || [
-            6, 12, 18, 24, 30, 36,40
+            6, 12, 18, 24, 30, 36, 40,
           ];
           const currentTenure =
             tenureSteps.find((step) => monthsSinceIssue <= step) ||
@@ -198,10 +202,21 @@ const handleViewClient = async (clientName: string) => {
 
           const paidAmount = loan.paidAmount || 0;
           const remaining = Math.max(0, totalLoan - paidAmount);
-          const endDate = moment(issueDate).add(loanTerm, "months");
-          const isDelayed = endDate.endOf("day").isBefore(today);
+          const totalDays = loanTerm * 30;
+          const endDate = moment(issueDate).add(totalDays, "days");
+          const isDelayed = endDate.endOf("day").isBefore(today, "day");
           const isPaidOff = paidAmount >= totalLoan;
 
+          const overdueMonths = isDelayed
+            ? Math.floor(today.diff(endDate, "days") / 30)
+            : 0;
+
+          const overdueInterest = isDelayed
+            ? loan.interestType === "flat"
+              ? loanData.subtotal * (loan.monthlyRate / 100) * overdueMonths
+              : loanData.subtotal *
+                (Math.pow(1 + loan.monthlyRate / 100, overdueMonths) - 1)
+            : 0;
           return {
             srNo: 0,
             id: loan._id,
@@ -220,6 +235,8 @@ const handleViewClient = async (clientName: string) => {
             status: isPaidOff ? "Paid Off" : isDelayed ? "Delayed" : "Active",
             monthlyRate: loan.monthlyRate || 0,
             interestAmount: totalLoan - loanData.subtotal,
+            overdueMonths,
+            overdueInterest,
           };
         })
         .filter(Boolean)
@@ -274,7 +291,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
         return end.isSame(today, "week");
       case "month":
         return end.isSame(today, "month");
-      case "all":
+      // case "all":
       default:
         return true;
     }
@@ -384,8 +401,8 @@ const handleClientUpdate = async (_id: string, data: any) => {
           exclusive
           onChange={(_e, newMode) => newMode && setViewMode(newMode)}
         >
-          <ToggleButton value="graph">Companies Performalce</ToggleButton>
           <ToggleButton value="upcoming">Upcoming Payoff</ToggleButton>
+          <ToggleButton value="graph">Companies Performalce</ToggleButton>
         </ToggleButtonGroup>
       </div>
       {viewMode === "graph" && (
@@ -446,7 +463,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
               onChange={(_event, newValue) =>
                 newValue &&
                 setPayoffFilter(
-                  newValue.value as "day" | "week" | "month" | "all"
+                  newValue.value as "day" | "week" | "month"
                 )
               }
               getOptionLabel={(option) => option.label}
@@ -464,7 +481,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
                 cellStyle: { whiteSpace: "nowrap" },
               },
               {
-                title: "Client",
+                title: "Customer",
                 render: (rowData) => (
                   <span
                     className="text-green-600 cursor-pointer hover:underline"
@@ -473,7 +490,11 @@ const handleClientUpdate = async (_id: string, data: any) => {
                     {capitalizeFirst(rowData.clientName)}
                   </span>
                 ),
-                cellStyle: { whiteSpace: "normal", wordBreak: "break-word",fontWeight: 500 },
+                cellStyle: {
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
+                  fontWeight: 500,
+                },
               },
               {
                 title: "Company",
@@ -512,28 +533,30 @@ const handleClientUpdate = async (_id: string, data: any) => {
                   })}`,
                 cellStyle: { whiteSpace: "nowrap" },
               },
-              {
+            {
                 title: "Current Tenure (Mo.)",
                 width: "25%",
                 render: (rowData) => {
                   const issue = moment(rowData.issueDate, "MM-DD-YYYY");
                   const today = moment();
-                  const monthsPassed = today.diff(issue, "months") + 1;
+                  const daysPassed = today.diff(issue, "days");
+                  const monthsPassed = Math.floor(daysPassed / 30) + 1;
                   const company = rowData.companyObject;
-                  const tenureSteps = company?.loanTerms;
+                  const tenureSteps = company?.loanTerms || [6, 12, 18, 24, 30, 36, 40];
                   const currentTenure =
                     tenureSteps.find((step) => monthsPassed <= step) ||
                     tenureSteps[tenureSteps.length - 1];
+
                   return currentTenure;
                 },
                 cellStyle: { whiteSpace: "nowrap" },
               },
-              {
-                title: "Term (Mo.)",
-                field: "originalTerm",
-                width: "20%",
-                cellStyle: { whiteSpace: "nowrap" },
-              },
+              // {
+              //   title: "Term (Mo.)",
+              //   field: "originalTerm",
+              //   width: "20%",
+              //   cellStyle: { whiteSpace: "nowrap" },
+              // },
               {
                 title: "Issue Date",
                 width: "15%",
@@ -545,7 +568,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
                 title: "End Date",
                 width: "10%",
                 render: (rowData) =>
-                  moment(rowData.endDate, "MM-DD-YYYY").format("DD MMM YYYY"),
+                  getLoanEndDate(rowData.issueDate, rowData.loanTerms || rowData.term),
                 cellStyle: { whiteSpace: "nowrap" },
               },
               {
@@ -555,13 +578,13 @@ const handleClientUpdate = async (_id: string, data: any) => {
                   const color =
                     status === "Delayed"
                       ? "text-white bg-red-600 py-1 px-2 rounded-lg"
-                      : status === "Paid off" || status === "Paid Off"
+                      : status === "Paid Off"
                       ? "text-white bg-gray-600 py-1 px-2 rounded-lg"
                       : "text-white bg-green-600 py-1 px-2 rounded-lg";
                   return (
                     <div className="flex flex-col items-start">
                       <span className={`font-semibold ${color}`}>{status}</span>
-                      {rowData.overdueMonths > 0 && (
+                      {rowData.status === "Delayed" && rowData.overdueMonths > 0 && (
                         <small className="text-xs text-red-600">
                           Overdue {rowData.overdueMonths} mo — Extra Interest: $
                           {Number(rowData.overdueInterest || 0).toFixed(2)}
