@@ -8,6 +8,8 @@ import { clientStore } from "../../../store/ClientStore";
 import { companyStore } from "../../../store/CompanyStore";
 import moment from "moment";
 import { observer } from "mobx-react-lite";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 
 import {
   Dialog,
@@ -29,6 +31,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
   const { loans, loading } = loanStore;
   const [search, setSearch] = useState("");
   const [selectedLoan, setSelectedLoan] = useState(null);
+const [issueDateFilter, setIssueDateFilter] = useState<moment.Moment | null>(null);
   const capitalizeFirst = (text?: string) => {
     if (!text) return "";
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -44,9 +47,8 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
       );
     }
 
-    if (!search) return data;
-
-    return data.filter((loan) => {
+    if (search) {
+ data = data.filter((loan) => {
       const clientName =
         loan.client?.["fullName"] ||
         clientStore.clients.find((c) => c._id === loan.client)?.fullName ||
@@ -61,7 +63,15 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
         companyName.toLowerCase().includes(search.toLowerCase())
       );
     });
-  }, [loans, search, clientId, loading]);
+  }
+if (issueDateFilter) {
+  data = data.filter((loan) =>
+    moment(loan.issueDate).isSame(issueDateFilter, "day")
+  );
+}
+return data;
+}, [loans, search, clientId, issueDateFilter, loading]);
+
 
   const debouncedSearch = useMemo(
     () => debounce((value: string) => setSearch(value), 300),
@@ -123,18 +133,37 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
   }
   return (
     <div>
-      {/* Search Input */}
-      <div className="mb-3 relative w-full">
-        <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-          <Search className="w-5 h-5 text-gray-400" />
-        </span>
-        <input
-          type="text"
-          placeholder="Search loans by client or company..."
-          className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-          onChange={handleSearchChange}
-        />
-      </div>
+      <LocalizationProvider dateAdapter={AdapterMoment}>
+        <div className="mb-3 flex gap-2">
+          {/* Search input */}
+          <div className="relative flex-1">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search className="w-5 h-5 text-gray-400" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search loans by client or company..."
+              className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+              onChange={handleSearchChange}
+            />
+          </div>
+
+          {/* MUI DatePicker */}
+          <DatePicker
+            label="Issue Date"
+            value={issueDateFilter}
+            //@ts-ignore
+            onChange={(newValue) => setIssueDateFilter(newValue)}
+            //@ts-ignore
+            renderInput={(params) => (
+              <input
+                {...params}
+                className="w-44 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+            )}
+          />
+        </div>
+      </LocalizationProvider>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
         {loading ? (
@@ -156,7 +185,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
 
               {
                 title: "Client",
-                cellStyle: { width: 80, minWidth: 120 ,fontWeight:600},
+                cellStyle: { width: 80, minWidth: 120, fontWeight: 600 },
                 render: (rowData) =>
                   capitalizeFirst(
                     clientStore.clients.find((c) => c._id === rowData.client)
@@ -209,7 +238,7 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
                   moment(rowData.issueDate).format("DD MMM YYYY"),
               },
               {
-                title: "Payment Status",                                                          
+                title: "Payment Status",
                 cellStyle: { whiteSpace: "nowrap" },
                 render: (rowData: any) => {
                   let bgColor = "";
