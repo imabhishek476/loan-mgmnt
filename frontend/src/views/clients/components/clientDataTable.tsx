@@ -38,7 +38,7 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
         </span>
         <input
           type="text"
-          placeholder="Search clients..."
+          placeholder="Search Customer..."
           value={search}
           onChange={handleSearchChange}
           className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
@@ -50,7 +50,7 @@ const ClientsDataTable = ({ clients, onSearch, onDelete,  onViewClient, onAddLoa
           <div className="flex justify-center items-center py-20">
             <CircularProgress className="text-green-700" />
             <span className="ml-3 text-gray-700 font-medium">
-              Loading clients...
+              Loading Customer...
             </span>
           </div>
         ) : clients.length > 0 ? (

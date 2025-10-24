@@ -3,7 +3,6 @@ const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
 const moment = require("moment");
 const createAuditLog = require("../utils/auditLog");
-
 exports.Clientstore = async (req, res) => {
   try {
     const {
@@ -28,11 +27,16 @@ exports.Clientstore = async (req, res) => {
     }
 
     const trimEmail = email?.trim().toLowerCase();
-    console.log("normalized email =>", trimEmail);
-
-
-    const exist_record = await Client.findOne({ email: trimEmail });
-    console.log("exist_record", exist_record);
+    let exist_record = null;
+    if (trimEmail) {
+     exist_record = await Client.findOne({ email: trimEmail });
+      if (exist_record) {
+        return res.status(400).json({
+          success: false,
+          error: "Client with this email already exists",
+        });
+      }
+    }
 
     if (exist_record) {
       return res.status(400).json({
@@ -131,6 +135,7 @@ exports.updateClient = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
+    // Format dates
     if (updates.dob) {
       updates.dob = moment(updates.dob).format("MM-DD-YYYY");
     }
@@ -138,23 +143,48 @@ exports.updateClient = async (req, res) => {
       updates.accidentDate = moment(updates.accidentDate).format("MM-DD-YYYY");
     }
 
+    // Normalize email
+    if (updates.email) {
+      updates.email = updates.email.trim().toLowerCase();
+
+      // Check if another client already has this email
+      const exist_record = await Client.findOne({
+        email: updates.email,
+        _id: { $ne: id }, // string id is fine
+      });
+
+      if (exist_record) {
+        return res.status(400).json({
+          success: false,
+          error: "Another client with this email already exists",
+        });
+      }
+    }
+
+    // Update client
     const client = await Client.findByIdAndUpdate(id, updates, { new: true });
     if (!client) {
-      return res.status(404).json({ success: false, error: "Client not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Client not found" });
     }
-  await createAuditLog(
-    req.user?.id || null,
-    req.user?.userRole || null,
-    "Client has been Updated",
-    "Client",
-    client._id,
-    { before: client, after: client }
-  );
+
+    // Audit log
+    await createAuditLog(
+      req.user?.id || null,
+      req.user?.userRole || null,
+      "Client has been Updated",
+      "Client",
+      client._id,
+      { before: client, after: client }
+    );
+
     res.status(200).json({ success: true, message: "Client updated", client });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
 
 exports.deleteClient = async (req, res) => {
   try {

@@ -179,7 +179,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
 
   const handleFeeValueChange = (key: string, value: string) => {
     let num = parseNumberInput(value);
-    if (fees[key].type === "percentage") num = Math.min(Math.max(num, 0), 100);
+    if (fees[key].type === "percentage") num = Math.max(num, 0);
     const newFees = { ...fees, [key]: { ...fees[key], value: num } };
     setFees(newFees);
     emitChange(currentBase, newFees, interestType, currentRate, loanTerm);
@@ -287,7 +287,7 @@ const formatDate = (date: Date) =>
           const fee = fees[item.key];
           if (!fee) return null;
           const isPercentage = fee.type === "percentage";
-          const displayValue = fee.value === 0 ? "" : fee.value;
+          const displayValue = fee.value === null || fee.value === undefined ? "" : fee.value;
           const contribution = isPercentage
             ? (currentBase * fee.value) / 100
             : fee.value;
@@ -304,7 +304,8 @@ const formatDate = (date: Date) =>
               </div>
               <div className="relative flex items-center  gap-2 w-2/2">
                 <input
-                  type="number"
+                  type="text" 
+                  inputMode="decimal"
                   min="0"
                   step={isPercentage ? "0.01" : "any"}
                   value={displayValue}
@@ -415,10 +416,12 @@ const formatDate = (date: Date) =>
                   interestType,
                   currentRate,
                   term,
-                includePreviousLoans ? previousLoanTotal : 0 
+                includePreviousLoans ? previousLoanTotal : 0
                 );
                 const isSelected = term <= loanTerm;
-
+                const start = issueDate ? new Date(issueDate) : new Date();
+                const termEnd = new Date(start);
+                termEnd.setDate(start.getDate() + term * 30); 
                 return (
                   <div
                     key={term}
@@ -455,17 +458,14 @@ const formatDate = (date: Date) =>
                       }`}
                     >
                       Total: $
-                      {(
-                        termResult.interestAmount +
-                        subtotal
-                      ).toFixed(2)}
+                      {(termResult.interestAmount + subtotal).toFixed(2)}
                     </div>
                     <div
                       className={`text-xs ${
                         isSelected ? "text-white" : "text-gray-700"
                       }`}
                     >
-                      Date: {formatDate(end)}
+                      Date: {formatDate(termEnd)}
                     </div>
                   </div>
                 );

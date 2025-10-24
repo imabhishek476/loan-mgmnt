@@ -57,19 +57,20 @@ const Clients = observer(() => {
     try {
       if (editingClient) {
         await clientStore.updateClient(editingClient._id, data);
+      await clientStore.fetchClients();
           const refreshedClient = clientStore.clients.find(
             (c) => c._id === editingClient._id
           );
-        toast.success("Client updated successfully 🎉");
-          if (refreshedClient) {
-            setViewClient(refreshedClient); 
-          }
+         toast.success("Client updated successfully");
+          if (refreshedClient) setViewClient(refreshedClient);
         setEditingClient(null);
+      setModalOpen(false);
       } else {
         await clientStore.createClient(data);
-        toast.success("New client added successfully 🎉");
-      }
+  await clientStore.fetchClients();
+      toast.success("New client added successfully");
       setModalOpen(false);
+    }
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Failed to save client");
     }
@@ -117,7 +118,7 @@ const Clients = observer(() => {
             setModalOpen(true);
           }}
         >
-          New Client
+          New Customer
         </Button>
       </div>
 
@@ -128,17 +129,17 @@ const Clients = observer(() => {
           setModalOpen(false);
           setEditingClient(null);
         }}
-        title={editingClient ? "Edit Client" : "New Client"}
+        title={editingClient ? "Edit Customer" : "New Customer"}
         fields={clientFields}
         //@ts-ignore
         customFields={customFields}
         initialData={editingClient || {}}
         submitButtonText={
           editingClient ? (
-            "Update Client"
+            "Update Customer"
           ) : (
             <>
-              <Save size={16} className="inline mr-1" /> Create Client
+              <Save size={16} className="inline mr-1" /> Create Customer
             </>
           )
         }
