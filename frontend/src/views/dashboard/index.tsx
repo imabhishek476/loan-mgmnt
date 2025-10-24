@@ -61,7 +61,6 @@ const payoffOptions = [
   { label: "Today", value: "day" },
   { label: "This Week", value: "week" },
   { label: "This Month", value: "month" },
-  { label: "All", value: "all" },
 ];
 const capitalizeFirst = (str: string) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
@@ -76,9 +75,7 @@ const Dashboard = observer(() => {
   );
   const [upcomingPayoffs, setUpcomingPayoffs] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<"graph" | "upcoming">("upcoming");
-  const [payoffFilter, setPayoffFilter] = useState<
-    "day"|"week" | "month" | "all"
-  >("all");
+  const [payoffFilter, setPayoffFilter] = useState<"day" | "week" | "month">("week");
   const [loadingGraph, setLoadingGraph] = useState(false);
 
   const stats = dashboardStore.stats;
@@ -294,7 +291,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
         return end.isSame(today, "week");
       case "month":
         return end.isSame(today, "month");
-      case "all":
+      // case "all":
       default:
         return true;
     }
