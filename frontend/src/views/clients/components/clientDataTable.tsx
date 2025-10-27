@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import MaterialTable from "@material-table/core";
 import { Search, Trash2, User, Plus } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -10,7 +10,7 @@ import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
 import { companyStore } from "../../../store/CompanyStore";
 import { toast } from "react-toastify";
-import { calculateLoanAmounts } from "../../../utils/loanCalculations";
+// import { calculateLoanAmounts } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
   clients: any[];
   loading: boolean;
@@ -24,7 +24,7 @@ interface ClientsDataTableProps {
 const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   clients,
   loading,
-  onSearch,
+  // onSearch,
   onAddLoan,
   onViewClient,
   onDelete,
@@ -100,6 +100,7 @@ const handleReset = async () => {
             label="Issue Date"
             value={issueDateFilterInput}
             onChange={(newValue) => setIssueDateFilterInput(newValue)}
+            //@ts-ignore
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -183,8 +184,9 @@ const handleReset = async () => {
     render: (rowData) => {
       const clientLoans = loanStore.loans.filter(
         (loan) =>
-        loan.client === rowData._id || loan.client?._id === rowData._id
-    );
+          //@ts-ignore
+          loan.client === rowData._id || loan.client?._id === rowData._id
+      );
 
     let totalPaid = 0;
     let totalRemaining = 0;
@@ -258,6 +260,7 @@ const handleReset = async () => {
                   const clientLoans = loanStore.loans.filter(
                     (loan) =>
                       loan.client === rowData._id ||
+                      //@ts-ignore
                       loan.client?._id === rowData._id
                   );
                   if (clientLoans.length === 0)

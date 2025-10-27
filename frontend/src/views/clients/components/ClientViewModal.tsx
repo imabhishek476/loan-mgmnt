@@ -295,7 +295,7 @@ useEffect(() => {
                   // const loanTermsOptions = loan.loanTermsOptions || [
                   //   currentTerm,
                   // ];
-                  const selectedTerm = loan.loanTerms;
+                  // const selectedTerm = loan.loanTerms;
                   const selectedDynamicTerm = currentTermMap[loan._id];
 
                   const selectedLoanData = calculateLoanAmounts({

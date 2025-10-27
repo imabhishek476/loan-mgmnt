@@ -97,6 +97,7 @@ const Clients = observer(() => {
         !issueDateFilter ||
         loanStore.loans.some(
           (loan) =>
+            //@ts-ignore
             (loan.client === client._id || loan.client?._id === client._id) &&
             moment(loan.issueDate).format("MM-DD-YYYY") === issueDateFilter
         );
@@ -180,6 +181,7 @@ const Clients = observer(() => {
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           client={viewClient}
+          //@ts-ignore
           onSearch={(query: string) => setSearchTerm(query)}
           onFilter={({ search, issueDate }) => {
             setSearchTerm(search);

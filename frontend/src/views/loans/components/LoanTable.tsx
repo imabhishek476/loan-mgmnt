@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
-import { debounce } from "lodash";
+// import { debounce } from "lodash";
 import { Search, Eye, Wallet, Trash2, RefreshCcw} from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
@@ -75,15 +75,6 @@ return data;
 }, [loans, search, clientId, issueDateFilter, loading]);
 
 
-  const debouncedSearch = useMemo(
-    () => debounce((value: string) => setSearch(value), 300),
-    []
-  );
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
-
   const handleView = (loan: any) => setSelectedLoan(loan);
   const handleClose = () => setSelectedLoan(null);
   useEffect(() => {
@@ -139,14 +130,14 @@ return data;
         <div className="mb-3 flex flex-wrap gap-2 items-center">
           {/* Search input */}
           <div className="justify-between flex flex-grid">
-          <div className="relative flex-1 px-3">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none">
-              <Search className="w-5 h-5 text-green-700" />
-            </span>
-            <input
-              type="text"
-              placeholder="Search by Customer or Company"
-              className="w-96 pl-10 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+            <div className="relative flex-1 px-3">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none">
+                <Search className="w-5 h-5 text-green-700" />
+              </span>
+              <input
+                type="text"
+                placeholder="Search by Customer or Company"
+                className="w-96 pl-10 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
               />
@@ -162,7 +153,9 @@ return data;
           <DatePicker
             label="Issue Date"
             value={issueDateFilterInput}
+            //@ts-ignore
             onChange={(newValue) => setIssueDateFilterInput(newValue)}
+            //@ts-ignores
             renderInput={(params) => (
               <input
                 {...params.inputProps}
@@ -258,16 +251,15 @@ return data;
               //   render: (rowData) =>
               //     `$${Number(rowData.totalLoan || 0).toLocaleString()}`,
               // },
-              { title: "Term (months)",
+              {
+                title: "Term (months)",
                 render: (rowData) => {
-                  const { monthsPassed } = calculateDynamicTermAndPayment(rowData);
+                  const { monthsPassed } =
+                    calculateDynamicTermAndPayment(rowData);
                   const runningTenure =
-                    ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
-                  return (
-                    <span>
-                      {runningTenure}{" "}
-                    </span>
-                  );
+                    ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
+                    ALLOWED_TERMS.at(-1);
+                  return <span>{runningTenure} </span>;
                 },
               },
               {
@@ -289,7 +281,7 @@ return data;
                     case "Merged":
                       bgColor = "bg-green-700";
                       displayText = "Paid Off (Merged)";
-                    break;
+                      break;
                     case "Partial Payment":
                       bgColor = "bg-yellow-600";
                       break;
