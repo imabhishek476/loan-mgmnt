@@ -30,6 +30,7 @@ const LoanPaymentModal = observer(
       amount?: string;
       checkNumber?: string;
     }>({});
+    const formated_Outstanding = outstanding.toFixed(2);
 
 useEffect(() => {
   if (!loan) return;
@@ -54,12 +55,8 @@ useEffect(() => {
       if (!amount || isNaN(numAmount) || numAmount <= 0) {
         newErrors.amount = "Paid Amount is required and must be greater than 0";
         //@ts-ignore
-      } else if (numAmount > outstanding.toFixed(2)) {
-        //@ts-ignore
-      } else if (numAmount > outstanding.toFixed(2)) {
-        newErrors.amount = `Cannot pay more than outstanding: $${outstanding.toFixed(
-          2
-        )}`;
+      } else if (numAmount > formated_Outstanding) {
+        newErrors.amount = `Cannot pay more than outstanding: $${formated_Outstanding}`;
       }
 
       if (!checkNumber.trim()) {
@@ -70,7 +67,6 @@ useEffect(() => {
       Object.values(newErrors).forEach((msg) => toast.error(msg));
       return Object.keys(newErrors).length === 0;
     };
-    const formated_Outstanding = outstanding.toFixed(2);
 
     const handlePayment = async () => {
       if (!validate()) return;
@@ -122,10 +118,9 @@ useEffect(() => {
                     amount:
                       !e.target.value || num <= 0
                         ? "Paid Amount is required and must be greater than 0"
-                        : num > outstanding
-                        ? `Cannot pay more than outstanding: $${outstanding.toFixed(
-                            2
-                          )}`
+                        : //@ts-ignore
+                        num > formated_Outstanding
+                        ? `Cannot pay more than outstanding: $${formated_Outstanding}`
                         : "",
                   }));
                 }}
@@ -139,7 +134,7 @@ useEffect(() => {
                 <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
               )}
               <p className="text-sm text-gray-500 mt-1">
-                Outstanding: ${outstanding.toFixed(2)}
+                Outstanding: ${formated_Outstanding}
               </p>
             </div>
 

@@ -128,14 +128,21 @@ useEffect(() => {
   };
 
   const getStatusStyles = (loan: any) => {
-    if (loan.loanStatus === "Deactivated") return "bg-gray-400 text-white"; 
-    if ((loan.paidAmount || 0) >= (loan.totalLoan || 0))
-      return "bg-green-600 text-white";
-    const lower = loan.status?.toLowerCase() || "";
-    if (lower === "active") return "bg-green-600 text-white";
-    if (lower === "paid off" || lower === "merged") return "bg-green-600 text-white";
+    if (loan.loanStatus === "Deactivated") return "bg-gray-400 text-white";
+  const paid = loan.paidAmount || 0;
+  const total = loan.totalLoan || 0;
+  const lower = loan.status?.toLowerCase() || "";
+  if (paid >= total && lower === "paid off") 
+    return "bg-green-600 text-white";
+  if (lower === "merged") 
+    return "bg-green-600 text-white";
+  if (lower === "active") 
+    return "bg-green-600 text-white";
+  if (lower === "partial payment") 
     return "bg-yellow-500 text-white";
-  };
+  return "bg-gray-400 text-white";
+};
+
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50 overflow-auto rounded-md">

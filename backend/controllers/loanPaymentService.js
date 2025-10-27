@@ -28,22 +28,22 @@ exports.addPayment = async (req, res) => {
       currentTerm,
     } = req.body;
       if (!loanId || !clientId || !paidAmount || !currentTerm) {
-      return res.status(400).json({ message: "Missing required fields" });
+     return res.status(400).json({ message: "Missing required fields" });
     }
-    // console.log(currentTerm, "currentTerm");
     const loan = await Loan.findById(loanId);
     if (!loan) return res.status(404).json({ message: "Loan not found" });
-    let totalLoan= null;
+    const to2 = (num) => parseFloat(Number(num).toFixed(2));
+    const subTotal = to2(loan.subTotal || 0);
+    const monthlyRate = to2(loan.monthlyRate || 0);
+    const term = Number(currentTerm);
+    let totalLoan = 0;
     if (loan.interestType === "flat") {
-      totalLoan =
-        loan.subTotal +
-        loan.subTotal * (loan.monthlyRate / 100) * Number(currentTerm);
+      totalLoan = to2(subTotal + subTotal * (monthlyRate / 100) * term);
     } else {
-      totalLoan =
-        loan.subTotal *
-        Math.pow(1 + loan.monthlyRate / 100, Number(currentTerm));
+      totalLoan = to2(subTotal * Math.pow(1 + monthlyRate / 100, term));
     }
-    const remainingAmount = totalLoan - (loan.paidAmount || 0);
+    const alreadyPaid = to2(loan.paidAmount || 0);
+    const remainingAmount = to2(totalLoan - alreadyPaid);
     if (Number(paidAmount) > remainingAmount) {
       return res
         .status(400)
@@ -52,15 +52,14 @@ exports.addPayment = async (req, res) => {
     const payment = await LoanPayment.create({
       loanId,
       clientId,
-      paidAmount: Number(paidAmount),
+      paidAmount: to2(paidAmount),
       paidDate: paidDate || new Date(),
       checkNumber: checkNumber || "",
       payoffLetter: payoffLetter || "",
     });
 
-    loan.paidAmount = (loan.paidAmount || 0) + Number(paidAmount);
-    loan.status =
-      loan.paidAmount >= totalLoan ? "Paid Off" : "Partial Payment";
+    loan.paidAmount = to2(alreadyPaid + Number(paidAmount));
+    loan.status = loan.paidAmount >= totalLoan ? "Paid Off" : "Partial Payment";
     await loan.save();
 
     await createAuditLog(
@@ -69,21 +68,19 @@ exports.addPayment = async (req, res) => {
       "Create",
       "Loan Payment",
       payment._id,
-      {
-        after: payment,
-      }
+      { after: payment }
     );
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Payment recorded successfully",
-        payment,
-      remaining: totalLoan - loan.paidAmount,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Payment recorded successfully",
+      payment,
+      remaining: to2(totalLoan - loan.paidAmount),
+      totalLoan,
+      totalPaid: loan.paidAmount,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("addPayment error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
