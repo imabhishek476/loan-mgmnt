@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import { userStore } from "../store/UserStore";
 import FullPageLoader from "../components/FullPageLoader";
 interface ProtectedRouteProps {
-  children: JSX.Element;
+  children: React.ReactElement;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = observer(({ children }) => {

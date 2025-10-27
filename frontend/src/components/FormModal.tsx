@@ -55,8 +55,8 @@ interface FormModalProps {
     key: string,
     value: boolean,
     onChange: (key: string, value: boolean) => void
-  ) => JSX.Element;
-  renderLoanTerms?: () => JSX.Element;
+  ) => React.ReactElement;
+  renderLoanTerms?: () => React.ReactElement;
   customFields?: {
     id: number;
     name: string;
