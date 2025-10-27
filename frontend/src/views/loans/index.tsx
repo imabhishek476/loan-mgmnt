@@ -278,7 +278,7 @@ useEffect(() => {
           await loanStore.fetchLoans();
 
           toast.success("Loan created successfully");
-          // loadInitialData();
+          loadInitialData();
         }
         setModalOpen(false);
         resetForm();

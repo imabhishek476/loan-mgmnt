@@ -108,6 +108,7 @@ const Clients = observer(() => {
 
   useEffect(() => {
     clientStore.fetchClients();
+    loanStore.fetchLoans();
   }, []);
 
   return (

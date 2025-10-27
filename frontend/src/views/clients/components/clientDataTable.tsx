@@ -34,7 +34,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   const [issueDateFilterInput, setIssueDateFilterInput] = useState<any>(null);
   const clearedSearch = "";
   const clearedDate = null;
-  const hasLoaded = useRef(false);
+  // const hasLoaded = useRef(false);
     const loadInitialData = async () => {
       try {
         await Promise.all([
@@ -65,10 +65,7 @@ const handleReset = async () => {
   }
 };
   useEffect(() => {
-    if (!hasLoaded.current) {
       loadInitialData();
-      hasLoaded.current = true;
-    }
   }, []);
   return (
     <div className="">
