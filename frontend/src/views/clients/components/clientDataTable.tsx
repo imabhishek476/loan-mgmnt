@@ -137,7 +137,7 @@ const handleReset = async () => {
               { title: "Email", field: "email" },
               { title: "Phone", field: "phone" },
               {
-                title: "Total Loan",
+                title: "Total Loan Amount",
                 render: (rowData) => {
                     const clientLoans = loanStore.loans.filter(
                     (loan) =>
@@ -158,7 +158,7 @@ const handleReset = async () => {
                   },
                 },
                 {
-                  title: "Paid Loan",
+                  title: "Paid",
                 render: (rowData) => {
                     const clientLoans = loanStore.loans.filter(
                     (loan) =>
@@ -187,7 +187,7 @@ const handleReset = async () => {
                   },
                 },
               {
-                title: "Latest Loan Issue Date",
+                title: "Issue Date(latest loan)",
                 render: (rowData) => {
                   const clientLoans = loanStore.loans.filter(
                     (loan) =>

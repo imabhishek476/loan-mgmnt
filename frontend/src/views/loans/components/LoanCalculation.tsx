@@ -53,8 +53,10 @@ const calculateLoan = (
   const num = (val: any): number =>
     typeof val === "string" ? parseFloat(val) || 0 : val || 0;
 
-  const baseNum = num(base) + num(previousLoanTotal); // include previous loan
-  if (baseNum <= 0)
+  const baseNum = num(base);
+  const prevLoan = num(previousLoanTotal);
+  const totalBase = baseNum + prevLoan;
+  if (totalBase <= 0)
     return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
 
   const rateNum = num(rate);
@@ -75,7 +77,7 @@ const calculateLoan = (
       : sum + value;
   }, 0);
 
-  const subtotal = baseNum + feeTotal;
+  const subtotal = totalBase + feeTotal;
   const interest =
     termNum > 0 && rateNum > 0
       ? type === "flat"
@@ -84,9 +86,9 @@ const calculateLoan = (
       : 0;
 
   return {
-    subtotal,
-    interestAmount: interest,
-    totalWithInterest: subtotal + interest,
+    subtotal: parseFloat(subtotal.toFixed(2)),
+    interestAmount: parseFloat(interest.toFixed(2)),
+    totalWithInterest: parseFloat((subtotal + interest).toFixed(2)),
   };
 };
 

@@ -111,7 +111,7 @@ useEffect(() => {
               </label>
               <input
                 type="number"
-                value={amount}
+                value={null}
                 min={0}
                 step="0.01"
                 onChange={(e) => {

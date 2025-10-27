@@ -163,7 +163,7 @@ const Loans = observer(
           loanStore.loans?.filter(
             (loan) =>
               loan?.client === formData.client &&
-              loan?.company === formData.company &&
+              // loan?.company === formData.company &&
               loan?.status !== "Paid Off" &&
               loan?.status !== "Merged" &&
               loan?.loanStatus !== "Deactivated"

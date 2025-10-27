@@ -270,13 +270,15 @@ return data;
                 cellStyle: { whiteSpace: "nowrap" },
                 render: (rowData: any) => {
                   let bgColor = "";
+                  let displayText = rowData.status;
                   switch (rowData.status) {
                     case "Paid Off":
                       bgColor = "bg-green-700";
                       break;
                     case "Merged":
-                      bgColor = "bg-indigo-600";
-                      break;
+                      bgColor = "bg-green-700";
+                      displayText = "Paid Off (Merged)";
+                    break;
                     case "Partial Payment":
                       bgColor = "bg-yellow-600";
                       break;
@@ -290,7 +292,7 @@ return data;
                     <span
                       className={`px-2 py-1 rounded-lg text-white text-sm ${bgColor}`}
                     >
-                      {rowData.status}
+                      {displayText}
                     </span>
                   );
                 },

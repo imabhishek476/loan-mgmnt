@@ -91,7 +91,7 @@ const clientLoans = useMemo(() => {
       hasLoaded.current = true;
     }
   }, []);
-
+const LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48, 60];
   useEffect(() => {
     if (client?._id) loanStore.fetchLoans();
   }, [client?._id]);
@@ -500,7 +500,8 @@ useEffect(() => {
                                               )}
                                             </span>{" "}
                                             ({loan.monthlyRate}%{" "}
-                                            {loan.interestType === "compound"
+                                            {loan.interestType ===
+                                            "compound"
                                               ? "compound"
                                               : "flat"}{" "}
                                             per month)
@@ -576,19 +577,16 @@ useEffect(() => {
                                 <div
                                   className={`mt-0 overflow-y-auto transition-all duration-300 ${
                                     showAllTermsMap[loan._id]
-                                      ? "max-h-20"
-                                      : "max-h-[20px]"
+                                      ? "max-h-[140px]"
+                                      : "max-h-[70px]"
                                   }`}
                                 >
-                                  <ul className="space-y-0  ">
-                                    {companyLoanTerms(loan)
-                                      .filter((term) =>
+                                  <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1 ">
+                                        {LOAN_TERMS.filter((term) =>
                                         showAllTermsMap[loan._id]
                                           ? true
-                                          : term ===
-                                                currentTermMap[loan._id]
-                                      )
-                                      .map((term) => {
+                                          : term === currentTermMap[loan._id]
+                                        ).map((term) => {
                                         const loanTermData =
                                           calculateLoanAmounts({
                                             ...loan,
@@ -600,25 +598,32 @@ useEffect(() => {
                                         return (
                                           <li
                                             key={term}
-                                            className={`flex justify-between items-center  rounded-lg cursor-pointer transition py-0 px-1
-                                              ${
-                                                isSelected
-                                                  ? "bg-red-600 text-white shadow-md"
-                                                  : "bg-gray-50 text-gray-800 "
-                                              }`}
-                                          >
-                                            <div className="font-semibold">
+                                            className={`rounded-xl border shadow-sm cursor-pointer transition-all duration-200
+                                    ${
+                                      isSelected
+                                        ? "bg-red-600 text-white border-red-700"
+                                        : "bg-white text-gray-800 hover:bg-gray-50"
+                                    }
+            `}
+                                            >
+                                              <div className="flex flex-col items-left font-bold p-1">
+                                            <div className="text-xs">
                                               {term} months
                                             </div>
-                                            <div className="flex flex-col items-end text-sm">
-                                              <span>
+                                            <div className="text-xs text-left">
+                                              <div>
                                                 Interest: $
                                                 {loanTermData.interestAmount.toFixed(
                                                   2
-                                                )}{" "}
-                                                {""}| Total: $
-                                                {loanTermData.total.toFixed(2)}
-                                              </span>
+                                                )}
+                                                  </div>
+                                                  <div>
+                                                    Total: $
+                                                    {loanTermData.total.toFixed(
+                                                      2
+                                                    )}
+                                                  </div>
+                                                </div>
                                             </div>
                                           </li>
                                         );
