@@ -205,7 +205,7 @@ return data;
               },
 
               {
-                title: "Client",
+                title: "Customer",
                 cellStyle: { width: 80, minWidth: 120, fontWeight: 600 },
                 render: (rowData) =>
                   capitalizeFirst(
