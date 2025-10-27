@@ -41,6 +41,15 @@ export const calculateLoanAmounts = (loan: any) => {
         dynamicTerm,
     };
 };
+export const formatUSD = (amount: number | string = 0) => {
+    const num = Number(amount) || 0;
+    return num.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+};
 
 export const calculateDynamicTermAndPayment = (loan: any) => {
     const start = moment(loan.issueDate, "MM-DD-YYYY");

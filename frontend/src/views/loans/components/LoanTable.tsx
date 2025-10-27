@@ -248,7 +248,7 @@ return data;
                 },
               },
               {
-                title: "Loan Amount ($)",
+                title: "Total Loan Amount ($)",
                 width: "15%",
                 render: (rowData) =>
                   `$${Number(rowData.subTotal || 0).toLocaleString()}`,
@@ -258,7 +258,18 @@ return data;
               //   render: (rowData) =>
               //     `$${Number(rowData.totalLoan || 0).toLocaleString()}`,
               // },
-              { title: "Term (months)", field: "loanTerms" },
+              { title: "Term (months)",
+                render: (rowData) => {
+                  const { monthsPassed } = calculateDynamicTermAndPayment(rowData);
+                  const runningTenure =
+                    ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
+                  return (
+                    <span>
+                      {runningTenure}{" "}
+                    </span>
+                  );
+                },
+              },
               {
                 title: "Issue Date",
                 cellStyle: { width: 140, minWidth: 140 },

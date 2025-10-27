@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import MaterialTable from "@material-table/core";
 import { Search, Trash2, User, Plus } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -8,6 +8,9 @@ import { TextField } from "@mui/material";
 import moment from "moment";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
+import { companyStore } from "../../../store/CompanyStore";
+import { toast } from "react-toastify";
+import { calculateLoanAmounts } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
   clients: any[];
   loading: boolean;
@@ -31,6 +34,19 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   const [issueDateFilterInput, setIssueDateFilterInput] = useState<any>(null);
   const clearedSearch = "";
   const clearedDate = null;
+  const hasLoaded = useRef(false);
+    const loadInitialData = async () => {
+      try {
+        await Promise.all([
+          companyStore.fetchCompany(),
+          clientStore.fetchClients(),
+          loanStore.fetchLoans(),
+        ]);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load data");
+      }
+    };
   const handleFilter = () => {
     if (typeof onFilter === "function") {
       const formattedDate = issueDateFilterInput
@@ -48,7 +64,12 @@ const handleReset = async () => {
     onFilter({ search: clearedSearch, issueDate: clearedDate });
   }
 };
-
+  useEffect(() => {
+    if (!hasLoaded.current) {
+      loadInitialData();
+      hasLoaded.current = true;
+    }
+  }, []);
   return (
     <div className="">
       <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -157,31 +178,76 @@ const handleReset = async () => {
                     );
                   },
                 },
-                {
-                  title: "Paid",
-                render: (rowData) => {
-                    const clientLoans = loanStore.loans.filter(
-                    (loan) =>
-                        loan.client === rowData._id ||
-                      loan.client?.["_id"] === rowData._id
-                    );
-                    const pending = clientLoans.reduce(
-                      (acc, loan) => acc + (loan.paidAmount || 0),
-                      0
-                    );
-                  const allPaidOff = clientLoans.every(
-                    (loan) => loan.status === "Paid Off" || "Merged"
-                  );
+          {
+    title: "Paid",
+    render: (rowData) => {
+      const clientLoans = loanStore.loans.filter(
+        (loan) =>
+        loan.client === rowData._id || loan.client?._id === rowData._id
+    );
 
-                    return (
+    let totalPaid = 0;
+    let totalRemaining = 0;
+
+    clientLoans.forEach((loan) => {
+      const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+      const today = moment();
+      const monthsPassed = today.diff(issueDate, "months") + 1;
+      const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
+      const currentTerm =
+        allowedTerms.find((t) => t >= monthsPassed) || loan.loanTerms;
+      const subTotal = Number(loan.subTotal || 0);
+      const monthlyRate = Number(loan.monthlyRate || 0);
+      const paidAmount = Number(loan.paidAmount || 0);
+      const interestType = loan.interestType || "flat";
+      let interest = 0;
+      if (interestType === "flat") {
+        interest = subTotal * (monthlyRate / 100) * currentTerm;
+      } else if (interestType === "compound") {
+        interest = subTotal * (Math.pow(1 + monthlyRate / 100, currentTerm) - 1);
+      }
+      const totalLoan = subTotal + interest;
+      const remaining = Math.max(totalLoan - paidAmount, 0);
+      console.log(
+        `Loan: ${loan._id} | Months Passed: ${monthsPassed} | Term: ${currentTerm} | Subtotal: ${subTotal} | Interest: ${interest.toFixed(
+          2
+        )} | Total: ${totalLoan.toFixed(2)} | Paid: ${paidAmount.toFixed(
+          2
+        )} | Remaining: ${remaining.toFixed(2)}`
+      );
+      totalPaid += paidAmount;
+      if (!["Paid Off", "Merged"].includes(loan.status)) {
+        totalRemaining += remaining;
+      }
+    });
+    const allPaidOff = clientLoans.every(
+      (loan) => loan.status === "Paid Off" || loan.status === "Merged"
+    );
+
+    return (
+      <span className="font-semibold">
                     <span
-                      className={`font-semibold ${
+                      className={`${
                         allPaidOff ? "text-green-600" : "text-blue-600"
                       }`}
                     >
-                      {allPaidOff
-                        ? `$ ${pending.toLocaleString()} `
-                        : `$${pending.toLocaleString()}`}
+          $
+          {totalPaid.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </span>
+            <br/>
+        {totalRemaining > 0 && (
+          <span className="text-red-600 text-xs font-medium">
+            (Pending: $
+            {totalRemaining.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+            )
+          </span>
+        )}
                       </span>
                     );
                   },
@@ -207,10 +273,10 @@ const handleReset = async () => {
                         "en-US",
                         { year: "numeric", month: "short", day: "numeric" }
                       )}
-                      </span>
-                    );
-                  },
+                    </span>
+                  );
                 },
+              },
               // {
               //   title: "Active Loans",
               //   render: (rowData) => {

@@ -392,8 +392,13 @@ const formatDate = (date: Date) =>
             <span>${previousLoanTotal.toFixed(2)}</span>
           </div>
         )}
-        <div className="flex   justify-between ">
-          <span>Loan Amount :</span>
+        <div className="flex justify-between items-center">
+          <span>
+            {includePreviousLoans && previousLoanTotal > 0
+              ? "Loan Amount (Base + Additional Fees + Previous Loan)"
+              : "Loan Amount (Base + Additional Fees)"}
+          </span>
+
           <span className="text-md text-green-700 px-2 rounded-md text-md bg-white">
             ${subtotal.toFixed(2)}
           </span>

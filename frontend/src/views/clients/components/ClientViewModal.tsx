@@ -17,9 +17,9 @@ import moment from "moment";
 import { observer } from "mobx-react-lite";
 import LoanPaymentModal from "../../../components/PaymentModel";
 import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
-import { Tooltip } from "@mui/material";
+import { Button, Tooltip } from "@mui/material";
 import Loans from "../../loans";
-import { calculateLoanAmounts } from "../../../utils/loanCalculations";
+import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -232,7 +232,7 @@ useEffect(() => {
 
           {/* Loans */}
           <div className="flex-1 border-r overflow-y-auto relative">
-            <div className="sticky top-0 bg-white z-10 p-3 border-b flex justify-between items-center">
+            <div className="sticky top-0 bg-white z-10 px-3 py-2 border-b flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <DollarSign size={20} className="text-green-600" />
                 <h3 className="text-lg font-bold text-gray-800">
@@ -241,7 +241,17 @@ useEffect(() => {
               </div>
 
               <Tooltip title="Add New Loan" arrow>
-                <button
+                <Button
+                 variant="contained"
+                 startIcon={<Plus />}
+                 sx={{
+                   backgroundColor: "#145A32",
+                   "&:hover": { backgroundColor: "#0f3f23" },
+                   textTransform: "none",
+                   fontWeight: 600,
+                   borderRadius: 1,
+                   fontSize: "12px",
+                 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (!client?._id) {
@@ -255,11 +265,11 @@ useEffect(() => {
                     }, 10);
                   }}
                 >
-                  <Plus size={20} />
-                </button>
+                  New Loan
+                </Button>
               </Tooltip>
             </div>
-            <div className="p-4 space-y-4 min-h-[400px]">
+            <div className="p-2 space-y-4 min-h-[400px] ">
               {clientLoans.length > 0 ? (
                 clientLoans.map((loan: any) => {
                   const company = companyStore.companies.find(
@@ -323,36 +333,64 @@ useEffect(() => {
                     <div
                       key={loan._id}
                       style={{ borderLeft: `6px solid ${companyColor}` }}
-                      className="border rounded-lg shadow-sm hover:shadow-lg  transition-all overflow-hidden bg-white "
+                      className="border rounded-lg shadow-sm hover:shadow-lg  transition-all overflow-hidden bg-gray-100 hover:bg-gray-50"
                     >
                       <tr
-                        className="cursor-pointer  border-b hover:bg-gray-50"
+                        className="cursor-pointer hover:bg-gray-50 transition"
                         onClick={() => handleToggleLoan(loan._id)}
                       >
-                        <td className="px-3 py-1  font-semibold text-gray-700 text-base w-52 text-left">
+                        {/* Company Name */}
+                        <td className="px-2 py-2 font-semibold text-gray-700 text-base text-left">
                           {companyName}
                         </td>
-                        <td className="px-3 py-2 text-right w-38 ">
-                          <div className="inline-block">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-                              <span className="text-xs font-semibold first-letter:block">
-                                Loan Amount: ${loan.subTotal.toFixed(2)}
+
+                        {/* Loan Info */}
+                        <td colSpan={4} className="px-3 py-2">
+                          <div className="flex justify-center items-center text-sm font-semibold text-gray-700 flex-wrap gap-16">
+                            {/* LEFT SIDE (Details) */}
+                            <div className="flex flex-wrap items-center gap-4">
+                              {/* Loan Amount */}
+                              <span>
+                                Principal Amount:{" "}
+                                <span className="text-blue-700 font-bold">
+                                  {formatUSD(loan.subTotal.toFixed(2))}
+                                </span>
                               </span>
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-semibold ${
+
+                              {/* Month */}
+                              {/* <span
+                                className={`px-2 py-1 rounded text-xs ${
                                   isDelayed
-                                    ? "bg-red-500 text-white shadow-lg"
-                                    : "text-gray-700"
+                                    ? "bg-red-500 text-white shadow-md"
+                                    : "bg-gray-100 text-gray-700"
                                 }`}
                               >
                                 Month: {selectedDynamicTerm}
+                              </span> */}
+                              <span>
+                                Paid:{" "}
+                                <span className="text-green-700 font-bold">
+                                  {formatUSD(selectedLoanData.paidAmount)}
+                                </span>{" "}
+                                /{" "}
+                                <span className="text-red-700 font-bold">
+                                  {formatUSD(selectedLoanData.remaining)}
+                                </span>
                               </span>
+                        {loanPayments[loan._id]?.length > 0 &&
+  !["Paid Off", "Merged"].includes(loan.status) && (
+    <button
+      onClick={() => setPaymentLoan(loan)}
+      className="p-1 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
+    >
+      <Plus className="w-4 h-4" />
+    </button>
+  )}
+
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-0 py-2 items-center text-right w-2/6 w-52">
+                          <div className="flex items-center gap-2">
                           <span
-                            className={`px-7 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
+                            className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
                               loan
                             )}`}
                           >
@@ -362,35 +400,20 @@ useEffect(() => {
                               ? "Paid Off"
                               : loan.status}
                           </span>
-                        </td>
-                        {/* <td className="px-3 py-2 text-right">
-                          <PencilIcon
-                            size={16}
-                            className="text-green-700 inline-block cursor-pointer hover:text-green-900"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedClientForLoan(client);
-                              setLoanModalOpen(true);
-                              setTimeout(() => {
-                                const event = new CustomEvent('editLoanFromClient', { detail: loan });
-                                window.dispatchEvent(event);
-                              }, 10);
-                            }}
-                          />
-                        </td> */}
-                        <td className="px-3 py-2 justify-end">
                           {isDelayed && loan.status !== "Paid Off" && (
                             <AlertCircle
                               size={16}
-                              className="text-red-600 inline-block"
+                              className="text-red-600"
                             />
                           )}
+                            </div>
+                          </div>
                         </td>
                       </tr>
 
                       {/* Content */}
                       {expandedLoanId === loan._id && (
-                        <div className="px-4 pb-1 bg-gray-50 flex flex-col sm:flex-row gap-6">
+                        <div className="px-4 pb-1  bg-gray-50 flex border-t flex-col sm:flex-row gap-1">
                           {loan.loanStatus === "Deactivated" ? (
                             <p className="text-gray-500 italic">
                               This loan has been deactivated.
@@ -398,10 +421,10 @@ useEffect(() => {
                           ) : (
                             <>
                           {/* Payment History */}
-                          <div className="flex-1 border-r pr-4 space-y-3">
+                          <div className="flex-1  pr-4 space-y-3 pt-2 border-r-2">
                             <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                               PayOff History
-                              {(loan.status === "Active" ||
+                                  {/* {(loan.status === "Active" ||
                                 loan.status === "Partial Payment") &&
                                 !loanPayments[loan._id]?.length && (
                                   <button
@@ -410,15 +433,15 @@ useEffect(() => {
                                   >
                                     <Plus className="w-4 h-4" />
                                   </button>
-                                )}
+                                )} */}
                             </h4>
 
                             {loanPayments[loan._id]?.length > 0 ? (
-                              <div className="mt-2 max-h-48 overflow-y-auto border rounded-md">
+                              <div className="mt-2 max-h-48 overflow-y-auto  rounded-md  ">
                                 {loanPayments[loan._id].map((p) => (
                                   <div
                                     key={p._id}
-                                    className="flex justify-between items-center text-sm text-gray-700 border-b pb-1 px-1"
+                                    className="flex justify-between items-center text-left text-sm text-gray-700 border-b pb-1 px-1 "
                                   >
                                     <span className="font-medium">
                                       {moment(p.paidDate).format(
@@ -427,7 +450,9 @@ useEffect(() => {
                                     </span>
                                     <span className="text-right">
                                       <span>
-                                        ${p.paidAmount?.toFixed(2)} Received
+                                            {formatUSD(
+                                              p.paidAmount?.toFixed(2)
+                                            )}
                                       </span>
                                       {p.checkNumber && (
                                         <span className="ml-1 text-gray-500 whitespace-nowrap">
@@ -446,7 +471,7 @@ useEffect(() => {
                           </div>
 
                           {/* Loan Details */}
-                          <div className="flex-1 text-sm text-gray-700 space-y-2">
+                          <div className="flex-2 text-sm text-gray-700 space-y-1 pt-2">
                             {loan.status !== "Paid Off" &&
                             loan.status !== "Merged" ? (
                               <>
@@ -456,7 +481,7 @@ useEffect(() => {
                                       <tbody>
                                         <tr className="">
                                           <td className="font-semibold py-0">
-                                            Tenure:
+                                                Current Tenure:
                                           </td>
                                           <td className="py-0">
                                             {selectedDynamicTerm} month {""}
@@ -467,11 +492,16 @@ useEffect(() => {
                                                   : ""
                                               }`}
                                             >
-                                              ( {selectedTerm} month
-                                              {selectedTerm !== 1 && "s"})
-                                            </span>{" "}
-                                            <br />
-                                            {loan.endDate}
+                                                  {/* ( {selectedTerm} month
+                                                  {selectedTerm !== 1 && "s"}) */}
+                                                </span>{" "}
+                                                <span>
+                                                  (
+                                                  {moment(loan.endDate).format(
+                                                    "MMM DD YYYY"
+                                                  )}
+                                                  )
+                                                </span>
                                             {isDelayed && (
                                               <span className="ml-2 text-xs text-red-600 font-semibold">
                                                 • Delayed
@@ -479,15 +509,15 @@ useEffect(() => {
                                             )}
                                           </td>
                                         </tr>
-
-                                        <tr className="">
-                                          <td className="font-semibold py-0">
-                                            Loan Amount:
-                                          </td>
-                                          <td className="py-0">
-                                            ${loan.subTotal?.toFixed(2)}
-                                          </td>
-                                        </tr>
+                                            {/* 
+                                            <tr className="">
+                                              <td className="font-semibold py-0">
+                                                Loan Amount:
+                                              </td>
+                                              <td className="py-0">
+                                                {formatUSD(loan.subTotal)}
+                                              </td>
+                                            </tr> */}
 
                                         <tr className="">
                                           <td className="font-semibold py-0">
@@ -519,26 +549,26 @@ useEffect(() => {
                                             Total Loan Amount:
                                           </td>
                                           <td className="py-0">
-                                            {selectedLoanData.total.toFixed(
-                                                  2
+                                            {formatUSD(
+                                                  selectedLoanData.total.toFixed(
+                                                    2
+                                                  )
                                                 )}
-                                          </td>
-                                        </tr>
-                                        <tr>
-                                          <td className="font-semibold py-0">
-                                            Paid Amount:
-                                          </td>
-                                          <td className="py-0 flex items-center gap-2">
-                                            $
-                                            {selectedLoanData.paidAmount.toFixed(
-                                              2
-                                            )}
-                                            <span className="text-xs text-red-600 rounded-full whitespace-nowrap">
-                                              Outstanding:{" "}
-                                              <strong>
-                                                $
-                                                {selectedLoanData.remaining.toFixed(
-                                                  2
+                                              </td>
+                                            </tr>
+                                            <tr>
+                                              {/* <td className="font-semibold py-0">
+                                                Paid Amount:
+                                              </td>
+                                              <td className="py-0 flex items-center gap-2">
+                                                {formatUSD(
+                                                  selectedLoanData.paidAmount
+                                                )}
+                                                <span className="text-xs text-red-600 rounded-full whitespace-nowrap">
+                                                  Outstanding:{" "}
+                                                  <strong>
+                                                    {formatUSD(
+                                                      selectedLoanData.remaining
                                                 )}
                                               </strong>
                                             </span>
@@ -553,11 +583,11 @@ useEffect(() => {
                                                 <Plus className="w-4 h-4" />
                                               </button>
                                             )}
-                                          </td>
+                                          </td> */}
                                         </tr>
                                         <tr className="">
                                           <td className="font-semibold py-0">
-                                            Loan Terms:
+                                                Terms:
                                           </td>
                                           <td className="py-0">
                                             {companyLoanTerms(loan).length >
@@ -588,7 +618,7 @@ useEffect(() => {
                                       : "max-h-[70px]"
                                   }`}
                                 >
-                                  <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1 ">
+                                  <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1 ">
                                         {LOAN_TERMS.filter((term) =>
                                         showAllTermsMap[loan._id]
                                           ? true
@@ -605,7 +635,7 @@ useEffect(() => {
                                         return (
                                           <li
                                             key={term}
-                                            className={`rounded-xl border shadow-sm cursor-pointer transition-all duration-200
+                                            className={`border-r rounded-lg cursor-pointer transition-all duration-200
                                     ${
                                       isSelected
                                         ? "bg-red-600 text-white border-red-700"
@@ -619,15 +649,15 @@ useEffect(() => {
                                             </div>
                                             <div className="text-xs text-left">
                                               <div>
-                                                Interest: $
-                                                {loanTermData.interestAmount.toFixed(
-                                                  2
-                                                )}
+                                                Interest:
+                                                {formatUSD(
+                                                      loanTermData.interestAmount
+                                                    )}
                                                   </div>
                                                   <div>
-                                                    Total: $
-                                                    {loanTermData.total.toFixed(
-                                                      2
+                                                    Total:
+                                                    {formatUSD(
+                                                      loanTermData.total
                                                     )}
                                                   </div>
                                                 </div>
