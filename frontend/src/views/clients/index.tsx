@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
@@ -9,6 +9,8 @@ import { clientStore, type Client } from "../../store/ClientStore";
 import { getClientLoans } from "../../services/ClientServices";
 import Loans from "../loans/index";
 import ClientViewModal from "../../views/clients/components/ClientViewModal";
+import { loanStore } from "../../store/LoanStore";
+import moment from "moment";
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
@@ -16,6 +18,8 @@ const Clients = observer(() => {
   const [selectedClientForLoan, setSelectedClientForLoan] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewClient, setViewClient] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [issueDateFilter, setIssueDateFilter] = useState(null);
 
   const handleViewClient = async (client: Client) => {
     try {
@@ -82,22 +86,42 @@ const Clients = observer(() => {
       toast.success("Client deleted successfully");
     }
   };
+  const filteredClients = useMemo(() => {
+    return clientStore.clients.filter((client) => {
+      const matchesSearch =
+        !searchTerm ||
+        client.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.attorneyName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesDate =
+        !issueDateFilter ||
+        loanStore.loans.some(
+          (loan) =>
+            //@ts-ignore
+            (loan.client === client._id || loan.client?._id === client._id) &&
+            moment(loan.issueDate).format("MM-DD-YYYY") === issueDateFilter
+        );
+      return matchesSearch && matchesDate;
+    });
+  }, [clientStore.clients, searchTerm, issueDateFilter]);
+
 
   useEffect(() => {
     clientStore.fetchClients();
+    loanStore.fetchLoans();
   }, []);
 
   return (
     <div className="text-left flex flex-col bg-white transition-all duration-300">
       {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="mb-5 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl  text-gray-800 font-bold ">
             Customer Management
           </h1>
-          <p className="text-gray-600 text-base">
+          {/* <p className="text-gray-600 text-base">
             Manage customer records and personal information
-          </p>
+          </p> */}
         </div>
 
         <Button
@@ -159,6 +183,17 @@ const Clients = observer(() => {
           onClose={() => setViewModalOpen(false)}
           client={viewClient}
           //@ts-ignore
+          onSearch={(query: string) => setSearchTerm(query)}
+          onFilter={({ search, issueDate }) => {
+            setSearchTerm(search);
+            setIssueDateFilter(issueDate);
+          }}
+          onDateFilter={(date) => setIssueDateFilter(date)}
+          onReset={() => {
+            setSearchTerm("");
+            setIssueDateFilter(null);
+          }}
+          //@ts-ignore
           loans={viewClient.loans || []}
           onEditClient={(client) => {
             setEditingClient(client);
@@ -168,13 +203,12 @@ const Clients = observer(() => {
       )}
       {/* Data Table */}
       <ClientsDataTable
-        clients={clientStore.clients.slice()}
+        clients={filteredClients}
         loading={clientStore.loading}
-        onSearch={(query: string) => clientStore.fetchClients(query)}
-        // @ts-ignore
-        onEdit={(client) => {
-          setEditingClient(client);
-          setModalOpen(true);
+        onSearch={(query) => setSearchTerm(query)}
+        onFilter={({ search, issueDate }) => {
+          setSearchTerm(search);
+          setIssueDateFilter(issueDate);
         }}
         onAddLoan={handleAddLoan}
         onViewClient={handleViewClient}

@@ -1,5 +1,5 @@
-import React from "react";
-import { Calculator } from "lucide-react";
+import React, { useEffect, useState } from "react";
+// import { Calculator } from "lucide-react";
 
 type Fee = {
   value: number;
@@ -12,6 +12,7 @@ type LoanCalculationProps = {
   company?: {
     name?: string;
     backgroundColor?: string;
+    loanTerms?: number[];
   };
   issueDate?: string;
   includePreviousLoans?: boolean;
@@ -52,8 +53,10 @@ const calculateLoan = (
   const num = (val: any): number =>
     typeof val === "string" ? parseFloat(val) || 0 : val || 0;
 
-  const baseNum = num(base) + num(previousLoanTotal); // include previous loan
-  if (baseNum <= 0)
+  const baseNum = num(base);
+  const prevLoan = num(previousLoanTotal);
+  const totalBase = baseNum + prevLoan;
+  if (totalBase <= 0)
     return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
 
   const rateNum = num(rate);
@@ -74,7 +77,7 @@ const calculateLoan = (
       : sum + value;
   }, 0);
 
-  const subtotal = baseNum + feeTotal;
+  const subtotal = totalBase + feeTotal;
   const interest =
     termNum > 0 && rateNum > 0
       ? type === "flat"
@@ -83,9 +86,9 @@ const calculateLoan = (
       : 0;
 
   return {
-    subtotal,
-    interestAmount: interest,
-    totalWithInterest: subtotal + interest,
+    subtotal: parseFloat(subtotal.toFixed(2)),
+    interestAmount: parseFloat(interest.toFixed(2)),
+    totalWithInterest: parseFloat((subtotal + interest).toFixed(2)),
   };
 };
 
@@ -95,8 +98,8 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
   company,
   interestType: interestTypeProp,
   monthlyRate: rateProp,
-  loanTermMonths: termProp,
-  loanTermsOptions,
+  // loanTermMonths: termProp,
+  // loanTermsOptions,
   includePreviousLoans = false,
   previousLoanTotal = 0,
   endDate,
@@ -105,13 +108,18 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
 }) => {
   const bgStyle = { backgroundColor: company?.backgroundColor || "#555555" };
 
-  const [baseInput, setBaseInput] = React.useState(baseProp?.toString() || "");
-  const [rateInput, setRateInput] = React.useState(rateProp?.toString() || "");
-  const [fees, setFees] = React.useState<Record<string, Fee>>({ ...feesProp });
-  const [interestType, setInterestType] = React.useState<"flat" | "compound">(interestTypeProp);
+  const [baseInput, setBaseInput] = useState(baseProp?.toString() || "");
+  const [rateInput, setRateInput] = useState(rateProp?.toString() || "");
+  const [fees, setFees] = useState<Record<string, Fee>>({ ...feesProp });
+  const [interestType, setInterestType] = useState<"flat" | "compound">(
+    interestTypeProp
+  );
+  const defaultTermSet = React.useRef<{ [companyName: string]: boolean }>({});
+  const [loanTerm, setLoanTerm] = useState<number>(24);
+  const ALL_LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
-  const defaultTerm = loanTermsOptions.includes(24) ? 24 : loanTermsOptions[0] || 12;
-  const [loanTerm, setLoanTerm] = React.useState<number>(termProp || defaultTerm);
+  const currentBase = parseNumberInput(baseInput);
+  const currentRate = parseNumberInput(rateInput);
 
   React.useEffect(() => {
     setBaseInput(baseProp?.toString() || "");
@@ -119,9 +127,6 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
     setFees({ ...feesProp });
     setInterestType(interestTypeProp);
   }, [baseProp, feesProp, interestTypeProp, rateProp]);
-
-  const currentBase = parseNumberInput(baseInput);
-  const currentRate = parseNumberInput(rateInput);
 
   //@ts-ignore
   const { subtotal, interestAmount, totalWithInterest } = calculateLoan(
@@ -166,15 +171,37 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
       endDate: end.toISOString(),
     });
   };
+useEffect(() => {
+  const defaultTerm = company?.loanTerms?.at(-1) || 24;
+  if (!company || !company.loanTerms?.length) return;
+  setLoanTerm(defaultTerm);
+  emitChange(parseNumberInput(baseInput), fees, interestType, parseNumberInput(rateInput), defaultTerm);
+  //@ts-ignore
+  defaultTermSet.current[company.name || "Claim Advance"] = defaultTerm;
+}, [company?.name, company?.loanTerms]);
+
+
 
   const handleBaseChange = (value: string) => {
     setBaseInput(value);
-    emitChange(parseNumberInput(value), fees, interestType, currentRate, loanTerm);
+    emitChange(
+      parseNumberInput(value),
+      fees,
+      interestType,
+      currentRate,
+      loanTerm
+    );
   };
 
   const handleRateChange = (value: string) => {
     setRateInput(value);
-    emitChange(currentBase, fees, interestType, parseNumberInput(value), loanTerm);
+    emitChange(
+      currentBase,
+      fees,
+      interestType,
+      parseNumberInput(value),
+      loanTerm
+    );
   };
 
   const handleFeeValueChange = (key: string, value: string) => {
@@ -186,7 +213,13 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
   };
 
   const handleFeeTypeToggle = (key: string) => {
-    const newFees = { ...fees, [key]: { ...fees[key], type: fees[key].type === "percentage" ? "flat" : "percentage" } };
+    const newFees = {
+      ...fees,
+      [key]: {
+        ...fees[key],
+        type: fees[key].type === "percentage" ? "flat" : "percentage",
+      },
+    };
     //@ts-ignore
     setFees(newFees);
     //@ts-ignore
@@ -214,7 +247,6 @@ const formatDate = (date: Date) =>
     year: "numeric",  // 👈 gives "2026"
   });
 
-  // Calculate start and end date for display
   const start = issueDate ? new Date(issueDate) : new Date();
   const end = endDate ? new Date(endDate) : new Date(start);
   if (!endDate) end.setMonth(end.getMonth() + loanTerm);
@@ -224,7 +256,7 @@ const formatDate = (date: Date) =>
       {" "}
       {/* Header */}
       <div className="flex items-center gap-2 px-2 py-2 rounded-lg">
-        <Calculator className="w-5 h-5 text-white" />
+        {/* <Calculator className="w-5 h-5 text-white" /> */}
         <h3 className="text-sm font-semibold text-white flex flex-col">
           Loan Calculation {company?.name ? `- ${company.name}` : ""}
           {/* <span className="text-sm mt-1 font-normal">
@@ -287,13 +319,14 @@ const formatDate = (date: Date) =>
           const fee = fees[item.key];
           if (!fee) return null;
           const isPercentage = fee.type === "percentage";
-          const displayValue = fee.value === null || fee.value === undefined ? "" : fee.value;
+          const displayValue =
+            fee.value === null || fee.value === undefined ? "" : fee.value;
           const contribution = isPercentage
             ? (currentBase * fee.value) / 100
             : fee.value;
 
           return (
-            <div key={item.key} className="flex flex-col gap-2 ">
+            <div key={item.key} className="flex flex-col gap-2 pr-3 ">
               <div className="flex items-center justify-between w-2/2">
                 <span className="text-sm text-white font-medium whitespace-nowrap">
                   {item.label}
@@ -304,7 +337,7 @@ const formatDate = (date: Date) =>
               </div>
               <div className="relative flex items-center  gap-2 w-2/2">
                 <input
-                  type="text" 
+                  type="text"
                   inputMode="decimal"
                   min="0"
                   step={isPercentage ? "0.01" : "any"}
@@ -326,10 +359,10 @@ const formatDate = (date: Date) =>
                     className="sr-only peer"
                   />
                   <div className="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-gray-400 transition-colors relative">
-                  <div
-                    className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md flex items-center justify-center transition-transform duration-300 ${
-                      isPercentage ? "translate-x-7" : ""
-                    }`}
+                    <div
+                      className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md flex items-center justify-center transition-transform duration-300 ${
+                        isPercentage ? "translate-x-7" : ""
+                      }`}
                     >
                       {isPercentage ? (
                         <span className="text-sm font-bold text-gray-700">
@@ -359,10 +392,15 @@ const formatDate = (date: Date) =>
             <span>${previousLoanTotal.toFixed(2)}</span>
           </div>
         )}
-        <div className="flex   justify-between ">
-          <span>Loan Amount :</span>
+        <div className="flex justify-between items-center">
+          <span>
+            {includePreviousLoans && previousLoanTotal > 0
+              ? "Loan Amount (Base + Additional Fees + Previous Loan)"
+              : "Loan Amount (Base + Additional Fees)"}
+          </span>
+
           <span className="text-md text-green-700 px-2 rounded-md text-md bg-white">
-            ${(subtotal).toFixed(2)}
+            ${subtotal.toFixed(2)}
           </span>
         </div>
       </div>
@@ -374,11 +412,11 @@ const formatDate = (date: Date) =>
         </label>
 
         <div className="flex justify-between px-2">
-          {loanTermsOptions.map((term) => (
+          {ALL_LOAN_TERMS.map((term) => (
             <span
               key={term}
               className={`text-sm font-semibold ${
-                term <= loanTerm ? "text-yellow-300 font-bold" : "text-white"
+                term === loanTerm ? "text-yellow-300 font-bold" : "text-white"
               }`}
             >
               {term}
@@ -389,12 +427,13 @@ const formatDate = (date: Date) =>
         <input
           type="range"
           min={0}
-          max={loanTermsOptions.length - 1}
+          max={ALL_LOAN_TERMS.length - 1}
           step={1}
-          value={loanTermsOptions.indexOf(loanTerm)}
+          value={Math.max(0, ALL_LOAN_TERMS.indexOf(loanTerm))}
           onChange={(e) => {
-            const selectedIndex = parseInt(e.target.value);
-            const selectedTerm = loanTermsOptions[selectedIndex];
+            const selectedIndex = parseInt(e.target.value, 10);
+            const selectedTerm =
+              ALL_LOAN_TERMS[selectedIndex] || ALL_LOAN_TERMS[0];
             setLoanTerm(selectedTerm);
             emitChange(
               currentBase,
@@ -409,19 +448,19 @@ const formatDate = (date: Date) =>
         <div className="px-2 py-2">
           <div className="overflow-x-auto pb-2 -mx-2 px-2">
             <div className="flex space-x-2 min-w-max">
-              {loanTermsOptions.map((term) => {
+              {ALL_LOAN_TERMS.map((term) => {
                 const termResult = calculateLoan(
                   currentBase,
                   fees,
                   interestType,
                   currentRate,
                   term,
-                includePreviousLoans ? previousLoanTotal : 0
+                  includePreviousLoans ? previousLoanTotal : 0
                 );
                 const isSelected = term <= loanTerm;
                 const start = issueDate ? new Date(issueDate) : new Date();
                 const termEnd = new Date(start);
-                termEnd.setDate(start.getDate() + term * 30); 
+                termEnd.setMonth(start.getMonth() + term);
                 return (
                   <div
                     key={term}
@@ -429,7 +468,7 @@ const formatDate = (date: Date) =>
             ${
               isSelected
                 ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
-                : "bg-white border-gray-200 text-gray-700 hover:border-red-400 hover:shadow-md"
+                : "bg-white border-gray-200 text-gray-700"
             }`}
                     onClick={() => {
                       setLoanTerm(term);

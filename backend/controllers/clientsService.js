@@ -72,7 +72,7 @@ exports.Clientstore = async (req, res) => {
     );
     res.status(201).json({
       success: true,
-      message: "Client added successfully",
+      message: "Customer added successfully",
       client: newClient,
     });
   } catch (error) {
@@ -156,7 +156,7 @@ exports.updateClient = async (req, res) => {
       if (exist_record) {
         return res.status(400).json({
           success: false,
-          error: "Another client with this email already exists",
+          error: "Another Customer with this email already exists",
         });
       }
     }
@@ -173,8 +173,8 @@ exports.updateClient = async (req, res) => {
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
-      "Client has been Updated",
-      "Client",
+      "Customer has been Updated",
+      "Customer",
       client._id,
       { before: client, after: client }
     );
@@ -193,24 +193,24 @@ exports.deleteClient = async (req, res) => {
     if (!client) {
       return res
         .status(404)
-        .json({ success: false, error: "Client not found" });
+        .json({ success: false, error: "Customer not found" });
     }
     const deletedLoans = await Loan.deleteMany({ client: id });
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
-      `Client and related loans deleted (${deletedLoans.deletedCount} loans)`,
-      "Client",
+      `Customer and related loans deleted (${deletedLoans.deletedCount} loans)`,
+      "Customer",
       client._id,
       { deletedClient: client, deletedLoansCount: deletedLoans.deletedCount }
     );
 
     res.status(200).json({
       success: true,
-      message: `Client deleted successfully along with ${deletedLoans.deletedCount} related loan(s)`,
+      message: `Customer deleted successfully along with ${deletedLoans.deletedCount} related loan(s)`,
     });
   } catch (error) {
-    console.error("Error deleting client and loans:", error);
+    console.error("Error deleting customer and loans:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -224,7 +224,7 @@ exports.getClietsLoan = async (req, res) => {
 
     res.status(200).json({ success: true, loans });
   } catch (error) {
-    console.error("Error fetching client loans:", error);
+    console.error("Error fetching Customer loans:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

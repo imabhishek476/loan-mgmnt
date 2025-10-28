@@ -5,7 +5,7 @@ const customFieldSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId()
   },
-  name: { type: String, required: true },
+  name: { type: String, required: false },
   value: mongoose.Schema.Types.Mixed,
   type: {
     type: String,

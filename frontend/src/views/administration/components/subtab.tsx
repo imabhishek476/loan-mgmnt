@@ -8,7 +8,7 @@ interface SubTabsProps {
 const SubTabs = ({ onTabChange }: SubTabsProps) => {
   const [activeTab, setActiveTab] = useState<TabType>("companies");
 
-  const tabs: { key: TabType; label: string; icon: JSX.Element }[] = [
+  const tabs: { key: TabType; label: string; icon: React.ReactElement }[] = [
     { key: "companies", label: "Companies", icon: <Building2 size={18} /> },
     { key: "users", label: "Users", icon: <User size={18} /> },
     // { key: "system", label: "System", icon: <Settings size={18} /> },

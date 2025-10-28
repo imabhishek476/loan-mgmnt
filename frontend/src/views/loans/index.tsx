@@ -163,7 +163,7 @@ const Loans = observer(
           loanStore.loans?.filter(
             (loan) =>
               loan?.client === formData.client &&
-              loan?.company === formData.company &&
+              // loan?.company === formData.company &&
               loan?.status !== "Paid Off" &&
               loan?.status !== "Merged" &&
               loan?.loanStatus !== "Deactivated"
@@ -278,7 +278,7 @@ useEffect(() => {
           await loanStore.fetchLoans();
 
           toast.success("Loan created successfully");
-          // loadInitialData();
+          loadInitialData();
         }
         setModalOpen(false);
         resetForm();
@@ -657,6 +657,7 @@ useEffect(() => {
                               name: selected.companyName,
                               backgroundColor:
                                 selected.backgroundColor || "#555555",
+                              loanTerms: selected.loanTerms,
                             }}
                             issueDate={formData.issueDate}
                             monthlyRate={formData.monthlyRate}
@@ -744,7 +745,7 @@ useEffect(() => {
                 <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
                   {/* Client Info */}
                   <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
+                    <p className="text-gray-500 text-xs uppercase mb-1">Customer</p>
                     <p className="font-medium">
                       {clientStore.clients.find(
                         (c) => c._id === selectedLoan.client

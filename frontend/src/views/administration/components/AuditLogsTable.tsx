@@ -90,7 +90,7 @@ const AuditLogsTable: React.FC = () => {
   const renderDataWithValues = (
     data: any,
     level = 0
-  ): JSX.Element | JSX.Element[] => {
+  ): React.ReactElement | React.ReactElement[] => {
     if (!data) return <span>-</span>;
 
     return Object.entries(data).map(([key, value], index) => {
