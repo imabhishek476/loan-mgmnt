@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
-import { debounce } from "lodash";
+// import { debounce } from "lodash";
 import { Search, Eye, Wallet, Trash2, RefreshCcw} from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
@@ -31,7 +31,9 @@ const LoanTable: React.FC<LoanTableProps> = ({ onEdit,clientId }) => {
   const { loans, loading } = loanStore;
   const [search, setSearch] = useState("");
   const [selectedLoan, setSelectedLoan] = useState(null);
-const [issueDateFilter, setIssueDateFilter] = useState<moment.Moment | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [issueDateFilterInput, setIssueDateFilterInput] = useState<moment.Moment | null>(null);
+  const [issueDateFilter, setIssueDateFilter] = useState<moment.Moment | null>(null);
   const capitalizeFirst = (text?: string) => {
     if (!text) return "";
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -72,15 +74,6 @@ if (issueDateFilter) {
 return data;
 }, [loans, search, clientId, issueDateFilter, loading]);
 
-
-  const debouncedSearch = useMemo(
-    () => debounce((value: string) => setSearch(value), 300),
-    []
-  );
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
 
   const handleView = (loan: any) => setSelectedLoan(loan);
   const handleClose = () => setSelectedLoan(null);
@@ -134,34 +127,62 @@ return data;
   return (
     <div>
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <div className="mb-3 flex gap-2">
+        <div className="mb-3 flex flex-wrap gap-2 items-center">
           {/* Search input */}
-          <div className="relative flex-1">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Search className="w-5 h-5 text-gray-400" />
-            </span>
-            <input
-              type="text"
-              placeholder="Search loans by client or company..."
-              className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-              onChange={handleSearchChange}
-            />
+          <div className="justify-between flex flex-grid">
+            <div className="relative flex-1 px-3">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none">
+                <Search className="w-5 h-5 text-green-700" />
+              </span>
+              <input
+                type="text"
+                placeholder="Search by Customer or Company"
+                className="w-96 pl-10 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
+            <button
+              className="flex items-center gap-1 text-white bg-green-800 hover:bg-green-900 px-2 py-0 rounded transition-all duration-200 hover:shadow-lg"
+              onClick={() => setSearch(searchInput)}
+            >
+              <Search size={15} />
+              <span className="font-sm">Search</span>
+            </button>
           </div>
-
-          {/* MUI DatePicker */}
           <DatePicker
             label="Issue Date"
-            value={issueDateFilter}
+            value={issueDateFilterInput}
             //@ts-ignore
-            onChange={(newValue) => setIssueDateFilter(newValue)}
-            //@ts-ignore
+            onChange={(newValue) => setIssueDateFilterInput(newValue)}
+            //@ts-ignores
             renderInput={(params) => (
               <input
-                {...params}
-                className="w-44 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                {...params.inputProps}
+                value={params.inputProps?.value || ""}
+                onChange={params.inputProps?.onChange}
+                className="w-44 border px-5 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
               />
             )}
           />
+          <button
+            className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-1 rounded transition-colors duration-200"
+            onClick={() => setIssueDateFilter(issueDateFilterInput)}
+          >
+            <Search size={20} />
+            <span className="font-medium">Filter</span>
+          </button>
+          <button
+            className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded transition-colors duration-200"
+            onClick={() => {
+              setSearchInput("");
+              setSearch("");
+              setIssueDateFilterInput(null);
+              setIssueDateFilter(null);
+            }}
+          >
+            <span className="font-medium">Reset</span>
+          </button>
         </div>
       </LocalizationProvider>
 
@@ -184,7 +205,7 @@ return data;
               },
 
               {
-                title: "Client",
+                title: "Customer",
                 cellStyle: { width: 80, minWidth: 120, fontWeight: 600 },
                 render: (rowData) =>
                   capitalizeFirst(
@@ -220,7 +241,7 @@ return data;
                 },
               },
               {
-                title: "Loan Amount ($)",
+                title: "Total Loan Amount ($)",
                 width: "15%",
                 render: (rowData) =>
                   `$${Number(rowData.subTotal || 0).toLocaleString()}`,
@@ -230,7 +251,17 @@ return data;
               //   render: (rowData) =>
               //     `$${Number(rowData.totalLoan || 0).toLocaleString()}`,
               // },
-              { title: "Term (months)", field: "loanTerms" },
+              {
+                title: "Term (months)",
+                render: (rowData) => {
+                  const { monthsPassed } =
+                    calculateDynamicTermAndPayment(rowData);
+                  const runningTenure =
+                    ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
+                    ALLOWED_TERMS.at(-1);
+                  return <span>{runningTenure} </span>;
+                },
+              },
               {
                 title: "Issue Date",
                 cellStyle: { width: 140, minWidth: 140 },
@@ -242,12 +273,14 @@ return data;
                 cellStyle: { whiteSpace: "nowrap" },
                 render: (rowData: any) => {
                   let bgColor = "";
+                  let displayText = rowData.status;
                   switch (rowData.status) {
                     case "Paid Off":
                       bgColor = "bg-green-700";
                       break;
                     case "Merged":
-                      bgColor = "bg-indigo-600";
+                      bgColor = "bg-green-700";
+                      displayText = "Paid Off (Merged)";
                       break;
                     case "Partial Payment":
                       bgColor = "bg-yellow-600";
@@ -262,7 +295,7 @@ return data;
                     <span
                       className={`px-2 py-1 rounded-lg text-white text-sm ${bgColor}`}
                     >
-                      {rowData.status}
+                      {displayText}
                     </span>
                   );
                 },
@@ -400,7 +433,7 @@ return data;
             <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
               {/* Client Info */}
               <div>
-                <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
+                <p className="text-gray-500 text-xs uppercase mb-1">Customer</p>
                 <p className="font-medium">
                   {clientStore.clients.find(
                     (c) => c._id === selectedLoan.client

@@ -514,7 +514,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
                 cellStyle: { width: 150, minWidth: 150 },
               },
               {
-                title: "Loan Amount ($)",
+                title: "Total Loan Amount ($)",
                 render: (rowData) =>
                   `$${Number(rowData.subTotal || 0).toLocaleString(undefined, {
                     minimumFractionDigits: 2,

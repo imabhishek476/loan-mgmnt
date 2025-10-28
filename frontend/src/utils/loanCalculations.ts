@@ -12,7 +12,7 @@ export const calculateLoanAmounts = (loan: any) => {
     const today = moment();
     const monthsPassed = today.diff(issueDate, "months") + 1;
 
-    const allowedTerms = [6, 12, 18, 24, 30, 36, 48, 60];
+    const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
     const dynamicTerm =
         originalTerm && allowedTerms.includes(originalTerm)
             ? originalTerm
@@ -40,6 +40,15 @@ export const calculateLoanAmounts = (loan: any) => {
         currentTerm: dynamicTerm,
         dynamicTerm,
     };
+};
+export const formatUSD = (amount: number | string = 0) => {
+    const num = Number(amount) || 0;
+    return num.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
 };
 
 export const calculateDynamicTermAndPayment = (loan: any) => {

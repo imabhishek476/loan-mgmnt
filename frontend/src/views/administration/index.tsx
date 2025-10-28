@@ -63,9 +63,9 @@ const Administration = observer(() => {
     try {
       let response;
       if (editingCompany) {
-        await companyStore.updateCompany(editingCompany._id!, data);
+       response = await companyStore.updateCompany(editingCompany._id!, data);
       } else {
-        await companyStore.createCompany(data);
+       response = await companyStore.createCompany(data);}
         if (response?.success === false) {
           toast.error(response?.message || "Failed to save company");
           return;
@@ -75,7 +75,6 @@ const Administration = observer(() => {
         );
         handleCompanyClose();
         await companyStore.fetchCompany();
-      }
     } catch (err: any) {
       console.error("Error saving company:", err);
       const errorMessage =
