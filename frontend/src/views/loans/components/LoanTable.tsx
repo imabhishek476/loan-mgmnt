@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 // import { debounce } from "lodash";
-import { Search, Eye, Wallet, Trash2, RefreshCcw} from "lucide-react";
+import { Search, Eye, Wallet, Trash2, RefreshCcw } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -286,11 +286,22 @@ return data;
                 render: (rowData) => {
                   let bgColor = "bg-green-700";
                   let displayText = rowData.status;
-                    if (rowData.status === "Merged")
+                  switch (rowData.status) {
+                    case "Paid Off":
+                      bgColor = "bg-green-700";
+                      break;
+                    case "Merged":
+                      bgColor = "bg-green-700";
                       displayText = "Paid Off (Merged)";
-                    if (rowData.status === "Partial Payment")
+                      break;
+                    case "Partial Payment":
                       bgColor = "bg-yellow-600";
-                    if (rowData.status === "Paid Off") bgColor = "bg-green-700";
+                      break;
+                    case "Active":
+                    default:
+                      bgColor = "bg-green-700";
+                      break;
+                  }
                   return (
                     <span
                       className={`px-2 py-1 rounded-lg text-white text-sm ${bgColor}`}
@@ -319,23 +330,31 @@ return data;
             ]}
             data={filteredLoans}
             actions={[
-              {
+              // (rowData: any) => ({
+              //   icon: () => <Pencil className="w-5 h-5 text-yellow-600" />,
+              //   tooltip: "Edit Loan",
+              //   hidden: rowData.loanStatus === "Deactivated",
+              //   onClick: (event, row) => onEdit?.(row),
+              // }),
+              // @ts-ignore
+              (rowData: any) => ({
                 icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                 tooltip: "View Loan",
+                hidden: false,
                 onClick: (_event, row) => handleView(row),
-              },
-                {
+              }),
+              (rowData: any) => ({
                 icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
                 tooltip: "Deactivate Loan",
-                hidden: (rowData) => rowData.loanStatus === "Deactivated",
+                hidden: rowData.loanStatus === "Deactivated",
                 onClick: (_event, row) => handleDelete(row._id),
-              },
-              {
+              }),
+              (rowData: any) => ({
                 icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
                 tooltip: "Recover Loan",
-                hidden: (rowData) => rowData.loanStatus !== "Deactivated",
+                hidden: rowData.loanStatus !== "Deactivated",
                 onClick: (_event, row) => handleRecover(row),
-              },
+              }),
             ]}
             options={{
               paging: true,
@@ -379,6 +398,7 @@ return data;
                   height: 44,
                   borderBottom: "1px solid #f1f1f1",
                   backgroundColor: "#ffffff",
+                  transition: "all 0.25s ease",
                   borderLeft: `6px solid ${borderColor}`,
                     transition: "background 0.2s ease",
                   cursor: "pointer",
@@ -560,4 +580,3 @@ return data;
 };
 const ObservedLoanTable = observer(LoanTable);
 export default ObservedLoanTable;
-
