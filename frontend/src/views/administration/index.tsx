@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
-import { Plus, User, Building2} from "lucide-react";
+import { User, Building2} from "lucide-react";
 import { Dialog } from "@mui/material";
 import { debounce } from "lodash";
 

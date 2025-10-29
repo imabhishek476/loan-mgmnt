@@ -347,6 +347,7 @@ return data;
                 icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
                 tooltip: "Deactivate Loan",
                 hidden: rowData.loanStatus === "Deactivated",
+                //@ts-ignore
                 onClick: (_event, row) => handleDelete(row._id),
               }),
               (rowData: any) => ({
@@ -400,7 +401,6 @@ return data;
                   backgroundColor: "#ffffff",
                   transition: "all 0.25s ease",
                   borderLeft: `6px solid ${borderColor}`,
-                    transition: "background 0.2s ease",
                   cursor: "pointer",
                   };
                 },

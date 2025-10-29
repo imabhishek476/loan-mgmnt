@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import Sidebar from "../components/Sidebar";
 import { userStore } from "../../store/UserStore";
-import { User, X } from "lucide-react";
+import { User } from "lucide-react";
 
 const Layout = observer(() => {
   const [sidebarOpen, setSidebarOpen] = useState(true); // sidebar open by default
