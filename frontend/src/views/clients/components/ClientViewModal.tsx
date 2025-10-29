@@ -357,9 +357,9 @@ useEffect(() => {
                         onClick={() => handleToggleLoan(loan._id)}
                       >
                         <td colSpan={4} className="px-3 py-2 w-3/4">
-                          <div className="flex justify-between items-center text-sm font-semibold text-gray-700 flex-wrap gap-10 sm:gap-6 w-full">
-                            <div className="flex items-center gap-2 w-auto min-w-[150px]">
-                              <span className="font-bold text-gray-800">
+                          <div className="flex justify-between items-center text-sm font-semibold text-gray-700  gap-10 sm:gap-6">
+                            <div className="flex items-center gap-2 flex-wrap  max-w-[150px]">
+                              <span className="font-bold text-gray-800 ">
                                 {companyName}
                               </span>
                             </div>

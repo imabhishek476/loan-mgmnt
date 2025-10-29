@@ -427,7 +427,7 @@ useEffect(() => {
                 </div>
 
                 {/* Modal Content */}
-                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden px-4 pt-1 flex flex-col sm:flex-row gap-3 flex-1">
+                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden px-4 pt-1 flex flex-col lg:flex-row gap-4 flex-1">
                   {/* Left Fields */}
                   <div className="flex-1 space-y-3">
                     {loanFields.map((field) => {
@@ -648,7 +648,7 @@ useEffect(() => {
                       );
                       if (!selected) return null;
                       return (
-                        <div className="flex max-w-3xl">
+                        <div className="flex lg:max-w-3xl">
                           <LoanCalculation
                             baseAmount={formData.baseAmount}
                             fees={formData.fees}
