@@ -195,18 +195,25 @@ return data;
             </span>
           </div>
         ) : filteredLoans.length > 0 ? (
+          <div className="w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
           <MaterialTable
             title={null}
             columns={[
               {
                 title: "Sr.no",
                 render: (rowData) => (rowData?.tableData?.id ?? 0) + 1,
-                width: "5%",
+                width: 70,
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap" },
               },
-
               {
                 title: "Customer",
-                cellStyle: { width: 80, minWidth: 120, fontWeight: 600 },
+                cellStyle: {
+                    minWidth: 120,
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                  },
+                headerStyle: { whiteSpace: "nowrap" },
                 render: (rowData) =>
                   capitalizeFirst(
                     clientStore.clients.find((c) => c._id === rowData.client)
@@ -215,7 +222,8 @@ return data;
               },
               {
                 title: "Company",
-                cellStyle: { width: 140, minWidth: 140 },
+                cellStyle: { minWidth: 140, whiteSpace: "nowrap" },
+                  headerStyle: { whiteSpace: "nowrap" },
                 render: (rowData) => {
                   const company = companyStore.companies.find(
                     (c) => c._id === rowData.company
@@ -225,14 +233,13 @@ return data;
                   return (
                     <span
                       style={{
-                        color: color,
+                          color,
                         borderRadius: "20px",
                         fontWeight: 600,
                         fontSize: "13px",
                         display: "inline-block",
                         textTransform: "capitalize",
                         whiteSpace: "nowrap",
-                        textAlign: "left",
                       }}
                     >
                       {companyName}
@@ -241,10 +248,11 @@ return data;
                 },
               },
               {
-                title: "Total Loan Amount ($)",
-                width: "15%",
+                title: "Total Loan ($)",
                 render: (rowData) =>
                   `$${Number(rowData.subTotal || 0).toLocaleString()}`,
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap", minWidth: 120 },
               },
               // {
               //   title: "Total Loan ($)",
@@ -259,38 +267,30 @@ return data;
                   const runningTenure =
                     ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
                     ALLOWED_TERMS.at(-1);
-                  return <span>{runningTenure} </span>;
+                  return <span>{runningTenure}</span>;
                 },
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap" },
               },
               {
                 title: "Issue Date",
-                cellStyle: { width: 140, minWidth: 140 },
                 render: (rowData) =>
                   moment(rowData.issueDate).format("DD MMM YYYY"),
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap", minWidth: 120 },
               },
               {
                 title: "Payment Status",
-                cellStyle: { whiteSpace: "nowrap" },
-                render: (rowData: any) => {
-                  let bgColor = "";
+                  headerStyle: { whiteSpace: "nowrap" },
+                cellStyle: { whiteSpace: "nowrap", minWidth: 150 },
+                render: (rowData) => {
+                  let bgColor = "bg-green-700";
                   let displayText = rowData.status;
-                  switch (rowData.status) {
-                    case "Paid Off":
-                      bgColor = "bg-green-700";
-                      break;
-                    case "Merged":
-                      bgColor = "bg-green-700";
+                    if (rowData.status === "Merged")
                       displayText = "Paid Off (Merged)";
-                      break;
-                    case "Partial Payment":
+                    if (rowData.status === "Partial Payment")
                       bgColor = "bg-yellow-600";
-                      break;
-                    case "Active":
-                    default:
-                      bgColor = "bg-green-700";
-                      break;
-                  }
-
+                    if (rowData.status === "Paid Off") bgColor = "bg-green-700";
                   return (
                     <span
                       className={`px-2 py-1 rounded-lg text-white text-sm ${bgColor}`}
@@ -302,8 +302,9 @@ return data;
               },
               {
                 title: "Active Status",
-                cellStyle: { whiteSpace: "nowrap" },
-                render: (rowData: any) => (
+                  headerStyle: { whiteSpace: "nowrap" },
+                cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
+                render: (rowData) => (
                   <span
                     className={`px-2 py-1 rounded-lg text-white text-sm ${
                       rowData.loanStatus === "Active"
@@ -318,31 +319,23 @@ return data;
             ]}
             data={filteredLoans}
             actions={[
-              // (rowData: any) => ({
-              //   icon: () => <Pencil className="w-5 h-5 text-yellow-600" />,
-              //   tooltip: "Edit Loan",
-              //   hidden: rowData.loanStatus === "Deactivated",
-              //   onClick: (event, row) => onEdit?.(row),
-              // }),
-              // @ts-ignore
-              (rowData: any) => ({
+              {
                 icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                 tooltip: "View Loan",
-                hidden: false,
                 onClick: (_event, row) => handleView(row),
-              }),
-              (rowData: any) => ({
+              },
+                {
                 icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
                 tooltip: "Deactivate Loan",
-                hidden: rowData.loanStatus === "Deactivated",
+                hidden: (rowData) => rowData.loanStatus === "Deactivated",
                 onClick: (_event, row) => handleDelete(row._id),
-              }),
-              (rowData: any) => ({
+              },
+              {
                 icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
                 tooltip: "Recover Loan",
-                hidden: rowData.loanStatus !== "Deactivated",
+                hidden: (rowData) => rowData.loanStatus !== "Deactivated",
                 onClick: (_event, row) => handleRecover(row),
-              }),
+              },
             ]}
             options={{
               paging: true,
@@ -351,14 +344,19 @@ return data;
               sorting: true,
               search: false,
               actionsColumnIndex: -1,
+                padding: "dense",
+                toolbar: false,
+                paginationType: "stepped",
+                tableLayout: "auto",
               headerStyle: {
                 fontWeight: 600,
                 backgroundColor: "#f9fafb",
                 color: "#374151",
                 fontSize: "13px",
                 height: 36,
-                padding: "0px 8px",
+                padding: "6px 8px",
                 borderBottom: "1px solid #e5e7eb",
+                  whiteSpace: "nowrap",
               },
               rowStyle: (rowData) => {
                 const company = companyStore.companies.find(
@@ -381,27 +379,14 @@ return data;
                   height: 44,
                   borderBottom: "1px solid #f1f1f1",
                   backgroundColor: "#ffffff",
-                  transition: "all 0.25s ease",
                   borderLeft: `6px solid ${borderColor}`,
+                    transition: "background 0.2s ease",
                   cursor: "pointer",
-                  position: "relative",
-                  // ...(showRibbon && {
-                  //   backgroundImage: `linear-gradient(
-                  //   135deg,
-                  //   ${ribbonColor} 22px,
-                  //   transparent 20px
-                  // )`,
-                  //   backgroundRepeat: "no-repeat",
-                  //   backgroundPosition: "left top",
-                  // }),
-                };
-              },
-
-              padding: "dense",
-              toolbar: false,
-              paginationType: "stepped",
-            }}
-          />
+                  };
+                },
+              }}
+            />
+          </div>
         ) : (
           <div className="text-center py-10 bg-gray-200 rounded-lg">
             <div className="flex items-center justify-center mb-4 bg-gray-300 rounded-full w-20 h-20 mx-auto">
