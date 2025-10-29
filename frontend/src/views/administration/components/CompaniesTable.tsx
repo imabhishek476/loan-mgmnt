@@ -149,7 +149,7 @@ const renderFee = (fee: any) => {
             padding: "dense",
             toolbar: false,
             paginationType: "stepped",
-            tableLayout: "fixed",
+            tableLayout: "auto",
             headerStyle: {
               fontWeight: "600",
               backgroundColor: "#f9fafb",

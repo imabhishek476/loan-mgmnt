@@ -339,7 +339,7 @@ useEffect(() => {
     ];
 
     return (
-      <div className="flex flex-col bg-white rounded-lg text-left">
+      <div className="flex flex-col bg-white rounded-lg text-left p-2">
         {/* Header & Table */}
         {!fromClientPage && showTable && (
           <>

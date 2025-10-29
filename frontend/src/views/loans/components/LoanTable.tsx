@@ -129,7 +129,7 @@ return data;
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <div className="mb-3 flex flex-wrap gap-2 items-center">
           {/* Search input */}
-          <div className="justify-between flex flex-grid">
+          <div className="justify-between flex flex-grid p-0">
             <div className="relative flex-1 px-3">
               <span className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none">
                 <Search className="w-5 h-5 text-green-700" />

@@ -75,13 +75,12 @@ const clientLoans = useMemo(() => {
       )
     : [];
 }, [loanStore.loans, client?._id]);
+    const LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
   const getDefaultLoanTerm = (loan: any) => {
     const loanData = calculateLoanAmounts(loan);
-    const allowedTerms = [6, 12, 18, 24, 30, 36, 48, 60];
     return (
-      allowedTerms.find((t) => t >= loanData.monthsPassed) ||
-      loanData.dynamicTerm
+      LOAN_TERMS.find((t) => t >= loanData.monthsPassed) || loanData.dynamicTerm
     );
   };
 
@@ -91,7 +90,6 @@ const clientLoans = useMemo(() => {
       hasLoaded.current = true;
     }
   }, []);
-const LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48, 60];
   useEffect(() => {
     if (client?._id) loanStore.fetchLoans();
   }, [client?._id]);
@@ -170,7 +168,7 @@ useEffect(() => {
           >
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="absolute top-2 right-2 flex items-center justify-center w-8 h-8 bg-green-700 text-white rounded-full shadow-lg hover:bg-green-800 transition-transform transform hover:scale-105"
+              className="hidden md:flex absolute top-2 right-2 items-center justify-center w-8 h-8 bg-green-700 text-white rounded-full shadow-lg hover:bg-green-800 transition-transform transform hover:scale-105"
               title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             >
               {sidebarCollapsed ? (
@@ -184,12 +182,12 @@ useEffect(() => {
               <>
                 <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-200">
                   <FileText size={20} className="text-green-600" />
-                  <h3 className="text-lg font-bold text-gray-800">
+                  <h3 className="text-sm font-bold text-gray-800 ">
                     Customer Information
                   </h3>
                   <Pencil
-                    size={16}
-                    className="text-green-700"
+                    size={18}
+                    className="text-green-700 cursor-pointer hover:text-green-900 transition md:w-5 md:h-5"
                     onClick={() => onEditClient(client)}
                   />
                 </div>
@@ -339,17 +337,14 @@ useEffect(() => {
                         className="cursor-pointer hover:bg-gray-50 transition"
                         onClick={() => handleToggleLoan(loan._id)}
                       >
-                        {/* Company Name */}
-                        <td className="px-2 py-2 font-semibold text-gray-700 text-base text-left">
+                        <td colSpan={4} className="px-3 py-2 w-3/4">
+                        <div className="flex justify-between items-center text-sm font-semibold text-gray-700 flex-wrap gap-10 sm:gap-6 w-full">
+                            <div className="flex items-center gap-2 w-auto min-w-[150px]">
+                              <span className="font-bold text-gray-800">
                           {companyName}
-                        </td>
-
-                        {/* Loan Info */}
-                        <td colSpan={4} className="px-3 py-2">
-                          <div className="flex justify-center items-center text-sm font-semibold text-gray-700 flex-wrap gap-16">
-                            {/* LEFT SIDE (Details) */}
-                            <div className="flex flex-wrap items-center gap-4">
-                              {/* Loan Amount */}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-end gap-4 ml-auto text-right w-full sm:w-auto">
                               <span>
                                 Principal Amount:{" "}
                                 <span className="text-blue-700 font-bold">
@@ -377,18 +372,21 @@ useEffect(() => {
                                   {formatUSD(selectedLoanData.remaining)}
                                 </span>
                               </span>
-                        {loanPayments[loan._id]?.length > 0 &&
-  !["Paid Off", "Merged"].includes(loan.status) && (
-    <button
-      onClick={() => setPaymentLoan(loan)}
+                        {!["Paid Off", "Merged"].includes(
+                                loan.status
+                              ) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPaymentLoan(loan);
+                                  }}
       className="p-1 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
+      title="Add Payment"
     >
       <Plus className="w-4 h-4" />
     </button>
   )}
 
-                            </div>
-                          <div className="flex items-center gap-2">
                           <span
                             className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
                               loan
@@ -413,7 +411,7 @@ useEffect(() => {
 
                       {/* Content */}
                       {expandedLoanId === loan._id && (
-                        <div className="px-4 pb-1  bg-gray-50 flex border-t flex-col sm:flex-row gap-1">
+                        <div className="px-4 pb-1  bg-gray-50 flex  flex-col sm:flex-row gap-1 overflow-y-auto max-h-[50vh] md:max-h-none">
                           {loan.loanStatus === "Deactivated" ? (
                             <p className="text-gray-500 italic">
                               This loan has been deactivated.
