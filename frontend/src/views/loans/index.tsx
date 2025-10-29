@@ -427,7 +427,7 @@ useEffect(() => {
                 </div>
 
                 {/* Modal Content */}
-                <div className="flex flex-col sm:flex-row gap-3 overflow-y-auto overflow-x-hidden px-4 pt-1 flex-1">
+                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden px-4 pt-1 flex flex-col sm:flex-row gap-3 flex-1">
                   {/* Left Fields */}
                   <div className="flex-1 space-y-3">
                     {loanFields.map((field) => {
@@ -549,91 +549,91 @@ useEffect(() => {
                           className={`transition-all duration-700 ease-in-out overflow-auto ${
                             overlapMode
                               ? "max-h-40 opacity-100"
-                            : "max-h-0 opacity-0"
-                        }`}
-                      >
-                        {overlapMode &&
-                          activeLoans.map((loan) => {
-                            const { runningTenure, total, remaining } =
-                              getLoanRunningDetails(loan);
-                            const isSelected = selectedLoanIds.includes(
-                              loan._id
-                            );
+                              : "max-h-0 opacity-0"
+                          }`}
+                        >
+                          {overlapMode &&
+                            activeLoans.map((loan) => {
+                              const { runningTenure, total, remaining } =
+                                getLoanRunningDetails(loan);
+                              const isSelected = selectedLoanIds.includes(
+                                loan._id
+                              );
 
-                            return (
-                              <div
-                                key={loan._id}
-                                onClick={() =>
-                                  setSelectedLoanIds((prev) =>
-                                    isSelected
-                                      ? prev.filter((id) => id !== loan._id)
-                                      : [...prev, loan._id]
-                                  )
-                                }
-                                className={`flex justify-between  items-center p-3  border rounded-lg shadow-sm cursor-pointer transition
-    ${
-      isSelected ? "bg-green-100 border-green-400" : "bg-white hover:bg-gray-50"
-    }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className="flex flex-col text-xs sm:text-xs">
-                                    <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
-                                      Issue Date:{" "}
-                                      {moment(loan.issueDate).format(
-                                        "MMM DD, YYYY"
-                                      )}
-                                    </span>
-                                    <span className="font-semibold">
-                                      Current Tenure:{" "}
-                                      <b>{runningTenure} Months</b>
-                                    </span>
-                                    <span className="text-green-700 font-bold ">
-                                      Total: $
-                                      {total.toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                      })}{" "}
-                                      ({" "} 
-                                      <span className="text-red-600 font-bold">
-                                        Remaining: $
-                                        {remaining.toLocaleString(undefined, {
-                                          minimumFractionDigits: 2,
-                                          maximumFractionDigits: 2,
-                                        })}
-                                      </span>
-                                      )
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <div className="flex flex-col text-right text-xs sm:text-sm"></div>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleView(loan);
-                                    }}
-                                  >
-                                    <Eye size={18} />
-                                  </IconButton>
-                                </div>
-
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() =>
+                              return (
+                                <div
+                                  key={loan._id}
+                                  onClick={() =>
                                     setSelectedLoanIds((prev) =>
                                       isSelected
                                         ? prev.filter((id) => id !== loan._id)
                                         : [...prev, loan._id]
                                     )
                                   }
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-4 h-4 m-0 accent-green-600 cursor-pointer"
-                                />
-                              </div>
-                            );
-                          })}
+                                  className={`flex justify-between  items-center p-3  border rounded-lg shadow-sm cursor-pointer transition
+    ${
+      isSelected ? "bg-green-100 border-green-400" : "bg-white hover:bg-gray-50"
+    }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex flex-col text-xs sm:text-xs">
+                                      <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
+                                        Issue Date:{" "}
+                                        {moment(loan.issueDate).format(
+                                          "MMM DD, YYYY"
+                                        )}
+                                      </span>
+                                      <span className="font-semibold">
+                                        Current Tenure:{" "}
+                                        <b>{runningTenure} Months</b>
+                                      </span>
+                                      <span className="text-green-700 font-bold ">
+                                        Total: $
+                                        {total.toLocaleString(undefined, {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        })}{" "}
+                                        ({" "}
+                                        <span className="text-red-600 font-bold">
+                                          Remaining: $
+                                          {remaining.toLocaleString(undefined, {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                          })}
+                                        </span>
+                                        )
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <div className="flex flex-col text-right text-xs sm:text-sm"></div>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleView(loan);
+                                      }}
+                                    >
+                                      <Eye size={18} />
+                                    </IconButton>
+                                  </div>
+
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() =>
+                                      setSelectedLoanIds((prev) =>
+                                        isSelected
+                                          ? prev.filter((id) => id !== loan._id)
+                                          : [...prev, loan._id]
+                                      )
+                                    }
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-4 h-4 m-0 accent-green-600 cursor-pointer"
+                                  />
+                                </div>
+                              );
+                            })}
                         </div>
                       </div>
                     )}
@@ -742,52 +742,54 @@ useEffect(() => {
               Loan Details
             </DialogTitle>
             <DialogContent className="p-6">
-                <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
-                  {/* Client Info */}
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">Customer</p>
-                    <p className="font-medium">
-                      {clientStore.clients.find(
-                        (c) => c._id === selectedLoan.client
-                      )?.fullName || "-"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+              <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
+                {/* Client Info */}
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Customer
+                  </p>
+                  <p className="font-medium">
+                    {clientStore.clients.find(
+                      (c) => c._id === selectedLoan.client
+                    )?.fullName || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Company
                   </p>
-                    <p className="font-medium">
-                      {companyStore.companies.find(
-                        (c) => c._id === selectedLoan.company
-                      )?.companyName || "-"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+                  <p className="font-medium">
+                    {companyStore.companies.find(
+                      (c) => c._id === selectedLoan.company
+                    )?.companyName || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Base Amount
                   </p>
-                    <p className="font-semibold text-green-700">
-                      $
+                  <p className="font-semibold text-green-700">
+                    $
                     {Number(selectedLoan.subTotal || 0).toLocaleString(
                       undefined,
                       { minimumFractionDigits: 2, maximumFractionDigits: 2 }
                     )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Total Loan
                   </p>
-                    <p className="font-semibold text-green-700">
-                      $
+                  <p className="font-semibold text-green-700">
+                    $
                     {total.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Paid Amount
                   </p>
                   <p className="font-semibold text-blue-700">
@@ -796,80 +798,80 @@ useEffect(() => {
                       undefined,
                       { minimumFractionDigits: 2, maximumFractionDigits: 2 }
                     )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Remaining Amount
                   </p>
-                   <p className="font-semibold text-red-700">
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Remaining Amount
+                  </p>
+                  <p className="font-semibold text-red-700">
                     $
                     {remaining.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
-                    </p>
-                  </div>
-                  <div className="sm:col-span-2 mt-2">
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+                  </p>
+                </div>
+                <div className="sm:col-span-2 mt-2">
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Progress
                   </p>
-                    <div className="w-full bg-gray-200 h-2 rounded-full">
-                      <div
-                        className="h-2 rounded-full bg-green-600"
-                        style={{
-                          width: `${
+                  <div className="w-full bg-gray-200 h-2 rounded-full">
+                    <div
+                      className="h-2 rounded-full bg-green-600"
+                      style={{
+                        width: `${
                           ((selectedLoan.paidAmount || 0) / (total || 1)) * 100
                         }%`,
-                        }}
-                      />
-                    </div>
+                      }}
+                    />
                   </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Interest Type
                   </p>
-                    <p className="font-medium capitalize">
+                  <p className="font-medium capitalize">
                     {selectedLoan.interestType || "N/A"}
                   </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Monthly Rate
                   </p>
-                    <p className="font-medium">{selectedLoan.monthlyRate}%</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+                  <p className="font-medium">{selectedLoan.monthlyRate}%</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Loan Term
-                    </p>
-                    <p className="font-medium">
-                      <b>{runningTenure} Months</b>
-                      </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
+                  </p>
+                  <p className="font-medium">
+                    <b>{runningTenure} Months</b>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
                     Issue Date
                   </p>
                   <p className="font-medium">
                     {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
                   </p>
-                  </div>
-                  <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
-                    <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
-                    <p
-                      className={`font-semibold ${
-                        selectedLoan.status === "Paid Off"
-                          ? "text-green-700"
-                          : selectedLoan.status === "Partial Payment"
-                          ? "text-blue-700"
-                          : "text-yellow-700"
-                      }`}
-                    >
-                      {selectedLoan.status}
-                    </p>
-                  </div>
                 </div>
+                <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
+                  <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
+                  <p
+                    className={`font-semibold ${
+                      selectedLoan.status === "Paid Off"
+                        ? "text-green-700"
+                        : selectedLoan.status === "Partial Payment"
+                        ? "text-blue-700"
+                        : "text-yellow-700"
+                    }`}
+                  >
+                    {selectedLoan.status}
+                  </p>
+                </div>
+              </div>
             </DialogContent>
             <DialogActions className="px-6 pb-4">
               <Button
