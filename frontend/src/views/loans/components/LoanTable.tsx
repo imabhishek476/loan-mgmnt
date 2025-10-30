@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 // import { debounce } from "lodash";
-import { Search, Eye, Wallet, Trash2, RefreshCcw} from "lucide-react";
+import { Search, Eye, Wallet, Trash2, RefreshCcw } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -126,54 +126,66 @@ return data;
   }
   return (
     <div>
-      <LocalizationProvider dateAdapter={AdapterMoment}>
-        <div className="mb-3 flex flex-wrap gap-2 items-center">
-          {/* Search input */}
-          <div className="justify-between flex flex-grid">
-            <div className="relative flex-1 px-3">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none">
-                <Search className="w-5 h-5 text-green-700" />
-              </span>
-              <input
-                type="text"
-                placeholder="Search by Customer or Company"
-                className="w-96 pl-10 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
-            <button
-              className="flex items-center gap-1 text-white bg-green-800 hover:bg-green-900 px-2 py-0 rounded transition-all duration-200 hover:shadow-lg"
+      <div className="mb-3 flex flex-col sm:flex-row gap-2">
+        {/* Search input */}
+        <div className="flex flex-col sm:flex-row  gap-2 items-left">
+          <div className="relative flex-grow min-w-[250px] max-w-md">
+            <input
+              type="text"
+              placeholder="Search by Customer or Company"
+              className="w-full sm:p-2 pr-10 pl-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <span
+              className="absolute sm:hidden inset-y-0 right-0 flex items-center  pr-3  cursor-pointer"
               onClick={() => setSearch(searchInput)}
             >
-              <Search size={15} />
-              <span className="font-sm">Search</span>
+              <Search className="w-5 h-5 text-green-700" />
+            </span>
+          </div>
+          <div className="sm:w-auto">
+            <button
+              className=" hidden sm:flex items-center gap-1 text-white bg-green-700 hover:bg-green-900 px-2 py-1 rounded transition-all duration-200 hover:shadow-lg"
+              onClick={() => setSearch(searchInput)}
+            >
+              <Search size={20} />
+              <span className="font-medium py-1">Search</span>
             </button>
           </div>
-          <DatePicker
-            label="Issue Date"
-            value={issueDateFilterInput}
-            //@ts-ignore
-            onChange={(newValue) => setIssueDateFilterInput(newValue)}
-            //@ts-ignores
-            renderInput={(params) => (
-              <input
-                {...params.inputProps}
-                value={params.inputProps?.value || ""}
-                onChange={params.inputProps?.onChange}
-                className="w-44 border px-5 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-              />
-            )}
-          />
+        </div>
+        <div className="flex gap-2 items-center">
+          <LocalizationProvider dateAdapter={AdapterMoment}>
+            <DatePicker
+              label="Issue Date"
+              value={issueDateFilterInput}
+              //@ts-ignore
+              onChange={(newValue) => setIssueDateFilterInput(newValue)}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  sx: {
+                    "& .MuiInputBase-root": {
+                      padding: "0px 4px",
+                      minHeight: "32px", // make it a bit shorter
+                    },
+                    "& .MuiInputBase-input": {
+                      padding: "4px 6px", // actual text padding
+                    },
+                  },
+                },
+              }}
+            />
+          </LocalizationProvider>
           <button
-            className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-1 rounded transition-colors duration-200"
+            className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-2 rounded transition-colors duration-200"
             onClick={() => setIssueDateFilter(issueDateFilterInput)}
           >
             <Search size={20} />
             <span className="font-medium">Filter</span>
           </button>
           <button
-            className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded transition-colors duration-200"
+            className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-2 rounded transition-colors duration-200"
             onClick={() => {
               setSearchInput("");
               setSearch("");
@@ -184,7 +196,7 @@ return data;
             <span className="font-medium">Reset</span>
           </button>
         </div>
-      </LocalizationProvider>
+      </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
         {loading ? (
@@ -195,213 +207,218 @@ return data;
             </span>
           </div>
         ) : filteredLoans.length > 0 ? (
-          <MaterialTable
-            title={null}
-            columns={[
-              {
-                title: "Sr.no",
-                render: (rowData) => (rowData?.tableData?.id ?? 0) + 1,
-                width: "5%",
-              },
-
-              {
-                title: "Customer",
-                cellStyle: { width: 80, minWidth: 120, fontWeight: 600 },
-                render: (rowData) =>
-                  capitalizeFirst(
-                    clientStore.clients.find((c) => c._id === rowData.client)
-                      ?.fullName || ""
+          <div className="w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
+            <MaterialTable
+              title={null}
+              columns={[
+                {
+                  title: "Sr.no",
+                  render: (rowData) => (rowData?.tableData?.id ?? 0) + 1,
+                  width: 70,
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap" },
+                },
+                {
+                  title: "Customer",
+                  cellStyle: {
+                    minWidth: 120,
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                  },
+                  headerStyle: { whiteSpace: "nowrap" },
+                  render: (rowData) =>
+                    capitalizeFirst(
+                      clientStore.clients.find((c) => c._id === rowData.client)
+                        ?.fullName || ""
+                    ),
+                },
+                {
+                  title: "Company",
+                  cellStyle: { minWidth: 140, whiteSpace: "nowrap" },
+                  headerStyle: { whiteSpace: "nowrap" },
+                  render: (rowData) => {
+                    const company = companyStore.companies.find(
+                      (c) => c._id === rowData.company
+                    );
+                    const companyName = company?.companyName || "";
+                    const color = company?.backgroundColor || "#555555";
+                    return (
+                      <span
+                        style={{
+                          color,
+                          borderRadius: "20px",
+                          fontWeight: 600,
+                          fontSize: "13px",
+                          display: "inline-block",
+                          textTransform: "capitalize",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {companyName}
+                      </span>
+                    );
+                  },
+                },
+                {
+                  title: "Total Loan ($)",
+                  render: (rowData) =>
+                    `$${Number(rowData.subTotal || 0).toLocaleString()}`,
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap", minWidth: 120 },
+                },
+                // {
+                //   title: "Total Loan ($)",
+                //   render: (rowData) =>
+                //     `$${Number(rowData.totalLoan || 0).toLocaleString()}`,
+                // },
+                {
+                  title: "Term (months)",
+                  render: (rowData) => {
+                    const { monthsPassed } =
+                      calculateDynamicTermAndPayment(rowData);
+                    const runningTenure =
+                      ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
+                      ALLOWED_TERMS.at(-1);
+                    return <span>{runningTenure}</span>;
+                  },
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap" },
+                },
+                {
+                  title: "Issue Date",
+                  render: (rowData) =>
+                    moment(rowData.issueDate).format("DD MMM YYYY"),
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap", minWidth: 120 },
+                },
+                {
+                  title: "Payment Status",
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap", minWidth: 150 },
+                  render: (rowData) => {
+                    let bgColor = "bg-green-700";
+                    let displayText = rowData.status;
+                    switch (rowData.status) {
+                      case "Paid Off":
+                        bgColor = "bg-green-700";
+                        break;
+                      case "Merged":
+                        bgColor = "bg-green-700";
+                        displayText = "Paid Off (Merged)";
+                        break;
+                      case "Partial Payment":
+                        bgColor = "bg-yellow-600";
+                        break;
+                      case "Active":
+                      default:
+                        bgColor = "bg-green-700";
+                        break;
+                    }
+                    return (
+                      <span
+                        className={`px-2 py-1 rounded-lg text-white text-sm ${bgColor}`}
+                      >
+                        {displayText}
+                      </span>
+                    );
+                  },
+                },
+                {
+                  title: "Active Status",
+                  headerStyle: { whiteSpace: "nowrap" },
+                  cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
+                  render: (rowData) => (
+                    <span
+                      className={`px-2 py-1 rounded-lg text-white text-sm ${
+                        rowData.loanStatus === "Active"
+                          ? "bg-green-700"
+                          : "bg-red-500"
+                      }`}
+                    >
+                      {rowData.loanStatus}
+                    </span>
                   ),
-              },
-              {
-                title: "Company",
-                cellStyle: { width: 140, minWidth: 140 },
-                render: (rowData) => {
+                },
+              ]}
+              data={filteredLoans}
+              actions={[
+                // (rowData: any) => ({
+                //   icon: () => <Pencil className="w-5 h-5 text-yellow-600" />,
+                //   tooltip: "Edit Loan",
+                //   hidden: rowData.loanStatus === "Deactivated",
+                //   onClick: (event, row) => onEdit?.(row),
+                // }),
+                // @ts-ignore
+                (rowData: any) => ({
+                  icon: () => <Eye className="w-5 h-5 text-blue-600" />,
+                  tooltip: "View Loan",
+                  hidden: false,
+                  onClick: (_event, row) => handleView(row),
+                }),
+                (rowData: any) => ({
+                  icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
+                  tooltip: "Deactivate Loan",
+                  hidden: rowData.loanStatus === "Deactivated",
+                  //@ts-ignore
+                  onClick: (_event, row) => handleDelete(row._id),
+                }),
+                (rowData: any) => ({
+                  icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
+                  tooltip: "Recover Loan",
+                  hidden: rowData.loanStatus !== "Deactivated",
+                  onClick: (_event, row) => handleRecover(row),
+                }),
+              ]}
+              options={{
+                paging: true,
+                pageSize: 10,
+                pageSizeOptions: [5, 10, 20],
+                sorting: true,
+                search: false,
+                actionsColumnIndex: -1,
+                padding: "dense",
+                toolbar: false,
+                paginationType: "stepped",
+                tableLayout: "auto",
+                headerStyle: {
+                  fontWeight: 600,
+                  backgroundColor: "#f9fafb",
+                  color: "#374151",
+                  fontSize: "13px",
+                  height: 36,
+                  padding: "6px 8px",
+                  borderBottom: "1px solid #e5e7eb",
+                  whiteSpace: "nowrap",
+                },
+                rowStyle: (rowData) => {
                   const company = companyStore.companies.find(
                     (c) => c._id === rowData.company
                   );
-                  const companyName = company?.companyName || "";
-                  const color = company?.backgroundColor || "#555555";
-                  return (
-                    <span
-                      style={{
-                        color: color,
-                        borderRadius: "20px",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        display: "inline-block",
-                        textTransform: "capitalize",
-                        whiteSpace: "nowrap",
-                        textAlign: "left",
-                      }}
-                    >
-                      {companyName}
-                    </span>
-                  );
-                },
-              },
-              {
-                title: "Total Loan Amount ($)",
-                width: "15%",
-                render: (rowData) =>
-                  `$${Number(rowData.subTotal || 0).toLocaleString()}`,
-              },
-              // {
-              //   title: "Total Loan ($)",
-              //   render: (rowData) =>
-              //     `$${Number(rowData.totalLoan || 0).toLocaleString()}`,
-              // },
-              {
-                title: "Term (months)",
-                render: (rowData) => {
-                  const { monthsPassed } =
-                    calculateDynamicTermAndPayment(rowData);
-                  const runningTenure =
-                    ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
-                    ALLOWED_TERMS.at(-1);
-                  return <span>{runningTenure} </span>;
-                },
-              },
-              {
-                title: "Issue Date",
-                cellStyle: { width: 140, minWidth: 140 },
-                render: (rowData) =>
-                  moment(rowData.issueDate).format("DD MMM YYYY"),
-              },
-              {
-                title: "Payment Status",
-                cellStyle: { whiteSpace: "nowrap" },
-                render: (rowData: any) => {
-                  let bgColor = "";
-                  let displayText = rowData.status;
-                  switch (rowData.status) {
-                    case "Paid Off":
-                      bgColor = "bg-green-700";
-                      break;
-                    case "Merged":
-                      bgColor = "bg-green-700";
-                      displayText = "Paid Off (Merged)";
-                      break;
-                    case "Partial Payment":
-                      bgColor = "bg-yellow-600";
-                      break;
-                    case "Active":
-                    default:
-                      bgColor = "bg-green-700";
-                      break;
-                  }
+                  const borderColor = company?.backgroundColor || "#555555";
+                  // const showRibbon = [
+                  //   "Paid Off",
+                  //   "Merged",
+                  //   "Partial Payment",
+                  // ].includes(rowData.status);
+                  // let ribbonColor = "";
+                  // if (rowData.status === "Paid Off") ribbonColor = "#22c55e";
+                  // else if (rowData.status === "Merged") ribbonColor = "#6366f1";
+                  // else if (rowData.status === "Partial Payment")
+                  //   ribbonColor = "#3b82f6";
 
-                  return (
-                    <span
-                      className={`px-2 py-1 rounded-lg text-white text-sm ${bgColor}`}
-                    >
-                      {displayText}
-                    </span>
-                  );
+                  return {
+                    fontSize: "13px",
+                    height: 44,
+                    borderBottom: "1px solid #f1f1f1",
+                    backgroundColor: "#ffffff",
+                    transition: "all 0.25s ease",
+                    borderLeft: `6px solid ${borderColor}`,
+                    cursor: "pointer",
+                  };
                 },
-              },
-              {
-                title: "Active Status",
-                cellStyle: { whiteSpace: "nowrap" },
-                render: (rowData: any) => (
-                  <span
-                    className={`px-2 py-1 rounded-lg text-white text-sm ${
-                      rowData.loanStatus === "Active"
-                        ? "bg-green-700"
-                        : "bg-red-500"
-                    }`}
-                  >
-                    {rowData.loanStatus}
-                  </span>
-                ),
-              },
-            ]}
-            data={filteredLoans}
-            actions={[
-              // (rowData: any) => ({
-              //   icon: () => <Pencil className="w-5 h-5 text-yellow-600" />,
-              //   tooltip: "Edit Loan",
-              //   hidden: rowData.loanStatus === "Deactivated",
-              //   onClick: (event, row) => onEdit?.(row),
-              // }),
-              // @ts-ignore
-              (rowData: any) => ({
-                icon: () => <Eye className="w-5 h-5 text-blue-600" />,
-                tooltip: "View Loan",
-                hidden: false,
-                onClick: (_event, row) => handleView(row),
-              }),
-              (rowData: any) => ({
-                icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
-                tooltip: "Deactivate Loan",
-                hidden: rowData.loanStatus === "Deactivated",
-                onClick: (_event, row) => handleDelete(row._id),
-              }),
-              (rowData: any) => ({
-                icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
-                tooltip: "Recover Loan",
-                hidden: rowData.loanStatus !== "Deactivated",
-                onClick: (_event, row) => handleRecover(row),
-              }),
-            ]}
-            options={{
-              paging: true,
-              pageSize: 10,
-              pageSizeOptions: [5, 10, 20],
-              sorting: true,
-              search: false,
-              actionsColumnIndex: -1,
-              headerStyle: {
-                fontWeight: 600,
-                backgroundColor: "#f9fafb",
-                color: "#374151",
-                fontSize: "13px",
-                height: 36,
-                padding: "0px 8px",
-                borderBottom: "1px solid #e5e7eb",
-              },
-              rowStyle: (rowData) => {
-                const company = companyStore.companies.find(
-                  (c) => c._id === rowData.company
-                );
-                const borderColor = company?.backgroundColor || "#555555";
-                // const showRibbon = [
-                //   "Paid Off",
-                //   "Merged",
-                //   "Partial Payment",
-                // ].includes(rowData.status);
-                // let ribbonColor = "";
-                // if (rowData.status === "Paid Off") ribbonColor = "#22c55e";
-                // else if (rowData.status === "Merged") ribbonColor = "#6366f1";
-                // else if (rowData.status === "Partial Payment")
-                //   ribbonColor = "#3b82f6";
-
-                return {
-                  fontSize: "13px",
-                  height: 44,
-                  borderBottom: "1px solid #f1f1f1",
-                  backgroundColor: "#ffffff",
-                  transition: "all 0.25s ease",
-                  borderLeft: `6px solid ${borderColor}`,
-                  cursor: "pointer",
-                  position: "relative",
-                  // ...(showRibbon && {
-                  //   backgroundImage: `linear-gradient(
-                  //   135deg,
-                  //   ${ribbonColor} 22px,
-                  //   transparent 20px
-                  // )`,
-                  //   backgroundRepeat: "no-repeat",
-                  //   backgroundPosition: "left top",
-                  // }),
-                };
-              },
-
-              padding: "dense",
-              toolbar: false,
-              paginationType: "stepped",
-            }}
-          />
+              }}
+            />
+          </div>
         ) : (
           <div className="text-center py-10 bg-gray-200 rounded-lg">
             <div className="flex items-center justify-center mb-4 bg-gray-300 rounded-full w-20 h-20 mx-auto">
@@ -575,4 +592,3 @@ return data;
 };
 const ObservedLoanTable = observer(LoanTable);
 export default ObservedLoanTable;
-

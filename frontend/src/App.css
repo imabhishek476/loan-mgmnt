@@ -24,10 +24,10 @@
   --font-lato: 'Lato', sans-serif;            /* Slightly rounded but sharp */
   --font-exo: 'Exo 2', sans-serif;             /* Techy and angular */
 }
-.css-vycme6-MuiPickersInputBase-root-MuiPickersOutlinedInput-root{
+/* .css-vycme6-MuiPickersInputBase-root-MuiPickersOutlinedInput-root{
   height: 40px;
     border-radius: 7px;
-}
+} */
 .no-spinner::-webkit-outer-spin-button,
 .no-spinner::-webkit-inner-spin-button {
     -webkit-appearance: none;

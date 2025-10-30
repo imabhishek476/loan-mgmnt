@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
-import { Plus, User, Building2} from "lucide-react";
+import { User, Building2} from "lucide-react";
 import { Dialog } from "@mui/material";
 import { debounce } from "lodash";
 
@@ -144,7 +144,7 @@ const Administration = observer(() => {
               </h2>
               <Button
                 variant="contained"
-                startIcon={<Plus />}
+                // startIcon={<Plus />}
                 onClick={() => handleCompanyOpen()}
                 sx={{
                   backgroundColor: "#145A32",
@@ -176,7 +176,7 @@ const Administration = observer(() => {
               </h2>
               <Button
                 variant="contained"
-                startIcon={<Plus />}
+                // startIcon={<Plus />}
                 onClick={() => handleUserOpen()}
                 sx={{
                   backgroundColor: "#145A32",
@@ -226,7 +226,7 @@ const Administration = observer(() => {
           <h1 className="text-2xl text-gray-800 font-bold text-left">
             Administration
           </h1>
-          <p className="text-gray-600 text-base">
+          <p className="text-gray-600 text-base text-left">
             Manage companies, users, and system configuration
           </p>
         </div>
