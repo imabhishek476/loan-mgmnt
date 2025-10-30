@@ -4,7 +4,7 @@ import { Search, Trash2, User, Plus } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { TextField } from "@mui/material";
+// import { TextField } from "@mui/material";
 import moment from "moment";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -69,44 +69,55 @@ const handleReset = async () => {
   }, []);
   return (
     <div className="">
-      <LocalizationProvider dateAdapter={AdapterMoment}>
-        <div className="mb-3 flex flex-wrap gap-2 items-center">
-          {/* Search */}
-          <div className="flex gap-2 items-center">
-            <div className="relative">
-        <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-          <Search className="w-5 h-5 text-green-700" />
-        </span>
-        <input
-          type="text"
-          placeholder="Search by Customer or Company"
-                className="w-96 pl-10 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-        />
-      </div>
-            <button
-              className="flex items-center gap-1 text-white bg-green-800 hover:bg-green-900 px-2 py-1 rounded transition-all duration-200 hover:shadow-lg"
+      <div className="mb-3 flex flex-col sm:flex-row gap-2">
+        {/* Search */}
+        <div className="flex flex-col sm:flex-row  gap-2 items-left">
+          <div className="relative flex-grow min-w-[250px] max-w-md">
+            <input
+              type="text"
+              placeholder="Search by Customer or Company"
+              className="w-full sm:p-2 pr-10 pl-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <span
+              className="absolute sm:hidden inset-y-0 right-0 flex items-center  pr-3  cursor-pointer"
               onClick={handleFilter}
             >
-              <Search size={15} />
-              <span className="font-sm">Search</span>
-            </button>
+              <Search className="w-5 h-5 text-green-700 " />
+            </span>
           </div>
-          <DatePicker
-            label="Issue Date"
-            value={issueDateFilterInput}
-            onChange={(newValue) => setIssueDateFilterInput(newValue)}
-            //@ts-ignore
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                className="w-44"
-                size="small"
-                variant="outlined"
-              />
-            )}
-          />
+
+          <button
+            className=" hidden sm:flex items-center gap-1 text-white bg-green-800 hover:bg-green-900 px-2 py-1 rounded transition-all duration-200 hover:shadow-lg"
+            onClick={handleFilter}
+          >
+            <Search size={15} />
+            <span className="font-sm">Search</span>
+          </button>
+        </div>
+        <div className="flex gap-2 items-center">
+          <LocalizationProvider dateAdapter={AdapterMoment}>
+            <DatePicker
+              label="Issue Date"
+              value={issueDateFilterInput}
+              onChange={(newValue) => setIssueDateFilterInput(newValue)}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  sx: {
+                    "& .MuiInputBase-root": {
+                      padding: "0px 4px",
+                      minHeight: "32px", // make it a bit shorter
+                    },
+                    "& .MuiInputBase-input": {
+                      padding: "4px 6px", // actual text padding
+                    },
+                  },
+                },
+              }}
+            />
+          </LocalizationProvider>
           <button
             className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-1 rounded transition-colors duration-200"
             onClick={handleFilter}
@@ -114,6 +125,7 @@ const handleReset = async () => {
             <Search size={20} />
             <span className="font-medium">Filter</span>
           </button>
+
           <button
             className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded transition-colors duration-200"
             onClick={handleReset}
@@ -121,7 +133,7 @@ const handleReset = async () => {
             <span className="font-medium">Reset</span>
           </button>
         </div>
-      </LocalizationProvider>
+      </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
         {loading ? (
@@ -158,99 +170,109 @@ const handleReset = async () => {
               {
                 title: "Total Loan Amount",
                 render: (rowData) => {
-                    const clientLoans = loanStore.loans.filter(
+                  const clientLoans = loanStore.loans.filter(
                     (loan) =>
                       loan.client === rowData._id ||
                       loan.client?.["_id"] === rowData._id
-                    );
+                  );
 
-                    const totalGiven = clientLoans.reduce(
-                      (acc, loan) => acc + (loan.subTotal || 0),
-                      0
-                    );
+                  const totalGiven = clientLoans.reduce(
+                    (acc, loan) => acc + (loan.subTotal || 0),
+                    0
+                  );
 
-                    return (
-                      <span className="font-semibold text-green-700">
-                        ${totalGiven.toLocaleString()}
-                      </span>
-                    );
-                  },
+                  return (
+                    <span className="font-semibold text-green-700">
+                      ${totalGiven.toLocaleString()}
+                    </span>
+                  );
                 },
-          {
-    title: "Paid",
-    render: (rowData) => {
-      const clientLoans = loanStore.loans.filter(
-        (loan) =>
-          //@ts-ignore
-          loan.client === rowData._id || loan.client?._id === rowData._id
-      );
+              },
+              {
+                title: "Paid",
+                render: (rowData) => {
+                  const clientLoans = loanStore.loans.filter(
+                    (loan) =>
+                      //@ts-ignore
+                      loan.client === rowData._id ||
+                      //@ts-ignore
+                      loan.client?._id === rowData._id
+                  );
 
-    let totalPaid = 0;
-    let totalRemaining = 0;
+                  let totalPaid = 0;
+                  let totalRemaining = 0;
 
-    clientLoans.forEach((loan) => {
-      const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
-      const today = moment();
-      const monthsPassed = today.diff(issueDate, "months") + 1;
-      const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
-      const currentTerm =
-        allowedTerms.find((t) => t >= monthsPassed) || loan.loanTerms;
-      const subTotal = Number(loan.subTotal || 0);
-      const monthlyRate = Number(loan.monthlyRate || 0);
-      const paidAmount = Number(loan.paidAmount || 0);
-      const interestType = loan.interestType || "flat";
-      let interest = 0;
-      if (interestType === "flat") {
-        interest = subTotal * (monthlyRate / 100) * currentTerm;
-      } else if (interestType === "compound") {
-        interest = subTotal * (Math.pow(1 + monthlyRate / 100, currentTerm) - 1);
-      }
-      const totalLoan = subTotal + interest;
-      const remaining = Math.max(totalLoan - paidAmount, 0);
-      console.log(
-        `Loan: ${loan._id} | Months Passed: ${monthsPassed} | Term: ${currentTerm} | Subtotal: ${subTotal} | Interest: ${interest.toFixed(
-          2
-        )} | Total: ${totalLoan.toFixed(2)} | Paid: ${paidAmount.toFixed(
-          2
-        )} | Remaining: ${remaining.toFixed(2)}`
-      );
-      totalPaid += paidAmount;
-      if (!["Paid Off", "Merged"].includes(loan.status)) {
-        totalRemaining += remaining;
-      }
-    });
-    const allPaidOff = clientLoans.every(
-      (loan) => loan.status === "Paid Off" || loan.status === "Merged"
-    );
-
-    return (
-      <span className="font-semibold">
-                    <span
-                      className={`${
-                        allPaidOff ? "text-green-600" : "text-blue-600"
-                      }`}
-                    >
-          $
-          {totalPaid.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </span>
-            <br/>
-        {totalRemaining > 0 && (
-          <span className="text-red-600 text-xs font-medium">
-            (Pending: $
-            {totalRemaining.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-            )
-          </span>
-        )}
-                      </span>
+                  clientLoans.forEach((loan) => {
+                    const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+                    const today = moment();
+                    const monthsPassed = today.diff(issueDate, "months") + 1;
+                    const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
+                    const currentTerm =
+                      allowedTerms.find((t) => t >= monthsPassed) ||
+                      loan.loanTerms;
+                    const subTotal = Number(loan.subTotal || 0);
+                    const monthlyRate = Number(loan.monthlyRate || 0);
+                    const paidAmount = Number(loan.paidAmount || 0);
+                    const interestType = loan.interestType || "flat";
+                    let interest = 0;
+                    if (interestType === "flat") {
+                      interest = subTotal * (monthlyRate / 100) * currentTerm;
+                    } else if (interestType === "compound") {
+                      interest =
+                        subTotal *
+                        (Math.pow(1 + monthlyRate / 100, currentTerm) - 1);
+                    }
+                    const totalLoan = subTotal + interest;
+                    const remaining = Math.max(totalLoan - paidAmount, 0);
+                    console.log(
+                      `Loan: ${
+                        loan._id
+                      } | Months Passed: ${monthsPassed} | Term: ${currentTerm} | Subtotal: ${subTotal} | Interest: ${interest.toFixed(
+                        2
+                      )} | Total: ${totalLoan.toFixed(
+                        2
+                      )} | Paid: ${paidAmount.toFixed(
+                        2
+                      )} | Remaining: ${remaining.toFixed(2)}`
                     );
-                  },
+                    totalPaid += paidAmount;
+                    if (!["Paid Off", "Merged"].includes(loan.status)) {
+                      totalRemaining += remaining;
+                    }
+                  });
+                  const allPaidOff = clientLoans.every(
+                    (loan) =>
+                      loan.status === "Paid Off" || loan.status === "Merged"
+                  );
+
+                  return (
+                    <span className="font-semibold">
+                      <span
+                        className={`${
+                          allPaidOff ? "text-green-600" : "text-blue-600"
+                        }`}
+                      >
+                        $
+                        {totalPaid.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                      <br />
+                      {totalRemaining > 0 && (
+                        <span className="text-red-600 text-xs font-medium">
+                          (Pending: $
+                          {totalRemaining.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                          )
+                        </span>
+                      )}
+                    </span>
+                  );
                 },
+              },
               {
                 title: "Issue Date(latest loan)",
                 render: (rowData) => {

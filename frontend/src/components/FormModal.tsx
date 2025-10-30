@@ -645,7 +645,7 @@ const FormModal = ({
                   return (
                     <div
                       key={field.key}
-                      className="flex flex-col sm:flex-row  gap-2 items-center"
+                      className="flex flex-col sm:flex-row  gap-2 items-left"
                     >
                       <div className="flex flex-col flex-2">
                         <label className="font-medium text-gray-700 whitespace-nowrap pb-2">

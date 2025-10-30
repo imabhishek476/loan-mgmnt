@@ -330,16 +330,23 @@ const handleClientUpdate = async (_id: string, data: any) => {
     }
 
     return (
-      <ResponsiveContainer width="50%" height={400}>
+     <div className="w-full h-[300px] sm:h-[400px]">
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
-          margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+          margin={{ top: 20, right: 20, bottom: 20, left: 10 }}
         >
           <CartesianGrid strokeDasharray="4 4" />
-          <XAxis dataKey="name" />
+          <XAxis
+             dataKey="name"
+             tick={{ fontSize: 12 }}
+             interval={0}
+             angle={-15}
+             dy={10}
+           />
           <YAxis tickFormatter={formatCurrency} />
           <Tooltip formatter={formatCurrency} />
-          <Legend />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
           <Bar
             dataKey="totalLoan"
             name="Total Loan"
@@ -354,6 +361,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
           />
         </BarChart>
       </ResponsiveContainer>
+     </div>
     );
   };
   useEffect(() => {
