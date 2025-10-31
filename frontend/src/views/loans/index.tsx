@@ -62,7 +62,7 @@ const Loans = observer(
       company: "",
       baseAmount: 0,
       subtotal: 0,
-      loanTerms: 24,
+      loanTerms: "",
       issueDate: moment().format("MM-DD-YYYY"),
       checkNumber: "",
       fees: {
@@ -216,8 +216,7 @@ useEffect(() => {
   const total =
     activeLoans
       ?.filter((loan) => selectedLoanIds.includes(loan._id))
-      ?.reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining, 0) ||
-    0;
+      ?.reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining,0) || 0;
 
   setPreviousLoanAmount(total);
 }, [selectedLoanIds, activeLoans]);
@@ -339,7 +338,7 @@ useEffect(() => {
     ];
 
     return (
-      <div className="flex flex-col bg-white rounded-lg text-left p-2">
+      <div className="flex flex-col rounded-lg text-left p-2">
         {/* Header & Table */}
         {!fromClientPage && showTable && (
           <>

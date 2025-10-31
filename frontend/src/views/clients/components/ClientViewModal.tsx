@@ -20,12 +20,14 @@ import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
 import { Button, Tooltip } from "@mui/material";
 import Loans from "../../loans";
 import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
+import EditLoanModal from "../../../components/EditLoanModal";
 
 interface ClientViewModalProps {
   open: boolean;
   onClose: () => void;
   client: any;
   onEditClient: (client: any) => void;
+  initialEditingLoan?: any;
 }
 
 const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModalProps) => {
@@ -34,17 +36,19 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
   const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
   const [loanPayments, setLoanPayments] = useState<Record<string, any[]>>({});
   const [loanModalOpen, setLoanModalOpen] = useState(false);
+  const [loanEditModalOpen, setEditLoanModalOpen] = useState(false);
   const [showAllTermsMap, setShowAllTermsMap] = useState<
     Record<string, boolean>
   >({});
   const hasLoaded = useRef(false);
+  
   const [selectedClientForLoan, setSelectedClientForLoan] = useState<any>(null);
   const companyLoanTerms = (loan: any) => {
     const company = companyStore.companies.find((c) => c._id === loan.company);
     return company?.loanTerms?.length ? company.loanTerms : [12, 24, 36]; // fallback
   };
 const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({});
-const [editingLoan, setEditingLoan] = useState<any>(null);
+const [editingLoanId, setEditingLoanId] = useState<any>(null);
   const loadInitialData = async () => {
     try {
       await Promise.all([
@@ -423,25 +427,21 @@ useEffect(() => {
                                   className="text-red-600"
                                 />
                               )}
-                              {/* <span>
-                                <Pencil
-                                  size={16}
-                                  className="text-green-700 inline-block cursor-pointer hover:text-green-900"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedClientForLoan(client);
-                                    console.log("Editing loan:", client);
-                                    setLoanModalOpen(true);
-                                    setTimeout(() => {
-                                      const event = new CustomEvent(
-                                        "editLoanFromClient",
-                                        { detail: loan }
-                                      );
-                                      window.dispatchEvent(event);
-                                    }, 10);
-                                  }}
-                                />
-                              </span> */}
+                              <span>
+                                {loan.status !== "Merged" && (
+                                    <Pencil
+                                      size={16}
+                                      className="text-green-700 inline-block cursor-pointer hover:text-green-900"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedClientForLoan(client);
+                                        console.log("Editing loan:", client);
+                                   setEditLoanModalOpen(true);
+                                        setEditingLoanId(loan._id);
+                                      }}
+                                    />
+                                  )}
+                              </span>
                             </div>
                           </div>
                         </td>
@@ -736,15 +736,21 @@ useEffect(() => {
           defaultClient={selectedClientForLoan}
           onClose={() => {
             setLoanModalOpen(false);
-            setEditingLoan(null);
           }}
           showTable={false}
           fromClientPage={true}
-          // @ts-ignore
-          editingLoanProp={editingLoan}
         />
       )}
-
+      {loanEditModalOpen && editingLoanId && (
+        <EditLoanModal
+          loanId={editingLoanId}
+          onClose={() => {
+            setEditLoanModalOpen(false);
+            setEditingLoanId(null);
+            loanStore.fetchLoans(); 
+          }}
+        />
+      )}
       {paymentLoan && (
         <LoanPaymentModal
           open={!!paymentLoan}

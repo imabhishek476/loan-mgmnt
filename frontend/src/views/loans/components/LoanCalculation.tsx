@@ -98,8 +98,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
   company,
   interestType: interestTypeProp,
   monthlyRate: rateProp,
-  // loanTermMonths: termProp,
-  // loanTermsOptions,
+  loanTermMonths: termProp, 
   includePreviousLoans = false,
   previousLoanTotal = 0,
   endDate,
@@ -115,7 +114,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
     interestTypeProp
   );
   const defaultTermSet = React.useRef<{ [companyName: string]: boolean }>({});
-  const [loanTerm, setLoanTerm] = useState<number>(24);
+  const [loanTerm, setLoanTerm] = useState<number>(termProp || 24);
   const ALL_LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
   const currentBase = parseNumberInput(baseInput);

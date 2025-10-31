@@ -1,0 +1,1003 @@
+// src/components/EditLoanModal.tsx
+import React, { useState, useEffect } from "react";
+import { observer } from "mobx-react-lite";
+import { toast } from "react-toastify";
+import { X, Save, Eye, RefreshCw } from "lucide-react";
+import { clientStore } from "../store/ClientStore";
+import { companyStore } from "../store/CompanyStore";
+import { loanStore } from "../store/LoanStore";
+import moment from "moment";
+import type { Moment } from "moment";
+import {
+  Button,
+  Switch,
+  Autocomplete,
+  TextField as MuiTextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  CircularProgress,
+} from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { DatePicker } from "@mui/x-date-pickers";
+import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
+import { fetchLoanById } from "../services/LoanService";
+
+// Utility
+const parseNumber = (val: any): number => {
+  if (typeof val === "string") return parseFloat(val) || 0;
+  return val || 0;
+};
+
+// Exact same as in Loans.tsx
+const calculateLoan = (
+  base: number,
+  fees: Record<string, { value: number; type: "flat" | "percentage" }>,
+  interestType: "flat" | "compound",
+  monthlyRate: number,
+  termMonths: number,
+  previousLoanTotal: number = 0
+) => {
+  const num = (val: any): number =>
+    typeof val === "string" ? parseFloat(val) || 0 : val || 0;
+
+  const baseNum = num(base);
+  const prevLoan = num(previousLoanTotal);
+  const totalBase = baseNum + prevLoan;
+
+  console.log("🔹 --- Loan Calculation Start ---");
+  console.log("Base Amount:", baseNum);
+  console.log("Previous Loan Amount:", prevLoan);
+  console.log("Total Base (Base + Previous):", totalBase);
+  console.log("Interest Type:", interestType);
+  console.log("Monthly Rate:", monthlyRate);
+  console.log("Term (Months):", termMonths);
+  console.log("Fees Object:", fees);
+
+  if (totalBase <= 0) {
+    console.warn("⚠️ Total base is 0 or negative — skipping calculation");
+    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
+  }
+
+  // ✅ Fee calculation
+  const feeKeys = [
+    "administrativeFee",
+    "applicationFee",
+    "attorneyReviewFee",
+    "brokerFee",
+    "annualMaintenanceFee",
+  ];
+
+  const feeTotal = feeKeys.reduce((sum, key) => {
+    const fee = fees[key];
+    if (!fee) return sum;
+
+    const value = num(fee.value);
+    const add = fee.type === "percentage" ? (baseNum * value) / 100 : value;
+
+    console.log(
+      `Fee: ${key} | Type: ${fee.type} | Value: ${value} | Added: ${add.toFixed(
+        2
+      )}`
+    );
+
+    return sum + add;
+  }, 0);
+
+  console.log("Total Fees:", feeTotal.toFixed(2));
+
+  const subtotal = totalBase + feeTotal;
+  let interestAmount = 0;
+
+  // ✅ Interest calculation
+  if (termMonths > 0 && monthlyRate > 0) {
+    if (interestType === "flat") {
+      interestAmount = subtotal * (monthlyRate / 100) * termMonths;
+      console.log(
+        `Flat Interest: subtotal(${subtotal.toFixed(
+          2
+        )}) × rate(${monthlyRate}%) × term(${termMonths}) = ${interestAmount.toFixed(
+          2
+        )}`
+      );
+    } else {
+      interestAmount =
+        subtotal * (Math.pow(1 + monthlyRate / 100, termMonths) - 1);
+      console.log(
+        `Compound Interest: subtotal(${subtotal.toFixed(2)}) × ((1 + ${
+          monthlyRate / 100
+        })^${termMonths} - 1) = ${interestAmount.toFixed(2)}`
+      );
+    }
+  }
+
+  const totalWithInterest = subtotal + interestAmount;
+
+  console.log("Subtotal (Base + Fees + Previous):", subtotal.toFixed(2));
+  console.log("Interest Amount:", interestAmount.toFixed(2));
+  console.log("Total With Interest:", totalWithInterest.toFixed(2));
+  console.log("🔹 --- Loan Calculation End ---");
+
+  return {
+    subtotal: parseFloat(subtotal.toFixed(2)),
+    interestAmount: parseFloat(interestAmount.toFixed(2)),
+    totalWithInterest: parseFloat(totalWithInterest.toFixed(2)),
+  };
+};
+
+const EditLoanModal = observer(
+  ({ loanId, onClose }: { loanId: string; onClose: () => void }) => {
+    const [formData, setFormData] = useState<any>(null);
+    const [companyData, setCompanyData] = useState<any>(null);
+    const [activeLoans, setActiveLoans] = useState<any[]>([]);
+    const [selectedLoanIds, setSelectedLoanIds] = useState<string[]>([]);
+    const [overlapMode, setOverlapMode] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [endDate, setEndDate] = useState<string | null>(null);
+    const [viewLoan, setViewLoan] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [previousToggleDisabled, setPreviousToggleDisabled] = useState(false);
+
+    useEffect(() => {
+      let mounted = true;
+
+      const load = async () => {
+        try {
+          setLoading(true);
+          const loan = await fetchLoanById(loanId);
+          if (!mounted) return;
+
+          if (!loan) {
+            toast.error("Loan not found");
+            onClose();
+            return;
+          }
+
+          await Promise.all([
+            companyStore.fetchCompany(),
+            clientStore.fetchClients(),
+            loanStore.fetchLoans(),
+          ]);
+
+          const company = companyStore.companies.find(
+            (c) => c._id === loan.company
+          );
+          const client = clientStore.clients.find((c) => c._id === loan.client);
+
+          if (!company || !client) {
+            toast.error("Client or company missing");
+            onClose();
+            return;
+          }
+
+          const mapFee = (fee: any) => ({
+            value: fee?.value || 0,
+            type: fee?.type === "percentage" ? "percentage" : "flat",
+          });
+
+          const fees = {
+            administrativeFee: mapFee(loan.fees?.administrativeFee),
+            applicationFee: mapFee(loan.fees?.applicationFee),
+            attorneyReviewFee: mapFee(loan.fees?.attorneyReviewFee),
+            brokerFee: mapFee(loan.fees?.brokerFee),
+            annualMaintenanceFee: mapFee(loan.fees?.annualMaintenanceFee),
+          };
+          const baseValue = Number(
+            ((loan.baseAmount || 0) - (loan.previousLoanAmount || 0)).toFixed(2)
+          );
+
+          const baseValueWithPerious = loan.baseAmount.toFixed(2);
+          setFormData({
+            ...loan,
+            client: loan.client,
+            company: loan.company,
+            baseAmount: baseValue || 0,
+            checkNumber: loan.checkNumber || "",
+            fees,
+            interestType: loan.interestType || "flat",
+            monthlyRate: loan.monthlyRate || 0,
+            loanTerms: loan.loanTerms || 24,
+            subtotal: baseValueWithPerious + loan.baseAmount,
+            issueDate: moment(loan.issueDate).format("MM-DD-YYYY"),
+          });
+
+          setCompanyData(company);
+
+          const loans =
+            loanStore.loans?.filter(
+              (l) =>
+                l.client === loan.client &&
+                l.status !== "Paid Off" &&
+                l.status !== "Merged" &&
+                l.loanStatus !== "Deactivated" &&
+                l._id !== loanId
+            ) || [];
+          setActiveLoans(loans);
+
+          if (loan.previousLoanIds?.length > 0) {
+            setOverlapMode(true);
+            setSelectedLoanIds(loan.previousLoanIds);
+            setPreviousToggleDisabled(true);
+
+            const previousLoans = loanStore.loans.filter((l) =>
+              loan.previousLoanIds.includes(l._id)
+            );
+
+            const totalRemaining = previousLoans.reduce((sum, l) => {
+              const details = getLoanRunningDetails(l);
+              return sum + (details?.remaining || 0);
+            }, 0);
+
+            setFormData((prev) => ({
+              ...prev,
+              previousLoanAmount: parseFloat(totalRemaining.toFixed(2)),
+            }));
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to load loan");
+          onClose();
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      };
+
+      load();
+
+      return () => {
+        mounted = false;
+      };
+    }, [loanId]);
+
+    const getLoanRunningDetails = (loan: any) => {
+      const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
+      const issue = moment(loan.issueDate);
+      const monthsPassed = Math.max(0, moment().diff(issue, "months"));
+      const runningTenure =
+        ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
+        ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
+      const calc = calculateLoan(
+        loan.baseAmount,
+        loan.fees,
+        loan.interestType,
+        loan.monthlyRate,
+        runningTenure,
+        loan.previousLoanAmount || 0
+      );
+      return {
+        monthsPassed,
+        runningTenure,
+        total: calc.totalWithInterest,
+        remaining: calc.totalWithInterest - (loan.paidAmount || 0),
+      };
+    };
+
+    const selectedPreviousLoanTotal = activeLoans
+      .filter((loan) => selectedLoanIds.includes(loan._id))
+      .reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining, 0);
+
+    const handleView = async (loan: any) => {
+      try {
+        await fetchPaymentsByLoan(loan._id);
+      } catch {}
+      setViewLoan(loan);
+    };
+
+    const handleCloseView = () => setViewLoan(null);
+
+    const handleSave = async () => {
+      if (saving || !formData) return;
+      setSaving(true);
+      try {
+        if (!formData.client) throw new Error("Client is required");
+        if (!formData.company) throw new Error("Company is required");
+        if (!formData.baseAmount || formData.baseAmount <= 0)
+          throw new Error("Base amount must be > 0");
+        if (!formData.loanTerms || formData.loanTerms <= 0)
+          throw new Error("Valid loan term required");
+
+        const calc = calculateLoan(
+          formData.baseAmount,
+          formData.fees,
+          formData.interestType,
+          formData.monthlyRate,
+          formData.loanTerms,
+          overlapMode ? selectedPreviousLoanTotal : 0
+        );
+
+        const payload = {
+          ...formData,
+          baseAmount: formData.baseAmount,
+          subtotal: calc.subtotal,
+          totalLoan: calc.totalWithInterest,
+          previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
+          previousLoanIds: overlapMode ? [...selectedLoanIds] : [],
+          endDate:
+            endDate ||
+            moment(formData.issueDate, "MM-DD-YYYY")
+              .add(formData.loanTerms, "months")
+              .format("MM-DD-YYYY"),
+          status: "Active",
+        };
+
+        await loanStore.updateLoan(loanId, payload);
+        toast.success("Loan updated successfully");
+        onClose();
+      } catch (error: any) {
+        toast.error(error.message || "Failed to update loan");
+        console.error(error);
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    // Guarded useEffect for endDate
+    useEffect(() => {
+      if (!formData?.issueDate || !formData?.loanTerms) return;
+      const start = moment(formData.issueDate, "MM-DD-YYYY");
+      const end = start.clone().add(formData.loanTerms, "months");
+      setEndDate(end.format("MM-DD-YYYY"));
+    }, [formData?.loanTerms, formData?.issueDate]);
+
+    if (loading) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg flex flex-col items-center space-y-3">
+            <CircularProgress color="success" />
+            <span className="text-gray-700 font-medium">Loading loan...</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (!formData || !companyData) return null;
+
+    const ALL_LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
+    const currentCalc = calculateLoan(
+      formData.baseAmount,
+      formData.fees,
+      formData.interestType,
+      formData.monthlyRate,
+      formData.loanTerms,
+      overlapMode ? selectedPreviousLoanTotal : 0
+    );
+
+    const feeItems = [
+      { key: "applicationFee", label: "Application Fee" },
+      { key: "brokerFee", label: "Broker Fee" },
+      { key: "administrativeFee", label: "Administrative Fee" },
+      { key: "attorneyReviewFee", label: "Attorney Review Fee" },
+      { key: "annualMaintenanceFee", label: "Annual Maintenance Fee" },
+    ];
+
+    const formatDate = (dateStr: string) =>
+      moment(dateStr, "MM-DD-YYYY").format("MMM DD, YYYY");
+
+    const LoanTemsCard = () => {
+      const start = moment(formData.issueDate, "MM-DD-YYYY");
+      return (
+        <div className="px-2 py-2">
+          <div className="overflow-x-auto pb-2 -mx-2 px-2">
+            <div className="flex space-x-2 min-w-max">
+              {ALL_LOAN_TERMS.map((term) => {
+                const effectiveBase = formData.previousLoanAmount
+                  ? Number(formData.baseAmount || 0) +
+                    Number(formData.previousLoanAmount || 0)
+                  : Number(formData.baseAmount || 0);
+
+                const termResult = calculateLoan(
+                  effectiveBase,
+                  formData.fees,
+                  formData.interestType,
+                  formData.monthlyRate,
+                  term
+                );
+
+                const isSelected = term <= formData.loanTerms;
+                const termEnd = start.clone().add(term, "months");
+
+                return (
+                  <div
+                    key={term}
+                    className={`flex-shrink-0 w-32 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
+              ${
+                isSelected
+                  ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
+                  : "bg-white border-gray-200 text-gray-700"
+              }`}
+                    onClick={() => {
+                      setFormData((prev: any) => ({
+                        ...prev,
+                        loanTerms: term,
+                      }));
+                    }}
+                  >
+                    <div className="font-medium text-sm font-semibold">
+                      {term} months
+                    </div>
+
+                    <div
+                      className={`text-xs font-medium mb-1 ${
+                        isSelected ? "text-yellow-300" : "text-gray-700"
+                      }`}
+                    >
+                      Interest: ${termResult.interestAmount.toFixed(2)}
+                    </div>
+
+                    <div
+                      className={`text-xs font-medium mb-1 ${
+                        isSelected ? "text-yellow-300" : "text-gray-700"
+                      }`}
+                    >
+                      Total: $
+                      {(
+                        termResult.subtotal + termResult.interestAmount
+                      ).toFixed(2)}
+                    </div>
+
+                    {/* {formData.previousLoanAmount > 0 && (
+                      <div
+                        className={`text-[11px] italic ${
+                          isSelected ? "text-yellow-200" : "text-gray-500"
+                        }`}
+                      >
+                        (Incl. Prev Loan: $
+                        {formData.previousLoanAmount.toFixed(2)})
+                      </div>
+                    )} */}
+
+                    <div
+                      className={`text-xs ${
+                        isSelected ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      Date: {termEnd.format("MMM DD, YYYY")}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <LocalizationProvider dateAdapter={AdapterMoment}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2">
+          <div className="bg-white shadow-lg w-full max-w-6xl flex flex-col rounded-lg">
+            {/* Header */}
+            <div className="flex justify-between items-center p-3 border-b bg-white sticky top-0 z-10 rounded-md">
+              <h2 className="text-xl font-bold text-gray-800">Edit Loan</h2>
+              <button
+                className="text-gray-500 hover:text-gray-800"
+                onClick={onClose}
+              >
+                <X />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden px-4 pt-1 flex flex-col lg:flex-row gap-4 flex-1">
+              {/* Left: Form Fields */}
+              <div className="flex-1 space-y-3">
+                {/* Client */}
+                <div className="flex flex-col text-left py-1">
+                  <label className="mb-1 font-medium text-gray-700">
+                    Client
+                  </label>
+                  <Autocomplete
+                    disablePortal
+                    options={
+                      clientStore.clients?.map((c) => ({
+                        label: c.fullName,
+                        value: c._id,
+                      })) || []
+                    }
+                    getOptionLabel={(opt) => opt.label}
+                    value={
+                      clientStore.clients
+                        ?.map((c) => ({ label: c.fullName, value: c._id }))
+                        .find((opt) => opt.value === formData.client) || null
+                    }
+                    onChange={(e, newValue) =>
+                      setFormData((prev: any) => ({
+                        ...prev,
+                        client: newValue?.value || "",
+                      }))
+                    }
+                    renderInput={(params) => (
+                      <MuiTextField
+                        {...params}
+                        placeholder="Select Client"
+                        size="small"
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* Company */}
+                <div className="flex flex-col text-left py-1">
+                  <label className="mb-1 font-medium text-gray-700">
+                    Company
+                  </label>
+                  <Autocomplete
+                    options={
+                      companyStore.companies
+                        ?.filter((c) => c.activeCompany)
+                        .map((c) => ({ label: c.companyName, value: c._id })) ||
+                      []
+                    }
+                    getOptionLabel={(opt) => opt.label}
+                    value={
+                      companyStore.companies
+                        ?.filter((c) => c.activeCompany)
+                        .map((c) => ({ label: c.companyName, value: c._id }))
+                        .find((opt) => opt.value === formData.company) || null
+                    }
+                    onChange={(e, newValue) => {
+                      const selectedCompany = companyStore.companies.find(
+                        (c) => c._id === newValue?.value
+                      );
+
+                      if (selectedCompany) {
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          company: selectedCompany._id,
+                          companyName: selectedCompany.companyName || "",
+                          backgroundColor:
+                            selectedCompany.backgroundColor || "#555555",
+                        }));
+                      } else {
+                        // Reset if cleared
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          company: "",
+                          companyName: "",
+                          backgroundColor: "#555555",
+                        }));
+                      }
+
+                      setCompanyData(selectedCompany || null);
+                    }}
+                    renderInput={(params) => (
+                      <MuiTextField
+                        {...params}
+                        placeholder="Company"
+                        size="small"
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* Issue Date */}
+                <div className="flex flex-col text-left py-1 z-20">
+                  <label className="mb-1 font-medium text-gray-700">
+                    Issue Date
+                  </label>
+                  <DatePicker
+                    value={moment(formData.issueDate, "MM-DD-YYYY")}
+                    onChange={(date: Moment | null) =>
+                      setFormData((prev: any) => ({
+                        ...prev,
+                        issueDate: date ? date.format("MM-DD-YYYY") : "",
+                      }))
+                    }
+                    slotProps={{ textField: { size: "small" } }}
+                  />
+                </div>
+
+                {/* Check Number */}
+                <div className="flex flex-col text-left py-1">
+                  <label className="mb-1 font-medium text-gray-700">
+                    Check Number
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.checkNumber || ""}
+                    onChange={(e) =>
+                      setFormData((prev: any) => ({
+                        ...prev,
+                        checkNumber: e.target.value,
+                      }))
+                    }
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+
+                {/* Overlap Mode */}
+                {activeLoans.length > 0 && (
+                  <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold">
+                        Previous Loan
+                      </label>
+                      <Switch
+                        checked={overlapMode}
+                        onCheckedChange={(val) =>
+                          !previousToggleDisabled && setOverlapMode(val)
+                        }
+                      />
+                    </div>
+
+                    <div
+                      className={`transition-all duration-700 ease-in-out overflow-auto ${
+                        overlapMode
+                          ? "max-h-40 opacity-100"
+                          : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      {overlapMode &&
+                        activeLoans.map((loan) => {
+                          const { runningTenure, total, remaining } =
+                            getLoanRunningDetails(loan);
+                          const isSelected = selectedLoanIds.includes(loan._id);
+                          return (
+                            <div
+                              key={loan._id}
+                              onClick={() =>
+                                setSelectedLoanIds((prev) =>
+                                  isSelected
+                                    ? prev.filter((id) => id !== loan._id)
+                                    : [...prev, loan._id]
+                                )
+                              }
+                              className={`flex justify-between items-center p-3 border rounded-lg shadow-sm cursor-pointer transition ${
+                                isSelected
+                                  ? "bg-green-100 border-green-400"
+                                  : "bg-white hover:bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col text-xs">
+                                  <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
+                                    Issue Date: {formatDate(loan.issueDate)}
+                                  </span>
+                                  <span className="font-semibold">
+                                    Current Tenure:{" "}
+                                    <b>{runningTenure} Months</b>
+                                  </span>
+                                  <span className="text-green-700 font-bold">
+                                    Total: $
+                                    {total.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                    })}
+                                    ({" "}
+                                    <span className="text-red-600 font-bold">
+                                      Remaining: $
+                                      {remaining.toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                      })}
+                                    </span>
+                                    )
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleView(loan);
+                                  }}
+                                >
+                                  <Eye size={18} />
+                                </IconButton>
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() =>
+                                  setSelectedLoanIds((prev) =>
+                                    isSelected
+                                      ? prev.filter((id) => id !== loan._id)
+                                      : [...prev, loan._id]
+                                  )
+                                }
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-4 h-4 m-0 accent-green-600 cursor-pointer"
+                              />
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex lg:max-w-3xl">
+                <div
+                  className="rounded-xl shadow-sm px-0 min-w-0"
+                  style={{
+                    backgroundColor: companyData.backgroundColor || "#555555",
+                  }}
+                >
+                  <div className="flex items-center gap-2 px-2 py-2 rounded-lg">
+                    <h3 className="text-sm font-semibold text-white">
+                      Loan Calculation - {companyData.companyName}
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 px-2">
+                    <div className="flex flex-col">
+                      <label className="text-sm text-white mb-1 font-medium">
+                        Base Amount
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={formData.baseAmount}
+                        onChange={(e) =>
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            baseAmount: parseNumber(e.target.value),
+                          }))
+                        }
+                        className="w-full px-2 h-8 py-2 border rounded-lg bg-white text-gray-800"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-sm text-white mb-1 font-medium">
+                        Interest Type
+                      </label>
+                      <select
+                        value={formData.interestType}
+                        onChange={(e) =>
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            interestType: e.target.value as "flat" | "compound",
+                          }))
+                        }
+                        className="w-full h-8 px-2 border rounded-lg bg-white text-gray-800"
+                      >
+                        <option value="flat">Flat Interest</option>
+                        <option value="compound">Compound Interest</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-sm text-white mb-1 font-medium">
+                        Monthly Interest (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.monthlyRate}
+                        onChange={(e) =>
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            monthlyRate: parseNumber(e.target.value),
+                          }))
+                        }
+                        className="w-full h-8 px-2 py-2 border rounded-lg bg-white text-gray-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mb-0 px-2">
+                    {feeItems.map((item) => {
+                      const fee = formData.fees[item.key];
+                      if (!fee) return null;
+                      const isPercentage = fee.type === "percentage";
+                      const contribution = isPercentage
+                        ? (formData.baseAmount * fee.value) / 100
+                        : fee.value;
+                      return (
+                        <div
+                          key={item.key}
+                          className="flex flex-col gap-2 pr-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-white font-medium whitespace-nowrap">
+                              {item.label}
+                            </span>
+                            <span className="text-md font-semibold text-green-700 bg-white px-1 py-0 rounded-md shadow-md">
+                              +${contribution.toFixed(2)}
+                            </span>
+                          </div>
+
+                          <div className="relative flex items-center gap-2">
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={fee.value}
+                              onChange={(e) => {
+                                const val = parseNumber(e.target.value);
+                                setFormData((prev: any) => ({
+                                  ...prev,
+                                  fees: {
+                                    ...prev.fees,
+                                    [item.key]: { ...fee, value: val },
+                                  },
+                                }));
+                              }}
+                              className="w-full h-8 px-3 py-2 border rounded-md bg-white text-gray-800"
+                              placeholder={isPercentage ? "0.00 %" : "0.00 $"}
+                            />
+                            <span className="absolute right-[70px] top-1/2 -translate-y-1/2 text-red-400 font-semibold">
+                              {isPercentage ? "%" : "$"}
+                            </span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isPercentage}
+                                onChange={() => {
+                                  setFormData((prev: any) => ({
+                                    ...prev,
+                                    fees: {
+                                      ...prev.fees,
+                                      [item.key]: {
+                                        ...fee,
+                                        type: isPercentage
+                                          ? "flat"
+                                          : "percentage",
+                                      },
+                                    },
+                                  }));
+                                }}
+                                className="sr-only peer"
+                              />
+                              <div className="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-gray-400 transition-colors relative">
+                                <div
+                                  className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md flex items-center justify-center transition-transform ${
+                                    isPercentage ? "translate-x-7" : ""
+                                  }`}
+                                >
+                                  <span className="text-sm font-bold text-gray-700">
+                                    {isPercentage ? "%" : "$"}
+                                  </span>
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="text-sm text-white mt-2 font-semibold px-2">
+                    {formData.previousLoanAmount > 0 && (
+                      <div className="flex justify-between text-yellow-300 font-semibold mt-2">
+                        <span>Previous Loan Amount Carry Forward:</span>
+                        <span>${formData.previousLoanAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span>
+                        {formData.previousLoanAmount > 0
+                          ? "Loan Amount (Base + Additional Fees + Previous Loan)"
+                          : "Loan Amount (Base + Additional Fees)"}
+                      </span>
+                      <span className="text-md text-green-700 px-2 rounded-md bg-white">
+                        $
+                        {(
+                          currentCalc.subtotal + formData.previousLoanAmount
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-2 relative max-w-full px-2">
+                    <label className="text-sm font-semibold text-white mb-2 block">
+                      Select Loan Term (
+                      <span className="font-bold">{formData.loanTerms}</span>{" "}
+                      Months)
+                    </label>
+                    <div className="flex justify-between">
+                      {ALL_LOAN_TERMS.map((term) => (
+                        <span
+                          key={term}
+                          className={`text-sm font-semibold ${
+                            term === formData.loanTerms
+                              ? "text-yellow-300 font-bold"
+                              : "text-white"
+                          }`}
+                        >
+                          {term}
+                        </span>
+                      ))}
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={ALL_LOAN_TERMS.length - 1}
+                      value={ALL_LOAN_TERMS.indexOf(formData.loanTerms)}
+                      onChange={(e) => {
+                        const idx = parseInt(e.target.value, 10);
+                        const term = ALL_LOAN_TERMS[idx] || 24;
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          loanTerms: term,
+                        }));
+                      }}
+                      className="w-full accent-white cursor-pointer"
+                    />
+                    <LoanTemsCard />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 p-4 bg-white sticky bottom-0 z-10 rounded-md">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+              >
+                {saving ? (
+                  "Saving..."
+                ) : (
+                  <>
+                    <Save size={16} /> Update Loan
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* View Loan Modal */}
+        {viewLoan && (
+          <Dialog open onClose={handleCloseView} maxWidth="sm" fullWidth>
+            <DialogTitle className="font-semibold text-xl text-green-700 border-b pb-2">
+              Loan Details
+            </DialogTitle>
+            <DialogContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Customer
+                  </p>
+                  <p className="font-medium">
+                    {clientStore.clients.find((c) => c._id === viewLoan.client)
+                      ?.fullName || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Total Loan
+                  </p>
+                  <p className="font-semibold text-green-700">
+                    $
+                    {getLoanRunningDetails(viewLoan).total.toLocaleString(
+                      undefined,
+                      { minimumFractionDigits: 2 }
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Remaining
+                  </p>
+                  <p className="font-semibold text-red-700">
+                    $
+                    {getLoanRunningDetails(viewLoan).remaining.toLocaleString(
+                      undefined,
+                      { minimumFractionDigits: 2 }
+                    )}
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseView} color="success">
+                Close
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
+      </LocalizationProvider>
+    );
+  }
+);
+
+export default EditLoanModal;

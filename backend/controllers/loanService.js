@@ -172,4 +172,30 @@ exports.recoverLoan = async (req, res) => {
     });
   }
 };
+exports.getLoanById = async (req, res) => {
+  try {
+    const { id } = req.params;
+// console.log("Fetching loan with ID:", id);
+    const loan = await Loan.findById(id);
+
+    if (!loan) {
+      return res.status(404).json({
+        success: false,
+        message: "Loan not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: loan,
+      message: "Loan fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error in getLoanById:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+};
 
