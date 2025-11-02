@@ -117,6 +117,7 @@ const EditLoanModal = observer(
     const [viewLoan, setViewLoan] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [previousToggleDisabled, setPreviousToggleDisabled] = useState(false);
+    const [originalLoan, setOriginalLoan] = useState<any>(null);
 
     useEffect(() => {
       let mounted = true;
@@ -125,6 +126,7 @@ const EditLoanModal = observer(
         try {
           setLoading(true);
           const loan = await fetchLoanById(loanId);
+          setOriginalLoan(loan);
           if (!mounted) return;
           if (!loan) {
             toast.error("Loan not found");
@@ -710,21 +712,45 @@ const handleSave = async () => {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 px-2">
-                    <div className="flex flex-col">
+                   <div className="flex flex-col">
                       <label className="text-sm text-white mb-1 font-medium">
                         Base Amount
+                        {originalLoan && (
+                          <span className="text-xs text-gray-300 ml-2">
+                            (min: ${originalLoan.baseAmount?.toLocaleString()})
+                          </span>
+                        )}
                       </label>
                       <input
                         type="number"
                         min="0"
                         step="any"
-                        value={formData.baseAmount}
-                        onChange={(e) =>
+                        value={
+                          formData.baseAmount === null || formData.baseAmount === undefined
+                            ? ""
+                            : formData.baseAmount
+                        }
+                        onChange={(e) => {
+                          const rawValue = e.target.value;
                           setFormData((prev: any) => ({
                             ...prev,
-                            baseAmount: parseNumber(e.target.value),
-                          }))
-                        }
+                            baseAmount: rawValue === "" ? "" : parseFloat(rawValue),
+                          }));
+                        }}
+                        onBlur={() => {
+                          const value = Number(formData.baseAmount);
+                          if (!isNaN(value)) {
+                            if (originalLoan && value < (originalLoan.baseAmount || 0)) {
+                              toast.error(
+                                `Base amount cannot be less than $${originalLoan.baseAmount}`
+                              );
+                              setFormData((prev: any) => ({
+                                ...prev,
+                                baseAmount: originalLoan.baseAmount,
+                              }));
+                            }
+                          }
+                        }}
                         className="w-full px-2 h-8 py-2 border rounded-lg bg-white text-gray-800"
                       />
                     </div>
@@ -758,7 +784,7 @@ const handleSave = async () => {
                         onChange={(e) =>
                           setFormData((prev: any) => ({
                             ...prev,
-                            monthlyRate: parseNumber(e.target.value),
+                            monthlyRate: e.target.value,
                           }))
                         }
                         className="w-full h-8 px-2 py-2 border rounded-lg bg-white text-gray-800"
