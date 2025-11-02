@@ -187,7 +187,7 @@ exports.getLoanById = async (req, res) => {
 
     const previousLoans = await Loan.find({
       parentLoanId: id,
-      status: "Merged",
+      status: { $in: ["Merged", "Active"] },
     }).sort({ createdAt: -1 });
 
     const obj = { ...loan.toObject(), previousLoans };
