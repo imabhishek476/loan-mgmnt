@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { X, Save, Eye, RefreshCw } from "lucide-react";
+import { X, Save, Eye } from "lucide-react";
 import { clientStore } from "../store/ClientStore";
 import { companyStore } from "../store/CompanyStore";
 import { loanStore } from "../store/LoanStore";
@@ -25,14 +25,34 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker } from "@mui/x-date-pickers";
 import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
 import { fetchLoanById } from "../services/LoanService";
+import {
+  calculateDynamicTermAndPayment,
+  calculateLoanAmounts,
+} from "../utils/loanCalculations";
 
-// Utility
 const parseNumber = (val: any): number => {
   if (typeof val === "string") return parseFloat(val) || 0;
   return val || 0;
 };
 
-// Exact same as in Loans.tsx
+const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
+const getLoanRunningDetails = (loan: any) => {
+  const { monthsPassed } = calculateDynamicTermAndPayment(loan);
+  const runningTenure =
+    ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
+
+  const loanCalc = calculateLoanAmounts({
+    ...loan,
+    loanTerms: runningTenure,
+  });
+
+  return {
+    monthsPassed,
+    runningTenure,
+    total: loanCalc?.total || 0,
+    remaining: loanCalc?.remaining || 0,
+  };
+};
 const calculateLoan = (
   base: number,
   fees: Record<string, { value: number; type: "flat" | "percentage" }>,
@@ -41,28 +61,16 @@ const calculateLoan = (
   termMonths: number,
   previousLoanTotal: number = 0
 ) => {
-  const num = (val: any): number =>
-    typeof val === "string" ? parseFloat(val) || 0 : val || 0;
-
-  const baseNum = num(base);
-  const prevLoan = num(previousLoanTotal);
-  const totalBase = baseNum + prevLoan;
-
-  console.log("🔹 --- Loan Calculation Start ---");
-  console.log("Base Amount:", baseNum);
-  console.log("Previous Loan Amount:", prevLoan);
-  console.log("Total Base (Base + Previous):", totalBase);
-  console.log("Interest Type:", interestType);
-  console.log("Monthly Rate:", monthlyRate);
-  console.log("Term (Months):", termMonths);
-  console.log("Fees Object:", fees);
+  const totalBase = base + previousLoanTotal;
 
   if (totalBase <= 0) {
-    console.warn("⚠️ Total base is 0 or negative — skipping calculation");
-    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
+    return {
+      subtotal: 0,
+      interestAmount: 0,
+      totalWithInterest: 0,
+    };
   }
 
-  // ✅ Fee calculation
   const feeKeys = [
     "administrativeFee",
     "applicationFee",
@@ -74,57 +82,26 @@ const calculateLoan = (
   const feeTotal = feeKeys.reduce((sum, key) => {
     const fee = fees[key];
     if (!fee) return sum;
-
-    const value = num(fee.value);
-    const add = fee.type === "percentage" ? (baseNum * value) / 100 : value;
-
-    console.log(
-      `Fee: ${key} | Type: ${fee.type} | Value: ${value} | Added: ${add.toFixed(
-        2
-      )}`
-    );
-
-    return sum + add;
+    const val = fee.value || 0;
+    return fee.type === "percentage" ? sum + (base * val) / 100 : sum + val;
   }, 0);
 
-  console.log("Total Fees:", feeTotal.toFixed(2));
-
   const subtotal = totalBase + feeTotal;
-  let interestAmount = 0;
 
-  // ✅ Interest calculation
+  let interestAmount = 0;
   if (termMonths > 0 && monthlyRate > 0) {
+    const rate = monthlyRate / 100;
     if (interestType === "flat") {
-      interestAmount = subtotal * (monthlyRate / 100) * termMonths;
-      console.log(
-        `Flat Interest: subtotal(${subtotal.toFixed(
-          2
-        )}) × rate(${monthlyRate}%) × term(${termMonths}) = ${interestAmount.toFixed(
-          2
-        )}`
-      );
+      interestAmount = subtotal * rate * termMonths;
     } else {
-      interestAmount =
-        subtotal * (Math.pow(1 + monthlyRate / 100, termMonths) - 1);
-      console.log(
-        `Compound Interest: subtotal(${subtotal.toFixed(2)}) × ((1 + ${
-          monthlyRate / 100
-        })^${termMonths} - 1) = ${interestAmount.toFixed(2)}`
-      );
+      interestAmount = subtotal * (Math.pow(1 + rate, termMonths) - 1);
     }
   }
-
-  const totalWithInterest = subtotal + interestAmount;
-
-  console.log("Subtotal (Base + Fees + Previous):", subtotal.toFixed(2));
-  console.log("Interest Amount:", interestAmount.toFixed(2));
-  console.log("Total With Interest:", totalWithInterest.toFixed(2));
-  console.log("🔹 --- Loan Calculation End ---");
 
   return {
     subtotal: parseFloat(subtotal.toFixed(2)),
     interestAmount: parseFloat(interestAmount.toFixed(2)),
-    totalWithInterest: parseFloat(totalWithInterest.toFixed(2)),
+    totalWithInterest: parseFloat((subtotal + interestAmount).toFixed(2)),
   };
 };
 
@@ -149,7 +126,6 @@ const EditLoanModal = observer(
           setLoading(true);
           const loan = await fetchLoanById(loanId);
           if (!mounted) return;
-
           if (!loan) {
             toast.error("Loan not found");
             onClose();
@@ -162,11 +138,35 @@ const EditLoanModal = observer(
             loanStore.fetchLoans(),
           ]);
 
+          const mergedLoans = loan.previousLoans || [];
+          if (mergedLoans.length > 0) {
+            const mergedIds = mergedLoans.map((m: any) =>
+              typeof m === "string" ? m : m._id
+            );
+            const filtered = loanStore.loans.filter((l) =>
+              mergedIds.includes(l._id)
+            );
+            setActiveLoans(filtered);
+            setOverlapMode(true);
+            setSelectedLoanIds(mergedIds);
+            setPreviousToggleDisabled(true);
+          } else {
+            const availableLoans =
+              loanStore.loans?.filter(
+                (l) =>
+                  l.client === loan.client &&
+                  l.status !== "Paid Off" &&
+                  l.status !== "Merged" &&
+                  l.loanStatus !== "Deactivated" &&
+                  l._id !== loanId
+              ) || [];
+            setActiveLoans(availableLoans);
+          }
+
           const company = companyStore.companies.find(
             (c) => c._id === loan.company
           );
           const client = clientStore.clients.find((c) => c._id === loan.client);
-
           if (!company || !client) {
             toast.error("Client or company missing");
             onClose();
@@ -185,56 +185,36 @@ const EditLoanModal = observer(
             brokerFee: mapFee(loan.fees?.brokerFee),
             annualMaintenanceFee: mapFee(loan.fees?.annualMaintenanceFee),
           };
-          const baseValue = Number(
-            ((loan.baseAmount || 0) - (loan.previousLoanAmount || 0)).toFixed(2)
-          );
 
-          const baseValueWithPerious = loan.baseAmount.toFixed(2);
           setFormData({
             ...loan,
             client: loan.client,
             company: loan.company,
-            baseAmount: baseValue || 0,
+            baseAmount: loan.baseAmount || 0,
             checkNumber: loan.checkNumber || "",
             fees,
             interestType: loan.interestType || "flat",
             monthlyRate: loan.monthlyRate || 0,
             loanTerms: loan.loanTerms || 24,
-            subtotal: baseValueWithPerious + loan.baseAmount,
             issueDate: moment(loan.issueDate).format("MM-DD-YYYY"),
+            previousLoanAmount: loan.previousLoanAmount || 0,
           });
 
           setCompanyData(company);
 
-          const loans =
-            loanStore.loans?.filter(
-              (l) =>
-                l.client === loan.client &&
-                l.status !== "Paid Off" &&
-                l.status !== "Merged" &&
-                l.loanStatus !== "Deactivated" &&
-                l._id !== loanId
-            ) || [];
-          setActiveLoans(loans);
-
-          if (loan.previousLoanIds?.length > 0) {
-            setOverlapMode(true);
-            setSelectedLoanIds(loan.previousLoanIds);
-            setPreviousToggleDisabled(true);
-
+          if (loan.previousLoans?.length > 0) {
             const previousLoans = loanStore.loans.filter((l) =>
-              loan.previousLoanIds.includes(l._id)
+              loan.previousLoans.includes(l._id)
             );
-
             const totalRemaining = previousLoans.reduce((sum, l) => {
               const details = getLoanRunningDetails(l);
               return sum + (details?.remaining || 0);
             }, 0);
-
             setFormData((prev) => ({
               ...prev,
-              previousLoanAmount: parseFloat(totalRemaining.toFixed(2)),
+              previousLoanAmount: loan.previousLoanAmount || totalRemaining,
             }));
+            setSelectedLoanIds(loan.previousLoans.map((pl) => pl._id));
           }
         } catch (err) {
           console.error(err);
@@ -246,34 +226,10 @@ const EditLoanModal = observer(
       };
 
       load();
-
       return () => {
         mounted = false;
       };
     }, [loanId]);
-
-    const getLoanRunningDetails = (loan: any) => {
-      const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
-      const issue = moment(loan.issueDate);
-      const monthsPassed = Math.max(0, moment().diff(issue, "months"));
-      const runningTenure =
-        ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
-        ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
-      const calc = calculateLoan(
-        loan.baseAmount,
-        loan.fees,
-        loan.interestType,
-        loan.monthlyRate,
-        runningTenure,
-        loan.previousLoanAmount || 0
-      );
-      return {
-        monthsPassed,
-        runningTenure,
-        total: calc.totalWithInterest,
-        remaining: calc.totalWithInterest - (loan.paidAmount || 0),
-      };
-    };
 
     const selectedPreviousLoanTotal = activeLoans
       .filter((loan) => selectedLoanIds.includes(loan._id))
@@ -289,15 +245,16 @@ const EditLoanModal = observer(
     const handleCloseView = () => setViewLoan(null);
 
     const handleSave = async () => {
-      if (saving || !formData) return;
-      setSaving(true);
       try {
-        if (!formData.client) throw new Error("Client is required");
-        if (!formData.company) throw new Error("Company is required");
+        if (saving) return;
+        setSaving(true);
+
+        if (!formData.client) return toast.error("Please select a client");
+        if (!formData.company) return toast.error("Please select a company");
         if (!formData.baseAmount || formData.baseAmount <= 0)
-          throw new Error("Base amount must be > 0");
+          return toast.error("Base amount must be greater than 0");
         if (!formData.loanTerms || formData.loanTerms <= 0)
-          throw new Error("Valid loan term required");
+          return toast.error("Please enter valid loan terms");
 
         const calc = calculateLoan(
           formData.baseAmount,
@@ -311,30 +268,29 @@ const EditLoanModal = observer(
         const payload = {
           ...formData,
           baseAmount: formData.baseAmount,
-          subtotal: calc.subtotal,
-          totalLoan: calc.totalWithInterest,
           previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
-          previousLoanIds: overlapMode ? [...selectedLoanIds] : [],
-          endDate:
-            endDate ||
-            moment(formData.issueDate, "MM-DD-YYYY")
-              .add(formData.loanTerms, "months")
-              .format("MM-DD-YYYY"),
+          subTotal: calc.subtotal,
+          totalLoan: calc.totalWithInterest,
+          endDate,
           status: "Active",
         };
 
         await loanStore.updateLoan(loanId, payload);
+        await loanStore.fetchLoans();
         toast.success("Loan updated successfully");
         onClose();
       } catch (error: any) {
-        toast.error(error.message || "Failed to update loan");
-        console.error(error);
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update loan";
+        toast.error(message);
+        console.error("Error saving loan:", error);
       } finally {
         setSaving(false);
       }
     };
 
-    // Guarded useEffect for endDate
     useEffect(() => {
       if (!formData?.issueDate || !formData?.loanTerms) return;
       const start = moment(formData.issueDate, "MM-DD-YYYY");
@@ -355,16 +311,6 @@ const EditLoanModal = observer(
 
     if (!formData || !companyData) return null;
 
-    const ALL_LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
-    const currentCalc = calculateLoan(
-      formData.baseAmount,
-      formData.fees,
-      formData.interestType,
-      formData.monthlyRate,
-      formData.loanTerms,
-      overlapMode ? selectedPreviousLoanTotal : 0
-    );
-
     const feeItems = [
       { key: "applicationFee", label: "Application Fee" },
       { key: "brokerFee", label: "Broker Fee" },
@@ -382,18 +328,14 @@ const EditLoanModal = observer(
         <div className="px-2 py-2">
           <div className="overflow-x-auto pb-2 -mx-2 px-2">
             <div className="flex space-x-2 min-w-max">
-              {ALL_LOAN_TERMS.map((term) => {
-                const effectiveBase = formData.previousLoanAmount
-                  ? Number(formData.baseAmount || 0) +
-                    Number(formData.previousLoanAmount || 0)
-                  : Number(formData.baseAmount || 0);
-
-                const termResult = calculateLoan(
-                  effectiveBase,
+              {ALLOWED_TERMS.map((term) => {
+                const result = calculateLoan(
+                  formData.baseAmount || 0,
                   formData.fees,
-                  formData.interestType,
-                  formData.monthlyRate,
-                  term
+                  formData.interestType || "flat",
+                  formData.monthlyRate || 0,
+                  term,
+                  overlapMode ? selectedPreviousLoanTotal : 0
                 );
 
                 const isSelected = term <= formData.loanTerms;
@@ -418,37 +360,20 @@ const EditLoanModal = observer(
                     <div className="font-medium text-sm font-semibold">
                       {term} months
                     </div>
-
                     <div
                       className={`text-xs font-medium mb-1 ${
                         isSelected ? "text-yellow-300" : "text-gray-700"
                       }`}
                     >
-                      Interest: ${termResult.interestAmount.toFixed(2)}
+                      Interest: ${result.interestAmount.toFixed(2)}
                     </div>
-
                     <div
                       className={`text-xs font-medium mb-1 ${
                         isSelected ? "text-yellow-300" : "text-gray-700"
                       }`}
                     >
-                      Total: $
-                      {(
-                        termResult.subtotal + termResult.interestAmount
-                      ).toFixed(2)}
+                      Total: ${result.totalWithInterest.toFixed(2)}
                     </div>
-
-                    {/* {formData.previousLoanAmount > 0 && (
-                      <div
-                        className={`text-[11px] italic ${
-                          isSelected ? "text-yellow-200" : "text-gray-500"
-                        }`}
-                      >
-                        (Incl. Prev Loan: $
-                        {formData.previousLoanAmount.toFixed(2)})
-                      </div>
-                    )} */}
-
                     <div
                       className={`text-xs ${
                         isSelected ? "text-white" : "text-gray-700"
@@ -464,6 +389,14 @@ const EditLoanModal = observer(
         </div>
       );
     };
+    const currentCalc = calculateLoan(
+      formData.baseAmount || 0,
+      formData.fees,
+      formData.interestType || "flat",
+      formData.monthlyRate || 0,
+      formData.loanTerms || 24,
+      overlapMode ? selectedPreviousLoanTotal : 0
+    );
 
     return (
       <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -542,7 +475,6 @@ const EditLoanModal = observer(
                       const selectedCompany = companyStore.companies.find(
                         (c) => c._id === newValue?.value
                       );
-
                       if (selectedCompany) {
                         setFormData((prev: any) => ({
                           ...prev,
@@ -551,17 +483,16 @@ const EditLoanModal = observer(
                           backgroundColor:
                             selectedCompany.backgroundColor || "#555555",
                         }));
+                        setCompanyData(selectedCompany);
                       } else {
-                        // Reset if cleared
                         setFormData((prev: any) => ({
                           ...prev,
                           company: "",
                           companyName: "",
                           backgroundColor: "#555555",
                         }));
+                        setCompanyData(null);
                       }
-
-                      setCompanyData(selectedCompany || null);
                     }}
                     renderInput={(params) => (
                       <MuiTextField
@@ -617,9 +548,11 @@ const EditLoanModal = observer(
                       </label>
                       <Switch
                         checked={overlapMode}
-                        onCheckedChange={(val) =>
-                          !previousToggleDisabled && setOverlapMode(val)
-                        }
+                        onChange={(e) => {
+                          setOverlapMode(e.target.checked);
+                          if (!e.target.checked) setSelectedLoanIds([]);
+                        }}
+                        disabled={previousToggleDisabled}
                       />
                     </div>
 
@@ -638,13 +571,6 @@ const EditLoanModal = observer(
                           return (
                             <div
                               key={loan._id}
-                              onClick={() =>
-                                setSelectedLoanIds((prev) =>
-                                  isSelected
-                                    ? prev.filter((id) => id !== loan._id)
-                                    : [...prev, loan._id]
-                                )
-                              }
                               className={`flex justify-between items-center p-3 border rounded-lg shadow-sm cursor-pointer transition ${
                                 isSelected
                                   ? "bg-green-100 border-green-400"
@@ -707,6 +633,8 @@ const EditLoanModal = observer(
                   </div>
                 )}
               </div>
+
+              {/* Right: Calculation Panel */}
               <div className="flex lg:max-w-3xl">
                 <div
                   className="rounded-xl shadow-sm px-0 min-w-0"
@@ -859,26 +787,24 @@ const EditLoanModal = observer(
                   </div>
 
                   <div className="text-sm text-white mt-2 font-semibold px-2">
-                    {formData.previousLoanAmount > 0 && (
+                    {overlapMode && selectedPreviousLoanTotal > 0 && (
                       <div className="flex justify-between text-yellow-300 font-semibold mt-2">
                         <span>Previous Loan Amount Carry Forward:</span>
-                        <span>${formData.previousLoanAmount.toFixed(2)}</span>
+                        <span>${selectedPreviousLoanTotal.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center">
                       <span>
-                        {formData.previousLoanAmount > 0
-                          ? "Loan Amount (Base + Additional Fees + Previous Loan)"
-                          : "Loan Amount (Base + Additional Fees)"}
+                        {overlapMode && selectedPreviousLoanTotal > 0
+                          ? "Loan Amount (Base + Fees + Previous Loan)"
+                          : "Loan Amount (Base + Fees)"}
                       </span>
                       <span className="text-md text-green-700 px-2 rounded-md bg-white">
-                        $
-                        {(
-                          currentCalc.subtotal + formData.previousLoanAmount
-                        ).toFixed(2)}
+                        ${currentCalc.subtotal.toFixed(2)}
                       </span>
                     </div>
                   </div>
+
                   <div className="mt-2 relative max-w-full px-2">
                     <label className="text-sm font-semibold text-white mb-2 block">
                       Select Loan Term (
@@ -886,7 +812,7 @@ const EditLoanModal = observer(
                       Months)
                     </label>
                     <div className="flex justify-between">
-                      {ALL_LOAN_TERMS.map((term) => (
+                      {ALLOWED_TERMS.map((term) => (
                         <span
                           key={term}
                           className={`text-sm font-semibold ${
@@ -902,11 +828,11 @@ const EditLoanModal = observer(
                     <input
                       type="range"
                       min={0}
-                      max={ALL_LOAN_TERMS.length - 1}
-                      value={ALL_LOAN_TERMS.indexOf(formData.loanTerms)}
+                      max={ALLOWED_TERMS.length - 1}
+                      value={ALLOWED_TERMS.indexOf(formData.loanTerms)}
                       onChange={(e) => {
                         const idx = parseInt(e.target.value, 10);
-                        const term = ALL_LOAN_TERMS[idx] || 24;
+                        const term = ALLOWED_TERMS[idx] || 24;
                         setFormData((prev: any) => ({
                           ...prev,
                           loanTerms: term,
@@ -937,6 +863,7 @@ const EditLoanModal = observer(
                   "Saving..."
                 ) : (
                   <>
+                    {" "}
                     <Save size={16} /> Update Loan
                   </>
                 )}

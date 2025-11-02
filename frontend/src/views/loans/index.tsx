@@ -252,7 +252,7 @@ useEffect(() => {
         }
       const payload = {
         ...data,
-        baseAmount: (formData.baseAmount + previousLoanAmount).toFixed(2),
+        baseAmount: (formData.baseAmount).toFixed(2),
         checkNumber: formData.checkNumber || null,
         fees: formData.fees,
         interestType: formData.interestType,
@@ -265,14 +265,16 @@ useEffect(() => {
         status: "Active",
       };
         if (!editingLoan) {
-          await loanStore.createLoan(payload);
+  const createdLoan = await loanStore.createLoan(payload);
           const selectedIds =
             activeLoans
               ?.filter((loan) => selectedLoanIds.includes(loan._id))
               ?.map((loan) => loan._id) || [];
-
           for (const id of selectedIds) {
-            await loanStore.updateLoan(id, { status: "Merged" });
+            await loanStore.updateLoan(id, { 
+              status: "Merged",
+              parentLoanId: createdLoan?._id || null,
+            });
           }
           await loanStore.fetchLoans();
 

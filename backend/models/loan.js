@@ -45,6 +45,7 @@ const LoanSchema = new mongoose.Schema(
       enum: ["Active", "Deactivated"],
       default: "Active",
     },
+    parentLoanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Loan', default: null }
   },
   { timestamps: true }
 );

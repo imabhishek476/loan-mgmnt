@@ -1,6 +1,6 @@
 const { Loan } = require("../models/loan");
 const createAuditLog = require("../utils/auditLog");
-
+const mongoose = require("mongoose");
 
 exports.LoansCreate = async (req, res) => {
   try {
@@ -185,9 +185,15 @@ exports.getLoanById = async (req, res) => {
       });
     }
 
+    const previousLoans = await Loan.find({
+      parentLoanId: id,
+      status: "Merged",
+    }).sort({ createdAt: -1 });
+
+    const obj = { ...loan.toObject(), previousLoans };
     res.status(200).json({
       success: true,
-      data: loan,
+      data: obj,
       message: "Loan fetched successfully",
     });
   } catch (error) {
