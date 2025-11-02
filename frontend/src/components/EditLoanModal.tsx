@@ -137,31 +137,51 @@ const EditLoanModal = observer(
             clientStore.fetchClients(),
             loanStore.fetchLoans(),
           ]);
+              //@ts-ignore
+        const normalizeId = (id: any) =>
+          id == null ? "" : typeof id === "string" ? id : id.toString();
+        const mergedLoans = loan.previousLoans || [];
 
-          const mergedLoans = loan.previousLoans || [];
-          if (mergedLoans.length > 0) {
-            const mergedIds = mergedLoans.map((m: any) =>
-              typeof m === "string" ? m : m._id
+        if (mergedLoans.length > 0) {
+          const mergedIds = mergedLoans.map((m: any) =>
+            typeof m === "string" ? m : m._id?.toString?.()
+          );
+          const clientId =
+            loan.client?._id?.toString?.() || loan.client?.toString?.();
+          const filtered = loanStore.loans.filter((l) => {
+            const lClient =
+              l.client?._id?.toString?.() || l.client?.toString?.();
+            return (
+              lClient === clientId &&
+              l._id?.toString?.() !== loanId?.toString?.()
             );
-            const filtered = loanStore.loans.filter((l) =>
-              mergedIds.includes(l._id)
-            );
-            setActiveLoans(filtered);
-            setOverlapMode(true);
-            setSelectedLoanIds(mergedIds);
-            setPreviousToggleDisabled(true);
-          } else {
-            const availableLoans =
-              loanStore.loans?.filter(
-                (l) =>
-                  l.client === loan.client &&
-                  l.status !== "Paid Off" &&
-                  l.status !== "Merged" &&
-                  l.loanStatus !== "Deactivated" &&
-                  l._id !== loanId
-              ) || [];
-            setActiveLoans(availableLoans);
-          }
+          });
+
+          setActiveLoans(filtered);
+          setSelectedLoanIds(
+            filtered
+              .filter((l) => mergedIds.includes(l._id?.toString?.()))
+              .map((l) => l._id?.toString?.())
+          );
+          setPreviousToggleDisabled(false); 
+          setOverlapMode(true);
+        } else {
+          const availableLoans =
+            loanStore.loans?.filter((l) => {
+              const lClient =
+                l.client?._id?.toString?.() || l.client?.toString?.();
+              return (
+                lClient ===
+                  (loan.client?._id?.toString?.() ||
+                    loan.client?.toString?.()) &&
+                l.status !== "Paid Off" &&
+                l.status !== "Merged" &&
+                l.loanStatus !== "Deactivated" &&
+                l._id?.toString?.() !== loanId?.toString?.()
+              );
+            }) || [];
+          setActiveLoans(availableLoans);
+        }
 
           const company = companyStore.companies.find(
             (c) => c._id === loan.company
@@ -198,6 +218,7 @@ const EditLoanModal = observer(
             loanTerms: loan.loanTerms || 24,
             issueDate: moment(loan.issueDate).format("MM-DD-YYYY"),
             previousLoanAmount: loan.previousLoanAmount || 0,
+            paidAmount: loan.paidAmount || 0,
           });
 
           setCompanyData(company);
@@ -244,52 +265,81 @@ const EditLoanModal = observer(
 
     const handleCloseView = () => setViewLoan(null);
 
-    const handleSave = async () => {
-      try {
-        if (saving) return;
-        setSaving(true);
+const handleSave = async () => {
+  try {
+    if (saving) return;
+    setSaving(true);
+    if (!formData.client) return toast.error("Please select a client");
+    if (!formData.company) return toast.error("Please select a company");
+    if (!formData.baseAmount || formData.baseAmount <= 0)
+      return toast.error("Base amount must be greater than 0");
+    if (!formData.loanTerms || formData.loanTerms <= 0)
+      return toast.error("Please enter valid loan terms");
+    const loan = await fetchLoanById(loanId);
+    if (!loan) return toast.error("Loan not found");
 
-        if (!formData.client) return toast.error("Please select a client");
-        if (!formData.company) return toast.error("Please select a company");
-        if (!formData.baseAmount || formData.baseAmount <= 0)
-          return toast.error("Base amount must be greater than 0");
-        if (!formData.loanTerms || formData.loanTerms <= 0)
-          return toast.error("Please enter valid loan terms");
+    const { runningTenure } = getLoanRunningDetails(loan);
+    const calc = calculateLoan(
+      formData.baseAmount,
+      formData.fees,
+      formData.interestType,
+      formData.monthlyRate,
+      runningTenure,
+      overlapMode ? selectedPreviousLoanTotal : 0
+    );
 
-        const calc = calculateLoan(
-          formData.baseAmount,
-          formData.fees,
-          formData.interestType,
-          formData.monthlyRate,
-          formData.loanTerms,
-          overlapMode ? selectedPreviousLoanTotal : 0
-        );
-
-        const payload = {
-          ...formData,
-          baseAmount: formData.baseAmount,
-          previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
-          subTotal: calc.subtotal,
-          totalLoan: calc.totalWithInterest,
-          endDate,
-          status: "Active",
-        };
-
-        await loanStore.updateLoan(loanId, payload);
-        await loanStore.fetchLoans();
-        toast.success("Loan updated successfully");
-        onClose();
-      } catch (error: any) {
-        const message =
-          error?.response?.data?.message ||
-          error?.message ||
-          "Failed to update loan";
-        toast.error(message);
-        console.error("Error saving loan:", error);
-      } finally {
-        setSaving(false);
-      }
+    const totalDue = calc.totalWithInterest || 0;
+    const paid = parseFloat(formData.paidAmount || 0);
+    let status = "Active";
+    if (paid >= totalDue) status = "Paid Off";
+    else if (paid > 0 && paid < totalDue) status = "Partial Payment";
+    const endDate = moment(formData.issueDate)
+      .add(runningTenure, "months")
+      .toISOString();
+    const payload = {
+      ...formData,
+      previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
+      subTotal: calc.subtotal,
+      totalLoan: totalDue,
+      endDate,
+      status,
     };
+    await loanStore.updateLoan(loanId, payload);
+    if (overlapMode && selectedLoanIds.length > 0) {
+      const selectedIds =
+        activeLoans
+          ?.filter(
+            (loan) =>
+              selectedLoanIds.includes(loan._id) && loan.status !== "Merged"
+          )
+          ?.map((loan) => loan._id) || [];
+
+      for (const id of selectedIds) {
+        await loanStore.updateLoan(id, {
+          status: "Merged",
+          parentLoanId: loanId,
+        });
+      }
+      toast.success(
+        `${selectedIds.length} previous loan${
+          selectedIds.length > 1 ? "s" : ""
+        } merged successfully`
+      );
+    }
+    await loanStore.fetchLoans();
+    toast.success("Loan updated successfully");
+    onClose();
+  } catch (error: any) {
+    const message =
+      error?.response?.data?.message ||
+      error?.message ||
+      "Failed to update loan";
+    toast.error(message);
+    console.error("Error saving loan:", error);
+  } finally {
+    setSaving(false);
+  }
+};
 
     useEffect(() => {
       if (!formData?.issueDate || !formData?.loanTerms) return;
@@ -404,7 +454,7 @@ const EditLoanModal = observer(
           <div className="bg-white shadow-lg w-full max-w-6xl flex flex-col rounded-lg">
             {/* Header */}
             <div className="flex justify-between items-center p-3 border-b bg-white sticky top-0 z-10 rounded-md">
-              <h2 className="text-xl font-bold text-gray-800">Edit Loan</h2>
+              <h2 className="text-xl font-bold text-gray-800">Edit Loan </h2>
               <button
                 className="text-gray-500 hover:text-gray-800"
                 onClick={onClose}
@@ -423,7 +473,7 @@ const EditLoanModal = observer(
                     Client
                   </label>
                   <Autocomplete
-                    disablePortal
+                    disabled
                     options={
                       clientStore.clients?.map((c) => ({
                         label: c.fullName,
@@ -546,9 +596,13 @@ const EditLoanModal = observer(
                       <label className="text-sm font-semibold">
                         Previous Loan
                       </label>
+
+                      {/* ✅ Disable switch if already merged */}
                       <Switch
                         checked={overlapMode}
                         onChange={(e) => {
+                          // Allow toggling only if not already merged
+                          if (previousToggleDisabled) return;
                           setOverlapMode(e.target.checked);
                           if (!e.target.checked) setSelectedLoanIds([]);
                         }}
@@ -567,16 +621,34 @@ const EditLoanModal = observer(
                         activeLoans.map((loan) => {
                           const { runningTenure, total, remaining } =
                             getLoanRunningDetails(loan);
-                          const isSelected = selectedLoanIds.includes(loan._id);
+                          const loanIdStr = loan._id?.toString?.();
+                          const alreadyMerged = loan.status === "Merged";
+                          const isSelected =
+                            selectedLoanIds.includes(loanIdStr);
+                          const isDisabled =
+                            alreadyMerged || previousToggleDisabled;
+                          const checked = alreadyMerged ? true : isSelected;
+
                           return (
                             <div
-                              key={loan._id}
-                              className={`flex justify-between items-center p-3 border rounded-lg shadow-sm cursor-pointer transition ${
-                                isSelected
+                              key={loanIdStr}
+                              className={`flex justify-between items-center p-3 border rounded-lg shadow-sm transition ${
+                                checked
                                   ? "bg-green-100 border-green-400"
                                   : "bg-white hover:bg-gray-50"
+                              } ${
+                                isDisabled
+                                  ? "opacity-70 cursor-not-allowed"
+                                  : ""
                               }`}
-                              disabled
+                              onClick={() => {
+                                if (isDisabled) return;
+                                setSelectedLoanIds((prev) =>
+                                  prev.includes(loanIdStr)
+                                    ? prev.filter((id) => id !== loanIdStr)
+                                    : [...prev, loanIdStr]
+                                );
+                              }}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="flex flex-col text-xs">
@@ -591,8 +663,8 @@ const EditLoanModal = observer(
                                     Total: $
                                     {total.toLocaleString(undefined, {
                                       minimumFractionDigits: 2,
-                                    })}
-                                    ({" "}
+                                    })}{" "}
+                                    (
                                     <span className="text-red-600 font-bold">
                                       Remaining: $
                                       {remaining.toLocaleString(undefined, {
@@ -613,21 +685,27 @@ const EditLoanModal = observer(
                                 >
                                   <Eye size={18} />
                                 </IconButton>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    if (isDisabled) return; // prevent change
+                                    setSelectedLoanIds((prev) =>
+                                      prev.includes(loanIdStr)
+                                        ? prev.filter((id) => id !== loanIdStr)
+                                        : [...prev, loanIdStr]
+                                    );
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`w-4 h-4 m-0 accent-green-600 ${
+                                    isDisabled
+                                      ? "cursor-not-allowed"
+                                      : "cursor-pointer"
+                                  }`}
+                                  disabled={isDisabled}
+                                />
                               </div>
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() =>
-                                  setSelectedLoanIds((prev) =>
-                                    isSelected
-                                      ? prev.filter((id) => id !== loan._id)
-                                      : [...prev, loan._id]
-                                  )
-                                }
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-4 h-4 m-0 accent-green-600 cursor-pointer"
-                                disabled
-                              />
                             </div>
                           );
                         })}
