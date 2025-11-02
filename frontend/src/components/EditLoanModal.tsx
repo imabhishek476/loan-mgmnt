@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { X, Save, Eye } from "lucide-react";
+import { X, Save, Eye, RefreshCw } from "lucide-react";
 import { clientStore } from "../store/ClientStore";
 import { companyStore } from "../store/CompanyStore";
 import { loanStore } from "../store/LoanStore";
@@ -593,38 +593,19 @@ const handleSave = async () => {
                 {activeLoans.length > 0 && (
                   <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-semibold">
+                      <label className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                        <RefreshCw size={14} className="text-gray-500" />{" "}
                         Previous Loan
                       </label>
-
-                      {/* ✅ Disable switch if already merged */}
-                      <Switch
-                        checked={overlapMode}
-                        onChange={(e) => {
-                          // Allow toggling only if not already merged
-                          if (previousToggleDisabled) return;
-                          setOverlapMode(e.target.checked);
-                          if (!e.target.checked) setSelectedLoanIds([]);
-                        }}
-                        disabled={previousToggleDisabled}
-                      />
                     </div>
 
-                    <div
-                      className={`transition-all duration-700 ease-in-out overflow-auto ${
-                        overlapMode
-                          ? "max-h-40 opacity-100"
-                          : "max-h-0 opacity-0"
-                      }`}
-                    >
-                      {overlapMode &&
-                        activeLoans.map((loan) => {
+                    <div className="transition-all duration-700 ease-in-out overflow-auto max-h-40 opacity-100">
+                      {activeLoans.map((loan) => {
                           const { runningTenure, total, remaining } =
                             getLoanRunningDetails(loan);
                           const loanIdStr = loan._id?.toString?.();
                           const alreadyMerged = loan.status === "Merged";
-                          const isSelected =
-                            selectedLoanIds.includes(loanIdStr);
+                          const isSelected = selectedLoanIds.includes(loanIdStr);
                           const isDisabled =
                             alreadyMerged || previousToggleDisabled;
                           const checked = alreadyMerged ? true : isSelected;
@@ -637,9 +618,7 @@ const handleSave = async () => {
                                   ? "bg-green-100 border-green-400"
                                   : "bg-white hover:bg-gray-50"
                               } ${
-                                isDisabled
-                                  ? "opacity-70 cursor-not-allowed"
-                                  : ""
+                                isDisabled ? "opacity-70 cursor-not-allowed" : ""
                               }`}
                               onClick={() => {
                                 if (isDisabled) return;
@@ -656,8 +635,7 @@ const handleSave = async () => {
                                     Issue Date: {formatDate(loan.issueDate)}
                                   </span>
                                   <span className="font-semibold">
-                                    Current Tenure:{" "}
-                                    <b>{runningTenure} Months</b>
+                                    Current Tenure: <b>{runningTenure} Months</b>
                                   </span>
                                   <span className="text-green-700 font-bold">
                                     Total: $
@@ -667,7 +645,10 @@ const handleSave = async () => {
                                     (
                                     <span className="text-red-600 font-bold">
                                       Remaining: $
-                                      {remaining.toLocaleString(undefined, {
+                                      {(alreadyMerged
+                                        ? 0
+                                        : remaining
+                                      ).toLocaleString(undefined, {
                                         minimumFractionDigits: 2,
                                       })}
                                     </span>
@@ -690,7 +671,7 @@ const handleSave = async () => {
                                   checked={checked}
                                   onChange={(e) => {
                                     e.stopPropagation();
-                                    if (isDisabled) return; // prevent change
+                                    if (isDisabled) return;
                                     setSelectedLoanIds((prev) =>
                                       prev.includes(loanIdStr)
                                         ? prev.filter((id) => id !== loanIdStr)
@@ -955,20 +936,69 @@ const handleSave = async () => {
         {/* View Loan Modal */}
         {viewLoan && (
           <Dialog open onClose={handleCloseView} maxWidth="sm" fullWidth>
-            <DialogTitle className="font-semibold text-xl text-green-700 border-b pb-2">
+            <DialogTitle className="font-semibold text-lg text-green-700 border-b pb-2 flex justify-between items-center">
               Loan Details
+              <IconButton onClick={handleCloseView}>
+                <X size={18} />
+              </IconButton>
             </DialogTitle>
-            <DialogContent className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
+
+            <DialogContent dividers className="space-y-3 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-800 text-sm">
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Customer
-                  </p>
-                  <p className="font-medium">
+                  <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
+                  <p className="font-semibold">
                     {clientStore.clients.find((c) => c._id === viewLoan.client)
                       ?.fullName || "-"}
                   </p>
                 </div>
+
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Company
+                  </p>
+                  <p className="font-semibold">
+                    {companyStore.companies.find(
+                      (c) => c._id === viewLoan.company
+                    )?.companyName || "-"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Issue Date
+                  </p>
+                  <p>{moment(viewLoan.issueDate).format("MMM DD, YYYY")}</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Loan Term
+                  </p>
+                  <p>{viewLoan.loanTerms} months</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Interest Type
+                  </p>
+                  <p className="capitalize">{viewLoan.interestType}</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Monthly Rate
+                  </p>
+                  <p>{viewLoan.monthlyRate}%</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Base Amount
+                  </p>
+                  <p>${(viewLoan.baseAmount || 0).toLocaleString()}</p>
+                </div>
+
                 <div>
                   <p className="text-gray-500 text-xs uppercase mb-1">
                     Total Loan
@@ -977,26 +1007,61 @@ const handleSave = async () => {
                     $
                     {getLoanRunningDetails(viewLoan).total.toLocaleString(
                       undefined,
-                      { minimumFractionDigits: 2 }
+                      {
+                        minimumFractionDigits: 2,
+                      }
                     )}
                   </p>
                 </div>
+
                 <div>
                   <p className="text-gray-500 text-xs uppercase mb-1">
                     Remaining
                   </p>
-                  <p className="font-semibold text-red-700">
+                  <p className="font-semibold text-red-600">
                     $
-                    {getLoanRunningDetails(viewLoan).remaining.toLocaleString(
-                      undefined,
-                      { minimumFractionDigits: 2 }
-                    )}
+                    {(viewLoan.status === "Merged"
+                      ? 0
+                      : getLoanRunningDetails(viewLoan).remaining
+                    ).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
                   </p>
                 </div>
+
+                <div>
+                  <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
+                  <p
+                    className={`font-bold ${
+                      viewLoan.status === "Paid Off"
+                        ? "text-green-600"
+                        : viewLoan.status === "Merged"
+                        ? "text-yellow-600"
+                        : "text-blue-600"
+                    }`}
+                  >
+                    {viewLoan.status}
+                  </p>
+                </div>
+
+                {viewLoan.checkNumber && (
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Check Number
+                    </p>
+                    <p>{viewLoan.checkNumber}</p>
+                  </div>
+                )}
               </div>
             </DialogContent>
+
             <DialogActions>
-              <Button onClick={handleCloseView} color="success">
+              <Button
+                onClick={handleCloseView}
+                color="success" // 👈 matches your other Close buttons
+                variant="contained"
+                className="mx-4 mb-3 font-bold"
+              >
                 Close
               </Button>
             </DialogActions>
