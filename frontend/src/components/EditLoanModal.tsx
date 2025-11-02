@@ -576,6 +576,7 @@ const EditLoanModal = observer(
                                   ? "bg-green-100 border-green-400"
                                   : "bg-white hover:bg-gray-50"
                               }`}
+                              disabled
                             >
                               <div className="flex items-center gap-2">
                                 <div className="flex flex-col text-xs">
@@ -625,6 +626,7 @@ const EditLoanModal = observer(
                                 }
                                 onClick={(e) => e.stopPropagation()}
                                 className="w-4 h-4 m-0 accent-green-600 cursor-pointer"
+                                disabled
                               />
                             </div>
                           );
@@ -796,8 +798,8 @@ const EditLoanModal = observer(
                     <div className="flex justify-between items-center">
                       <span>
                         {overlapMode && selectedPreviousLoanTotal > 0
-                          ? "Loan Amount (Base + Fees + Previous Loan)"
-                          : "Loan Amount (Base + Fees)"}
+                          ? "Loan Amount (Base + Additional Fees + Previous Loan)"
+                          : "Loan Amount (Base + Additional Fees)"}
                       </span>
                       <span className="text-md text-green-700 px-2 rounded-md bg-white">
                         ${currentCalc.subtotal.toFixed(2)}
