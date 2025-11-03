@@ -147,10 +147,11 @@ const Administration = observer(() => {
                 // startIcon={<Plus />}
                 onClick={() => handleCompanyOpen()}
                 sx={{
-                  backgroundColor: "#145A32",
-                  fontWeight: 600,
+                  backgroundColor: "#15803d",
+                  "&:hover": { backgroundColor: "#166534" },
                   textTransform: "none",
-                  borderRadius: "8px",
+                  fontWeight: 600,
+                  borderRadius: 1,
                 }}
               >
                 Add Company
@@ -179,10 +180,11 @@ const Administration = observer(() => {
                 // startIcon={<Plus />}
                 onClick={() => handleUserOpen()}
                 sx={{
-                  backgroundColor: "#145A32",
-                  fontWeight: 600,
+                  backgroundColor: "#15803d",
+                  "&:hover": { backgroundColor: "#166534" },
                   textTransform: "none",
-                  borderRadius: "8px",
+                  fontWeight: 600,
+                  borderRadius: 1,
                 }}
               >
                 Add User
@@ -219,7 +221,7 @@ const Administration = observer(() => {
   };
 
   return (
-    <div className="flex flex-col bg-white transition-all duration-300">
+    <div className="flex flex-col  transition-all duration-300">
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>

@@ -340,7 +340,7 @@ useEffect(() => {
     ];
 
     return (
-      <div className="flex flex-col rounded-lg text-left p-2">
+      <div className="flex flex-col rounded-lg text-left">
         {/* Header & Table */}
         {!fromClientPage && showTable && (
           <>
@@ -357,8 +357,8 @@ useEffect(() => {
                 variant="contained"
                 startIcon={<Plus />}
                 sx={{
-                  backgroundColor: "#145A32",
-                  "&:hover": { backgroundColor: "#0f3f23" },
+                  backgroundColor: "#15803d",
+                  "&:hover": { backgroundColor: "#166534" },
                   textTransform: "none",
                   fontWeight: 600,
                   borderRadius: 1,
@@ -707,7 +707,7 @@ useEffect(() => {
                   </button>
                   <button
                     onClick={() => handleSave(formData)}
-                    className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 w-fit"
+                    className="px-4 py-1 font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 w-fit"
                     disabled={saving}
                   >
                     {saving ? (

@@ -590,9 +590,25 @@ const handleSave = async () => {
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
-
+                <div className="flex items-center justify-between mt-3 mb-2">
+                  <label className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                    <RefreshCw size={14} className="text-gray-500" /> Previous
+                    Loan
+                  </label>
+                  <Switch
+                    color="success"
+                    size="small"
+                    checked={overlapMode}
+                    onChange={(e) => {
+                      setOverlapMode(e.target.checked);
+                      if (!e.target.checked) {
+                        setSelectedLoanIds([]);
+                      }
+                    }}
+                  />
+                </div>
                 {/* Overlap Mode */}
-                {activeLoans.length > 0 && (
+                {overlapMode && activeLoans.length > 0 && (
                   <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium text-gray-800 flex items-center gap-2">
@@ -603,95 +619,95 @@ const handleSave = async () => {
 
                     <div className="transition-all duration-700 ease-in-out overflow-auto max-h-40 opacity-100">
                       {activeLoans.map((loan) => {
-                          const { runningTenure, total, remaining } =
-                            getLoanRunningDetails(loan);
-                          const loanIdStr = loan._id?.toString?.();
-                          const alreadyMerged = loan.status === "Merged";
-                          const isSelected = selectedLoanIds.includes(loanIdStr);
-                          const isDisabled =
-                            alreadyMerged || previousToggleDisabled;
-                          const checked = alreadyMerged ? true : isSelected;
+                        const { runningTenure, total, remaining } =
+                          getLoanRunningDetails(loan);
+                        const loanIdStr = loan._id?.toString?.();
+                        const alreadyMerged = loan.status === "Merged";
+                        const isSelected = selectedLoanIds.includes(loanIdStr);
+                        const isDisabled =
+                          alreadyMerged || previousToggleDisabled;
+                        const checked = alreadyMerged ? true : isSelected;
 
-                          return (
-                            <div
-                              key={loanIdStr}
-                              className={`flex justify-between items-center p-3 border rounded-lg shadow-sm transition ${
-                                checked
-                                  ? "bg-green-100 border-green-400"
-                                  : "bg-white hover:bg-gray-50"
-                              } ${
-                                isDisabled ? "opacity-70 cursor-not-allowed" : ""
-                              }`}
-                              onClick={() => {
-                                if (isDisabled) return;
-                                setSelectedLoanIds((prev) =>
-                                  prev.includes(loanIdStr)
-                                    ? prev.filter((id) => id !== loanIdStr)
-                                    : [...prev, loanIdStr]
-                                );
-                              }}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className="flex flex-col text-xs">
-                                  <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
-                                    Issue Date: {formatDate(loan.issueDate)}
-                                  </span>
-                                  <span className="font-semibold">
-                                    Current Tenure: <b>{runningTenure} Months</b>
-                                  </span>
-                                  <span className="text-green-700 font-bold">
-                                    Total: $
-                                    {total.toLocaleString(undefined, {
+                        return (
+                          <div
+                            key={loanIdStr}
+                            className={`flex justify-between items-center p-3 border rounded-lg shadow-sm transition ${
+                              checked
+                                ? "bg-green-100 border-green-400"
+                                : "bg-white hover:bg-gray-50"
+                            } ${
+                              isDisabled ? "opacity-70 cursor-not-allowed" : ""
+                            }`}
+                            onClick={() => {
+                              if (isDisabled) return;
+                              setSelectedLoanIds((prev) =>
+                                prev.includes(loanIdStr)
+                                  ? prev.filter((id) => id !== loanIdStr)
+                                  : [...prev, loanIdStr]
+                              );
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-col text-xs">
+                                <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
+                                  Issue Date: {formatDate(loan.issueDate)}
+                                </span>
+                                <span className="font-semibold">
+                                  Current Tenure: <b>{runningTenure} Months</b>
+                                </span>
+                                <span className="text-green-700 font-bold">
+                                  Total: $
+                                  {total.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                  })}{" "}
+                                  (
+                                  <span className="text-red-600 font-bold">
+                                    Remaining: $
+                                    {(alreadyMerged
+                                      ? 0
+                                      : remaining
+                                    ).toLocaleString(undefined, {
                                       minimumFractionDigits: 2,
-                                    })}{" "}
-                                    (
-                                    <span className="text-red-600 font-bold">
-                                      Remaining: $
-                                      {(alreadyMerged
-                                        ? 0
-                                        : remaining
-                                      ).toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                      })}
-                                    </span>
-                                    )
+                                    })}
                                   </span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleView(loan);
-                                  }}
-                                >
-                                  <Eye size={18} />
-                                </IconButton>
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    if (isDisabled) return;
-                                    setSelectedLoanIds((prev) =>
-                                      prev.includes(loanIdStr)
-                                        ? prev.filter((id) => id !== loanIdStr)
-                                        : [...prev, loanIdStr]
-                                    );
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`w-4 h-4 m-0 accent-green-600 ${
-                                    isDisabled
-                                      ? "cursor-not-allowed"
-                                      : "cursor-pointer"
-                                  }`}
-                                  disabled={isDisabled}
-                                />
+                                  )
+                                </span>
                               </div>
                             </div>
-                          );
-                        })}
+                            <div className="flex items-center gap-1">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleView(loan);
+                                }}
+                              >
+                                <Eye size={18} />
+                              </IconButton>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  if (isDisabled) return;
+                                  setSelectedLoanIds((prev) =>
+                                    prev.includes(loanIdStr)
+                                      ? prev.filter((id) => id !== loanIdStr)
+                                      : [...prev, loanIdStr]
+                                  );
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`w-4 h-4 m-0 accent-green-600 ${
+                                  isDisabled
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }`}
+                                disabled={isDisabled}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -712,7 +728,7 @@ const handleSave = async () => {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 px-2">
-                   <div className="flex flex-col">
+                    <div className="flex flex-col">
                       <label className="text-sm text-white mb-1 font-medium">
                         Base Amount
                         {originalLoan && (
@@ -726,7 +742,8 @@ const handleSave = async () => {
                         min="0"
                         step="any"
                         value={
-                          formData.baseAmount === null || formData.baseAmount === undefined
+                          formData.baseAmount === null ||
+                          formData.baseAmount === undefined
                             ? ""
                             : formData.baseAmount
                         }
@@ -734,13 +751,17 @@ const handleSave = async () => {
                           const rawValue = e.target.value;
                           setFormData((prev: any) => ({
                             ...prev,
-                            baseAmount: rawValue === "" ? "" : parseFloat(rawValue),
+                            baseAmount:
+                              rawValue === "" ? "" : parseFloat(rawValue),
                           }));
                         }}
                         onBlur={() => {
                           const value = Number(formData.baseAmount);
                           if (!isNaN(value)) {
-                            if (originalLoan && value < (originalLoan.baseAmount || 0)) {
+                            if (
+                              originalLoan &&
+                              value < (originalLoan.baseAmount || 0)
+                            ) {
                               toast.error(
                                 `Base amount cannot be less than $${originalLoan.baseAmount}`
                               );
@@ -944,7 +965,7 @@ const handleSave = async () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                className="px-4 py-1 font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
               >
                 {saving ? (
                   "Saving..."

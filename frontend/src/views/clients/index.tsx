@@ -112,9 +112,9 @@ const Clients = observer(() => {
   }, []);
 
   return (
-    <div className="text-left flex flex-col bg-white transition-all duration-300">
+    <div className="text-left flex flex-col transition-all duration-300">
       {/* Header */}
-      <div className="mb-5 flex flex-col sm:flex-row justify-between items-left gap-4">
+      <div className="mb-5 flex flex-col sm:flex-row justify-between items-left gap-4 ">
         <div>
           <h1 className="text-2xl  text-gray-800 font-bold ">
             Customer Management
@@ -127,15 +127,12 @@ const Clients = observer(() => {
         <Button
           variant="contained"
           sx={{
-            backgroundColor: "#145A32",
-            fontWeight: 600,
+            backgroundColor: "#15803d",
+            "&:hover": { backgroundColor: "#166534" },
             textTransform: "none",
-            borderRadius: "8px",
-            padding: "8px 10px",
-            fontSize: "14px",
-            boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
-            "&:hover": { backgroundColor: "#0f3f23" },
-          }}
+            fontWeight: 600,
+            borderRadius: 1,
+           }}
           startIcon={<Plus />}
           onClick={() => {
             setEditingClient(null);
