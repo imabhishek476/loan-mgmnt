@@ -17,7 +17,7 @@ import moment from "moment";
 import { observer } from "mobx-react-lite";
 import LoanPaymentModal from "../../../components/PaymentModel";
 import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
-import { Button, Tooltip } from "@mui/material";
+import { Button } from "@mui/material";
 import Loans from "../../loans";
 import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";

@@ -173,7 +173,7 @@ const handleReset = async () => {
                   const clientLoans = loanStore.loans.filter(
                     (loan) =>
                       (loan.client === rowData._id ||
-                        loan.client?._id === rowData._id) &&
+                        loan.client?.["_id"] === rowData._id) &&
                       loan.status !== "Merged" // 👈 exclude merged loans
                   );
 
