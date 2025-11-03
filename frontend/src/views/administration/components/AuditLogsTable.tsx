@@ -179,7 +179,7 @@ const AuditLogsTable: React.FC = () => {
     },
     {
       title: "Action",
-      render: (rowData: any) => rowData.message || "-",
+      render: (rowData: any) => rowData.action || "-",
       cellStyle: { minWidth: 200 },
     },
     {

@@ -65,8 +65,8 @@ exports.Clientstore = async (req, res) => {
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
-      "Create Client", 
-      "Client",
+      `Create Customer (${newClient.fullName ? newClient.fullName : ""})`,
+      "Customer",
       newClient._id,
       { after: newClient }
     );
@@ -173,7 +173,7 @@ exports.updateClient = async (req, res) => {
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
-      "Customer has been Updated",
+      `Customer Updated (${client.fullName ? client.fullName : ""})`,
       "Customer",
       client._id,
       { before: client, after: client }
@@ -196,14 +196,23 @@ exports.deleteClient = async (req, res) => {
         .json({ success: false, error: "Customer not found" });
     }
     const deletedLoans = await Loan.deleteMany({ client: id });
-    await createAuditLog(
-      req.user?.id || null,
-      req.user?.userRole || null,
-      `Customer and related loans deleted (${deletedLoans.deletedCount} loans)`,
-      "Customer",
-      client._id,
-      { deletedClient: client, deletedLoansCount: deletedLoans.deletedCount }
-    );
+  await createAuditLog(
+    req.user?.id || null,
+    req.user?.userRole || null,
+    `Customer "${client.fullName || "Unnamed"}" and ${
+      deletedLoans.deletedCount
+    } related loan(s) deleted`, 
+    "Customer",
+    client._id,
+    {
+      message: `Customer "${client.fullName || "Unnamed"}" and ${
+        deletedLoans.deletedCount
+      } related loan(s) deleted`,
+      deletedClient: client,
+      deletedLoansCount: deletedLoans.deletedCount,
+    }
+  );
+
 
     res.status(200).json({
       success: true,

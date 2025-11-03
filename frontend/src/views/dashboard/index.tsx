@@ -260,7 +260,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
         (c) => c._id === editingClient._id
       );
       if (refreshedClient) {
-        toast.success("Client updated successfully");
+        toast.success("Customer updated successfully");
         setSelectedClientForView((prev: any) => ({
           ...refreshedClient,
           loans: prev?.loans || [],
@@ -272,10 +272,10 @@ const handleClientUpdate = async (_id: string, data: any) => {
     } else {
       await clientStore.createClient(data);
       await clientStore.fetchClients();
-      toast.success("New client added successfully");
+      toast.success("New Customer added successfully");
     }
   } catch (error: any) {
-    toast.error(error.response?.data?.error || "Failed to save client ❌");
+    toast.error(error.response?.data?.error || "Failed to save Customer ❌");
   }
 };
 
