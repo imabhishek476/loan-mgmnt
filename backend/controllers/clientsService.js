@@ -33,7 +33,7 @@ exports.Clientstore = async (req, res) => {
       if (exist_record) {
         return res.status(400).json({
           success: false,
-          error: "Client with this email already exists",
+          error: "Customer with this email already exists",
         });
       }
     }
@@ -41,7 +41,7 @@ exports.Clientstore = async (req, res) => {
     if (exist_record) {
       return res.status(400).json({
         success: false,
-        error: "Client with this email already exists",
+        error: "Customer with this email already exists",
       });
     }
 
@@ -199,13 +199,13 @@ exports.deleteClient = async (req, res) => {
   await createAuditLog(
     req.user?.id || null,
     req.user?.userRole || null,
-    `Customer "${client.fullName || "Unnamed"}" and ${
+    `Customer "${client.fullName || "-"}" and ${
       deletedLoans.deletedCount
     } related loan(s) deleted`, 
     "Customer",
     client._id,
     {
-      message: `Customer "${client.fullName || "Unnamed"}" and ${
+      message: `Customer "${client.fullName || "-"}" and ${
         deletedLoans.deletedCount
       } related loan(s) deleted`,
       deletedClient: client,

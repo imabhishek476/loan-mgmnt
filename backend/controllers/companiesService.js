@@ -2,6 +2,7 @@
 const Company = require("../models/companies");
 const { logAction } = require("../middleware/auditLogger.middleware");
 const createAuditLog = require("../utils/auditLog");
+const User = require("../models/User");
 
 exports.CompaniesCreate = async (req, res) => {
   try {
@@ -74,13 +75,14 @@ exports.CompaniesCreate = async (req, res) => {
       message: "Company with this name already exists",
       });
     }
-
+    const user = await User.findById(req.user?.id).select("name email");
+    const createdBy = user?.name || user?.email || "";
     const newCompany = await Company.create(companyData);
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
-      "New Compnay Create", 
-      "Company", 
+      `Company "${newCompany.companyName}" created by ${createdBy}`,
+      "Company",
       newCompany._id,
       { after: newCompany }
     );
@@ -200,13 +202,15 @@ exports.updateCompany = async (req, res) => {
         message: "Company not found",
       });
     }
+    const user = await User.findById(req.user?.id).select("name email");
+    const createdBy = user?.name || user?.email || "";
       await createAuditLog(
         req.user?.id || null,
         req.user?.userRole || null,
-        "Company has been update",
+         `Company "${updatedCompany.companyName}" updated by ${updatedBy}`,
         "Company",
         updatedCompany._id,
-        { after: updatedCompany }
+        { before, after: updatedCompany }
       );
     res.status(200).json({
       success: true,
@@ -229,13 +233,15 @@ exports.deleteCompany = async (req, res) => {
     if (!company) {
       return res.status(404).json({ success: false, error: "Company not found" });
     }
+    const user = await User.findById(req.user?.id).select("name email");
+    const deletedBy = user?.name || user?.email || "";
   await createAuditLog(
     req.user?.id || null,
     req.user?.userRole || null,
-    "Company has been delete",
+   `Company "${company.companyName}" deleted by ${deletedBy}`,
     "Company",
     company._id,
-    { deleted: company }
+    { before: company }
   );    res.status(200).json({ success: true, message: "Company deleted" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
