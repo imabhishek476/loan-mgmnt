@@ -89,7 +89,7 @@ const handleReset = async () => {
           </div>
 
           <button
-            className=" hidden sm:flex items-center gap-1 text-white bg-green-800 hover:bg-green-900 px-2 py-1 rounded transition-all duration-200 hover:shadow-lg"
+            className=" hidden sm:flex items-center gap-1 text-white bg-green-700 hover:bg-green-900 px-2 py-1 rounded transition-all duration-200 hover:shadow-lg font-medium"
             onClick={handleFilter}
           >
             <Search size={15} />
@@ -167,7 +167,7 @@ const handleReset = async () => {
               },
               { title: "Email", field: "email" },
               { title: "Phone", field: "phone" },
-             {
+              {
                 title: "Total Loan Amount",
                 render: (rowData) => {
                   const clientLoans = loanStore.loans.filter(

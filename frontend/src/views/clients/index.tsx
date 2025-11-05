@@ -132,7 +132,9 @@ const Clients = observer(() => {
             textTransform: "none",
             fontWeight: 600,
             borderRadius: 1,
-           }}
+            px: 3,
+            py: 1,
+          }}
           startIcon={<Plus />}
           onClick={() => {
             setEditingClient(null);
