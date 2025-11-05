@@ -119,7 +119,7 @@ const handleReset = async () => {
             />
           </LocalizationProvider>
           <button
-            className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-1 rounded transition-colors duration-200"
+            className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-2 rounded transition-colors duration-200"
             onClick={handleFilter}
           >
             <Search size={20} />
@@ -127,7 +127,7 @@ const handleReset = async () => {
           </button>
 
           <button
-            className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded transition-colors duration-200"
+            className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-2 rounded transition-colors duration-200"
             onClick={handleReset}
           >
             <span className="font-medium">Reset</span>
@@ -167,13 +167,14 @@ const handleReset = async () => {
               },
               { title: "Email", field: "email" },
               { title: "Phone", field: "phone" },
-              {
+             {
                 title: "Total Loan Amount",
                 render: (rowData) => {
                   const clientLoans = loanStore.loans.filter(
                     (loan) =>
-                      loan.client === rowData._id ||
-                      loan.client?.["_id"] === rowData._id
+                      (loan.client === rowData._id ||
+                        loan.client?.["_id"] === rowData._id) &&
+                      loan.status !== "Merged" // 👈 exclude merged loans
                   );
 
                   const totalGiven = clientLoans.reduce(
@@ -263,7 +264,7 @@ const handleReset = async () => {
                 },
               },
               {
-                title: "Issue Date(latest loan)",
+                title: "Issue Date",
                 render: (rowData) => {
                   const clientLoans = loanStore.loans.filter(
                     (loan) =>

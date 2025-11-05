@@ -17,7 +17,7 @@ import moment from "moment";
 import { observer } from "mobx-react-lite";
 import LoanPaymentModal from "../../../components/PaymentModel";
 import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
-import { Button, Tooltip } from "@mui/material";
+import { Button } from "@mui/material";
 import Loans from "../../loans";
 import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
@@ -214,7 +214,7 @@ useEffect(() => {
 
             {!sidebarCollapsed && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700 px-4 h-full pb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700 px-2 pb-4">
                   <Info label="Full Name" value={client.fullName} />
                   <Info label="Email" value={client.email} />
                   <Info label="Phone" value={client.phone} />
@@ -261,17 +261,16 @@ useEffect(() => {
                 </h3>
               </div>
 
-              <Tooltip title="Add New Loan" arrow>
+              {/* <Tooltip title="Add New Loan" arrow> */}
                 <Button
                   variant="contained"
                   startIcon={<Plus />}
                   sx={{
-                    backgroundColor: "#145A32",
-                    "&:hover": { backgroundColor: "#0f3f23" },
+                    backgroundColor: "#15803d",
+                    "&:hover": { backgroundColor: "#166534" },
                     textTransform: "none",
                     fontWeight: 600,
                     borderRadius: 1,
-                    fontSize: "12px",
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -288,7 +287,7 @@ useEffect(() => {
                 >
                   New Loan
                 </Button>
-              </Tooltip>
+              {/* </Tooltip> */}
             </div>
             <div className="p-2 space-y-4 min-h-[400px] ">
               {clientLoans.length > 0 ? (
@@ -429,18 +428,18 @@ useEffect(() => {
                               )}
                               <span>
                                 {loan.status !== "Merged" && (
-                                    <Pencil
-                                      size={16}
-                                      className="text-green-700 inline-block cursor-pointer hover:text-green-900"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedClientForLoan(client);
-                                        console.log("Editing loan:", client);
-                                   setEditLoanModalOpen(true);
-                                        setEditingLoanId(loan._id);
-                                      }}
-                                    />
-                                  )}
+                                  <Pencil
+                                    size={16}
+                                    className="text-green-700 inline-block cursor-pointer hover:text-green-900"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedClientForLoan(client);
+                                      console.log("Editing loan:", client);
+                                      setEditLoanModalOpen(true);
+                                      setEditingLoanId(loan._id);
+                                    }}
+                                  />
+                                )}
                               </span>
                             </div>
                           </div>
@@ -747,7 +746,7 @@ useEffect(() => {
           onClose={() => {
             setEditLoanModalOpen(false);
             setEditingLoanId(null);
-            loanStore.fetchLoans(); 
+            loanStore.fetchLoans();
           }}
         />
       )}

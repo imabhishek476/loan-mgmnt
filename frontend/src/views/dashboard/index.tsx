@@ -410,7 +410,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
           onChange={(_e, newMode) => newMode && setViewMode(newMode)}
         >
           <ToggleButton value="upcoming">Upcoming Payoff</ToggleButton>
-          <ToggleButton value="graph">Companies Performalce</ToggleButton>
+          <ToggleButton value="graph">Companies Performance</ToggleButton>
         </ToggleButtonGroup>
       </div>
       {viewMode === "graph" && (
@@ -470,9 +470,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
               value={payoffOptions.find((o) => o.value === payoffFilter)}
               onChange={(_event, newValue) =>
                 newValue &&
-                setPayoffFilter(
-                  newValue.value as "day" | "week" | "month"
-                )
+                setPayoffFilter(newValue.value as "day" | "week" | "month")
               }
               getOptionLabel={(option) => option.label}
               renderInput={(params) => <TextField {...params} size="small" />}
@@ -541,7 +539,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
                   })}`,
                 cellStyle: { whiteSpace: "nowrap" },
               },
-            {
+              {
                 title: "Current Tenure (Mo.)",
                 width: "25%",
                 render: (rowData) => {
@@ -550,7 +548,9 @@ const handleClientUpdate = async (_id: string, data: any) => {
                   const daysPassed = today.diff(issue, "days");
                   const monthsPassed = Math.floor(daysPassed / 30) + 1;
                   const company = rowData.companyObject;
-                  const tenureSteps = company?.loanTerms || [6, 12, 18, 24, 30, 36, 40];
+                  const tenureSteps = company?.loanTerms || [
+                    6, 12, 18, 24, 30, 36, 40,
+                  ];
                   const currentTenure =
                     tenureSteps.find((step) => monthsPassed <= step) ||
                     tenureSteps[tenureSteps.length - 1];
@@ -576,7 +576,10 @@ const handleClientUpdate = async (_id: string, data: any) => {
                 title: "End Date",
                 width: "10%",
                 render: (rowData) =>
-                  getLoanEndDate(rowData.issueDate, rowData.loanTerms || rowData.term),
+                  getLoanEndDate(
+                    rowData.issueDate,
+                    rowData.loanTerms || rowData.term
+                  ),
                 cellStyle: { whiteSpace: "nowrap" },
               },
               {
@@ -592,12 +595,13 @@ const handleClientUpdate = async (_id: string, data: any) => {
                   return (
                     <div className="flex flex-col items-start">
                       <span className={`font-semibold ${color}`}>{status}</span>
-                      {rowData.status === "Delayed" && rowData.overdueMonths > 0 && (
-                        <small className="text-xs text-red-600">
-                          Overdue {rowData.overdueMonths} mo — Extra Interest: $
-                          {Number(rowData.overdueInterest || 0).toFixed(2)}
-                        </small>
-                      )}
+                      {rowData.status === "Delayed" &&
+                        rowData.overdueMonths > 0 && (
+                          <small className="text-xs text-red-600">
+                            Overdue {rowData.overdueMonths} mo — Extra Interest:
+                            ${Number(rowData.overdueInterest || 0).toFixed(2)}
+                          </small>
+                        )}
                     </div>
                   );
                 },
