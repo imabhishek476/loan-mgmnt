@@ -224,17 +224,6 @@ const handleReset = async () => {
                     }
                     const totalLoan = subTotal + interest;
                     const remaining = Math.max(totalLoan - paidAmount, 0);
-                    console.log(
-                      `Loan: ${
-                        loan._id
-                      } | Months Passed: ${monthsPassed} | Term: ${currentTerm} | Subtotal: ${subTotal} | Interest: ${interest.toFixed(
-                        2
-                      )} | Total: ${totalLoan.toFixed(
-                        2
-                      )} | Paid: ${paidAmount.toFixed(
-                        2
-                      )} | Remaining: ${remaining.toFixed(2)}`
-                    );
                     totalPaid += paidAmount;
                     if (!["Paid Off", "Merged"].includes(loan.status)) {
                       totalRemaining += remaining;

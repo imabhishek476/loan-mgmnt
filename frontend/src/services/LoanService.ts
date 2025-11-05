@@ -53,3 +53,7 @@ export const recoverLoan = async (id: string) => {
   const { data } = await api.put(`/loans/${id}/recover`);
   return data.data || data;
 };
+export const fetchLoanById = async (id: string) => {
+  const { data } = await api.get(`/loans/edit/${id}`);
+  return data.data || data;
+};

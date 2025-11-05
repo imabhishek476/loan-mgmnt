@@ -1,6 +1,6 @@
 const { Loan } = require("../models/loan");
 const createAuditLog = require("../utils/auditLog");
-
+const mongoose = require("mongoose");
 
 exports.LoansCreate = async (req, res) => {
   try {
@@ -169,6 +169,38 @@ exports.recoverLoan = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+exports.getLoanById = async (req, res) => {
+  try {
+    const { id } = req.params;
+// console.log("Fetching loan with ID:", id);
+    const loan = await Loan.findById(id);
+
+    if (!loan) {
+      return res.status(404).json({
+        success: false,
+        message: "Loan not found",
+      });
+    }
+
+    const previousLoans = await Loan.find({
+      parentLoanId: id,
+      status: { $in: ["Merged", "Active"] },
+    }).sort({ createdAt: -1 });
+
+    const obj = { ...loan.toObject(), previousLoans };
+    res.status(200).json({
+      success: true,
+      data: obj,
+      message: "Loan fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error in getLoanById:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
     });
   }
 };

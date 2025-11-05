@@ -62,7 +62,7 @@ const Loans = observer(
       company: "",
       baseAmount: 0,
       subtotal: 0,
-      loanTerms: 24,
+      loanTerms: "",
       issueDate: moment().format("MM-DD-YYYY"),
       checkNumber: "",
       fees: {
@@ -216,8 +216,7 @@ useEffect(() => {
   const total =
     activeLoans
       ?.filter((loan) => selectedLoanIds.includes(loan._id))
-      ?.reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining, 0) ||
-    0;
+      ?.reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining,0) || 0;
 
   setPreviousLoanAmount(total);
 }, [selectedLoanIds, activeLoans]);
@@ -253,7 +252,7 @@ useEffect(() => {
         }
       const payload = {
         ...data,
-        baseAmount: (formData.baseAmount + previousLoanAmount).toFixed(2),
+        baseAmount: (formData.baseAmount).toFixed(2),
         checkNumber: formData.checkNumber || null,
         fees: formData.fees,
         interestType: formData.interestType,
@@ -266,14 +265,16 @@ useEffect(() => {
         status: "Active",
       };
         if (!editingLoan) {
-          await loanStore.createLoan(payload);
+  const createdLoan = await loanStore.createLoan(payload);
           const selectedIds =
             activeLoans
               ?.filter((loan) => selectedLoanIds.includes(loan._id))
               ?.map((loan) => loan._id) || [];
-
           for (const id of selectedIds) {
-            await loanStore.updateLoan(id, { status: "Merged" });
+            await loanStore.updateLoan(id, { 
+              status: "Merged",
+              parentLoanId: createdLoan?._id || null,
+            });
           }
           await loanStore.fetchLoans();
 
@@ -339,7 +340,7 @@ useEffect(() => {
     ];
 
     return (
-      <div className="flex flex-col bg-white rounded-lg text-left p-2">
+      <div className="flex flex-col rounded-lg text-left p-2">
         {/* Header & Table */}
         {!fromClientPage && showTable && (
           <>
