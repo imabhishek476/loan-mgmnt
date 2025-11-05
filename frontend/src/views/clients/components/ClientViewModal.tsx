@@ -692,9 +692,9 @@ useEffect(() => {
                                               ...loan,
                                               loanTerms: term,
                                             })!;
-                                          const isSelected =
-                                            term ===
-                                            currentTermMap[loan._id];
+                                          // const isSelected =
+                                          //   term ===
+                                          //   currentTermMap[loan._id];
 
                                           return (
                                             <li
