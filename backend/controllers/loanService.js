@@ -1,4 +1,7 @@
+const { Client } = require("../models/Client");
+const Company = require("../models/companies");
 const { Loan } = require("../models/loan");
+const User = require("../models/User");
 const createAuditLog = require("../utils/auditLog");
 const mongoose = require("mongoose");
 
@@ -27,14 +30,20 @@ exports.LoansCreate = async (req, res) => {
       previousLoanAmount: Number(body.previousLoanAmount ?? 0),
       subTotal: Number(body.subTotal ?? 0),
       endDate: body.endDate || null,
-      status: body.status || "Fresh Loan Issued",
+      status: body.status || "Active",
     };
 
     const newLoan = await Loan.create(loanData);
+     const client = await Client.findById(body.client).select("fullName");
+     const company = await Company.findById(body.company).select("companyName");
+     const user = await User.findById(req.user?.id).select("name email");
+     const clientName = client?.fullName || "";
+     const companyName = company?.companyName || "";
+     const createdBy = user?.name || user?.email || "";     
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
-      "Loan Created ",
+      `Loan created for ${clientName} under ${companyName} by ${createdBy}`,
       "Loan",
       newLoan._id,
       { after: newLoan }
@@ -99,7 +108,23 @@ exports.updateLoan = async (req, res) => {
         message: "Loan not found",
       });
     }
+   const [client, company, user] = await Promise.all([
+     Client.findById(loan.client).select("fullName"),
+     Company.findById(loan.company).select("companyName"),
+     User.findById(req.user?.id).select("name email"),
+   ]);
+   const clientName = client?.fullName || "";
+   const companyName = company?.companyName || "";
+   const updatedBy = user?.name || user?.email || "";
 
+   await createAuditLog(
+     req.user?.id || null,
+     req.user?.userRole || null,
+     `Loan updated for ${clientName} under ${companyName} by ${updatedBy}`,
+     "Loan",
+     loan._id,
+     { after: loan, changes: updates }
+   );
     res.status(200).json({
       success: true,
       message: "Loan updated successfully",
@@ -129,7 +154,24 @@ exports.updateLoan = async (req, res) => {
         success: false,
         message: "Loan not found",
       });
+  const [client, company, user] = await Promise.all([
+    Client.findById(loan.client).select("fullName"),
+    Company.findById(loan.company).select("companyName"),
+    User.findById(req.user?.id).select("name email"),
+  ]);
 
+  const clientName = client?.fullName || "";
+  const companyName = company?.companyName || "";
+  const deletedBy = user?.name || user?.email || "";
+
+  await createAuditLog(
+    req.user?.id || null,
+    req.user?.userRole || null,
+    `Loan deactivated for ${clientName} under ${companyName} by ${deletedBy}`,
+    "Loan",
+    loan._id,
+    { after: loan }
+  );
     res.status(200).json({
       success: true,
       message: "Loan status set to Deactivated",
@@ -158,6 +200,24 @@ exports.recoverLoan = async (req, res) => {
       id,
       { loanStatus: "Active" },
       { new: true } 
+    );
+     const [client, company, user] = await Promise.all([
+       Client.findById(loan.client).select("fullName"),
+       Company.findById(loan.company).select("companyName"),
+       User.findById(req.user?.id).select("name email"),
+     ]);
+
+     const clientName = client?.fullName || "";
+     const companyName = company?.companyName || "";
+     const recoveredBy = user?.name || user?.email || "";
+
+     await createAuditLog(
+       req.user?.id || null,
+       req.user?.userRole || null,
+       `Loan recovered for ${clientName} under ${companyName} by ${recoveredBy}`,
+       "Loan",
+       loan._id,
+       { after: loan }
     );
     res.status(200).json({
       success: true,

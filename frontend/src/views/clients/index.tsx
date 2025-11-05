@@ -27,7 +27,7 @@ const Clients = observer(() => {
       setViewClient({ ...client, loans });
       setViewModalOpen(true);
     } catch (error) {
-      console.error("Failed to fetch client loans", error);
+      console.error("Failed to fetch Customer loans", error);
     }
   };
 
@@ -65,25 +65,25 @@ const Clients = observer(() => {
           const refreshedClient = clientStore.clients.find(
             (c) => c._id === editingClient._id
           );
-         toast.success("Client updated successfully");
+         toast.success("Customer updated successfully");
           if (refreshedClient) setViewClient(refreshedClient);
         setEditingClient(null);
       setModalOpen(false);
       } else {
         await clientStore.createClient(data);
   await clientStore.fetchClients();
-      toast.success("New client added successfully");
+      toast.success("New Customer added successfully");
       setModalOpen(false);
     }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to save client");
+      toast.error(error.response?.data?.error || "Failed to save Customer");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this client?")) {
+    if (window.confirm("Are you sure you want to delete this Customer?")) {
       await clientStore.deleteClient(id);
-      toast.success("Client deleted successfully");
+      toast.success("Customer deleted successfully");
     }
   };
   const filteredClients = useMemo(() => {
