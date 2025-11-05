@@ -326,7 +326,6 @@ useEffect(() => {
                     ...loan,
                     loanTerms: selectedDynamicTerm,
                   })!;
-                  // console.log(selectedDynamicLoanData.loanTerms, "loanTerms");
                   const today = moment();
                   const totalLoan =
                     loan.interestType === "flat"
@@ -346,11 +345,9 @@ useEffect(() => {
                     "months"
                   );
                   const end = Number(selectedDynamicTerm) * 30;
-                  console.log(end,'end date');
                   const currentEndDate = moment(loan.issueDate).add(end,
                     "day"
                   );
-                  console.log(currentEndDate,);
                   const isDelayed = today.isAfter(endDate, "day");
                   const isPaidOff = paidAmount >= totalLoan;
 
@@ -441,7 +438,6 @@ useEffect(() => {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedClientForLoan(client);
-                                      console.log("Editing loan:", client);
                                       setEditLoanModalOpen(true);
                                       setEditingLoanId(loan._id);
                                     }}
