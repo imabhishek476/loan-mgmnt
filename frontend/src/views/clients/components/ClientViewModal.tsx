@@ -344,6 +344,10 @@ useEffect(() => {
                     loan.loanTerms,
                     "months"
                   );
+                  const end = Number(selectedDynamicTerm) * 30;
+                  const currentEndDate = moment(loan.issueDate).add(end,
+                    "day"
+                  );
                   const isDelayed = today.isAfter(endDate, "day");
                   const isPaidOff = paidAmount >= totalLoan;
 
@@ -434,7 +438,6 @@ useEffect(() => {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedClientForLoan(client);
-                                      console.log("Editing loan:", client);
                                       setEditLoanModalOpen(true);
                                       setEditingLoanId(loan._id);
                                     }}
@@ -515,6 +518,26 @@ useEffect(() => {
                                         <table className="w-full text-sm text-gray-700 border-collapse">
                                           <tbody>
                                             <tr className="">
+                                              <td className="font-semibold py-0 whitespace-nowrap">
+                                                Issue Date:
+                                              </td>
+                                              <td className="py-0">
+                                                {loan.issueDate
+                                                  ? moment(
+                                                      loan.issueDate
+                                                    ).format("MMM DD, YYYY")
+                                                  : "—"}
+                                              </td>
+                                            </tr>
+                                            <tr className="">
+                                              <td className="font-semibold py-0 whitespace-nowrap">
+                                                Check No:
+                                              </td>
+                                              <td className="py-0">
+                                                {loan.checkNumber}
+                                              </td>
+                                            </tr>
+                                            <tr className="">
                                               <td className="font-semibold py-0">
                                                 Current Tenure:
                                               </td>
@@ -532,7 +555,7 @@ useEffect(() => {
                                                 </span>{" "}
                                                 <span>
                                                   (
-                                                  {moment(loan.endDate).format(
+                                                  {moment(currentEndDate).format(
                                                     "MMM DD YYYY"
                                                   )}
                                                   )
@@ -653,30 +676,26 @@ useEffect(() => {
                                           : "max-h-[70px]"
                                       }`}
                                     >
-                                      <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1 ">
-                                        {LOAN_TERMS.filter((term) =>
-                                          showAllTermsMap[loan._id]
-                                            ? true
-                                            : term === currentTermMap[loan._id]
+                                      <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
+                                        {(showAllTermsMap[loan._id]
+                                          ? companyLoanTerms(loan).filter(
+                                              (t) => t <= loan.loanTerms
+                                            )
+                                          : [currentTermMap[loan._id]]
                                         ).map((term) => {
                                           const loanTermData =
                                             calculateLoanAmounts({
                                               ...loan,
                                               loanTerms: term,
                                             })!;
-                                          const isSelected =
-                                            term === currentTermMap[loan._id];
+                                          // const isSelected =
+                                          //   term ===
+                                          //   currentTermMap[loan._id];
 
                                           return (
                                             <li
                                               key={term}
-                                              className={`border-r rounded-lg cursor-pointer transition-all duration-200
-                                    ${
-                                      isSelected
-                                        ? "bg-red-600 text-white border-red-700"
-                                        : "bg-white text-gray-800 hover:bg-gray-50"
-                                    }
-            `}
+                                              className={`border rounded-lg cursor-pointer transition-all duration-200 `}
                                             >
                                               <div className="flex flex-col items-left font-bold p-1">
                                                 <div className="text-xs">
@@ -684,13 +703,13 @@ useEffect(() => {
                                                 </div>
                                                 <div className="text-xs text-left">
                                                   <div>
-                                                    Interest:
+                                                    Interest:{" "}
                                                     {formatUSD(
                                                       loanTermData.interestAmount
                                                     )}
                                                   </div>
                                                   <div>
-                                                    Total:
+                                                    Total:{" "}
                                                     {formatUSD(
                                                       loanTermData.total
                                                     )}
