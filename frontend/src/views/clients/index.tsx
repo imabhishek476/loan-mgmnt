@@ -27,7 +27,7 @@ const Clients = observer(() => {
       setViewClient({ ...client, loans });
       setViewModalOpen(true);
     } catch (error) {
-      console.error("Failed to fetch client loans", error);
+      console.error("Failed to fetch Customer loans", error);
     }
   };
 
@@ -65,25 +65,25 @@ const Clients = observer(() => {
           const refreshedClient = clientStore.clients.find(
             (c) => c._id === editingClient._id
           );
-         toast.success("Client updated successfully");
+         toast.success("Customer updated successfully");
           if (refreshedClient) setViewClient(refreshedClient);
         setEditingClient(null);
       setModalOpen(false);
       } else {
         await clientStore.createClient(data);
   await clientStore.fetchClients();
-      toast.success("New client added successfully");
+      toast.success("New Customer added successfully");
       setModalOpen(false);
     }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to save client");
+      toast.error(error.response?.data?.error || "Failed to save Customer");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this client?")) {
+    if (window.confirm("Are you sure you want to delete this Customer?")) {
       await clientStore.deleteClient(id);
-      toast.success("Client deleted successfully");
+      toast.success("Customer deleted successfully");
     }
   };
   const filteredClients = useMemo(() => {
@@ -112,9 +112,9 @@ const Clients = observer(() => {
   }, []);
 
   return (
-    <div className="text-left flex flex-col bg-white transition-all duration-300">
+    <div className="text-left flex flex-col transition-all duration-300">
       {/* Header */}
-      <div className="mb-5 flex flex-col sm:flex-row justify-between items-left gap-4">
+      <div className="mb-5 flex flex-col sm:flex-row justify-between items-left gap-4 ">
         <div>
           <h1 className="text-2xl  text-gray-800 font-bold ">
             Customer Management
@@ -127,15 +127,12 @@ const Clients = observer(() => {
         <Button
           variant="contained"
           sx={{
-            backgroundColor: "#145A32",
-            fontWeight: 600,
+            backgroundColor: "#15803d",
+            "&:hover": { backgroundColor: "#166534" },
             textTransform: "none",
-            borderRadius: "8px",
-            padding: "8px 10px",
-            fontSize: "14px",
-            boxShadow: "0 3px 6px rgba(0,0,0,0.2)",
-            "&:hover": { backgroundColor: "#0f3f23" },
-          }}
+            fontWeight: 600,
+            borderRadius: 1,
+           }}
           startIcon={<Plus />}
           onClick={() => {
             setEditingClient(null);

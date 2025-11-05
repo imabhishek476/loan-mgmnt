@@ -187,14 +187,14 @@ useEffect(() => {
             <button
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
             >
               Cancel
             </button>
             <button
               onClick={handlePayment}
               disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+              className="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-700 hover:bg-green-600 transition"
             >
               {loading ? "Processing..." : "Pay"}
             </button>

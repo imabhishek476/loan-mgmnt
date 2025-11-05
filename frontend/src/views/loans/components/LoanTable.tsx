@@ -505,9 +505,17 @@ return data;
                 <p className="text-gray-500 text-xs uppercase mb-1">
                   Remaining Amount
                 </p>
-                <p className="font-semibold text-red-700">
-                  $
-                  {remaining.toLocaleString(undefined, {
+                  <p className={`font-semibold 
+                  ${
+                      selectedLoan.status === "Merged" ? "text-green-700" : "text-red-700"
+                    }`}
+                  >
+                    $
+                    {(
+                      selectedLoan.status === "Merged"
+                        ? 0
+                        : remaining
+                    ).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -515,16 +523,23 @@ return data;
               </div>
               <div className="sm:col-span-2 mt-2">
                 <p className="text-gray-500 text-xs uppercase mb-1">Progress</p>
-                <div className="w-full bg-gray-200 h-2 rounded-full">
+                <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                   <div
-                    className="h-2 rounded-full bg-green-600"
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      selectedLoan.status === "Merged" ? "bg-green-500" : "bg-green-600"
+                    }`}
                     style={{
                       width: `${
-                        ((selectedLoan.paidAmount || 0) / (total || 1)) * 100
+                        selectedLoan.status === "Merged"
+                          ? 100
+                          : ((selectedLoan.paidAmount || 0) / (total || 1)) * 100
                       }%`,
                     }}
                   />
                 </div>
+                {selectedLoan.status === "Merged" && (
+                  <p className="text-xs text-green-600 mt-1 font-medium">
+                    Merged loan — fully settled </p>)}
               </div>
               <div>
                 <p className="text-gray-500 text-xs uppercase mb-1">

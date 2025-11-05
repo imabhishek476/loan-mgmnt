@@ -49,27 +49,29 @@ const AuditLogsTable: React.FC = () => {
 
   const formatActionType = (action: string) => {
     const lower = action?.toLowerCase() || "";
-    let color = "text-gray-700";
-    let bgColor = "bg-gray-200";
-    let type = "";
+   let bgColor = "bg-gray-100 text-gray-700";
+    let type = "-";
 
     if (lower.includes("create")) {
+    bgColor = "bg-green-100 text-green-700";
       type = "Create";
-      color = "text-green-700";
-      bgColor = "bg-green-100";
     } else if (lower.includes("update")) {
-      type = "Update";
-      color = "text-blue-700";
-      bgColor = "bg-blue-100";
+    bgColor = "bg-blue-100 text-blue-700";
+     type = "Update";
+  } else if (lower.includes("deactivate")) {
+    bgColor = "bg-orange-100 text-orange-700";
+    type = "Deactivate";
     } else if (lower.includes("delete")) {
+    bgColor = "bg-red-100 text-red-700";
       type = "Delete";
-      color = "text-red-700";
-      bgColor = "bg-red-100";
+  } else if (lower.includes("recover")) {
+ bgColor = "bg-green-200 text-green-800";
+    type = "Recover";
     }
 
     return (
       <span
-        className={`px-2 py-1 rounded-lg font-semibold ${bgColor} ${color}`}
+        className={`px-2 py-1 rounded-lg font-semibold text-xs ${bgColor}`}
       >
         {type}
       </span>
@@ -83,7 +85,9 @@ const AuditLogsTable: React.FC = () => {
     if (action.includes("delete")) return log.data.before || log.data;
     if (action.includes("update")) return log.data.after || log.data;
     if (action.includes("create")) return log.data.after || log.data;
-
+     if (action.includes("delete")) return log.data.before || log.data;
+     if (action.includes("deactivate")) return log.data.before || log.data;
+     if (action.includes("recover")) return log.data.after || log.data;
     return log.data;
   };
   // Render fields with values, nested arrays/objects indented
@@ -136,23 +140,24 @@ const AuditLogsTable: React.FC = () => {
       );
     });
   };
-  const filteredLogs = useMemo(() => {
-    const lowerSearch = search.toLowerCase();
-    return logs.filter((log) => {
-      const act = log.action?.toLowerCase() || "";
-      const isActionType = ["create", "update", "delete"].some((a) =>
-        act.includes(a)
-      );
-      if (!isActionType) return false;
+const filteredLogs = useMemo(() => {
+  const lowerSearch = search.toLowerCase();
+  return logs.filter((log) => {
+    const act = log.action?.toLowerCase() || "";
+    const isActionType = ["create", "update", "delete", "deactivate", "recover"].some((a) =>
+      act.includes(a)
+    ); // ✅ added deactivate & recover
+    if (!isActionType) return false;
 
-      return (
-        log.entity?.toLowerCase().includes(lowerSearch) ||
-        log.userId?.name?.toLowerCase().includes(lowerSearch) ||
-        log.userId?.email?.toLowerCase().includes(lowerSearch) ||
-        act.includes(lowerSearch)
-      );
-    });
-  }, [logs, search]);
+    return (
+      log.entity?.toLowerCase().includes(lowerSearch) ||
+      log.userId?.name?.toLowerCase().includes(lowerSearch) ||
+      log.userId?.email?.toLowerCase().includes(lowerSearch) ||
+      act.includes(lowerSearch)
+    );
+  });
+}, [logs, search]);
+
 
   const columns = [
     {
@@ -179,7 +184,7 @@ const AuditLogsTable: React.FC = () => {
     },
     {
       title: "Action",
-      render: (rowData: any) => rowData.message || "-",
+      render: (rowData: any) => rowData.action || "-",
       cellStyle: { minWidth: 200 },
     },
     {

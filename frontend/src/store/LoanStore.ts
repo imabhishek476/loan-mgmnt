@@ -27,6 +27,7 @@ export interface Loan {
   checkNumber?: string;
   status?: string;
   loanStatus: string;
+  parentLoanId?: string | null;
 }
 
 class LoanStore {
