@@ -203,14 +203,14 @@ exports.updateCompany = async (req, res) => {
       });
     }
     const user = await User.findById(req.user?.id).select("name email");
-    const createdBy = user?.name || user?.email || "";
+    const updatedBy = user?.name || user?.email || "";
       await createAuditLog(
         req.user?.id || null,
         req.user?.userRole || null,
          `Company "${updatedCompany.companyName}" updated by ${updatedBy}`,
         "Company",
         updatedCompany._id,
-        { before, after: updatedCompany }
+        { after: updatedCompany }
       );
     res.status(200).json({
       success: true,
