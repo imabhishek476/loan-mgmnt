@@ -8,7 +8,7 @@ import Layout from "./views/components/Layout";
 import ProtectedRoute from "./views/ProtectedRoute"; 
 import  Administration from "./views/administration/index";
 import  Loans from "./views/loans/index";
-
+import NotFound from "./views/components/404"; 
 
 const appRouter = createBrowserRouter([
   {
@@ -42,6 +42,7 @@ const appRouter = createBrowserRouter([
       },
     ],
   },
+  { path: "*", element: <NotFound /> },
 ]);
 
 const Body = () => {
