@@ -134,7 +134,7 @@ useEffect(() => {
                 <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
               )}
               <p className="text-sm text-gray-500 mt-1">
-                Outstanding: ${formated_Outstanding}
+                Outstanding: ${Number(formated_Outstanding).toLocaleString()}
               </p>
             </div>
 
