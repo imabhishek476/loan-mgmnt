@@ -78,17 +78,26 @@ const calculateLoan = (
   }, 0);
 
   const subtotal = totalBase + feeTotal;
-  const interest =
-    termNum > 0 && rateNum > 0
-      ? type === "flat"
-        ? subtotal * (rateNum / 100) * termNum
-        : subtotal * (Math.pow(1 + rateNum / 100, termNum) - 1)
-      : 0;
+  let interest = 0;
+  let total = subtotal;
+  if (termNum > 0 && rateNum > 0) {
+    if (type === "flat") {
+      for (let i = 6; i <= termNum; i += 6) {
+        const stepInterest = total * (rateNum / 100) * 6;
+        total += stepInterest;
+        if (i === 18 || i === 30) total += 200;
+      }
+      interest = total - subtotal;
+    } else {
+      total = subtotal * Math.pow(1 + rateNum / 100, termNum);
+      interest = total - subtotal;
+    }
+  }
 
   return {
     subtotal: parseFloat(subtotal.toFixed(2)),
     interestAmount: parseFloat(interest.toFixed(2)),
-    totalWithInterest: parseFloat((subtotal + interest).toFixed(2)),
+    totalWithInterest: parseFloat(total.toFixed(2)),
   };
 };
 
@@ -249,7 +258,10 @@ const formatDate = (date: Date) =>
   const start = issueDate ? new Date(issueDate) : new Date();
   const end = endDate ? new Date(endDate) : new Date(start);
   if (!endDate) end.setMonth(end.getMonth() + loanTerm);
-
+  const usd = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
   return (
     <div className="rounded-xl shadow-sm px-0 min-w-0" style={bgStyle}>
       {" "}
@@ -388,7 +400,7 @@ const formatDate = (date: Date) =>
         {includePreviousLoans && previousLoanTotal > 0 && (
           <div className="flex justify-between text-yellow-300">
             <span>Previous Loan Amount Carry Forward:</span>
-            <span>${previousLoanTotal.toFixed(2)}</span>
+            <span>{usd.format(previousLoanTotal)}</span>
           </div>
         )}
         <div className="flex justify-between items-center">
@@ -399,7 +411,7 @@ const formatDate = (date: Date) =>
           </span>
 
           <span className="text-md text-green-700 px-2 rounded-md text-md bg-white">
-            ${subtotal.toFixed(2)}
+            {usd.format(subtotal)}
           </span>
         </div>
       </div>
@@ -488,15 +500,14 @@ const formatDate = (date: Date) =>
                         isSelected ? "text-yellow-300" : "text-gray-700"
                       }`}
                     >
-                      Interest: ${termResult.interestAmount.toFixed(2)}
+                      Interest: {usd.format(termResult.interestAmount)}
                     </div>
                     <div
                       className={`text-xs font-medium mb-1 ${
                         isSelected ? "text-yellow-300" : "text-gray-700"
                       }`}
                     >
-                      Total: $
-                      {(termResult.interestAmount + subtotal).toFixed(2)}
+                      Total: {usd.format(termResult.interestAmount + subtotal)}
                     </div>
                     <div
                       className={`text-xs ${

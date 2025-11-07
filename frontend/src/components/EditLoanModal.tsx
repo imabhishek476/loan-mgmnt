@@ -55,22 +55,23 @@ const getLoanRunningDetails = (loan: any) => {
 };
 const calculateLoan = (
   base: number,
-  fees: Record<string, { value: number; type: "flat" | "percentage" }>,
-  interestType: "flat" | "compound",
-  monthlyRate: number,
-  termMonths: number,
+  fees: Record<string, Fee>,
+  type: "flat" | "compound",
+  rate: number,
+  term: number,
   previousLoanTotal: number = 0
 ) => {
-  const totalBase = base + previousLoanTotal;
+  const num = (val: any): number =>
+    typeof val === "string" ? parseFloat(val) || 0 : val || 0;
 
-  if (totalBase <= 0) {
-    return {
-      subtotal: 0,
-      interestAmount: 0,
-      totalWithInterest: 0,
-    };
-  }
+  const baseNum = num(base);
+  const prevLoan = num(previousLoanTotal);
+  const totalBase = baseNum + prevLoan;
+  if (totalBase <= 0)
+    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
 
+  const rateNum = num(rate);
+  const termNum = Math.max(0, Math.floor(num(term)));
   const feeKeys = [
     "administrativeFee",
     "applicationFee",
@@ -82,26 +83,33 @@ const calculateLoan = (
   const feeTotal = feeKeys.reduce((sum, key) => {
     const fee = fees[key];
     if (!fee) return sum;
-    const val = fee.value || 0;
-    return fee.type === "percentage" ? sum + (base * val) / 100 : sum + val;
+    const value = num(fee.value);
+    return fee.type === "percentage"
+      ? sum + (baseNum * value) / 100
+      : sum + value;
   }, 0);
 
   const subtotal = totalBase + feeTotal;
-
-  let interestAmount = 0;
-  if (termMonths > 0 && monthlyRate > 0) {
-    const rate = monthlyRate / 100;
-    if (interestType === "flat") {
-      interestAmount = subtotal * rate * termMonths;
+  let interest = 0;
+  let total = subtotal;
+  if (termNum > 0 && rateNum > 0) {
+    if (type === "flat") {
+      for (let i = 6; i <= termNum; i += 6) {
+        const stepInterest = total * (rateNum / 100) * 6;
+        total += stepInterest;
+        if (i === 18 || i === 30) total += 200;
+      }
+      interest = total - subtotal;
     } else {
-      interestAmount = subtotal * (Math.pow(1 + rate, termMonths) - 1);
+      total = subtotal * Math.pow(1 + rateNum / 100, termNum);
+      interest = total - subtotal;
     }
   }
 
   return {
     subtotal: parseFloat(subtotal.toFixed(2)),
-    interestAmount: parseFloat(interestAmount.toFixed(2)),
-    totalWithInterest: parseFloat((subtotal + interestAmount).toFixed(2)),
+    interestAmount: parseFloat(interest.toFixed(2)),
+    totalWithInterest: parseFloat(total.toFixed(2)),
   };
 };
 
@@ -323,11 +331,11 @@ const handleSave = async () => {
           parentLoanId: loanId,
         });
       }
-      toast.success(
-        `${selectedIds.length} previous loan${
-          selectedIds.length > 1 ? "s" : ""
-        } merged successfully`
-      );
+      // toast.success(
+      //   `${selectedIds.length} previous loan${
+      //     selectedIds.length > 1 ? "s" : ""
+      //   } merged successfully`
+      // );
     }
     await loanStore.fetchLoans();
     toast.success("Loan updated successfully");
@@ -418,14 +426,14 @@ const handleSave = async () => {
                         isSelected ? "text-yellow-300" : "text-gray-700"
                       }`}
                     >
-                      Interest: ${result.interestAmount.toFixed(2)}
+                      Interest: {usd.format(result.interestAmount)}
                     </div>
                     <div
                       className={`text-xs font-medium mb-1 ${
                         isSelected ? "text-yellow-300" : "text-gray-700"
                       }`}
                     >
-                      Total: ${result.totalWithInterest.toFixed(2)}
+                      Total: {usd.format(result.totalWithInterest)}
                     </div>
                     <div
                       className={`text-xs ${
@@ -450,7 +458,10 @@ const handleSave = async () => {
       formData.loanTerms || 24,
       overlapMode ? selectedPreviousLoanTotal : 0
     );
-
+ const usd = new Intl.NumberFormat("en-US", {
+   style: "currency",
+   currency: "USD",
+ });
     return (
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2">
@@ -613,12 +624,7 @@ const handleSave = async () => {
                 {/* Overlap Mode */}
                 {overlapMode && activeLoans.length > 0 && (
                   <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-800 flex items-center gap-2">
-                        <RefreshCw size={14} className="text-gray-500" />{" "}
-                        Previous Loan
-                      </label>
-                    </div>
+                
 
                     <div className="transition-all duration-700 ease-in-out overflow-auto max-h-40 opacity-100">
                       {activeLoans.map((loan) => {
@@ -901,7 +907,7 @@ const handleSave = async () => {
                     {overlapMode && selectedPreviousLoanTotal > 0 && (
                       <div className="flex justify-between text-yellow-300 font-semibold mt-2">
                         <span>Previous Loan Amount Carry Forward:</span>
-                        <span>${selectedPreviousLoanTotal.toFixed(2)}</span>
+                        <span>{usd.format(selectedPreviousLoanTotal)}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center">
@@ -911,7 +917,7 @@ const handleSave = async () => {
                           : "Loan Amount (Base + Additional Fees)"}
                       </span>
                       <span className="text-md text-green-700 px-2 rounded-md bg-white">
-                        ${currentCalc.subtotal.toFixed(2)}
+                        {usd.format(currentCalc.subtotal)}
                       </span>
                     </div>
                   </div>

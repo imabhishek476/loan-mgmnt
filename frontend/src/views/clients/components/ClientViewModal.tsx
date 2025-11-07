@@ -424,12 +424,11 @@ useEffect(() => {
                                   ? "Paid Off"
                                   : loan.status}
                               </span>
-                              {isDelayed && loan.status !== "Paid Off" && (
-                                <AlertCircle
-                                  size={16}
-                                  className="text-red-600"
-                                />
-                              )}
+                             {isDelayed &&
+                      loan.status !== "Paid Off" &&
+                      loan.status !== "Merged" && (
+                        <AlertCircle size={16} className="text-red-600" />
+                      )}
                               <span>
                                 {loan.status !== "Merged" && (
                                   <Pencil
@@ -677,12 +676,17 @@ useEffect(() => {
                                       }`}
                                     >
                                       <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
-                                        {(showAllTermsMap[loan._id]
-                                          ? companyLoanTerms(loan).filter(
-                                              (t) => t <= loan.loanTerms
-                                            )
-                                          : [currentTermMap[loan._id]]
-                                        ).map((term) => {
+                                        {(() => {
+                                        const companyTerms = companyLoanTerms(loan);
+                                        const allTerms = companyTerms.includes(loan.loanTerms)
+                                          ? companyTerms
+                                          : [...companyTerms, loan.loanTerms].sort((a, b) => a - b);
+
+                                        return showAllTermsMap[loan._id]
+                                          ? allTerms.filter((t) => t <= loan.loanTerms)
+                                          : [currentTermMap[loan._id]];
+                                      })()
+                                      .map((term) => {
                                           const loanTermData =
                                             calculateLoanAmounts({
                                               ...loan,
