@@ -38,7 +38,7 @@ useEffect(() => {
   if (!loanData) return;
   const { remaining } = loanData;
   setOutstanding(remaining);
-  setAmount(remaining > 0 ? remaining.toFixed(2) : "0.00");
+        setAmount("");
         setCheckNumber("");
         setPayoffLetter("");
         setErrors({});
@@ -107,7 +107,7 @@ useEffect(() => {
               </label>
               <input
                 type="number"
-                value={null}
+                value={amount}
                 min={0}
                 step="0.01"
                 onChange={(e) => {
@@ -134,7 +134,7 @@ useEffect(() => {
                 <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
               )}
               <p className="text-sm text-gray-500 mt-1">
-                Outstanding: ${formated_Outstanding}
+                Outstanding: ${Number(formated_Outstanding).toLocaleString()}
               </p>
             </div>
 
@@ -187,14 +187,14 @@ useEffect(() => {
             <button
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
+              className="px-4 py-2 font-bold bg-red-500 text-white rounded-lg hover:bg-red-700 transition"
             >
               Cancel
             </button>
             <button
               onClick={handlePayment}
               disabled={loading}
-              className="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-700 hover:bg-green-600 transition"
+              className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition flex items-center gap-2"
             >
               {loading ? "Processing..." : "Pay"}
             </button>
