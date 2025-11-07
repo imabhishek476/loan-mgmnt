@@ -55,7 +55,7 @@ const getLoanRunningDetails = (loan: any) => {
 };
 const calculateLoan = (
   base: number,
-  fees: Record<string, Fee>,
+  fees: Record<string, { value: number; type: "flat" | "percentage" }>,
   type: "flat" | "compound",
   rate: number,
   term: number,
