@@ -274,11 +274,12 @@ return data;
                 {
                   title: "Term (months)",
                   render: (rowData) => {
-                    const { monthsPassed } =
-                      calculateDynamicTermAndPayment(rowData);
+                    const today = moment();
+                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY");
+                  const monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) + 1;
+
                     const runningTenure =
-                      ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
-                      ALLOWED_TERMS.at(-1);
+                      ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
                     return <span>{runningTenure}</span>;
                   },
                   headerStyle: { whiteSpace: "nowrap" },
