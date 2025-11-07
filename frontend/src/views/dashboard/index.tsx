@@ -341,7 +341,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
              dataKey="name"
              tick={{ fontSize: 12 }}
              interval={0}
-             angle={-15}
+             angle={-0}
              dy={10}
            />
           <YAxis tickFormatter={formatCurrency} />
