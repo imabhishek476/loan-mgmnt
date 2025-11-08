@@ -30,7 +30,10 @@ export const calculateLoanAmounts = (loan: any) => {
         }
         interestAmount = total - subtotal;
     } else if (interestType === "compound") {
-        total = subtotal * Math.pow(1 + rate, dynamicTerm);
+        for (let i = 1; i <= dynamicTerm; i++) {
+            total *= 1 + rate; 
+            if (i === 18 || i === 30) total += 200;
+        }
         interestAmount = total - subtotal;
     }
 
