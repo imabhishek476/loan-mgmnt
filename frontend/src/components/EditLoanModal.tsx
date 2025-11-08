@@ -101,8 +101,10 @@ const calculateLoan = (
       }
       interest = total - subtotal;
     } else {
-      total = subtotal * Math.pow(1 + rateNum / 100, termNum);
-      interest = total - subtotal;
+      for (let i = 1; i <= termNum; i++) {
+          total *= 1 + rateNum / 100;
+        if (i === 18 || i === 30) total += 200;
+      }      interest = total - subtotal;
     }
   }
 
