@@ -62,7 +62,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       };
       try {
         const data = await getClientsSearch(filters);
-        setClientsList(data.clients);
+          setClientsList(data.clients);
         return {
           data: data.clients,
           page: query.page,
@@ -89,12 +89,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       toast.success("Customer deleted successfully");
     }
   };
-  useEffect(() => {
-    if (tableRef.current) {
-      tableRef.current.onQueryChange();
-    }
-  }, [clientStore.refreshTable]);
-
   return (
     <div className="">
       <div className="mb-3 flex flex-col sm:flex-row gap-2">
