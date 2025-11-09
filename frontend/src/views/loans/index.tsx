@@ -94,24 +94,24 @@ const Loans = observer(
 
     const handleClose = () => setSelectedLoan(null);
 
-  const loadInitialData = async () => {
-    try {
-      const promises = [];
-      if (companyStore.companies.length == 0) {
-        promises.push(companyStore.fetchCompany());
+    const loadInitialData = async () => {
+      try {
+        const promises = [];
+        if (companyStore.companies.length == 0) {
+          promises.push(companyStore.fetchCompany());
+        }
+        if (clientStore.clients.length == 0) {
+          promises.push(clientStore.fetchClients());
+        }
+        if (loanStore.loans.length == 0) {
+          promises.push(loanStore.fetchLoans());
+        }
+        await Promise.all(promises);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load data");
       }
-      if (clientStore.clients.length == 0) {
-        promises.push(clientStore.fetchClients());
-      }
-      if (loanStore.loans.length == 0) {
-        promises.push(loanStore.fetchLoans());
-      }
-      await Promise.all(promises);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load data");
-    }
-  };
+    };
 
     useEffect(() => {
       if (defaultClient && companyStore.companies?.length) {
@@ -219,14 +219,17 @@ const Loans = observer(
           (sum, loan) => sum + getLoanRunningDetails(loan).remaining,
           0
         ) || 0;
-useEffect(() => {
-  const total =
-    activeLoans
-      ?.filter((loan) => selectedLoanIds.includes(loan._id))
-      ?.reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining,0) || 0;
+    useEffect(() => {
+      const total =
+        activeLoans
+          ?.filter((loan) => selectedLoanIds.includes(loan._id))
+          ?.reduce(
+            (sum, loan) => sum + getLoanRunningDetails(loan).remaining,
+            0
+          ) || 0;
 
-  setPreviousLoanAmount(total);
-}, [selectedLoanIds, activeLoans]);
+      setPreviousLoanAmount(total);
+    }, [selectedLoanIds, activeLoans]);
     let runningTenure = 0;
     let remaining = 0;
     let total = 0;
@@ -257,36 +260,36 @@ useEffect(() => {
           toast.error("Please enter valid loan terms");
           return;
         }
-      const payload = {
-        ...data,
-        baseAmount: (formData.baseAmount).toFixed(2),
-        checkNumber: formData.checkNumber || null,
-        fees: formData.fees,
-        interestType: formData.interestType,
-        monthlyRate: formData.monthlyRate,
-        loanTerms: formData.loanTerms,
-        totalLoan: formData.totalLoan,
-        endDate,
-        subTotal: (calculatedSubTotal + previousLoanAmount).toFixed(2),
-        previousLoanAmount,
-        status: "Active",
-      };
+        const payload = {
+          ...data,
+          baseAmount: formData.baseAmount.toFixed(2),
+          checkNumber: formData.checkNumber || null,
+          fees: formData.fees,
+          interestType: formData.interestType,
+          monthlyRate: formData.monthlyRate,
+          loanTerms: formData.loanTerms,
+          totalLoan: formData.totalLoan,
+          endDate,
+          subTotal: (calculatedSubTotal + previousLoanAmount).toFixed(2),
+          previousLoanAmount,
+          status: "Active",
+        };
         if (!editingLoan) {
-  const createdLoan = await loanStore.createLoan(payload);
+          const createdLoan = await loanStore.createLoan(payload);
           const selectedIds =
             activeLoans
               ?.filter((loan) => selectedLoanIds.includes(loan._id))
               ?.map((loan) => loan._id) || [];
           for (const id of selectedIds) {
-            await loanStore.updateLoan(id, { 
+            await loanStore.updateLoan(id, {
               status: "Merged",
               parentLoanId: createdLoan?._id || null,
             });
           }
           await loanStore.fetchLoans();
-
+          await loanStore.refreshDataTable();
+          await clientStore.refreshDataTable();
           toast.success("Loan created successfully");
-          loadInitialData();
         }
         setModalOpen(false);
         onClose?.();
@@ -297,16 +300,16 @@ useEffect(() => {
           error?.message ||
           "Failed to save loan";
         toast.error(message);
-          onClose?.();
+        onClose?.();
         console.error("Error saving loan:", error);
       } finally {
         setSaving(false);
-          onClose?.();
+        onClose?.();
       }
     };
- useEffect(() => {
-     loadInitialData();
- }, []);
+    useEffect(() => {
+      loadInitialData();
+    }, []);
     const handleDelete = async (id: string) => {
       if (!window.confirm("Are you sure you want to delete this loan?")) return;
       try {
@@ -357,7 +360,7 @@ useEffect(() => {
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <Wallet size={20} /> Loans ({loanStore.loans?.length || 0})
+                  <Wallet size={20} /> Loans ({loanStore.total || 0})
                 </h1>
                 <p className="text-gray-600 text-base">
                   Manage loan origination, fresh loans, and tracking
@@ -397,11 +400,6 @@ useEffect(() => {
               </Button>
             </div>
             <LoanTable
-              onEdit={(loan) => {
-                setEditingLoan(loan);
-                setFormData(loan);
-                setModalOpen(true);
-              }}
               onDelete={handleDelete}
               //@ts-ignore
               onView={handleView}

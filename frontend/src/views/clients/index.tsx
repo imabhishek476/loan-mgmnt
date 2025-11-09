@@ -65,13 +65,14 @@ const Clients = observer(() => {
           const refreshedClient = clientStore.clients.find(
             (c) => c._id === editingClient._id
           );
+        await clientStore.refreshDataTable();
          toast.success("Customer updated successfully");
           if (refreshedClient) setViewClient(refreshedClient);
         setEditingClient(null);
       setModalOpen(false);
       } else {
         await clientStore.createClient(data);
-  await clientStore.fetchClients();
+        await clientStore.refreshDataTable();
       toast.success("New Customer added successfully");
       setModalOpen(false);
     }

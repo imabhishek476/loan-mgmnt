@@ -138,7 +138,100 @@ exports.updateLoan = async (req, res) => {
     });
   }
 };
+exports.searchLoans = async (req, res) => {
+  try {
+    const { query, issueDate, clientId, page = 0, limit = 10 } = req.query;
 
+    const matchStage = {};
+    if (clientId) matchStage.client = new mongoose.Types.ObjectId(clientId);
+    if (issueDate) {
+      const formattedDate = moment(issueDate, [
+        "MM-DD-YYYY",
+        "YYYY-MM-DD",
+      ]).format("MM-DD-YYYY");
+      matchStage.issueDate = formattedDate;
+    }
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "clients",
+          localField: "client",
+          foreignField: "_id",
+          as: "clientInfo",
+        },
+      },
+      { $unwind: { path: "$clientInfo", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company",
+          foreignField: "_id",
+          as: "companyInfo",
+        },
+      },
+      { $unwind: { path: "$companyInfo", preserveNullAndEmptyArrays: true } },
+    ];
+    if (query && query.trim() !== "") {
+      const regex = new RegExp(query, "i");
+      pipeline.push({
+        $match: {
+          $or: [
+            { "clientInfo.fullName": regex },
+            { "companyInfo.companyName": regex },
+            { loanNumber: regex },
+            { status: regex },
+          ],
+        },
+      });
+    }
+    pipeline.push(
+      { $sort: { createdAt: -1 } },
+      { $skip: Number(page) * Number(limit) },
+      { $limit: Number(limit) },
+      {
+        $project: {
+          _id: 1,
+          loanNumber: 1,
+          issueDate: 1,
+          status: 1,
+          subTotal: 1,
+          paidAmount: 1,
+          loanStatus: 1,
+          monthlyRate: 1,
+          interestType: 1,
+          client: { _id: "$clientInfo._id", fullName: "$clientInfo.fullName" },
+          company: {
+            _id: "$companyInfo._id",
+            companyName: "$companyInfo.companyName",
+            backgroundColor: "$companyInfo.backgroundColor",
+          },
+        },
+      }
+    );
+    const loans = await Loan.aggregate(pipeline);
+    let total;
+    if (query || clientId || issueDate) {
+      const countPipeline = pipeline.filter(
+        (stage) => !("$skip" in stage) && !("$limit" in stage)
+      );
+      const filteredLoans = await Loan.aggregate(countPipeline);
+      total = filteredLoans.length;
+    } else {
+      total = await Loan.countDocuments();
+    }
+    res.status(200).json({
+      success: true,
+      loans,
+      total,
+      currentPage: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+    });
+  } catch (error) {
+    console.error("Error in searchLoans:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
  exports.deleteLoan = async (req, res) => {
   try {
     const { id } = req.params;

@@ -95,10 +95,7 @@ const clientLoans = useMemo(() => {
   };
 
   useEffect(() => {
-    if (!hasLoaded.current) {
       loadInitialData();
-      hasLoaded.current = true;
-    }
   }, []);
   // useEffect(() => {
   //   if (client?._id) loanStore.fetchLoans();
@@ -298,9 +295,15 @@ useEffect(() => {
             <div className="p-2 space-y-4 min-h-[400px] ">
               {clientLoans.length > 0 ? (
                 clientLoans.map((loan: any) => {
-                  const company = companyStore.companies.find(
-                    (c) => c._id === loan.company
-                  );
+                  const companyId =
+                    typeof loan.company === "string"
+                      ? loan.company
+                      : loan.company?._id;
+
+                  const company =
+                    companyStore.companies.find((c) => c._id === companyId) ||
+                    loan.company; // fallback if object is directly in loan
+
                   const companyName = company?.companyName || "Unknown";
                   const companyColor = company?.backgroundColor || "#555555";
                   // const isPaidOff =
