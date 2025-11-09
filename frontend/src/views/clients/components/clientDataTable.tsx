@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MaterialTable from "@material-table/core";
-import { Search, Trash2, User, Plus } from "lucide-react";
+import { Search, Trash2, Plus } from "lucide-react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 // import { TextField } from "@mui/material";
@@ -22,7 +22,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   onViewClient,
 }) => {
   const [searchInput, setSearchInput] = useState("");
-  const [clientsList, setClientsList] = useState("");
+  const [, setClientsList] = useState("");
 
   const [issueDateFilterInput, setIssueDateFilterInput] = useState<any>(null);
   const clearedSearch = "";

@@ -6,7 +6,7 @@
   } from "react";
   import MaterialTable from "@material-table/core";
   // import { debounce } from "lodash";
-  import { Search, Eye, Wallet, Trash2, RefreshCcw } from "lucide-react";
+  import { Search, Eye, Trash2, RefreshCcw } from "lucide-react";
   import { loanStore } from "../../../store/LoanStore";
   import { clientStore } from "../../../store/ClientStore";
   import { companyStore } from "../../../store/CompanyStore";
@@ -37,7 +37,7 @@
   const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
     const [search] = useState("");
     const [selectedLoan, setSelectedLoan] = useState(null);
-  const [loansDataTable, setLoansDataTable] = useState<any[]>([]);
+  const [, setLoansDataTable] = useState<any[]>([]);
     const [searchInput, setSearchInput] = useState("");
     const [issueDateFilterInput, setIssueDateFilterInput] =
       useState<moment.Moment | null>(null);
