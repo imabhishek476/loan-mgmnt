@@ -67,7 +67,7 @@ const renderFee = (fee: any) => {
             {
               title: "Sr.no",
               width: "5%",
-              render: (rowData) => (rowData.tableData?.id ?? 0) + 1,
+              render: (rowData:any) => (rowData.tableData?.id ?? 0) + 1,
             },
             {
               title: "Company Name",

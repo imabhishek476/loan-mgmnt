@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import AuditLogsTable from "./components/AuditLogsTable";
 import { CompaniesTab } from "./components/CompaniesTab";
