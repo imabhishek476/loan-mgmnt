@@ -1,31 +1,25 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MaterialTable from "@material-table/core";
 import { Search, Trash2, User, Plus } from "lucide-react";
-import CircularProgress from "@mui/material/CircularProgress";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 // import { TextField } from "@mui/material";
 import moment from "moment";
-import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
-import { companyStore } from "../../../store/CompanyStore";
 import { toast } from "react-toastify";
 import { getClientsSearch } from "../../../services/ClientServices";
 // import { calculateLoanAmounts } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
   // clients: any[];
   loading: boolean;
-  onSearch: (query: string) => void;
   onAddLoan: (client: any) => void;
   onViewClient: (client: any) => void;
-  onFilter?: (filters: { search: string; issueDate: string | null }) => void;
 }
 
 const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   loading,
   onAddLoan,
   onViewClient,
-  onFilter,
 }) => {
   const [searchInput, setSearchInput] = useState("");
   const [clientsList, setClientsList] = useState("");
@@ -34,14 +28,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   const clearedSearch = "";
   const clearedDate = null;
   const tableRef = useRef<any>(null);
-  const handleFilter = () => {
-    if (typeof onFilter === "function") {
-      const formattedDate = issueDateFilterInput
-        ? moment(issueDateFilterInput).format("MM-DD-YYYY")
-        : null;
-      onFilter({ search: searchInput, issueDate: formattedDate });
-    }
-  };
   const handleReset = async () => {
     setSearchInput(clearedSearch);
     setIssueDateFilterInput(clearedDate);

@@ -94,17 +94,24 @@ const Loans = observer(
 
     const handleClose = () => setSelectedLoan(null);
 
-    const loadInitialData = async () => {
-      try {
-        await Promise.all([
-          companyStore.fetchCompany(),
-          clientStore.fetchClients(),
-          loanStore.fetchLoans(),
-        ]);
-      } catch {
-        toast.error("Failed to load data");
+  const loadInitialData = async () => {
+    try {
+      const promises = [];
+      if (companyStore.companies.length == 0) {
+        promises.push(companyStore.fetchCompany());
       }
-    };
+      if (clientStore.clients.length == 0) {
+        promises.push(clientStore.fetchClients());
+      }
+      if (loanStore.loans.length == 0) {
+        promises.push(loanStore.fetchLoans());
+      }
+      await Promise.all(promises);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load data");
+    }
+  };
 
     useEffect(() => {
       if (defaultClient && companyStore.companies?.length) {
@@ -282,6 +289,7 @@ useEffect(() => {
           loadInitialData();
         }
         setModalOpen(false);
+        onClose?.();
         resetForm();
       } catch (error: any) {
         const message =
@@ -289,9 +297,11 @@ useEffect(() => {
           error?.message ||
           "Failed to save loan";
         toast.error(message);
+          onClose?.();
         console.error("Error saving loan:", error);
       } finally {
         setSaving(false);
+          onClose?.();
       }
     };
  useEffect(() => {

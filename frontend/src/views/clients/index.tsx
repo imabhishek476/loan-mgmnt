@@ -80,32 +80,6 @@ const Clients = observer(() => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this Customer?")) {
-      await clientStore.deleteClient(id);
-      toast.success("Customer deleted successfully");
-    }
-  };
-  const filteredClients = useMemo(() => {
-    return clientStore.clients.filter((client) => {
-      const matchesSearch =
-        !searchTerm ||
-        client.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.attorneyName?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesDate =
-        !issueDateFilter ||
-        loanStore.loans.some(
-          (loan) =>
-            //@ts-ignore
-            (loan.client === client._id || loan.client?._id === client._id) &&
-            moment(loan.issueDate).format("MM-DD-YYYY") === issueDateFilter
-        );
-      return matchesSearch && matchesDate;
-    });
-  }, [clientStore.clients, searchTerm, issueDateFilter]);
-
-
   // useEffect(() => {
   //   clientStore.fetchClients();
   //   loanStore.fetchLoans();
@@ -203,14 +177,8 @@ const Clients = observer(() => {
       {/* Data Table */}
       <ClientsDataTable
         loading={clientStore.loading}
-        onSearch={(query) => setSearchTerm(query)}
-        onFilter={({ search, issueDate }) => {
-          setSearchTerm(search);
-          setIssueDateFilter(issueDate);
-        }}
         onAddLoan={handleAddLoan}
         onViewClient={handleViewClient}
-        // onDelete={handleDelete}
       />
     </div>
   );
