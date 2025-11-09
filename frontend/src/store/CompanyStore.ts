@@ -63,9 +63,6 @@ class CompanyStore {
     }
   }
   async fetchCompany() {
-    // if (this.isCompanyFetched || this.isFetching) return;
-
-    // this.isFetching = true;
     this.loading = true;
 
     try {
@@ -74,15 +71,11 @@ class CompanyStore {
         const validCompanies = (companies || []).filter(Boolean);
         this.companies = validCompanies;
         this.filteredCompanies = validCompanies;
-        // this.isCompanyFetched = true;
       });
     } catch (err) {
       console.error("Failed to fetch companies:", err);
     } finally {
-      runInAction(() => {
-        this.loading = false;
-        // this.isFetching = false;
-      });
+      runInAction(() => (this.loading = false));
     }
   }
 
