@@ -85,47 +85,125 @@ exports.Clientstore = async (req, res) => {
 };
 exports.searchClients = async (req, res) => {
   try {
-    const { query } = req.query;
-    let matchStage = {};
+    const { query, issueDate, page = 0, limit = 10 } = req.query;
+    const matchStage = {};
 
-    if (query) {
+    if (query && query.trim() !== "") {
       const regex = new RegExp(query, "i");
-
       matchStage.$or = [
         { fullName: regex },
         { email: regex },
         { phone: regex },
         { attorneyName: regex },
-        { ssn: { $regex: query } },
-        { dob: { $regex: query } },
-        { accidentDate: { $regex: query } },
+        { ssn: regex },
+        { dob: regex },
+        { accidentDate: regex },
         { "customFields.name": regex },
         { "customFields.value": regex },
       ];
     }
 
-    const clients = await Client.aggregate([
+    const pipeline = [
       { $match: matchStage },
-      { $sort: { createdAt: -1 } },
       {
-        $project: {
-          fullName: 1,
-          email: 1,
-          phone: 1,
-          ssn: 1,
-          dob: 1,
-          accidentDate: 1,
-          attorneyName: 1,
-          memo: 1,
-          address: 1,
-          customFields: 1,
-          createdAt: 1,
+        $lookup: {
+          from: "loans",
+          let: { clientId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$client", "$$clientId"] },
+              },
+            },
+            {
+              $addFields: {
+                issueDateParsed: {
+                  $dateFromString: {
+                    dateString: "$issueDate",
+                    format: "%m-%d-%Y",
+                    onError: null,
+                    onNull: null,
+                  },
+                },
+              },
+            },
+            { $sort: { issueDateParsed: -1 } },
+          ],
+          as: "allLoans",
         },
       },
-    ]);
+      {
+        $addFields: {
+          loanSummary: {
+            $let: {
+              vars: {
+                validLoans: {
+                  $filter: {
+                    input: "$allLoans",
+                    as: "loan",
+                    cond: { $ne: ["$$loan.status", "Merged"] },
+                  },
+                },
+              },
+              in: {
+                totalSubTotal: { $sum: "$$validLoans.subTotal" },
+                totalPaid: { $sum: "$$validLoans.paidAmount" },
+                totalLoan: { $sum: "$$validLoans.totalLoan" },
+                totalPending: {
+                  $subtract: [
+                    { $sum: "$$validLoans.totalLoan" },
+                    { $sum: "$$validLoans.paidAmount" },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          latestLoan: {
+            $ifNull: [{ $arrayElemAt: ["$allLoans", 0] }, null],
+          },
+        },
+      },
+      ...(issueDate
+        ? [
+            {
+              $match: {
+                "latestLoan.issueDate": issueDate,
+              },
+            },
+          ]
+        : []),
 
-    res.status(200).json({ clients });
+      { $sort: { createdAt: -1 } },
+      { $skip: Number(page) * Number(limit) },
+      { $limit: Number(limit) },
+    ];
+
+    const clients = await Client.aggregate(pipeline);
+    let total;
+    if (query || issueDate) {
+      const countPipeline = pipeline.filter(
+        (stage) => !("$skip" in stage) && !("$limit" in stage)
+      );
+      const filteredClients = await Client.aggregate(countPipeline);
+      total = filteredClients.length;
+    } else {
+      total = await Client.countDocuments();
+    }
+
+    res.status(200).json({
+      success: true,
+      count: clients.length,
+      total,
+      currentPage: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+      clients,
+    });
   } catch (error) {
+    console.error("Error in searchClients:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
