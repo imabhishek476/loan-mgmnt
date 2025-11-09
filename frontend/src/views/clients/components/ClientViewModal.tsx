@@ -51,11 +51,17 @@ const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({})
 const [editingLoanId, setEditingLoanId] = useState<any>(null);
   const loadInitialData = async () => {
     try {
-      await Promise.all([
-        companyStore.fetchCompany(),
-        clientStore.fetchClients(),
-        loanStore.fetchLoans(),
-      ]);
+      const promises = [];
+      if (companyStore.companies.length == 0 ) {
+        promises.push(companyStore.fetchCompany());
+      }
+       if (clientStore.clients.length == 0) {
+         promises.push(clientStore.fetchClients());
+       }
+        if (loanStore.loans.length == 0) {
+          promises.push(loanStore.fetchLoans());
+        }
+      await Promise.all(promises);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load data");
@@ -94,9 +100,9 @@ const clientLoans = useMemo(() => {
       hasLoaded.current = true;
     }
   }, []);
-  useEffect(() => {
-    if (client?._id) loanStore.fetchLoans();
-  }, [client?._id]);
+  // useEffect(() => {
+  //   if (client?._id) loanStore.fetchLoans();
+  // }, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
   clientLoans.forEach((loan) => {
@@ -303,19 +309,8 @@ useEffect(() => {
                   if (!loanData) return null;
 
                   const {
-                    // subtotal,
-                    // interestAmount,
-                    // total,
                     paidAmount,
-                    // remaining,
-                    // currentTerm,
                   } = loanData;
-
-                  // const showAllTerms = showAllTermsMap[loan._id] || false;
-                  // const loanTermsOptions = loan.loanTermsOptions || [
-                  //   currentTerm,
-                  // ];
-                  // const selectedTerm = loan.loanTerms;
                   const selectedDynamicTerm = currentTermMap[loan._id];
 
                   const selectedLoanData = calculateLoanAmounts({
