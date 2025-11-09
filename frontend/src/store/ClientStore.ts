@@ -35,7 +35,7 @@ class ClientStore {
   selectedClientLoans: Loan[] = [];
   loading = false;
   customFields:[];
-
+  refreshTable = false;
   constructor() {
     makeAutoObservable(this);
   }
@@ -98,6 +98,9 @@ class ClientStore {
     } finally {
       runInAction(() => (this.loading = false));
     }
+  }
+  async refreshDataTable() {
+    runInAction(() => (this.refreshTable = !this.refreshTable));
   }
 }
 
