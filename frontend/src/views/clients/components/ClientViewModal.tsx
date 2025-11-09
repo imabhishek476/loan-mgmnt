@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   X,
   Plus,
@@ -30,6 +30,7 @@ interface ClientViewModalProps {
   initialEditingLoan?: any;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModalProps) => {
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -40,7 +41,6 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
   const [showAllTermsMap, setShowAllTermsMap] = useState<
     Record<string, boolean>
   >({});
-  const hasLoaded = useRef(false);
   
   const [selectedClientForLoan, setSelectedClientForLoan] = useState<any>(null);
   const companyLoanTerms = (loan: any) => {

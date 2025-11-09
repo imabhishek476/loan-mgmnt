@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState} from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
@@ -9,8 +9,6 @@ import { clientStore, type Client } from "../../store/ClientStore";
 import { getClientLoans } from "../../services/ClientServices";
 import Loans from "../loans/index";
 import ClientViewModal from "../../views/clients/components/ClientViewModal";
-import { loanStore } from "../../store/LoanStore";
-import moment from "moment";
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
@@ -18,8 +16,6 @@ const Clients = observer(() => {
   const [selectedClientForLoan, setSelectedClientForLoan] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewClient, setViewClient] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [issueDateFilter, setIssueDateFilter] = useState(null);
 
   const handleViewClient = async (client: Client) => {
     try {
@@ -156,17 +152,6 @@ const Clients = observer(() => {
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           client={viewClient}
-          //@ts-ignore
-          onSearch={(query: string) => setSearchTerm(query)}
-          onFilter={({ search, issueDate }) => {
-            setSearchTerm(search);
-            setIssueDateFilter(issueDate);
-          }}
-          onDateFilter={(date) => setIssueDateFilter(date)}
-          onReset={() => {
-            setSearchTerm("");
-            setIssueDateFilter(null);
-          }}
           //@ts-ignore
           loans={viewClient.loans || []}
           onEditClient={(client) => {

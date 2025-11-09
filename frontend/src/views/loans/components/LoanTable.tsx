@@ -33,7 +33,7 @@
     onDelete: (id: string) => void;
     clientId?: string;
   }
-  // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
     const [search] = useState("");
     const [selectedLoan, setSelectedLoan] = useState(null);
@@ -57,8 +57,8 @@
     };
     const handleView = (loan: any) => setSelectedLoan(loan);
     const handleClose = () => setSelectedLoan(null);
+    //@ts-ignore
     const [loading, setLoading] = useState(false);
-    const isFetching = useRef(false);
     const fetchLoansData = useCallback(
       async (query: any) => {
         setLoading(true);
@@ -409,7 +409,7 @@
                   borderBottom: "1px solid #e5e7eb",
                   whiteSpace: "nowrap",
                 },
-                rowStyle: (rowData) => {
+                rowStyle: (rowData: any) => {
                   const companyId =
                     typeof rowData.company === "string"
                       ? rowData.company

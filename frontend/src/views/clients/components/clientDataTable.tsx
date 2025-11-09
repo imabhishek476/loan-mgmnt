@@ -158,7 +158,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
           columns={[
             {
               title: "Sr.no",
-              render: (rowData) => rowData.tableData.id + 1,
+              render: (rowData:any) => rowData.tableData.id + 1,
             },
             {
               title: "Name",
@@ -178,7 +178,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             { title: "Phone", field: "phone" },
             {
               title: "Total Loan Amount",
-              render: (rowData) => (
+              render: (rowData: any) => (
                 <span className="font-semibold text-green-700">
                   ${rowData.loanSummary?.totalSubTotal?.toLocaleString() || "0"}
                 </span>
@@ -186,7 +186,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             },
             {
               title: "Paid",
-              render: (rowData) => (
+              render: (rowData: any) => (
                 <span className="font-semibold text-blue-600">
                   $
                   {rowData.loanSummary?.totalPaid?.toLocaleString(undefined, {
@@ -213,7 +213,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
 
             {
               title: "Issue Date",
-              render: (rowData) => {
+              render: (rowData: any) => {
                 if (!rowData.latestLoan || !rowData.latestLoan.issueDate) {
                   return <span className="text-gray-400 italic">N/A</span>;
                 }
