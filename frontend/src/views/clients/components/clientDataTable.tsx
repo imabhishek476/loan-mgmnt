@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { Search, Trash2, User, Plus } from "lucide-react";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -10,30 +10,43 @@ import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
 import { companyStore } from "../../../store/CompanyStore";
 import { toast } from "react-toastify";
-import { getClientsSearch } from "../../../services/ClientServices";
 // import { calculateLoanAmounts } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
-  // clients: any[];
+  clients: any[];
   loading: boolean;
   onSearch: (query: string) => void;
   onAddLoan: (client: any) => void;
   onViewClient: (client: any) => void;
+  onDelete: (id: string) => void;
   onFilter?: (filters: { search: string; issueDate: string | null }) => void;
 }
 
 const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
+  clients,
   loading,
+  // onSearch,
   onAddLoan,
   onViewClient,
+  onDelete,
   onFilter,
 }) => {
   const [searchInput, setSearchInput] = useState("");
-  const [clientsList, setClientsList] = useState("");
-
   const [issueDateFilterInput, setIssueDateFilterInput] = useState<any>(null);
   const clearedSearch = "";
   const clearedDate = null;
-  const tableRef = useRef<any>(null);
+  // const hasLoaded = useRef(false);
+    const loadInitialData = async () => {
+      try {
+        await Promise.all([
+          companyStore.fetchCompany(),
+          clientStore.fetchClients(),
+          loanStore.fetchLoans(),
+        ]);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load data");
+      }
+    };
   const handleFilter = () => {
     if (typeof onFilter === "function") {
       const formattedDate = issueDateFilterInput
@@ -42,53 +55,18 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       onFilter({ search: searchInput, issueDate: formattedDate });
     }
   };
-  const handleReset = async () => {
-    setSearchInput(clearedSearch);
-    setIssueDateFilterInput(clearedDate);
-    if (tableRef.current) {
-      tableRef.current.onQueryChange();
-    }
-  };
-  const fetchClientsData = useCallback(
-    async (query: any) => {
-      console.log(query.page, "1");
-      const filters = {
-        query: searchInput,
-        page: query.page,
-        limit: query.pageSize,
-        issueDate: issueDateFilterInput
-          ? moment(issueDateFilterInput).format("MM-DD-YYYY")
-          : null,
-      };
-      try {
-        const data = await getClientsSearch(filters);
-          setClientsList(data.clients);
-        return {
-          data: data.clients,
-          page: query.page,
-          totalCount: data.total,
-        };
-      } catch (err) {
-        console.error(err);
-        return { data: [], page: query.page, totalCount: 0 };
-      }
-    },
-    [searchInput, issueDateFilterInput]
-  );
-  const handleSearch = () => {
-    if (tableRef.current) {
-      tableRef.current.onQueryChange();
-    }
-  };
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this Customer?")) {
-      await clientStore.deleteClient(id);
-      if (tableRef.current) {
-        tableRef.current.onQueryChange();
-      }
-      toast.success("Customer deleted successfully");
-    }
-  };
+const handleReset = async () => {
+  await clientStore.fetchClients();
+  await loanStore.fetchActiveLoans();
+  setSearchInput(clearedSearch);
+  setIssueDateFilterInput(clearedDate);
+  if (typeof onFilter === "function") {
+    onFilter({ search: clearedSearch, issueDate: clearedDate });
+  }
+};
+  useEffect(() => {
+      loadInitialData();
+  }, []);
   return (
     <div className="">
       <div className="mb-3 flex flex-col sm:flex-row gap-2">
@@ -104,7 +82,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             />
             <span
               className="absolute sm:hidden inset-y-0 right-0 flex items-center  pr-3  cursor-pointer"
-              onClick={handleSearch}
+              onClick={handleFilter}
             >
               <Search className="w-5 h-5 text-green-700 " />
             </span>
@@ -112,7 +90,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
 
           <button
             className=" hidden sm:flex items-center gap-1 text-white bg-green-700 hover:bg-green-900 px-2 py-1 rounded transition-all duration-200 hover:shadow-lg font-medium"
-            onClick={handleSearch}
+            onClick={handleFilter}
           >
             <Search size={15} />
             <span className="font-sm">Search</span>
@@ -142,7 +120,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
           </LocalizationProvider>
           <button
             className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-2 rounded transition-colors duration-200"
-            onClick={handleSearch}
+            onClick={handleFilter}
           >
             <Search size={20} />
             <span className="font-medium">Filter</span>
@@ -158,168 +136,239 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
-        <MaterialTable
-          isLoading={loading}
-          title={null}
-          tableRef={tableRef}
-          data={fetchClientsData}
-          columns={[
-            {
-              title: "Sr.no",
-              render: (rowData) => rowData.tableData.id + 1,
-            },
-            {
-              title: "Name",
-              field: "fullName",
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <CircularProgress className="text-green-700" />
+            <span className="ml-3 text-gray-700 font-medium">
+              Loading Customer...
+            </span>
+          </div>
+        ) : clients.length > 0 ? (
+          <MaterialTable
+            isLoading={loading}
+            title={null}
+            columns={[
+              {
+                title: "Sr.no",
+                render: (rowData) => rowData.tableData.id + 1,
+              },
+              {
+                title: "Name",
+                field: "fullName",
+                cellStyle: { fontWeight: 500 },
+                render: (rowData) => (
+                  <span
+                    className="text-green-600 cursor-pointer hover:underline"
+                    onClick={() => onViewClient?.(rowData)}
+                  >
+                    {rowData.fullName}
+                  </span>
+                ),
+              },
+              { title: "Email", field: "email" },
+              { title: "Phone", field: "phone" },
+              {
+                title: "Total Loan Amount",
+                render: (rowData) => {
+                  const clientLoans = loanStore.loans.filter(
+                    (loan) =>
+                      (loan.client === rowData._id ||
+                        loan.client?.["_id"] === rowData._id) &&
+                      loan.status !== "Merged" // 👈 exclude merged loans
+                  );
 
-              cellStyle: { fontWeight: 500 },
-              render: (rowData) => (
-                <span
-                  className="text-green-600 cursor-pointer hover:underline"
-                  onClick={() => onViewClient?.(rowData)}
-                >
-                  {rowData.fullName}
-                </span>
-              ),
-            },
-            { title: "Email", field: "email" },
-            { title: "Phone", field: "phone" },
-            {
-              title: "Total Loan Amount",
-              render: (rowData) => (
-                <span className="font-semibold text-green-700">
-                  ${rowData.loanSummary?.totalSubTotal?.toLocaleString() || "0"}
-                </span>
-              ),
-            },
-            {
-              title: "Paid",
-              render: (rowData) => (
-                <span className="font-semibold text-blue-600">
-                  $
-                  {rowData.loanSummary?.totalPaid?.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }) || "0.00"}
-                  <br />
-                  {rowData.loanSummary?.totalPending > 0 && (
-                    <span className="text-red-600 text-xs font-medium">
-                      (Pending: $
-                      {rowData.loanSummary?.totalPending?.toLocaleString(
-                        undefined,
-                        {
+                  const totalGiven = clientLoans.reduce(
+                    (acc, loan) => acc + (loan.subTotal || 0),
+                    0
+                  );
+
+                  return (
+                    <span className="font-semibold text-green-700">
+                      ${totalGiven.toLocaleString()}
+                    </span>
+                  );
+                },
+              },
+              {
+                title: "Paid",
+                render: (rowData) => {
+                  const clientLoans = loanStore.loans.filter(
+                    (loan) =>
+                      //@ts-ignore
+                      loan.client === rowData._id ||
+                      //@ts-ignore
+                      loan.client?._id === rowData._id
+                  );
+
+                  let totalPaid = 0;
+                  let totalRemaining = 0;
+
+                  clientLoans.forEach((loan) => {
+                    const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+                    const today = moment();
+                    const monthsPassed = today.diff(issueDate, "months") + 1;
+                    const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
+                    const currentTerm =
+                      allowedTerms.find((t) => t >= monthsPassed) ||
+                      loan.loanTerms;
+                    const subTotal = Number(loan.subTotal || 0);
+                    const monthlyRate = Number(loan.monthlyRate || 0);
+                    const paidAmount = Number(loan.paidAmount || 0);
+                    const interestType = loan.interestType || "flat";
+                    let interest = 0;
+                    if (interestType === "flat") {
+                      interest = subTotal * (monthlyRate / 100) * currentTerm;
+                    } else if (interestType === "compound") {
+                      interest =
+                        subTotal *
+                        (Math.pow(1 + monthlyRate / 100, currentTerm) - 1);
+                    }
+                    const totalLoan = subTotal + interest;
+                    const remaining = Math.max(totalLoan - paidAmount, 0);
+                    totalPaid += paidAmount;
+                    if (!["Paid Off", "Merged"].includes(loan.status)) {
+                      totalRemaining += remaining;
+                    }
+                  });
+                  const allPaidOff = clientLoans.every(
+                    (loan) =>
+                      loan.status === "Paid Off" || loan.status === "Merged"
+                  );
+
+                  return (
+                    <span className="font-semibold">
+                      <span
+                        className={`${
+                          allPaidOff ? "text-green-600" : "text-blue-600"
+                        }`}
+                      >
+                        $
+                        {totalPaid.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
-                        }
+                        })}
+                      </span>
+                      <br />
+                      {totalRemaining > 0 && (
+                        <span className="text-red-600 text-xs font-medium">
+                          (Pending: $
+                          {totalRemaining.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                          )
+                        </span>
                       )}
-                      )
                     </span>
-                  )}
-                </span>
-              ),
-            },
-
-            {
-              title: "Issue Date",
-              render: (rowData) => {
-                if (!rowData.latestLoan || !rowData.latestLoan.issueDate) {
-                  return <span className="text-gray-400 italic">N/A</span>;
-                }
-
-                return (
-                  <span className="text-gray-800 font-medium">
-                    {new Date(rowData.latestLoan.issueDate).toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      }
-                    )}
-                  </span>
-                );
+                  );
+                },
               },
-            },
+              {
+                title: "Issue Date",
+                render: (rowData) => {
+                  const clientLoans = loanStore.loans.filter(
+                    (loan) =>
+                      loan.client === rowData._id ||
+                      //@ts-ignore
+                      loan.client?._id === rowData._id
+                  );
+                  if (clientLoans.length === 0)
+                    return <span className="text-gray-400">—</span>;
+                  const latestLoan = clientLoans.reduce((latest, current) =>
+                    new Date(current.issueDate) > new Date(latest.issueDate)
+                      ? current
+                      : latest
+                  );
+                  return (
+                    <span className="text-gray-800 font-medium">
+                      {new Date(latestLoan.issueDate).toLocaleDateString(
+                        "en-US",
+                        { year: "numeric", month: "short", day: "numeric" }
+                      )}
+                    </span>
+                  );
+                },
+              },
+              // {
+              //   title: "Active Loans",
+              //   render: (rowData) => {
+              //     return loanStore.loans.filter(
+              //       (loan) =>
+              //         (loan.client === rowData._id ||
+              //           loan.client?.["_id"] === rowData._id) &&
+              //         loan.status !== "Paid Off"
+              //     ).length;
+              //   },
+              // },
 
-            // {
-            //   title: "Active Loans",
-            //   render: (rowData) => {
-            //     return loanStore.loans.filter(
-            //       (loan) =>
-            //         (loan.client === rowData._id ||
-            //           loan.client?.["_id"] === rowData._id) &&
-            //         loan.status !== "Paid Off"
-            //     ).length;
-            //   },
-            // },
+              // {
+              //   title: "Total Paid Off",
+              //   render: (rowData) => {
+              //     return loanStore.loans.filter(
+              //       (loan) =>
+              //         (loan.client === rowData._id ||
+              //           loan.client?.["_id"] === rowData._id) &&
+              //         loan.status === "Paid Off"
+              //     ).length;
+              //   },
+              // },
+              // { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
+              // { title: "Accident Date", field: "accidentDate", type: "date" },
+              { title: "Attorney", field: "attorneyName" },
+              // { title: "SSN", field: "ssn" },
+            ]}
+            data={clients}
+            actions={[
+              {
+                icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
+                tooltip: "Add Loan",
+                //@ts-ignore
+                onClick: (event, rowData: any) => onAddLoan(rowData),
+              },
 
-            // {
-            //   title: "Total Paid Off",
-            //   render: (rowData) => {
-            //     return loanStore.loans.filter(
-            //       (loan) =>
-            //         (loan.client === rowData._id ||
-            //           loan.client?.["_id"] === rowData._id) &&
-            //         loan.status === "Paid Off"
-            //     ).length;
-            //   },
-            // },
-            // { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
-            // { title: "Accident Date", field: "accidentDate", type: "date" },
-            { title: "Attorney", field: "attorneyName" },
-            // { title: "SSN", field: "ssn" },
-          ]}
-          actions={[
-            {
-              icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
-              tooltip: "Add Loan",
-              //@ts-ignore
-              onClick: (event, rowData: any) => onAddLoan(rowData),
-            },
-
-            // {
-            //   icon: () => <Pencil className="w-5 h-5 text-green-600" />,
-            //   tooltip: "Edit",
-            //   //@ts-ignore
-            //   onClick: (event, rowData: any) => onEdit(rowData),
-            // },
-            {
-              icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
-              tooltip: "Delete",
-              //@ts-ignore
-              onClick: (event, rowData: any) => handleDelete(rowData._id),
-            },
-          ]}
-          options={{
-            paging: true,
-            pageSize: 10,
-            pageSizeOptions: [5, 10, 20],
-            sorting: true,
-            search: false,
-            actionsColumnIndex: -1,
-            headerStyle: {
-              fontWeight: "600",
-              backgroundColor: "#f9fafb",
-              color: "#374151",
-              fontSize: "13px",
-              height: 36,
-              padding: "6px 8px",
-              borderBottom: "1px solid #e5e7eb",
-              whiteSpace: "nowrap",
-            },
-            rowStyle: {
-              fontSize: "13px",
-              height: 38,
-              width: 38,
-              borderBottom: "1px solid #f1f1f1",
-              transition: "background 0.2s",
-            },
-            padding: "default",
-            toolbar: false,
-            // paginationType: "stepped",
-          }}
-        />
-        {clientsList.length == 0 ? (
+              // {
+              //   icon: () => <Pencil className="w-5 h-5 text-green-600" />,
+              //   tooltip: "Edit",
+              //   //@ts-ignore
+              //   onClick: (event, rowData: any) => onEdit(rowData),
+              // },
+              {
+                icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
+                tooltip: "Delete",
+                //@ts-ignore
+                onClick: (event, rowData: any) => onDelete(rowData._id),
+              },
+            ]}
+            options={{
+              paging: true,
+              pageSize: 10,
+              pageSizeOptions: [5, 10, 20],
+              sorting: true,
+              search: false,
+              actionsColumnIndex: -1,
+              headerStyle: {
+                fontWeight: "600",
+                backgroundColor: "#f9fafb",
+                color: "#374151",
+                fontSize: "13px",
+                height: 36,
+                padding: "6px 8px",
+                borderBottom: "1px solid #e5e7eb",
+                whiteSpace: "nowrap",
+              },
+              rowStyle: {
+                fontSize: "13px",
+                height: 38,
+                width: 38,
+                borderBottom: "1px solid #f1f1f1",
+                transition: "background 0.2s",
+              },
+              padding: "default",
+              toolbar: false,
+              paginationType: "stepped",
+            }}
+          />
+        ) : (
           <div className="text-center py-10 bg-gray-200 rounded-lg">
             <div className="flex items-center justify-center mb-4 bg-gray-300 rounded-full w-20 h-20 mx-auto">
               <User className="w-16 h-16 text-green-700" />
@@ -334,7 +383,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                 : "No clients available. Add a new client to get started."}
             </p>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

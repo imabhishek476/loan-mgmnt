@@ -40,15 +40,13 @@ class ClientStore {
     makeAutoObservable(this);
   }
 
-  async fetchClients(filters: { query?: string; page?: number; limit?: number; issueDate?: string } = {}) {
+  async fetchClients(query: string = "") {
     this.loading = true;
     try {
-      const data = await getClientsSearch(filters);
-      runInAction(() => (this.clients = data.clients));
-      return data.total;
-    } catch (error) {
-      console.error("Error fetching clients:", error);
-      return 0;
+      const data = await getClientsSearch({ query });
+      runInAction(() => (this.clients = data));
+    } catch (err) {
+      console.error("Error fetching clients:", err);
     } finally {
       runInAction(() => (this.loading = false));
     }
