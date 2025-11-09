@@ -106,10 +106,10 @@ const Clients = observer(() => {
   }, [clientStore.clients, searchTerm, issueDateFilter]);
 
 
-  useEffect(() => {
-    clientStore.fetchClients();
-    loanStore.fetchLoans();
-  }, []);
+  // useEffect(() => {
+  //   clientStore.fetchClients();
+  //   loanStore.fetchLoans();
+  // }, []);
 
   return (
     <div className="text-left flex flex-col transition-all duration-300">
@@ -202,7 +202,6 @@ const Clients = observer(() => {
       )}
       {/* Data Table */}
       <ClientsDataTable
-        clients={filteredClients}
         loading={clientStore.loading}
         onSearch={(query) => setSearchTerm(query)}
         onFilter={({ search, issueDate }) => {
@@ -211,7 +210,7 @@ const Clients = observer(() => {
         }}
         onAddLoan={handleAddLoan}
         onViewClient={handleViewClient}
-        onDelete={handleDelete}
+        // onDelete={handleDelete}
       />
     </div>
   );
