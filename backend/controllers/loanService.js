@@ -4,6 +4,7 @@ const { Loan } = require("../models/loan");
 const User = require("../models/User");
 const createAuditLog = require("../utils/auditLog");
 const mongoose = require("mongoose");
+const moment = require("moment"); 
 
 exports.LoansCreate = async (req, res) => {
   try {

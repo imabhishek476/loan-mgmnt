@@ -36,6 +36,7 @@ class ClientStore {
   loading = false;
   customFields:[];
   refreshTable = false;
+  toggleLoan = false;
   constructor() {
     makeAutoObservable(this);
   }
@@ -101,6 +102,9 @@ class ClientStore {
   }
   async refreshDataTable() {
     runInAction(() => (this.refreshTable = !this.refreshTable));
+  }
+  async toggleLoanModel() {
+    runInAction(() => (this.toggleLoan = !this.toggleLoan));
   }
 }
 

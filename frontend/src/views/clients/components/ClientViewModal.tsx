@@ -754,9 +754,6 @@ useEffect(() => {
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
-          onClose={() => {
-            setLoanModalOpen(false);
-          }}
           showTable={false}
           fromClientPage={true}
         />

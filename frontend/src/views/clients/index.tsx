@@ -12,7 +12,6 @@ import ClientViewModal from "../../views/clients/components/ClientViewModal";
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
-  const [loanModalOpen, setLoanModalOpen] = useState(false);
   const [selectedClientForLoan, setSelectedClientForLoan] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewClient, setViewClient] = useState(null);
@@ -26,11 +25,9 @@ const Clients = observer(() => {
       console.error("Failed to fetch Customer loans", error);
     }
   };
-
-
   const handleAddLoan = (client: any) => {
     setSelectedClientForLoan(client);
-    setLoanModalOpen(true);
+    clientStore.toggleLoanModel();
   };
 
   const clientFields: FieldConfig[] = [
@@ -139,14 +136,11 @@ const Clients = observer(() => {
         }
         onSubmit={handleSave}
       />
-      {loanModalOpen && (
         <Loans
           defaultClient={selectedClientForLoan}
-          onClose={() => setLoanModalOpen(false)}
           showTable={false}
           fromClientPage={true}
-        />
-      )}
+        />   
       {viewModalOpen && viewClient && (
         <ClientViewModal
           open={viewModalOpen}

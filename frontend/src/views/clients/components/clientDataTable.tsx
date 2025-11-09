@@ -158,7 +158,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
           columns={[
             {
               title: "Sr.no",
-              render: (rowData:any) => rowData.tableData.id + 1,
+              render: (rowData: any) => rowData.tableData.id + 1,
             },
             {
               title: "Name",
@@ -265,8 +265,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             {
               icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
               tooltip: "Add Loan",
-              //@ts-ignore
-              onClick: (event, rowData: any) => onAddLoan(rowData),
+              onClick: (_event, rowData: any) => onAddLoan(rowData),
             },
 
             // {
@@ -278,8 +277,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             {
               icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
               tooltip: "Delete",
-              //@ts-ignore
-              onClick: (event, rowData: any) => handleDelete(rowData._id),
+              onClick: (_event, rowData: any) => handleDelete(rowData._id),
             },
           ]}
           options={{
@@ -310,23 +308,19 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             toolbar: false,
             // paginationType: "stepped",
           }}
-        />
-        {clientsList.length == 0 ? (
-          <div className="text-center py-10 bg-gray-200 rounded-lg">
-            <div className="flex items-center justify-center mb-4 bg-gray-300 rounded-full w-20 h-20 mx-auto">
-              <User className="w-16 h-16 text-green-700" />
-            </div>
-            <p className="text-gray-700 font-semibold mb-4">
-              {searchInput
+          localization={{
+            body: {
+              emptyDataSourceMessage:
+                `${searchInput
                 ? `No results found for "${searchInput}"`
                 : issueDateFilterInput
                 ? `No results found for "${moment(issueDateFilterInput).format(
                     "MM-DD-YYYY"
                   )}"`
-                : "No clients available. Add a new client to get started."}
-            </p>
-          </div>
-        ) : null}
+                : "No clients available. Add a new client to get started."}`,
+            },
+          }}
+        />
       </div>
     </div>
   );

@@ -32,12 +32,10 @@ import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
 const Loans = observer(
   ({
     defaultClient,
-    onClose,
     showTable = true,
     fromClientPage = false,
   }: {
     defaultClient?: any;
-    onClose?: () => void;
     showTable?: boolean;
     fromClientPage?: boolean;
   }) => {
@@ -292,7 +290,6 @@ const Loans = observer(
           toast.success("Loan created successfully");
         }
         setModalOpen(false);
-        onClose?.();
         resetForm();
       } catch (error: any) {
         const message =
@@ -300,16 +297,20 @@ const Loans = observer(
           error?.message ||
           "Failed to save loan";
         toast.error(message);
-        onClose?.();
         console.error("Error saving loan:", error);
       } finally {
         setSaving(false);
-        onClose?.();
       }
     };
     useEffect(() => {
       loadInitialData();
     }, []);
+    useEffect(() => {
+      if (defaultClient) {
+      setModalOpen(true);
+      }
+    }, [clientStore.toggleLoan, defaultClient]);
+    
     const handleDelete = async (id: string) => {
       if (!window.confirm("Are you sure you want to delete this loan?")) return;
       try {
@@ -428,7 +429,6 @@ const Loans = observer(
                     className="text-gray-500 hover:text-gray-800"
                     onClick={() => {
                       setModalOpen(false);
-                      onClose?.();
                     }}
                   >
                     <X />
@@ -707,7 +707,6 @@ const Loans = observer(
                   <button
                     onClick={() => {
                       setModalOpen(false);
-                      onClose?.();
                     }}
                     className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >

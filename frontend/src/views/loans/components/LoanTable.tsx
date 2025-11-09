@@ -432,20 +432,20 @@
                   };
                 },
               }}
+                localization={{
+                   body: {
+                     emptyDataSourceMessage:
+                       `${search
+                       ? `No results found for "${search}"`
+                       : issueDateFilterInput
+                       ? `No results found for "${moment(issueDateFilterInput).format(
+                           "MM-DD-YYYY"
+                         )}"`
+                       : "No loans available. Add a new loan to get started."}`,
+                   },
+                 }}
             />
           </div>
-          {loansDataTable.length === 0 ? (
-            <div className="text-center py-10 bg-gray-200 rounded-lg">
-              <div className="flex items-center justify-center mb-4 bg-gray-300 rounded-full w-20 h-20 mx-auto">
-                <Wallet className="w-16 h-16 text-green-700" />
-              </div>
-              <p className="text-gray-700 font-semibold mb-4">
-                {search
-                  ? `No results found for "${search}"`
-                  : "No loans available."}
-              </p>
-            </div>
-          ) : null}
         </div>
         {selectedLoan && (
           <Dialog
