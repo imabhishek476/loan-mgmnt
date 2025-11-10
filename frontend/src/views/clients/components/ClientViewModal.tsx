@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   X,
   Plus,
@@ -30,6 +30,7 @@ interface ClientViewModalProps {
   initialEditingLoan?: any;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModalProps) => {
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -40,7 +41,6 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
   const [showAllTermsMap, setShowAllTermsMap] = useState<
     Record<string, boolean>
   >({});
-  const hasLoaded = useRef(false);
   
   const [selectedClientForLoan, setSelectedClientForLoan] = useState<any>(null);
   const companyLoanTerms = (loan: any) => {
@@ -51,11 +51,17 @@ const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({})
 const [editingLoanId, setEditingLoanId] = useState<any>(null);
   const loadInitialData = async () => {
     try {
-      await Promise.all([
-        companyStore.fetchCompany(),
-        clientStore.fetchClients(),
-        loanStore.fetchLoans(),
-      ]);
+      const promises = [];
+      if (companyStore.companies.length == 0 ) {
+        promises.push(companyStore.fetchCompany());
+      }
+       if (clientStore.clients.length == 0) {
+         promises.push(clientStore.fetchClients());
+       }
+        if (loanStore.loans.length == 0) {
+          promises.push(loanStore.fetchLoans());
+        }
+      await Promise.all(promises);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load data");
@@ -89,14 +95,11 @@ const clientLoans = useMemo(() => {
   };
 
   useEffect(() => {
-    if (!hasLoaded.current) {
       loadInitialData();
-      hasLoaded.current = true;
-    }
   }, []);
-  useEffect(() => {
-    if (client?._id) loanStore.fetchLoans();
-  }, [client?._id]);
+  // useEffect(() => {
+  //   if (client?._id) loanStore.fetchLoans();
+  // }, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
   clientLoans.forEach((loan) => {
@@ -292,9 +295,15 @@ useEffect(() => {
             <div className="p-2 space-y-4 min-h-[400px] ">
               {clientLoans.length > 0 ? (
                 clientLoans.map((loan: any) => {
-                  const company = companyStore.companies.find(
-                    (c) => c._id === loan.company
-                  );
+                  const companyId =
+                    typeof loan.company === "string"
+                      ? loan.company
+                      : loan.company?._id;
+
+                  const company =
+                    companyStore.companies.find((c) => c._id === companyId) ||
+                    loan.company; // fallback if object is directly in loan
+
                   const companyName = company?.companyName || "Unknown";
                   const companyColor = company?.backgroundColor || "#555555";
                   // const isPaidOff =
@@ -303,19 +312,8 @@ useEffect(() => {
                   if (!loanData) return null;
 
                   const {
-                    // subtotal,
-                    // interestAmount,
-                    // total,
                     paidAmount,
-                    // remaining,
-                    // currentTerm,
                   } = loanData;
-
-                  // const showAllTerms = showAllTermsMap[loan._id] || false;
-                  // const loanTermsOptions = loan.loanTermsOptions || [
-                  //   currentTerm,
-                  // ];
-                  // const selectedTerm = loan.loanTerms;
                   const selectedDynamicTerm = currentTermMap[loan._id];
 
                   const selectedLoanData = calculateLoanAmounts({
@@ -756,9 +754,6 @@ useEffect(() => {
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
-          onClose={() => {
-            setLoanModalOpen(false);
-          }}
           showTable={false}
           fromClientPage={true}
         />

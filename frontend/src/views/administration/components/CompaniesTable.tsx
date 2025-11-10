@@ -2,21 +2,18 @@ import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2 } from "lucide-react";
+import { companyStore } from "../../../store/CompanyStore";
 
 interface CompaniesDataTableProps {
-  companies?: any[];
   onSearch: (query: string) => void;
   onEdit: (company: any) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }
 
 const CompaniesDataTable = ({
-  companies = [],
   onSearch,
   onEdit,
   onDelete,
-  loading,
 }: CompaniesDataTableProps) => {
   const [search, setSearch] = useState("");
 
@@ -45,8 +42,6 @@ const renderFee = (fee: any) => {
 
   return `${displayValue} (${capitalizeFirst(fee.type)})`;
 };
-
-
   return (
     <div className="w-full">
       {/* Search Input */}
@@ -66,13 +61,13 @@ const renderFee = (fee: any) => {
       {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
         <MaterialTable
-          isLoading={loading}
+          isLoading={companyStore.loading}
           title={null}
           columns={[
             {
               title: "Sr.no",
               width: "5%",
-              render: (rowData) => (rowData.tableData?.id ?? 0) + 1,
+              render: (rowData:any) => (rowData.tableData?.id ?? 0) + 1,
             },
             {
               title: "Company Name",
@@ -93,7 +88,7 @@ const renderFee = (fee: any) => {
 
                 const monthlyRate = Number(interest.monthlyRate).toFixed(2);
                 const interestType = capitalizeFirst(
-                  interest.interestType || "N/A"
+                  interest.interestType || "-"
                 );
                 return `${monthlyRate}% (${interestType})`;
               },
@@ -124,7 +119,7 @@ const renderFee = (fee: any) => {
               cellStyle: { width: 100, textAlign: "left", padding: "6px" },
             },
           ]}
-          data={companies}
+          data={companyStore.filteredCompanies}
           actions={[
             {
               icon: () => <Pencil className="w-4 h-4 text-green-600" />,
@@ -169,7 +164,7 @@ const renderFee = (fee: any) => {
           }}
           localization={{
             body: {
-              emptyDataSourceMessage: loading
+              emptyDataSourceMessage: companyStore.loading
                 ? "Loading companies..."
                 : search
                   ? `No results found for "${search}"`

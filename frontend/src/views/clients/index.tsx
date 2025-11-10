@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState} from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
@@ -9,17 +9,12 @@ import { clientStore, type Client } from "../../store/ClientStore";
 import { getClientLoans } from "../../services/ClientServices";
 import Loans from "../loans/index";
 import ClientViewModal from "../../views/clients/components/ClientViewModal";
-import { loanStore } from "../../store/LoanStore";
-import moment from "moment";
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
-  const [loanModalOpen, setLoanModalOpen] = useState(false);
   const [selectedClientForLoan, setSelectedClientForLoan] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewClient, setViewClient] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [issueDateFilter, setIssueDateFilter] = useState(null);
 
   const handleViewClient = async (client: Client) => {
     try {
@@ -30,11 +25,9 @@ const Clients = observer(() => {
       console.error("Failed to fetch Customer loans", error);
     }
   };
-
-
   const handleAddLoan = (client: any) => {
     setSelectedClientForLoan(client);
-    setLoanModalOpen(true);
+    clientStore.toggleLoanModel();
   };
 
   const clientFields: FieldConfig[] = [
@@ -65,13 +58,14 @@ const Clients = observer(() => {
           const refreshedClient = clientStore.clients.find(
             (c) => c._id === editingClient._id
           );
+        await clientStore.refreshDataTable();
          toast.success("Customer updated successfully");
           if (refreshedClient) setViewClient(refreshedClient);
         setEditingClient(null);
       setModalOpen(false);
       } else {
         await clientStore.createClient(data);
-  await clientStore.fetchClients();
+        await clientStore.refreshDataTable();
       toast.success("New Customer added successfully");
       setModalOpen(false);
     }
@@ -80,36 +74,10 @@ const Clients = observer(() => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this Customer?")) {
-      await clientStore.deleteClient(id);
-      toast.success("Customer deleted successfully");
-    }
-  };
-  const filteredClients = useMemo(() => {
-    return clientStore.clients.filter((client) => {
-      const matchesSearch =
-        !searchTerm ||
-        client.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.attorneyName?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesDate =
-        !issueDateFilter ||
-        loanStore.loans.some(
-          (loan) =>
-            //@ts-ignore
-            (loan.client === client._id || loan.client?._id === client._id) &&
-            moment(loan.issueDate).format("MM-DD-YYYY") === issueDateFilter
-        );
-      return matchesSearch && matchesDate;
-    });
-  }, [clientStore.clients, searchTerm, issueDateFilter]);
-
-
-  useEffect(() => {
-    clientStore.fetchClients();
-    loanStore.fetchLoans();
-  }, []);
+  // useEffect(() => {
+  //   clientStore.fetchClients();
+  //   loanStore.fetchLoans();
+  // }, []);
 
   return (
     <div className="text-left flex flex-col transition-all duration-300">
@@ -168,30 +136,16 @@ const Clients = observer(() => {
         }
         onSubmit={handleSave}
       />
-      {loanModalOpen && (
         <Loans
           defaultClient={selectedClientForLoan}
-          onClose={() => setLoanModalOpen(false)}
           showTable={false}
           fromClientPage={true}
-        />
-      )}
+        />   
       {viewModalOpen && viewClient && (
         <ClientViewModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           client={viewClient}
-          //@ts-ignore
-          onSearch={(query: string) => setSearchTerm(query)}
-          onFilter={({ search, issueDate }) => {
-            setSearchTerm(search);
-            setIssueDateFilter(issueDate);
-          }}
-          onDateFilter={(date) => setIssueDateFilter(date)}
-          onReset={() => {
-            setSearchTerm("");
-            setIssueDateFilter(null);
-          }}
           //@ts-ignore
           loans={viewClient.loans || []}
           onEditClient={(client) => {
@@ -202,16 +156,9 @@ const Clients = observer(() => {
       )}
       {/* Data Table */}
       <ClientsDataTable
-        clients={filteredClients}
         loading={clientStore.loading}
-        onSearch={(query) => setSearchTerm(query)}
-        onFilter={({ search, issueDate }) => {
-          setSearchTerm(search);
-          setIssueDateFilter(issueDate);
-        }}
         onAddLoan={handleAddLoan}
         onViewClient={handleViewClient}
-        onDelete={handleDelete}
       />
     </div>
   );

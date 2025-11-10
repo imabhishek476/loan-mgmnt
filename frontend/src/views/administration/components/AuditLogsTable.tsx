@@ -198,7 +198,7 @@ const filteredLogs = useMemo(() => {
   const handleView = (log: AuditLog) => setSelectedLog(log);
 
   return (
-    <div>
+    <div className="bg-white rounded-lg shadow border p-4">
       {/* Search Input */}
       <div className="mb-3 relative w-full">
         <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">

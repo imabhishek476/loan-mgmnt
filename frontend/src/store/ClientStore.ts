@@ -35,18 +35,21 @@ class ClientStore {
   selectedClientLoans: Loan[] = [];
   loading = false;
   customFields:[];
-
+  refreshTable = false;
+  toggleLoan = false;
   constructor() {
     makeAutoObservable(this);
   }
 
-  async fetchClients(query: string = "") {
+  async fetchClients(filters: { query?: string; page?: number; limit?: number; issueDate?: string } = {}) {
     this.loading = true;
     try {
-      const data = await getClientsSearch({ query });
-      runInAction(() => (this.clients = data));
-    } catch (err) {
-      console.error("Error fetching clients:", err);
+      const data = await getClientsSearch(filters);
+      runInAction(() => (this.clients = data.clients));
+      return data.total;
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      return 0;
     } finally {
       runInAction(() => (this.loading = false));
     }
@@ -96,6 +99,12 @@ class ClientStore {
     } finally {
       runInAction(() => (this.loading = false));
     }
+  }
+  async refreshDataTable() {
+    runInAction(() => (this.refreshTable = !this.refreshTable));
+  }
+  async toggleLoanModel() {
+    runInAction(() => (this.toggleLoan = !this.toggleLoan));
   }
 }
 

@@ -10,8 +10,8 @@ module.exports = async function seedAdmin() {
     // Check if admin already exists
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
-      await User.create({ email: adminEmail, password: hashedPassword, userRole: "admin", name: "Admin"});
+      // const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      await User.create({ email: adminEmail, password: adminPassword, userRole: "admin", name: "Admin"});
       console.log("✅ Admin user created");
     } else {
       console.log("ℹ️ Admin already exists");

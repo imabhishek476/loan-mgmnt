@@ -40,10 +40,10 @@ function denormalizeUser(data: any): UserResponse {
 const UserForm = observer(
   ({ initialData, onSubmit, open, onClose }: UserFormProps) => {
     const [formData, setFormData] = useState<any>({ userRole: "" });
-    const [roles, setRoles] = useState<string[]>([""]); // initial roles
+    const [roles, setRoles] = useState<string[]>([""]);
 
     useEffect(() => {
-      if (initialData) {
+      if (initialData && open) {
         setFormData(normalizeUser(initialData));
         if (initialData.userRole && !roles.includes(initialData.userRole)) {
           setRoles((prev) => [...prev, initialData.userRole]);
