@@ -18,9 +18,9 @@ export const createClient = async (data: ClientPayload) => {
   return response;
 };
 
-export const getClientsSearch = async (filters: { query?: string } = {}) => {
+export const getClientsSearch = async (filters: { query?: string; page?: number; limit?: number; issueDate?: string } = {}) => {
   const { data } = await api.get("/client/search", { params: filters });
-  return data.clients || [];
+  return data;
 };
 
 export const updateClient = async (id: string, data: ClientPayload) => {

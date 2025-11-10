@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import {
-  fetchLoans,
+  getLoansSearch,
   createLoan,
   deleteLoan,
   updateLoan,
@@ -8,6 +8,7 @@ import {
   activeLoans,
   type LoanPayload,
 } from "../services/LoanService";
+import { toast } from "react-toastify";
 
 export interface Loan {
   paidAmount: number;
@@ -31,8 +32,12 @@ export interface Loan {
 }
 
 class LoanStore {
-  loans: Loan[] = [];
-  loading = false;
+  loans: any[] = [];
+  total: number = 0;
+  loading: boolean = false;
+  currentPage: number = 0;
+  limit: number = 10;
+  refreshTable = false;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -57,15 +62,30 @@ class LoanStore {
     }
   }
 
-  async fetchLoans() {
+  async fetchLoans(filters: any = {}) {
     this.loading = true;
     try {
-      const data = await fetchLoans();
-      runInAction(() => (this.loans = data));
-    } catch (err) {
-      console.error("Error fetching loans:", err);
+      const params = {
+        query: filters.query || "",
+        issueDate: filters.issueDate || null,
+        clientId: filters.clientId || null,
+        page: filters.page ?? this.currentPage,
+        limit: filters.limit ?? this.limit,
+      };
+      const response = await getLoansSearch(params);
+      runInAction(() => {
+        this.loans = response.loans || [];
+        this.total = response.total || 0;
+        this.currentPage = Number(response.currentPage ?? params.page);
+        this.limit = Number(params.limit);
+      });
+    } catch (error: any) {
+      console.error("Failed to fetch loans:", error);
+      toast.error("Failed to load loans");
     } finally {
-      runInAction(() => (this.loading = false));
+      runInAction(() => {
+        this.loading = false;
+      });
     }
   }
   async fetchActiveLoans() {
@@ -131,6 +151,9 @@ class LoanStore {
 
   getLoansByCompany(companyId: string) {
     return this.loans.filter((l) => l.company === companyId);
+  }
+  async refreshDataTable() {
+    runInAction(() => (this.refreshTable = !this.refreshTable));
   }
 }
 

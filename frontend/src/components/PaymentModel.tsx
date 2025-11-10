@@ -4,6 +4,7 @@ import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
 import { calculateLoanAmounts } from "../utils/loanCalculations"; 
+import { clientStore } from "../store/ClientStore";
 
 interface LoanPaymentModalProps {
   open: boolean;
@@ -85,6 +86,7 @@ useEffect(() => {
         });
 
         await loanStore.fetchLoans();
+        await clientStore.refreshDataTable();
         onPaymentSuccess?.();
         toast.success("Payment recorded successfully");
         onClose();

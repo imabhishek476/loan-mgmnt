@@ -144,12 +144,17 @@ const EditLoanModal = observer(
             onClose();
             return;
           }
-
-          await Promise.all([
-            companyStore.fetchCompany(),
-            clientStore.fetchClients(),
-            loanStore.fetchLoans(),
-          ]);
+          const promises = [];
+          if (companyStore.companies.length == 0) {
+            promises.push(companyStore.fetchCompany());
+          }
+          if (clientStore.clients.length == 0) {
+            promises.push(clientStore.fetchClients());
+          }
+          if (loanStore.loans.length == 0) {
+            promises.push(loanStore.fetchLoans());
+          }
+          await Promise.all(promises);
               //@ts-ignore
         const normalizeId = (id: any) =>
           id == null ? "" : typeof id === "string" ? id : id.toString();
@@ -340,6 +345,8 @@ const handleSave = async () => {
       // );
     }
     await loanStore.fetchLoans();
+    await clientStore.refreshDataTable();
+    
     toast.success("Loan updated successfully");
     onClose();
   } catch (error: any) {
