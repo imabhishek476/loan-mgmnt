@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import{ useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Percent, DollarSign } from "lucide-react";
@@ -9,48 +11,20 @@ import { Switch, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 const loanTermOptions = [6, 12, 18, 24, 30, 36, 48];
 
 const companyFields: FieldConfig[] = [
-  // { label: "Basic Information", key: "basicInformation", type: "section", icon: <Home size={18} /> },
   { label: "Company Name", key: "companyName", type: "text", required: true },
-  // { label: "Company Code", key: "companyCode", type: "text", required: true },
-  // { label: "Description", key: "description", type: "textarea", fullWidth: true, required: true },
-  // { label: "Phone", key: "phone", type: "text", required: true },
-  // { label: "Email", key: "email", type: "email", required: true },
-  // { label: "Website", key: "website", type: "text", required: true },
   { label: "Color Code", key: "backgroundColor", type: "color", required: true },
   { label: "Active Company", key: "activeCompany", type: "toggle", required: false },
 
   { label: "Available Loan Terms", key: "loanTerms", type: "toggle", required: true },
-
-  // { label: "Available Loan Terms", key: "availableLoanTerms", type: "section", icon: <FileText size={18} /> },
-  // { label: "Address", key: "address", type: "textarea", fullWidth: true, required: true },
   { label: "Interest Rate Configuration", key: "interestRateConfiguration", type: "section", icon: <Percent size={18} /> },
   { label: "Interest Rate (%)", key: "interestRate", type: "number", min: 0,required: true },
-  // {
-  //   label: "Interest Type",
-  //   key: "interestType",
-  //   type: "select",
-  //   options: [
-  //     { label: "Compound", value: "compound" },
-  //     { label: "Flat", value: "flat" },
-  //   ],
-  //   required: true,
-  // },
 
   { label: "Fee Structure", key: "feeStructure", type: "section", icon: <DollarSign size={18} /> },
-  // {
-  //   label: "Payoff Settings",
-  //   key: "payoffSettings",
-  //   type: "section",
-  //   icon: <DollarSign size={18} />,
-  //   inlineToggle: { key: "allowEarlyPayoff", label: "Allow Early Payoff" },
-  // },
-  // { label: "Early Payoff Penalty (%)", key: "earlyPayoffPenalty", type: "number", min: 0, max: 100 },
-  // { label: "Early Payoff Discount (%)", key: "earlyPayoffDiscount", type: "number", min: 0, max: 100 },
 ];
 
 interface CompanyFormProps {
   initialData?: Company;
-  onSubmit: (data: Company) => Promise<void>;
+  onSubmit: (data: Company) => void;
   open: boolean;
   onClose: () => void;
 }
@@ -71,16 +45,6 @@ function normalizeCompany(data?: Company) {
     brokerFeeType: data.fees?.brokerFee?.type ?? "flat",
     maintenanceFee: data.fees?.annualMaintenanceFee?.value ?? 0,
     maintenanceFeeType: data.fees?.annualMaintenanceFee?.type ?? "flat",
-    // enableFreshLoanRules: data.freshLoanRules?.enabled ?? false,
-    // minimumMonthsBetween: data.freshLoanRules?.minMonthsBetweenLoans ?? 0,
-    // allowOverlappingLoans: data.freshLoanRules?.allowOverlappingLoans ?? false,
-    // requireFullPayoff: data.freshLoanRules?.requireFullPayoff ?? false,
-    // allowEarlyPayoff: data.payoffSettings?.allowEarlyPayoff ?? false,
-    // earlyPayoffPenalty: data.payoffSettings?.earlyPayoffPenalty ?? 0,
-    // earlyPayoffDiscount: data.payoffSettings?.earlyPayoffDiscount ?? 0,
-    // gracePeriodDays: data.payoffSettings?.gracePeriodDays ?? 0,
-    // lateFeeAmount: data.payoffSettings?.lateFeeAmount ?? 0,
-    // lateFeeGraceDays: data.payoffSettings?.lateFeeGraceDays ?? 0,
     loanTerms: data.loanTerms ?? [],
   };
 }
@@ -140,9 +104,6 @@ const CompanyForm = observer(({ initialData, onSubmit, open, onClose }: CompanyF
     enableFreshLoanRules: true,
     allowOverlappingLoans: true,
     requireFullPayoff: true,
-    // allowEarlyPayoff: false,
-    // earlyPayoffPenalty: 0,
-    // earlyPayoffDiscount: 0,
   });
 
   useEffect(() => {
