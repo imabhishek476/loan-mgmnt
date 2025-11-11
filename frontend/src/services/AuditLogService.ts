@@ -2,6 +2,8 @@
 import api from "../api/axios";
 
 export interface AuditLog {
+    userEmail: any;
+    userName: any;
     message: string;
     _id: string;
     userId?: { _id: string; name: string; email: string ,userRole:string} | null;

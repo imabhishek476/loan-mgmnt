@@ -151,13 +151,13 @@ const AuditLogsTable: React.FC = () => {
     {
       title: "User",
       render: (rowData: any) =>
-        rowData.userId ? `${rowData.userId.name}` : "-",
+        rowData.userId ? `${rowData.userName}` : "-",
       cellStyle: { minWidth: 160 },
     },
     {
       title: "Role",
       render: (rowData: any) =>
-        rowData.userId ? `${rowData.userId.userRole}` : "-",
+        rowData.userId ? `${rowData.userRole}` : "-",
       cellStyle: { minWidth: 140 },
     },
     {
@@ -275,7 +275,7 @@ useEffect(() => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle className="flex justify-between  items-center">
+        <DialogTitle className="flex justify-between  items-center font-medium">
           Log Details
           <IconButton onClick={() => setSelectedLog(null)}>
             <X className="w-5 h-5 text-gray-600 hover:text-red-500" />
@@ -286,8 +286,8 @@ useEffect(() => {
             <div className="grid grid-cols- sm:grid-cols-2 gap-2 text-gray-800 text-sm">
               <p>
                 <strong>User:</strong>{" "}
-                {selectedLog.userId
-                  ? `${selectedLog.userId.name} (${selectedLog.userId.email})`
+                {selectedLog.userName
+                  ? `${selectedLog.userName} (${selectedLog.userEmail})`
                   : "System"}
               </p>
               <p>

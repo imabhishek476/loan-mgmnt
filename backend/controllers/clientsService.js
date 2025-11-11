@@ -3,6 +3,7 @@ const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
 const moment = require("moment");
 const createAuditLog = require("../utils/auditLog");
+const User = require("../models/User");
 exports.Clientstore = async (req, res) => {
   try {
     const {
@@ -274,12 +275,14 @@ exports.deleteClient = async (req, res) => {
         .json({ success: false, error: "Customer not found" });
     }
     const deletedLoans = await Loan.deleteMany({ client: id });
+    const user = await User.findById(req.user?.id).select("name email");
+    const deletedBy = user?.name || user?.email || "-";
   await createAuditLog(
     req.user?.id || null,
     req.user?.userRole || null,
     `Customer "${client.fullName || "-"}" and ${
       deletedLoans.deletedCount
-    } related loan(s) deleted`, 
+    } related loan(s) deleted by ${deletedBy}`,
     "Customer",
     client._id,
     {

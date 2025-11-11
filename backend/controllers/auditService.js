@@ -18,6 +18,22 @@ exports.getLogs = async (req, res) => {
     const skip = Math.max(Number(page) * Number(limit), 0);
     const pipeline = [
       { $match: matchStage },
+      {
+        $lookup: {
+          from: "users", 
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          userName: { $ifNull: ["$user.name", "Deleted User"] },
+          userEmail: "$user.email",
+          userRole: "$user.userRole",
+        },
+      },
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: Number(limit) },
