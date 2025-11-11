@@ -43,10 +43,13 @@ const UserForm = observer(
     const [roles, setRoles] = useState<string[]>([""]);
 
     useEffect(() => {
-      if (initialData && open) {
+   if (open) {
+   if (initialData) {
         setFormData(normalizeUser(initialData));
         if (initialData.userRole && !roles.includes(initialData.userRole)) {
           setRoles((prev) => [...prev, initialData.userRole]);
+       }}else {
+       setFormData(null);
         }
       }
     }, [initialData, open]);
