@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, FileText, Eye } from "lucide-react";
-import CircularProgress from "@mui/material/CircularProgress";
+import { Search, Eye } from "lucide-react";
 import { toast } from "react-toastify";
 import { fetchAuditLogs, type AuditLog } from "../../../services/AuditLogService";
 import moment from "moment";
@@ -17,12 +16,12 @@ import {
 import { X } from "lucide-react";
 
 const AuditLogsTable: React.FC = () => {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [, setLogs] = useState<AuditLog[]>([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const tableRef = useRef<any>(null);
 
-  useEffect(() => {
     const loadLogs = async () => {
       setLoading(true);
       try {
@@ -35,6 +34,7 @@ const AuditLogsTable: React.FC = () => {
         setLoading(false);
       }
     };
+  useEffect(() => {
     loadLogs();
   }, []);
 
@@ -140,23 +140,6 @@ const AuditLogsTable: React.FC = () => {
       );
     });
   };
-const filteredLogs = useMemo(() => {
-  const lowerSearch = search.toLowerCase();
-  return logs.filter((log) => {
-    const act = log.action?.toLowerCase() || "";
-    const isActionType = ["create", "update", "delete", "deactivate", "recover"].some((a) =>
-      act.includes(a)
-    ); // ✅ added deactivate & recover
-    if (!isActionType) return false;
-
-    return (
-      log.entity?.toLowerCase().includes(lowerSearch) ||
-      log.userId?.name?.toLowerCase().includes(lowerSearch) ||
-      log.userId?.email?.toLowerCase().includes(lowerSearch) ||
-      act.includes(lowerSearch)
-    );
-  });
-}, [logs, search]);
 
 
   const columns = [
@@ -196,7 +179,11 @@ const filteredLogs = useMemo(() => {
   ];
 
   const handleView = (log: AuditLog) => setSelectedLog(log);
-
+useEffect(() => {
+  if (tableRef.current) {
+    tableRef.current.onQueryChange();
+  }
+}, [search]);
   return (
     <div className="bg-white rounded-lg shadow border p-4">
       {/* Search Input */}
@@ -213,65 +200,72 @@ const filteredLogs = useMemo(() => {
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <CircularProgress className="text-green-700" />
-            <span className="ml-3 text-gray-700 font-medium">
-              Loading audit logs...
-            </span>
-          </div>
-        ) : filteredLogs.length > 0 ? (
-          <MaterialTable
-            title={null}
-            columns={columns}
-            data={filteredLogs}
-            actions={[
-              {
-                icon: () => <Eye className="w-5 h-5 text-blue-600" />,
-                tooltip: "View Details",
-                //@ts-ignore
-                onClick: (event, rowData) => handleView(rowData),
-              },
-            ]}
-            options={{
-              paging: true,
-              pageSize: 10,
-              pageSizeOptions: [5, 10, 20],
-              sorting: true,
-              search: false,
-              actionsColumnIndex: -1,
-              headerStyle: {
-                fontWeight: 600,
-                backgroundColor: "#f9fafb",
-                color: "#374151",
-                fontSize: "13px",
-                height: 36,
-                padding: "6px 8px",
-                borderBottom: "1px solid #e5e7eb",
-              },
-              rowStyle: {
-                fontSize: "13px",
-                height: 38,
-                borderBottom: "1px solid #f1f1f1",
-                transition: "background 0.2s",
-              },
-              padding: "dense",
-              toolbar: false,
-              paginationType: "stepped",
-            }}
-          />
-        ) : (
-          <div className="text-center py-10 bg-gray-200 rounded-lg">
-            <div className="flex items-center justify-center mb-4 bg-gray-300 rounded-full w-20 h-20 mx-auto">
-              <FileText className="w-12 h-12 text-green-700" />
-            </div>
-            <p className="text-gray-700 font-semibold mb-4">
-              {search
-                ? `No results found for "${search}"`
-                : "No audit logs available."}
-            </p>
-          </div>
-        )}
+        <MaterialTable
+          tableRef={tableRef}
+          title={null}
+          columns={columns}
+          data={(query) =>
+            new Promise(async (resolve, reject) => {
+              try {
+                const res = await fetchAuditLogs(
+                  query.page,
+                  query.pageSize,
+                  search
+                );
+                resolve({
+                  data: res.data,
+                  page: query.page,
+                  totalCount: res.total,
+                });
+              } catch (error) {
+                reject(error);
+              }
+            })
+          }
+          actions={[
+            {
+              icon: () => <Eye className="w-5 h-5 text-blue-600" />,
+              tooltip: "View Details",
+              //@ts-ignore
+              onClick: (event, rowData) => handleView(rowData),
+            },
+          ]}
+          options={{
+            paging: true,
+            pageSize: 10,
+            pageSizeOptions: [5, 10, 20],
+            sorting: true,
+            search: false,
+            actionsColumnIndex: -1,
+            headerStyle: {
+              fontWeight: 600,
+              backgroundColor: "#f9fafb",
+              color: "#374151",
+              fontSize: "13px",
+              height: 36,
+              padding: "6px 8px",
+              borderBottom: "1px solid #e5e7eb",
+            },
+            rowStyle: {
+              fontSize: "13px",
+              height: 38,
+              borderBottom: "1px solid #f1f1f1",
+              transition: "background 0.2s",
+            },
+            padding: "dense",
+            toolbar: false,
+            // paginationType: "stepped",
+          }}
+          localization={{
+            body: {
+              emptyDataSourceMessage: `${
+                search
+                  ? `No results found for "${search}"`
+                  : "No audit logs available.."
+              }`,
+            },
+          }}
+        />
       </div>
 
       {/* Modal */}
@@ -320,8 +314,17 @@ const filteredLogs = useMemo(() => {
           <Button
             onClick={() => setSelectedLog(null)}
             variant="contained"
-            color="success"
-            className="rounded-lg shadow-sm px-5 font-bold"
+            sx={{
+              backgroundColor: "#dc2626",
+            color: "white",
+              fontWeight: "bold",
+              px: 2,
+              py: 1,
+              borderRadius: "5px",
+              "&:hover": {
+                backgroundColor: "#b91c1c", 
+              },
+            }}
           >
             Close
           </Button>
