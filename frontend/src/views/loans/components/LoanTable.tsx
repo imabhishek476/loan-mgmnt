@@ -14,6 +14,7 @@
   import { observer } from "mobx-react-lite";
   import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
   import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+  import Confirm from "../../../components/Confirm";
 
   import {
     Dialog,
@@ -90,16 +91,16 @@
       if (clientId) clientStore.fetchClientLoans(clientId);
     }, [clientId]);
     const handleDelete = async (id: string) => {
-      if (!window.confirm("Are you sure you want to delete this loan?")) return;
-      try {
-        await loanStore.deleteLoan(id);
-        if (tableRef.current) {
-          tableRef.current.onQueryChange();
-        }
-        toast.success("Loan Deactivated successfully");
-      } catch {
-        toast.error("Failed to delete loan");
-      }
+      Confirm({
+        title: "Confirm Deactivate",
+        message: "Are you sure you want to deactivate this loan?",
+        confirmText: "Yes, Deactivate",
+        onConfirm: async () => {
+          await loanStore.deleteLoan(id);
+          tableRef.current?.onQueryChange();
+          toast.success("Loan Deactivated successfully");
+        },
+      });
     };
     const handleRecover = async (loan: any) => {
       try {
