@@ -4,6 +4,7 @@ import { CompaniesTab } from "./components/CompaniesTab";
 import { UsersTab } from "./components/UsersTab";
 import { Building2, Shield, User } from "lucide-react";
 import { userStore } from "../../store/UserStore";
+import { useEffect } from "react";
 type TabType = "system" | "companies" | "users" | "audit";
 
 const Administration = observer(() => {
@@ -16,6 +17,9 @@ const Administration = observer(() => {
   const handleClick = (key: TabType) => {
     userStore.setActiveAdminTab(key);
   };
+  useEffect(() => {
+      userStore.setActiveAdminTab("companies");
+  }, []);
   return (
     <div className="flex flex-col  transition-all duration-300">
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
