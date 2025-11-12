@@ -53,22 +53,22 @@ const AuditLogsTable: React.FC = () => {
     let type = "-";
 
     if (lower.includes("create")) {
-    bgColor = "bg-green-100 text-green-700";
+    bgColor = "bg-green-700 text-white";
       type = "Create";
     } else if (lower.includes("update")) {
-    bgColor = "bg-blue-100 text-blue-700";
+    bgColor = "bg-blue-500 text-white";
      type = "Update";
   } else if (lower.includes("deactivate") || lower.includes("inactive")) {
-    bgColor = "bg-orange-100 text-orange-700";
+    bgColor = "bg-orange-400 text-white";
     type = "Deactivate";
     } else if (lower.includes("activate") || lower.includes("active")) {
-      bgColor = "bg-emerald-100 text-emerald-700";
+      bgColor = "bg-green-700 text-white";
       type = "Activate";
     } else if (lower.includes("delete")) {
-    bgColor = "bg-red-100 text-red-700";
+    bgColor = "bg-red-500 text-white";
       type = "Delete";
   } else if (lower.includes("recover")) {
- bgColor = "bg-green-200 text-green-800";
+ bgColor = "bg-green-700 text-white";
     type = "Recover";
     }
 
@@ -272,71 +272,64 @@ useEffect(() => {
       </div>
 
       {/* Modal */}
-      <Dialog
-        open={!!selectedLog}
-        onClose={() => setSelectedLog(null)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle className="flex justify-between  items-center font-medium">
-          Log Details
-          <IconButton onClick={() => setSelectedLog(null)}>
-            <X className="w-5 h-5 text-gray-600 hover:text-red-500" />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers className="p-6">
-          {selectedLog && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-800 text-sm break-words">
-              <p className="break-words">
-                <strong>User:</strong>{" "}
-                {selectedLog.userName
-                  ? `${selectedLog.userName} (${selectedLog.userEmail})`
-                  : "System"}
-              </p>
+      {selectedLog && (
+        <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto z-[9999]">
+          <div className="bg-white rounded-lg w-full max-w-4xl shadow-lg relative mx-2 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
+                        <div className="flex justify-between items-center border-b px-6 py-3">
+              <h2 className="text-xl font-bold text-gray-800">Log Details</h2>
+              <button
+                onClick={() => setSelectedLog(null)}
+                className="text-gray-600 hover:text-red-500 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-3 text-gray-800 text-sm ">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 justify-start">
+                <p className="break-words text-left ">
+                  <strong>User:</strong>{" "}
+                  {selectedLog.userName
+                    ? `${selectedLog.userName} (${selectedLog.userEmail})`
+                    : "System"}
+                </p>
 
-              <p className="break-words">
-                <strong>Action Type:</strong>{" "}
-                {formatActionType(selectedLog.action)}
-              </p>
+                <p className="break-words text-left">
+                  <strong>Action Type:</strong>{" "}
+                  {formatActionType(selectedLog.action)}
+                </p>
 
-              <p className="sm:col-span-2 break-words">
-                <strong>Action:</strong> {selectedLog.message}
-              </p>
+                <p className="sm:col-span-2 break-words text-left">
+                  <strong>Action:</strong> {selectedLog.message}
+                </p>
 
-              <p className="sm:col-span-2">
-                <strong>Time:</strong>{" "}
-                {moment(selectedLog.createdAt).format("DD MMM YYYY, hh:mm A")}
-              </p>
+                <p className="sm:col-span-2 text-left">
+                  <strong>Time:</strong>{" "}
+                  {moment(selectedLog.createdAt).format("DD MMM YYYY, hh:mm A")}
+                </p>
+              </div>
 
-              <div className="sm:col-span-2 bg-gray-200 p-4 rounded-md overflow-x-auto max-h-[60vh]">
+
+              <div className="bg-gray-100 p-4 text-left rounded-md overflow-x-auto max-h-[50vh]">
                 <strong>Data:</strong>
                 <pre className="text-xs mt-2 whitespace-pre-wrap break-words">
                   {renderDataWithValues(getRelevantData(selectedLog))}
                 </pre>
               </div>
             </div>
-          )}
-        </DialogContent>
-        <DialogActions className="px-6 pb-4">
-          <Button
-            onClick={() => setSelectedLog(null)}
-            variant="contained"
-            sx={{
-              backgroundColor: "#dc2626",
-              color: "white",
-              fontWeight: "bold",
-              px: 2,
-              py: 1,
-              borderRadius: "5px",
-              "&:hover": {
-                backgroundColor: "#b91c1c",
-              },
-            }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+
+            <div className="flex justify-end border-t px-6 py-3">
+           
+              <button
+                type="button"
+                onClick={() => setSelectedLog(null)}
+                className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
