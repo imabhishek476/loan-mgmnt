@@ -281,6 +281,7 @@ const Loans = observer(
             });
           }
           await loanStore.fetchLoans();
+          await loanStore.fetchActiveLoans();
           await loanStore.refreshDataTable();
           await clientStore.refreshDataTable();
           toast.success("Loan created successfully");

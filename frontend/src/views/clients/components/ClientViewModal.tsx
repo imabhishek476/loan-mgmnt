@@ -59,7 +59,7 @@ const [editingLoanId, setEditingLoanId] = useState<any>(null);
          promises.push(clientStore.fetchClients());
        }
         if (loanStore.loans.length == 0) {
-          promises.push(loanStore.fetchLoans());
+          promises.push(loanStore.fetchActiveLoans());
         }
       await Promise.all(promises);
     } catch (error) {
@@ -96,10 +96,11 @@ const clientLoans = useMemo(() => {
 
   useEffect(() => {
       loadInitialData();
+      // loanStore.fetchActiveLoans();
   }, []);
-  // useEffect(() => {
-  //   if (client?._id) loanStore.fetchLoans();
-  // }, [client?._id]);
+  useEffect(() => {
+    if (client?._id) loanStore.fetchActiveLoans();
+  }, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
   clientLoans.forEach((loan) => {
@@ -767,7 +768,7 @@ useEffect(() => {
           onClose={() => {
             setEditLoanModalOpen(false);
             setEditingLoanId(null);
-            loanStore.fetchLoans();
+            // loanStore.fetchLoans();
           }}
         />
       )}
