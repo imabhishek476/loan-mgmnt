@@ -5,6 +5,7 @@ import {
   updateClient,
   deleteClient,
   getClientLoans,
+  toggleClientStatus,
 } from "../services/ClientServices";
 
 export interface Loan {
@@ -17,6 +18,7 @@ export interface Loan {
 }
 
 export interface Client {
+  isActive: boolean;
   _id?: string;
   fullName: string;
   email: string;
@@ -96,6 +98,20 @@ class ClientStore {
       runInAction(() => (this.selectedClientLoans = loans));
     } catch (err) {
       console.error("Error fetching client loans:", err);
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
+  async toggleClientStatus(id: string) {
+    this.loading = true;
+    try {
+      const { client } = await toggleClientStatus(id);
+      runInAction(() => {
+        const idx = this.clients.findIndex((c) => c._id === id);
+        if (idx !== -1) this.clients[idx] = client;
+      });
+    } catch (err) {
+      console.error("Error toggling client status:", err);
     } finally {
       runInAction(() => (this.loading = false));
     }

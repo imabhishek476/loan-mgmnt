@@ -83,7 +83,7 @@ const Loans = observer(
       setSelectedLoan(loan);
       try {
         //@ts-ignore
-        const payments = await fetchPaymentsByLoan(loan._id);
+        const payments = await fetchPaymentsByLoan(loan?._id);
         // setLoanPayments(payments);
       } catch {
         // setLoanPayments([]);
@@ -113,14 +113,14 @@ const Loans = observer(
 
     useEffect(() => {
       if (defaultClient && companyStore.companies?.length) {
-        setFormData((prev) => ({ ...prev, client: defaultClient._id }));
+        setFormData((prev) => ({ ...prev, client: defaultClient?._id }));
 
         const defaultCompany = companyStore.companies.find(
           (c) => c.activeCompany && c.companyName === "Claim Advance"
         );
 
         if (defaultCompany) {
-          handleCompanyChange(defaultCompany._id);
+          handleCompanyChange(defaultCompany?._id);
         }
 
         setModalOpen(true);
@@ -328,8 +328,8 @@ const Loans = observer(
         type: "autocomplete",
         options:
           clientStore.clients?.map((c) => ({
-            label: c.fullName,
-            value: c._id,
+            label: c?.fullName,
+            value: c?._id,
           })) || [],
         required: true,
         onChange: (value: string) =>
@@ -758,7 +758,7 @@ const Loans = observer(
                   </p>
                   <p className="font-medium">
                     {clientStore.clients.find(
-                      (c) => c._id === selectedLoan.client
+                      (c) => c?._id === selectedLoan.client
                     )?.fullName || "-"}
                   </p>
                 </div>

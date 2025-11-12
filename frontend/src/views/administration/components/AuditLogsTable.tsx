@@ -58,9 +58,12 @@ const AuditLogsTable: React.FC = () => {
     } else if (lower.includes("update")) {
     bgColor = "bg-blue-100 text-blue-700";
      type = "Update";
-  } else if (lower.includes("deactivate")) {
+  } else if (lower.includes("deactivate") || lower.includes("inactive")) {
     bgColor = "bg-orange-100 text-orange-700";
     type = "Deactivate";
+    } else if (lower.includes("activate") || lower.includes("active")) {
+      bgColor = "bg-emerald-100 text-emerald-700";
+      type = "Activate";
     } else if (lower.includes("delete")) {
     bgColor = "bg-red-100 text-red-700";
       type = "Delete";
@@ -283,27 +286,31 @@ useEffect(() => {
         </DialogTitle>
         <DialogContent dividers className="p-6">
           {selectedLog && (
-            <div className="grid grid-cols- sm:grid-cols-2 gap-2 text-gray-800 text-sm">
-              <p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-800 text-sm break-words">
+              <p className="break-words">
                 <strong>User:</strong>{" "}
                 {selectedLog.userName
                   ? `${selectedLog.userName} (${selectedLog.userEmail})`
                   : "System"}
               </p>
-              <p>
+
+              <p className="break-words">
                 <strong>Action Type:</strong>{" "}
                 {formatActionType(selectedLog.action)}
               </p>
-              <p className="sm:col-span-2">
+
+              <p className="sm:col-span-2 break-words">
                 <strong>Action:</strong> {selectedLog.message}
               </p>
+
               <p className="sm:col-span-2">
                 <strong>Time:</strong>{" "}
                 {moment(selectedLog.createdAt).format("DD MMM YYYY, hh:mm A")}
               </p>
-              <div className="sm:col-span-2 bg-gray-200 p-4 rounded-md">
+
+              <div className="sm:col-span-2 bg-gray-200 p-4 rounded-md overflow-x-auto max-h-[60vh]">
                 <strong>Data:</strong>
-                <pre className="text-xs mt-2">
+                <pre className="text-xs mt-2 whitespace-pre-wrap break-words">
                   {renderDataWithValues(getRelevantData(selectedLog))}
                 </pre>
               </div>
@@ -316,13 +323,13 @@ useEffect(() => {
             variant="contained"
             sx={{
               backgroundColor: "#dc2626",
-            color: "white",
+              color: "white",
               fontWeight: "bold",
               px: 2,
               py: 1,
               borderRadius: "5px",
               "&:hover": {
-                backgroundColor: "#b91c1c", 
+                backgroundColor: "#b91c1c",
               },
             }}
           >

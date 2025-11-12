@@ -34,6 +34,7 @@ const ClientSchema = new mongoose.Schema(
   address: String,
   attorneyName: String,
   memo: String,
+   isActive: { type: Boolean, default: true },
   customFields: [customFieldSchema],
 },
 { timestamps: true }
