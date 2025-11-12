@@ -287,42 +287,60 @@ exports.recoverLoan = async (req, res) => {
     if (!existingLoan) {
       return res.status(404).json({
         success: false,
-        message: "Loan not found",
+        message: "Loan not found.",
       });
     }
-    const loan = await Loan.findByIdAndUpdate(
+    const client = await Client.findById(existingLoan.client);
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: "Client not found.",
+      });
+    }
+    if (!client.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: `Client "${client.fullName}" is currently inactive. Please activate this client before recovering their loan.`,
+      });
+    }
+    const recoveredLoan = await Loan.findByIdAndUpdate(
       id,
       { loanStatus: "Active" },
-      { new: true } 
+      { new: true }
     );
-     const [client, company, user] = await Promise.all([
-       Client.findById(loan.client).select("fullName"),
-       Company.findById(loan.company).select("companyName"),
+
+    if (!recoveredLoan) {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to update loan status.",
+      });
+    }
+    const [company, user] = await Promise.all([
+       Company.findById(recoveredLoan.company).select("companyName"),
        User.findById(req.user?.id).select("name email"),
      ]);
 
-     const clientName = client?.fullName || "";
-     const companyName = company?.companyName || "";
-     const recoveredBy = user?.name || user?.email || "";
+    const recoveredBy = user?.name || user?.email || "System";
+    const companyName = company?.companyName || "Unknown Company";
 
-     await createAuditLog(
-       req.user?.id || null,
-       req.user?.userRole || null,
-       `Loan recovered for ${clientName} under ${companyName} by ${recoveredBy}`,
-       "Loan",
-       loan._id,
-       { after: loan }
+    await createAuditLog(
+      req.user?.id || null,
+      req.user?.userRole || null,
+      `Loan for client "${client.fullName}" under "${companyName}" was recovered by ${recoveredBy}`,
+      "Loan",
+      recoveredLoan._id,
+      { after: recoveredLoan }
     );
     res.status(200).json({
       success: true,
-      message: "Loan recovered successfully",
-      data: loan,
+      message: `Loan for client "${client.fullName}" recovered successfully.`,
+      data: recoveredLoan,
     });
   } catch (error) {
-    console.error("Error in recoverLoan:", error);
+    console.error("Recover Loan Error:", error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "An unexpected error occurred while recovering the loan.",
     });
   }
 };

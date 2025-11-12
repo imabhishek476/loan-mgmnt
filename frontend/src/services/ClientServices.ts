@@ -37,3 +37,7 @@ export const getClientLoans = async (id: string) => {
   const { data } = await api.get(`/client/loans/${id}`);
   return data.loans || [];
 };
+export const toggleClientStatus = async (id: string) => {
+  const { data } = await api.put(`/client/toggle/${id}`);
+  return data;
+};
