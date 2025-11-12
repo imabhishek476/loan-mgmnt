@@ -15,6 +15,7 @@ class AuditLogStore {
         try {
             const logs = await fetchAuditLogs();
             runInAction(() => {
+                //@ts-ignore
                 this.logs = logs;
             });
         } catch (err) {

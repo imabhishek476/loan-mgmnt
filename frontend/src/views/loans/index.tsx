@@ -21,10 +21,6 @@ import {
   Switch,
   Autocomplete,
   TextField as MuiTextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
