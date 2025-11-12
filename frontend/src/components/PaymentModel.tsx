@@ -85,7 +85,7 @@ useEffect(() => {
           currentTerm: loan.loanTerms,
         });
 
-        await loanStore.fetchLoans();
+        await loanStore.fetchActiveLoans();
         await clientStore.refreshDataTable();
         onPaymentSuccess?.();
         toast.success("Payment recorded successfully");

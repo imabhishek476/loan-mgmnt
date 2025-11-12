@@ -102,7 +102,8 @@ class ClientStore {
       runInAction(() => (this.loading = false));
     }
   }
-  async toggleClientStatus(id: string) {
+  // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+  async toggleClientStatus(id: string, _p0: boolean) {
     this.loading = true;
     try {
       const { client } = await toggleClientStatus(id);

@@ -9,14 +9,9 @@ import { loanStore } from "../store/LoanStore";
 import moment from "moment";
 import type { Moment } from "moment";
 import {
-  Button,
   Switch,
   Autocomplete,
   TextField as MuiTextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   CircularProgress,
 } from "@mui/material";
@@ -344,7 +339,7 @@ const handleSave = async () => {
       //   } merged successfully`
       // );
     }
-    await loanStore.fetchLoans();
+    await loanStore.fetchActiveLoans();
     await clientStore.refreshDataTable();
     
     toast.success("Loan updated successfully");
@@ -1000,148 +995,149 @@ const handleSave = async () => {
 
         {/* View Loan Modal */}
         {viewLoan && (
-          <Dialog open onClose={handleCloseView} maxWidth="sm" fullWidth>
-            <DialogTitle className="font-semibold text-lg text-green-700 border-b pb-2 flex justify-between items-center">
-              Loan Details
-              <IconButton onClick={handleCloseView}>
-                <X size={18} />
-              </IconButton>
-            </DialogTitle>
+          <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/60 overflow-auto">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-xl border border-gray-200 w-full max-w-2xl mx-3 sm:mx-6 relative flex flex-col max-h-[90vh]">
+              <div className="flex justify-between items-center border-b px-6 py-3">
+                <h2 className="font-semibold text-xl text-green-700">
+                  Loan Details
+                </h2>
+                <button
+                  onClick={handleCloseView}
+                  className="text-gray-600 hover:text-red-500 transition"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-            <DialogContent dividers className="space-y-3 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-800 text-sm">
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Client</p>
-                  <p className="font-semibold">
-                    {clientStore.clients.find((c) => c._id === viewLoan.client)
-                      ?.fullName || "-"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Company
-                  </p>
-                  <p className="font-semibold">
-                    {companyStore.companies.find(
-                      (c) => c._id === viewLoan.company
-                    )?.companyName || "-"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Issue Date
-                  </p>
-                  <p>{moment(viewLoan.issueDate).format("MMM DD, YYYY")}</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Loan Term
-                  </p>
-                  <p>{viewLoan.loanTerms} months</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Interest Type
-                  </p>
-                  <p className="capitalize">{viewLoan.interestType}</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Monthly Rate
-                  </p>
-                  <p>{viewLoan.monthlyRate}%</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Base Amount
-                  </p>
-                  <p>${(viewLoan.baseAmount || 0).toLocaleString()}</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Total Loan
-                  </p>
-                  <p className="font-semibold text-green-700">
-                    $
-                    {getLoanRunningDetails(viewLoan).total.toLocaleString(
-                      undefined,
-                      {
-                        minimumFractionDigits: 2,
-                      }
-                    )}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Remaining
-                  </p>
-                  <p className="font-semibold text-red-600">
-                    $
-                    {(viewLoan.status === "Merged"
-                      ? 0
-                      : getLoanRunningDetails(viewLoan).remaining
-                    ).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
-                  <p
-                    className={`font-bold ${
-                      viewLoan.status === "Paid Off"
-                        ? "text-green-600"
-                        : viewLoan.status === "Merged"
-                        ? "text-green-600"
-                        : viewLoan.status === "Active"
-                        ? "text-green-600"
-                        : "text-yellow-600"
-                    }`}
-                  >
-                    {viewLoan.status}
-                  </p>
-                </div>
-
-                {viewLoan.checkNumber && (
+              <div className="p-6 overflow-y-auto space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-800 text-sm">
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
-                      Check Number
+                      Client
                     </p>
-                    <p>{viewLoan.checkNumber}</p>
+                    <p className="font-semibold">
+                      {clientStore.clients.find(
+                        (c) => c._id === viewLoan.client
+                      )?.fullName || "-"}
+                    </p>
                   </div>
-                )}
-              </div>
-            </DialogContent>
 
-            <DialogActions>
-              <Button
-                onClick={handleCloseView}
-                variant="contained"
-                sx={{
-                  backgroundColor: "#dc2626",
-                  color: "white",
-                  fontWeight: "bold",
-                  px: 2,
-                  py: 1,
-                  borderRadius: "5px",
-                  "&:hover": {
-                    backgroundColor: "#b91c1c",
-                  },
-                }}
-              >
-                Close
-              </Button>
-            </DialogActions>
-          </Dialog>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Company
+                    </p>
+                    <p className="font-semibold">
+                      {companyStore.companies.find(
+                        (c) => c._id === viewLoan.company
+                      )?.companyName || "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Issue Date
+                    </p>
+                    <p>{moment(viewLoan.issueDate).format("MMM DD, YYYY")}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Loan Term
+                    </p>
+                    <p>{viewLoan.loanTerms} months</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Interest Type
+                    </p>
+                    <p className="capitalize">{viewLoan.interestType}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Monthly Rate
+                    </p>
+                    <p>{viewLoan.monthlyRate}%</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Base Amount
+                    </p>
+                    <p>${(viewLoan.baseAmount || 0).toLocaleString()}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Total Loan
+                    </p>
+                    <p className="font-semibold text-green-700">
+                      $
+                      {getLoanRunningDetails(viewLoan).total.toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 2,
+                        }
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Remaining
+                    </p>
+                    <p className="font-semibold text-red-600">
+                      $
+                      {(viewLoan.status === "Merged"
+                        ? 0
+                        : getLoanRunningDetails(viewLoan).remaining
+                      ).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Status
+                    </p>
+                    <p
+                      className={`font-bold ${
+                        viewLoan.status === "Paid Off"
+                          ? "text-green-600"
+                          : viewLoan.status === "Merged"
+                          ? "text-green-600"
+                          : viewLoan.status === "Active"
+                          ? "text-green-600"
+                          : "text-yellow-600"
+                      }`}
+                    >
+                      {viewLoan.status}
+                    </p>
+                  </div>
+
+                  {viewLoan.checkNumber && (
+                    <div>
+                      <p className="text-gray-500 text-xs uppercase mb-1">
+                        Check Number
+                      </p>
+                      <p>{viewLoan.checkNumber}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end border-t px-6 py-3">
+                <button
+                  onClick={handleCloseView}
+                  className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </LocalizationProvider>
     );

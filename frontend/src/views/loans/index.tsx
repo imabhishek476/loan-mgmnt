@@ -21,10 +21,6 @@ import {
   Switch,
   Autocomplete,
   TextField as MuiTextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
@@ -285,6 +281,7 @@ const Loans = observer(
             });
           }
           await loanStore.fetchLoans();
+          await loanStore.fetchActiveLoans();
           await loanStore.refreshDataTable();
           await clientStore.refreshDataTable();
           toast.success("Loan created successfully");
@@ -736,162 +733,173 @@ const Loans = observer(
         )}
         {/* View Loan Modal */}
         {selectedLoan && (
-          <Dialog
-            open={!!selectedLoan}
-            onClose={handleClose}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-              className:
-                "rounded-2xl shadow-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50",
-            }}
-          >
-            <DialogTitle className="font-semibold text-xl text-green-700 border-b pb-2">
-              Loan Details
-            </DialogTitle>
-            <DialogContent className="p-6">
-              <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
-                {/* Client Info */}
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Customer
-                  </p>
-                  <p className="font-medium">
-                    {clientStore.clients.find(
-                      (c) => c?._id === selectedLoan.client
-                    )?.fullName || "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Company
-                  </p>
-                  <p className="font-medium">
-                    {companyStore.companies.find(
-                      (c) => c._id === selectedLoan.company
-                    )?.companyName || "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Base Amount
-                  </p>
-                  <p className="font-semibold text-green-700">
-                    $
-                    {Number(selectedLoan.subTotal || 0).toLocaleString(
-                      undefined,
-                      { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Total Loan
-                  </p>
-                  <p className="font-semibold text-green-700">
-                    $
-                    {total.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Paid Amount
-                  </p>
-                  <p className="font-semibold text-blue-700">
-                    $
-                    {Number(selectedLoan.paidAmount || 0).toLocaleString(
-                      undefined,
-                      { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Remaining Amount
-                  </p>
-                  <p className="font-semibold text-red-700">
-                    $
-                    {remaining.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </p>
-                </div>
-                <div className="sm:col-span-2 mt-2">
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Progress
-                  </p>
-                  <div className="w-full bg-gray-200 h-2 rounded-full">
-                    <div
-                      className="h-2 rounded-full bg-green-600"
-                      style={{
-                        width: `${
-                          ((selectedLoan.paidAmount || 0) / (total || 1)) * 100
-                        }%`,
-                      }}
-                    />
+          <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-xl border border-gray-200 w-full max-w-2xl mx-3 sm:mx-6 relative flex flex-col max-h-[90vh]">
+              <div className="flex justify-between items-center border-b px-6 py-3">
+                <h2 className="font-semibold text-xl text-green-700">
+                  Loan Details
+                </h2>
+                <button
+                  onClick={handleClose}
+                  className="text-gray-600 hover:text-red-500 transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto">
+                <div className="grid grid-cols-1 mt-2 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
+           
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Customer
+                    </p>
+                    <p className="font-medium">
+                      {clientStore.clients.find(
+                        (c) => c?._id === selectedLoan.client
+                      )?.fullName || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Company
+                    </p>
+                    <p className="font-medium">
+                      {companyStore.companies.find(
+                        (c) => c._id === selectedLoan.company
+                      )?.companyName || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Base Amount
+                    </p>
+                    <p className="font-semibold text-green-700">
+                      $
+                      {Number(selectedLoan.subTotal || 0).toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Total Loan
+                    </p>
+                    <p className="font-semibold text-green-700">
+                      $
+                      {total.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Paid Amount
+                    </p>
+                    <p className="font-semibold text-blue-700">
+                      $
+                      {Number(selectedLoan.paidAmount || 0).toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Remaining Amount
+                    </p>
+                    <p className="font-semibold text-red-700">
+                      $
+                      {remaining.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2 mt-2">
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Progress
+                    </p>
+                    <div className="w-full bg-gray-200 h-2 rounded-full">
+                      <div
+                        className="h-2 rounded-full bg-green-600 transition-all duration-500"
+                        style={{
+                          width: `${
+                            ((selectedLoan.paidAmount || 0) / (total || 1)) *
+                            100
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Interest Type
+                    </p>
+                    <p className="font-medium capitalize">
+                      {selectedLoan.interestType || "N/A"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Monthly Rate
+                    </p>
+                    <p className="font-medium">{selectedLoan.monthlyRate}%</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Loan Term
+                    </p>
+                    <p className="font-medium">
+                      <b>{runningTenure} Months</b>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Issue Date
+                    </p>
+                    <p className="font-medium">
+                      {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
+                    </p>
+                  </div>
+
+                  <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
+                    <p className="text-gray-500 text-xs uppercase mb-1">
+                      Status
+                    </p>
+                    <p
+                      className={`font-semibold ${
+                        selectedLoan.status === "Paid Off"
+                          ? "text-green-700"
+                          : selectedLoan.status === "Partial Payment"
+                          ? "text-blue-700"
+                          : "text-yellow-700"
+                      }`}
+                    >
+                      {selectedLoan.status}
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Interest Type
-                  </p>
-                  <p className="font-medium capitalize">
-                    {selectedLoan.interestType || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Monthly Rate
-                  </p>
-                  <p className="font-medium">{selectedLoan.monthlyRate}%</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Loan Term
-                  </p>
-                  <p className="font-medium">
-                    <b>{runningTenure} Months</b>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">
-                    Issue Date
-                  </p>
-                  <p className="font-medium">
-                    {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
-                  </p>
-                </div>
-                <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
-                  <p className="text-gray-500 text-xs uppercase mb-1">Status</p>
-                  <p
-                    className={`font-semibold ${
-                      selectedLoan.status === "Paid Off"
-                        ? "text-green-700"
-                        : selectedLoan.status === "Partial Payment"
-                        ? "text-blue-700"
-                        : "text-yellow-700"
-                    }`}
-                  >
-                    {selectedLoan.status}
-                  </p>
-                </div>
               </div>
-            </DialogContent>
-            <DialogActions className="px-6 pb-4">
-              <Button
-                onClick={handleClose}
-                variant="contained"
-                color="success"
-                className="px-4 py-2 font-bold bg-green-400 text-white rounded-lg hover:bg-green-700 transition"
-              >
-                Close
-              </Button>
-            </DialogActions>
-          </Dialog>
+              <div className="flex justify-end border-t px-6 py-3">
+                <button
+                  onClick={handleClose}
+                  className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     );
