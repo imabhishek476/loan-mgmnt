@@ -3,6 +3,7 @@ const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
 const moment = require("moment");
 const createAuditLog = require("../utils/auditLog");
+const User = require("../models/User");
 exports.Clientstore = async (req, res) => {
   try {
     const {
@@ -274,12 +275,14 @@ exports.deleteClient = async (req, res) => {
         .json({ success: false, error: "Customer not found" });
     }
     const deletedLoans = await Loan.deleteMany({ client: id });
+    const user = await User.findById(req.user?.id).select("name email");
+    const deletedBy = user?.name || user?.email || "-";
   await createAuditLog(
     req.user?.id || null,
     req.user?.userRole || null,
     `Customer "${client.fullName || "-"}" and ${
       deletedLoans.deletedCount
-    } related loan(s) deleted`, 
+    } related loan(s) deleted by ${deletedBy}`,
     "Customer",
     client._id,
     {
@@ -312,6 +315,63 @@ exports.getClietsLoan = async (req, res) => {
     res.status(200).json({ success: true, loans });
   } catch (error) {
     console.error("Error fetching Customer loans:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+exports.toggleClientStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const client = await Client.findById(id);
+    if (!client) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Client not found" });
+    }
+
+    client.isActive = !client.isActive;
+    await client.save();
+    const newLoanStatus = client.isActive ? "Active" : "Deactivated";
+
+    const updatedLoans = await Loan.updateMany(
+      { client: id },
+      { loanStatus: newLoanStatus }
+    );
+
+    const user = await User.findById(req.user?.id).select("name email");
+    const actionBy = user?.name || user?.email || "-";
+
+    await createAuditLog(
+      req.user?.id || null,
+      req.user?.userRole || null,
+      `Customer "${client.fullName || "-"}" marked as "${
+        client.isActive ? "Active" : "Inactive"
+      }" by ${actionBy} — ${
+        updatedLoans.modifiedCount
+      } related loan(s) also set to "${newLoanStatus}"`,
+      "Customer",
+      client._id,
+      {
+        message: `Customer "${client.fullName || "-"}" was marked as "${
+          client.isActive ? "Active" : "Inactive"
+        }" and ${
+          updatedLoans.modifiedCount
+        } related loan(s) were set to "${newLoanStatus}".`,
+        updatedClient: client,
+        updatedLoansCount: updatedLoans.modifiedCount,
+        performedBy: actionBy,
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Customer "${client.fullName || "-"}" ${
+        client.isActive ? "activated" : "deactivated"
+      } successfully, along with ${
+        updatedLoans.modifiedCount
+      } related loan(s).`,
+    });
+  } catch (error) {
+    console.error("Error toggling client status:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

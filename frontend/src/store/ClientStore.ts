@@ -5,6 +5,7 @@ import {
   updateClient,
   deleteClient,
   getClientLoans,
+  toggleClientStatus,
 } from "../services/ClientServices";
 
 export interface Loan {
@@ -17,6 +18,7 @@ export interface Loan {
 }
 
 export interface Client {
+  isActive: boolean;
   _id?: string;
   fullName: string;
   email: string;
@@ -96,6 +98,21 @@ class ClientStore {
       runInAction(() => (this.selectedClientLoans = loans));
     } catch (err) {
       console.error("Error fetching client loans:", err);
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
+  // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+  async toggleClientStatus(id: string, _p0: boolean) {
+    this.loading = true;
+    try {
+      const { client } = await toggleClientStatus(id);
+      runInAction(() => {
+        const idx = this.clients.findIndex((c) => c._id === id);
+        if (idx !== -1) this.clients[idx] = client;
+      });
+    } catch (err) {
+      console.error("Error toggling client status:", err);
     } finally {
       runInAction(() => (this.loading = false));
     }

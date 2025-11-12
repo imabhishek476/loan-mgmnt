@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MaterialTable from "@material-table/core";
-import { Search, Trash2, Plus } from "lucide-react";
+import { Search, Trash2, Plus, Power } from "lucide-react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 // import { TextField } from "@mui/material";
@@ -8,6 +8,7 @@ import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { toast } from "react-toastify";
 import { getClientsSearch } from "../../../services/ClientServices";
+import Confirm from "../../../components/Confirm";
 // import { calculateLoanAmounts } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
   // clients: any[];
@@ -67,13 +68,37 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     }
   };
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this Customer?")) {
-      await clientStore.deleteClient(id);
-      if (tableRef.current) {
-        tableRef.current.onQueryChange();
+    Confirm({
+      title: "Confirm Delete",
+      message: "Are you sure you want to delete this customer?",
+      confirmText: "Yes, Delete",
+      onConfirm: async () => {
+        await clientStore.deleteClient(id);
+        tableRef.current?.onQueryChange();
+        toast.success("Customer deleted successfully");
+      },
+    });
+  };
+const handleToggleActive = async (id: string, isActive: boolean) => {
+  Confirm({
+    title: isActive ? "Deactivate Client" : "Activate Client",
+    message: `Are you sure you want to ${
+      isActive ? "deactivate" : "activate"
+    } this client?`,
+    confirmText: isActive ? "Yes, Deactivate" : "Yes, Activate",
+    onConfirm: async () => {
+      try {
+        await clientStore.toggleClientStatus(id, !isActive);
+        toast.success(
+          `Client ${!isActive ? "activated" : "deactivated"} successfully`
+        );
+        tableRef.current?.onQueryChange();
+      } catch (error) {
+        toast.error("Failed to update status");
+        console.error(error);
       }
-      toast.success("Customer deleted successfully");
-    }
+      },
+    });
   };
   useEffect(() => {
     if (tableRef.current) {
@@ -170,7 +195,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                   className="text-green-600 cursor-pointer hover:underline"
                   onClick={() => onViewClient?.(rowData)}
                 >
-                  {rowData.fullName}
+                  {rowData?.fullName}
                 </span>
               ),
             },
@@ -232,7 +257,20 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                 );
               },
             },
-
+            {
+              title: "Status",
+              render: (rowData) =>
+                rowData.isActive ? (
+                  <span className="px-2 py-0.5 bg-green-700 text-white text-sm font-semibold rounded-lg">
+                    Active
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-sm font-semibold rounded-lg">
+                    Inactive
+                  </span>
+                ),
+              cellStyle: { width: 100, textAlign: "left", padding: "6px" },
+            },
             // {
             //   title: "Active Loans",
             //   render: (rowData) => {
@@ -274,6 +312,12 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             //   //@ts-ignore
             //   onClick: (event, rowData: any) => onEdit(rowData),
             // },
+            {
+              icon: () => <Power className="w-5 h-5 text-green-600" />,
+              tooltip: "Active / Deactive Client",
+              onClick: (_event, rowData: any) =>
+                handleToggleActive(rowData._id, rowData.isActive),
+            },
             {
               icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
               tooltip: "Delete",

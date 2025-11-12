@@ -59,7 +59,7 @@ const [editingLoanId, setEditingLoanId] = useState<any>(null);
          promises.push(clientStore.fetchClients());
        }
         if (loanStore.loans.length == 0) {
-          promises.push(loanStore.fetchLoans());
+          promises.push(loanStore.fetchActiveLoans());
         }
       await Promise.all(promises);
     } catch (error) {
@@ -96,10 +96,11 @@ const clientLoans = useMemo(() => {
 
   useEffect(() => {
       loadInitialData();
+      // loanStore.fetchActiveLoans();
   }, []);
-  // useEffect(() => {
-  //   if (client?._id) loanStore.fetchLoans();
-  // }, [client?._id]);
+  useEffect(() => {
+    if (client?._id) loanStore.fetchActiveLoans();
+  }, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
   clientLoans.forEach((loan) => {
@@ -152,7 +153,7 @@ useEffect(() => {
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50  rounded-md">
       <div
-        className="bg-white rounded-lg w-full max-w-6xl shadow-lg relative mx-4 sm:mx-6 flex flex-col overflow-y-auto"
+        className="bg-white rounded-lg w-full max-w-7xl shadow-lg relative mx-4 sm:mx-6 flex flex-col overflow-y-auto"
         style={{ height: "650px" }}
       >
         {" "}
@@ -357,6 +358,8 @@ useEffect(() => {
                       style={{ borderLeft: `6px solid ${companyColor}` }}
                       className="border rounded-lg shadow-sm hover:shadow-lg  transition-all overflow-hidden bg-gray-100 hover:bg-gray-50"
                     >
+                        <table className="w-full">
+                       <tbody>
                       <tr
                         className="cursor-pointer hover:bg-gray-50 transition"
                         onClick={() => handleToggleLoan(loan._id)}
@@ -445,7 +448,8 @@ useEffect(() => {
                           </div>
                         </td>
                       </tr>
-
+                    </tbody>
+                    </table>
                       {/* Content */}
                       {expandedLoanId === loan._id && (
                         <div className="px-4 pb-1  bg-gray-50 flex  flex-col sm:flex-row gap-1 overflow-y-auto max-h-[50vh] md:max-h-none">
@@ -764,7 +768,7 @@ useEffect(() => {
           onClose={() => {
             setEditLoanModalOpen(false);
             setEditingLoanId(null);
-            loanStore.fetchLoans();
+            // loanStore.fetchLoans();
           }}
         />
       )}

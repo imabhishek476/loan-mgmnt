@@ -141,6 +141,7 @@ class LoanStore {
       return recovered;
     } catch (err) {
       console.error("Error recovering loan:", err);
+      throw new Error(err?.response?.data?.message || "Failed to recover loan");
     } finally {
       runInAction(() => (this.loading = false));
     }

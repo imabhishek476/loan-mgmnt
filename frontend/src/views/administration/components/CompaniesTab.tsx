@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import CompanyForm from "../../../components/CompanyForm";
 import { debounce } from "lodash";
 import { observer } from "mobx-react-lite";
+import Confirm from "../../../components/Confirm";
 
 export const CompaniesTab = observer(({ activeTab }: any) => {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -46,16 +47,18 @@ export const CompaniesTab = observer(({ activeTab }: any) => {
       return { success: false };
     }
   };
-  const handleCompanyDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this company?"))
-      return;
-    try {
-      await companyStore.deleteCompany(id);
-      toast.success("Company deleted successfully");
-      await companyStore.fetchCompany();
-    } catch {
-      toast.error("Failed to delete company");
-    }
+
+    const handleCompanyDelete = (id: string) => {
+      Confirm({
+        title: "Confirm Delete",
+        message: "Are you sure you want to delete this company?",
+        confirmText: "Yes, delete",
+        onConfirm: async () => {
+          await companyStore.deleteCompany(id);
+          await companyStore.fetchCompany();
+          toast.success("Company deleted successfully");
+        },
+      });
   };
   const debouncedSearch = useMemo(
     () =>
