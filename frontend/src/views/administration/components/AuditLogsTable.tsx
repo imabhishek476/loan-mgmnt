@@ -39,7 +39,7 @@ const AuditLogsTable: React.FC = () => {
   }, []);
 
   const debouncedSearch = useMemo(
-    () => debounce((value: string) => setSearch(value), 300),
+    () => debounce((value: string) => setSearch(value), 1000),
     []
   );
 
