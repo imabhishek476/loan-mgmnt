@@ -6,7 +6,7 @@
   } from "react";
   import MaterialTable from "@material-table/core";
   // import { debounce } from "lodash";
-  import { Search, Eye, Trash2, RefreshCcw } from "lucide-react";
+  import { Search, Eye, Trash2, RefreshCcw, X } from "lucide-react";
   import { loanStore } from "../../../store/LoanStore";
   import { clientStore } from "../../../store/ClientStore";
   import { companyStore } from "../../../store/CompanyStore";
@@ -14,6 +14,7 @@
   import { observer } from "mobx-react-lite";
   import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
   import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+  import Confirm from "../../../components/Confirm";
 
   import {
     Dialog,
@@ -21,6 +22,7 @@
     DialogContent,
     DialogActions,
     Button,
+    IconButton,
   } from "@mui/material";
   import { toast } from "react-toastify";
   import {
@@ -90,16 +92,16 @@
       if (clientId) clientStore.fetchClientLoans(clientId);
     }, [clientId]);
     const handleDelete = async (id: string) => {
-      if (!window.confirm("Are you sure you want to delete this loan?")) return;
-      try {
-        await loanStore.deleteLoan(id);
-        if (tableRef.current) {
-          tableRef.current.onQueryChange();
-        }
-        toast.success("Loan Deactivated successfully");
-      } catch {
-        toast.error("Failed to delete loan");
-      }
+      Confirm({
+        title: "Confirm Deactivate",
+        message: "Are you sure you want to deactivate this loan?",
+        confirmText: "Yes, Deactivate",
+        onConfirm: async () => {
+          await loanStore.deleteLoan(id);
+          tableRef.current?.onQueryChange();
+          toast.success("Loan Deactivated successfully");
+        },
+      });
     };
     const handleRecover = async (loan: any) => {
       try {
@@ -434,13 +436,13 @@
               }}
                 localization={{
                    body: {
-                     emptyDataSourceMessage:
-                       `${search
+                     emptyDataSourceMessage: `${
+                    search
                        ? `No results found for "${search}"`
                        : issueDateFilterInput
-                       ? `No results found for "${moment(issueDateFilterInput).format(
-                           "MM-DD-YYYY"
-                         )}"`
+                       ? `No results found for "${moment(
+                          issueDateFilterInput
+                        ).format("MM-DD-YYYY")}"`
                        : "No loans available. Add a new loan to get started."}`,
                    },
                  }}
@@ -458,14 +460,19 @@
                 "rounded-2xl shadow-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50",
             }}
           >
-            <DialogTitle className="font-semibold text-xl text-green-700 border-b pb-2">
+            <DialogTitle className="font-semibold text-lg text-green-700 border-b pb-2 flex justify-between items-center">
               Loan Details
+              <IconButton onClick={handleClose}>
+                <X size={18} />
+              </IconButton>
             </DialogTitle>
             <DialogContent className="p-6">
               <div className="grid grid-cols-1 mt-5 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
                 {/* Client Info */}
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Customer</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Customer
+                  </p>
                   <p className="font-medium">
                     {selectedLoan.client?.fullName ||
                       clientStore.clients.find(
@@ -475,7 +482,9 @@
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase mb-1">Company</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Company
+                  </p>
                   <p className="font-medium">
                     {selectedLoan.company?.companyName ||
                       companyStore.companies.find(
@@ -543,7 +552,9 @@
                   </p>
                 </div>
                 <div className="sm:col-span-2 mt-2">
-                  <p className="text-gray-500 text-xs uppercase mb-1">Progress</p>
+                  <p className="text-gray-500 text-xs uppercase mb-1">
+                    Progress
+                  </p>
                   <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                     <div
                       className={`h-2 rounded-full transition-all duration-500 ${
@@ -588,9 +599,7 @@
                   <p className="text-gray-500 text-xs uppercase mb-1">
                     Loan Term
                   </p>
-                  <p className="font-medium">
-                    <b>{runningTenure} Months</b>
-                  </p>
+                  <p className="font-medium">{runningTenure} Months</p>
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs uppercase mb-1">
@@ -607,10 +616,12 @@
                   <p
                     className={`font-semibold ${
                       selectedLoan.status === "Paid Off"
-                        ? "text-green-700"
-                        : selectedLoan.status === "Partial Payment"
-                        ? "text-yellow-700"
-                        : "text-green-700"
+                        ? "text-green-600"
+                        : selectedLoan.status === "Merged"
+                        ? "text-green-600"
+                        : selectedLoan.status === "Active"
+                        ? "text-green-600"
+                        : "text-yellow-600"
                     }`}
                   >
                     {selectedLoan.status}
@@ -623,8 +634,17 @@
               <Button
                 onClick={handleClose}
                 variant="contained"
-                color="success"
-                className="px-4 py-2 font-bold bg-green-400 text-white rounded-lg hover:bg-green-700 transition"
+                sx={{
+                  backgroundColor: "#dc2626",
+                  color: "white",
+                  fontWeight: "bold",
+                  px: 2,
+                  py: 1,
+                  borderRadius: "5px",
+                  "&:hover": {
+                    backgroundColor: "#b91c1c",
+                  },
+                }}
               >
                 Close
               </Button>

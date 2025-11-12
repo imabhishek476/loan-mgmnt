@@ -1,5 +1,6 @@
 
 const AuditLog = require("../models/AuditLog");
+const moment = require("moment");
 
 const createAuditLog = async (
   userId,
@@ -29,6 +30,7 @@ const createAuditLog = async (
       entityId,
       data,
       message,
+      expireAt: moment().add(30, "days").toDate(),
     });
   } catch (err) {
     console.error("❌ Error creating audit log:", err);

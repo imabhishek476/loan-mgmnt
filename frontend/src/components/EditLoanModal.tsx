@@ -1101,8 +1101,10 @@ const handleSave = async () => {
                       viewLoan.status === "Paid Off"
                         ? "text-green-600"
                         : viewLoan.status === "Merged"
-                        ? "text-yellow-600"
-                        : "text-blue-600"
+                        ? "text-green-600"
+                        : viewLoan.status === "Active"
+                        ? "text-green-600"
+                        : "text-yellow-600"
                     }`}
                   >
                     {viewLoan.status}
@@ -1123,9 +1125,18 @@ const handleSave = async () => {
             <DialogActions>
               <Button
                 onClick={handleCloseView}
-                color="success" // 👈 matches your other Close buttons
                 variant="contained"
-                className="mx-4 mb-3 font-bold"
+                sx={{
+                  backgroundColor: "#dc2626",
+                  color: "white",
+                  fontWeight: "bold",
+                  px: 2,
+                  py: 1,
+                  borderRadius: "5px",
+                  "&:hover": {
+                    backgroundColor: "#b91c1c",
+                  },
+                }}
               >
                 Close
               </Button>

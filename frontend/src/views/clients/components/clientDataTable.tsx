@@ -8,6 +8,7 @@ import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { toast } from "react-toastify";
 import { getClientsSearch } from "../../../services/ClientServices";
+import Confirm from "../../../components/Confirm";
 // import { calculateLoanAmounts } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
   // clients: any[];
@@ -67,13 +68,16 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     }
   };
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this Customer?")) {
-      await clientStore.deleteClient(id);
-      if (tableRef.current) {
-        tableRef.current.onQueryChange();
-      }
-      toast.success("Customer deleted successfully");
-    }
+    Confirm({
+      title: "Confirm Delete",
+      message: "Are you sure you want to delete this customer?",
+      confirmText: "Yes, Delete",
+      onConfirm: async () => {
+        await clientStore.deleteClient(id);
+        tableRef.current?.onQueryChange();
+        toast.success("Customer deleted successfully");
+      },
+    });
   };
   useEffect(() => {
     if (tableRef.current) {

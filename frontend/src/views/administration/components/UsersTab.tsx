@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { debounce } from "lodash";
 import UserForm from "../../../components/UsersForm";
 import { observer } from "mobx-react-lite";
+import Confirm from "../../../components/Confirm";
 
 export const UsersTab = observer(({ activeTab }: any) => {
   const [editingUser, setEditingUser] = useState<any | null>(null);
@@ -38,15 +39,16 @@ export const UsersTab = observer(({ activeTab }: any) => {
     }
   };
   const handleUserDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
-    try {
-      await userStore.deleteUser(id);
-      toast.success("User deleted successfully");
-
-      await userStore.fetchUsers();
-    } catch {
-      toast.error("Failed to delete user");
-    }
+    Confirm({
+      title: "Confirm Delete",
+      message: "Are you sure you want to delete this user?",
+      confirmText: "Yes, delete",
+      onConfirm: async () => {
+        await userStore.deleteUser(id);
+        await userStore.fetchUsers();
+        toast.success("User deleted successfully");
+      },
+    });
   };
   const debouncedSearch = useMemo(
     () =>
