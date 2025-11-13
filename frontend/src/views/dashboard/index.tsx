@@ -153,7 +153,6 @@ const getLoanEndDate = (issueDate: string, termMonths: number) => {
   const loadUpcomingPayoffs = async () => {
     try {
       await Promise.all([
-      loanStore.fetchActiveLoans(),
       clientStore.fetchClients(),
       companyStore.fetchCompany(),
     ]);

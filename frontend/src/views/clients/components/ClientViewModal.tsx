@@ -59,7 +59,7 @@ const [editingLoanId, setEditingLoanId] = useState<any>(null);
          promises.push(clientStore.fetchClients());
        }
         if (loanStore.loans.length == 0) {
-          promises.push(loanStore.fetchActiveLoans());
+          promises.push(loanStore.fetchActiveLoans(client._id));
         }
       await Promise.all(promises);
     } catch (error) {
@@ -99,7 +99,7 @@ const clientLoans = useMemo(() => {
       // loanStore.fetchActiveLoans();
   }, []);
   useEffect(() => {
-    if (client?._id) loanStore.fetchActiveLoans();
+    if (client?._id) loanStore.fetchActiveLoans(client?._id);
   }, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
@@ -747,7 +747,7 @@ useEffect(() => {
                 })
               ) : (
                 <p className="text-gray-600 text-center py-4">
-                  No loans available.
+                  No Active loans available.
                 </p>
               )}
             </div>

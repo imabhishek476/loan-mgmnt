@@ -81,16 +81,36 @@ exports.AllLoans = async (req, res) => {
 };
 exports.activeLoans = async (req, res) => {
   try {
-    const loans = await Loan.find({ loanStatus: "Active" }).sort({
-      createdAt: -1,
-    });
+    const { clientId, page = 1, limit = 10 } = req.query;
+    const query = { loanStatus: "Active" };
+    if (clientId) {
+      query.client = new mongoose.Types.ObjectId(clientId);
+    }
+    let loans, total;
+    if (clientId) {
+      loans = await Loan.find(query).populate("client").sort({ createdAt: -1 });
+      total = loans.length;
+    } else {
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      [loans, total] = await Promise.all([
+        Loan.find(query)
+          .populate("client")
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(parseInt(limit)),
+        Loan.countDocuments(query),
+      ]);
+    }
     res.status(200).json({
       success: true,
       data: loans,
+      total,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
       message: "Active loans fetched successfully",
     });
   } catch (error) {
-    console.error("Error in AllLoans:", error);
+    console.error("Error in activeLoans:", error);
     res.status(500).json({
       success: false,
       message: error.message,

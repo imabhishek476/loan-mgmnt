@@ -306,11 +306,11 @@ exports.deleteClient = async (req, res) => {
 };
 exports.getClietsLoan = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
     const loans = await Loan.find({ client: id })
       .sort({ createdAt: -1 })
-      .populate("client", "fullName")       
-      .populate("company", "companyName");  
+      .populate("client") 
+      .populate("company", "companyName");
 
     res.status(200).json({ success: true, loans });
   } catch (error) {

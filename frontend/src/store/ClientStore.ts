@@ -38,7 +38,7 @@ class ClientStore {
   loading = false;
   customFields:[];
   toggleLoan = false;
-  tableRef: any = null; 
+  tableRef: any = null; //table Ref is for customers table screen
   constructor() {
     makeAutoObservable(this);
   }
@@ -74,7 +74,7 @@ class ClientStore {
     try {
       const { client: updatedClient } = await updateClient(id, client);
       runInAction(() => {
-        const idx = this.clients.findIndex((c) => c._id === id);
+        const idx = this.clients.findIndex((c) => c?._id === id);
         if (idx !== -1) this.clients[idx] = updatedClient;
       });
     } finally {

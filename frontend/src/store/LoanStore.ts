@@ -37,7 +37,7 @@ class LoanStore {
   loading: boolean = false;
   currentPage: number = 0;
   limit: number = 10;
-  tableRef: any = null; 
+  tableRef: any = null; //table Ref is for loans table screen
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
@@ -87,17 +87,23 @@ class LoanStore {
       runInAction(() => (this.loading = false));
     }
   }
-  async fetchActiveLoans() {
+  async fetchActiveLoans(clientId: string) {
     this.loading = true;
     try {
-      const data = await activeLoans();
-      runInAction(() => (this.loans = data));
+      console.log(clientId, "clientId");
+      const data = await activeLoans(clientId);
+      runInAction(() => {
+        this.loans = data;
+      });
     } catch (err) {
       console.error("Error fetching loans:", err);
     } finally {
-      runInAction(() => (this.loading = false));
+      runInAction(() => {
+        this.loading = false;
+      });
     }
   }
+
   async createLoan(payload: LoanPayload) {
     this.loading = true;
     try {

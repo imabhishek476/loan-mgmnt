@@ -158,26 +158,29 @@ const Loans = observer(
       }));
     };
 
-    useEffect(() => {
-      if (formData?.client && formData?.company) {
-        const loans =
-          loanStore.loans?.filter(
-            (loan) =>
-              loan?.client === formData.client &&
-              // loan?.company === formData.company &&
-              loan?.status !== "Paid Off" &&
-              loan?.status !== "Merged" &&
-              loan?.loanStatus !== "Deactivated"
-          ) || [];
-        setActiveLoans(loans);
-        setSelectedLoanIds([]);
-        setOverlapMode(false);
-      } else {
-        setActiveLoans([]);
-        setSelectedLoanIds([]);
-        setOverlapMode(false);
-      }
-    }, [formData.client, formData.company]);
+ useEffect(() => {
+   if (formData?.client && formData?.company) {
+     const loans =
+       loanStore.loans?.filter((loan) => {
+         const clientId =
+           typeof loan?.client === "object" ? loan?.client?._id : loan?.client;
+
+         return (
+           clientId === formData.client &&
+           loan?.status !== "Paid Off" &&
+           loan?.status !== "Merged" &&
+           loan?.loanStatus !== "Deactivated"
+         );
+       }) || [];
+     setActiveLoans(loans);
+     setSelectedLoanIds([]);
+     setOverlapMode(false);
+   } else {
+     setActiveLoans([]);
+     setSelectedLoanIds([]);
+     setOverlapMode(false);
+   }
+ }, [formData.client, formData.company, loanStore.loans]);
 
     const resetForm = () => {
       setFormData(getInitialFormData());
@@ -280,7 +283,9 @@ const Loans = observer(
               parentLoanId: createdLoan?._id || null,
             });
           }
-          await loanStore.refreshDataTable();
+        if (fromClientPage) {
+          await loanStore.fetchActiveLoans(createdLoan.clientId);
+        } await loanStore.refreshDataTable();
           await clientStore.refreshDataTable();
           toast.success("Loan created successfully");
         }
@@ -347,7 +352,19 @@ const Loans = observer(
       { label: "Issue Date", key: "issueDate", type: "date", required: true },
       { label: "Check Number", key: "checkNumber", type: "number" },
     ];
-
+    if (!fromClientPage){
+      useEffect(() => {
+        const fetchClientLoans = async () => {
+          if (formData?.client) {
+            try {
+              await loanStore.fetchActiveLoans(formData.client);
+            } catch (error) {
+              console.error("Error fetching client active loans:", error);
+            }
+          }
+        };
+        fetchClientLoans();
+      }, [formData.client]);}
     return (
       <div className="flex flex-col rounded-lg text-left">
         {/* Header & Table */}
@@ -375,7 +392,6 @@ const Loans = observer(
                   py: 1,
                 }}
                 onClick={() => {
-                loanStore.fetchActiveLoans();
                   setEditingLoan(null);
                   setModalOpen(true);
                   resetForm();

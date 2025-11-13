@@ -295,18 +295,15 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
             // { title: "SSN", field: "ssn" },
           ]}
           actions={[
-            {
-              icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
-              tooltip: "Add Loan",
-              onClick: (_event, rowData: any) => onAddLoan(rowData),
-            },
+            (rowData: any) =>
+              rowData.isActive
+                ? {
+                    icon: () => <Plus className="w-5 h-5 text-emerald-600" />,
+                    tooltip: "Add Loan",
+                    onClick: (_event, data: any) => onAddLoan(data),
+                  }
+                : null, 
 
-            // {
-            //   icon: () => <Pencil className="w-5 h-5 text-green-600" />,
-            //   tooltip: "Edit",
-            //   //@ts-ignore
-            //   onClick: (event, rowData: any) => onEdit(rowData),
-            // },
             (rowData: any) => ({
               icon: rowData.isActive
                 ? () => <Power className="w-5 h-5 text-green-600" />
