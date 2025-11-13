@@ -66,13 +66,19 @@
             clientId: clientId || null,
           };
           const data = await getLoansSearch(filters);
-          setLoansDataTable(data.loans || []);
-          return { data: data.loans || [], page: query.page, totalCount: data.total || 0 };
+          // setLoansDataTable(data.loans || []);
+          
+          return {
+            data: data.loans || [],
+            page: query.page,
+            totalCount: data.total || 0,
+          };
         } catch (error) {
           console.error(error);
           toast.error("Failed to fetch loans");
           return { data: [], page: query.page, totalCount: 0 };
         } finally {
+          loanStore.setTableRef(tableRef);
           setLoading(false);
         }
       },
@@ -99,15 +105,15 @@
         if (tableRef.current) tableRef.current.onQueryChange();
 
         toast.success(
-        `Loan for "${
-          loan.client?.fullName || "client"
-        }" recovered successfully!`
-      );
-  } catch (error: any) {
-    const backendMessage =
-      error?.response?.data?.message ||
-      error?.message ||
-      "An unexpected error occurred.";
+          `Loan for "${
+            loan.client?.fullName || "client"
+          }" recovered successfully!`
+        );
+      } catch (error: any) {
+        const backendMessage =
+          error?.response?.data?.message ||
+          error?.message ||
+          "An unexpected error occurred.";
 
         toast.error(backendMessage);
       }
@@ -139,12 +145,7 @@
       remaining = details.remaining;
       total = details.total;
     }
-        useEffect(() => {
-          if (tableRef.current) {
-            tableRef.current.onQueryChange();
-          }
-        }, [loanStore.refreshTable]);
-      
+
     return (
       <div>
         <div className="mb-3 flex flex-col sm:flex-row gap-2">
@@ -456,7 +457,7 @@
                 <h2 className="font-semibold text-xl text-green-700">
                   Loan Details
                 </h2>
-             
+
                 <button
                   onClick={handleClose}
                   className="text-gray-600 hover:text-red-500 transition"
@@ -467,7 +468,6 @@
 
               <div className="p-6 overflow-y-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800 text-sm mt-2">
-        
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Customer

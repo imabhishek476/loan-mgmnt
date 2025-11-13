@@ -141,10 +141,18 @@ exports.updateLoan = async (req, res) => {
 };
 exports.searchLoans = async (req, res) => {
   try {
-    const { query, issueDate, clientId, page = 0, limit = 10 } = req.query;
+    const {
+      query,
+      issueDate,
+      clientId,
+      loanStatus,
+      page = 0,
+      limit = 10,
+    } = req.query;
 
     const matchStage = {};
     if (clientId) matchStage.client = new mongoose.Types.ObjectId(clientId);
+    if (loanStatus) matchStage.loanStatus = loanStatus; 
     if (issueDate) {
       const formattedDate = moment(issueDate, [
         "MM-DD-YYYY",
@@ -211,16 +219,7 @@ exports.searchLoans = async (req, res) => {
       }
     );
     const loans = await Loan.aggregate(pipeline);
-    let total;
-    if (query || clientId || issueDate) {
-      const countPipeline = pipeline.filter(
-        (stage) => !("$skip" in stage) && !("$limit" in stage)
-      );
-      const filteredLoans = await Loan.aggregate(countPipeline);
-      total = filteredLoans.length;
-    } else {
-      total = await Loan.countDocuments();
-    }
+    const total = await Loan.countDocuments(matchStage);
     res.status(200).json({
       success: true,
       loans,

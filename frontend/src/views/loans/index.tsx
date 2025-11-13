@@ -280,8 +280,6 @@ const Loans = observer(
               parentLoanId: createdLoan?._id || null,
             });
           }
-          await loanStore.fetchLoans();
-          await loanStore.fetchActiveLoans();
           await loanStore.refreshDataTable();
           await clientStore.refreshDataTable();
           toast.success("Loan created successfully");
@@ -377,6 +375,7 @@ const Loans = observer(
                   py: 1,
                 }}
                 onClick={() => {
+                loanStore.fetchActiveLoans();
                   setEditingLoan(null);
                   setModalOpen(true);
                   resetForm();
@@ -417,7 +416,7 @@ const Loans = observer(
                       : fromClientPage && formData.client
                       ? `Create New Loan - ${
                           clientStore.clients.find(
-                            (c) => c._id === formData.client
+                            (c) => c?._id === formData.client
                           )?.fullName || "Unknown"
                         }`
                       : "Create New Loan"}

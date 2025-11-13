@@ -9,6 +9,7 @@ import { clientStore, type Client } from "../../store/ClientStore";
 import { getClientLoans } from "../../services/ClientServices";
 import Loans from "../loans/index";
 import ClientViewModal from "../../views/clients/components/ClientViewModal";
+import { loanStore } from "../../store/LoanStore";
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
@@ -26,6 +27,7 @@ const Clients = observer(() => {
     }
   };
   const handleAddLoan = (client: any) => {
+    loanStore.fetchActiveLoans();
     setSelectedClientForLoan(client);
     clientStore.toggleLoanModel();
   };

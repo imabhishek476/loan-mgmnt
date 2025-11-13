@@ -37,12 +37,14 @@ class ClientStore {
   selectedClientLoans: Loan[] = [];
   loading = false;
   customFields:[];
-  refreshTable = false;
   toggleLoan = false;
+  tableRef: any = null; 
   constructor() {
     makeAutoObservable(this);
   }
-
+  setTableRef(ref: any) {
+    this.tableRef = ref;
+  }
   async fetchClients(filters: { query?: string; page?: number; limit?: number; issueDate?: string } = {}) {
     this.loading = true;
     try {
@@ -118,7 +120,11 @@ class ClientStore {
     }
   }
   async refreshDataTable() {
-    runInAction(() => (this.refreshTable = !this.refreshTable));
+    if (this.tableRef?.current) {
+      this.tableRef.current.onQueryChange();
+    } else {
+      console.log('refresh table failed', this.tableRef)
+    }
   }
   async toggleLoanModel() {
     runInAction(() => (this.toggleLoan = !this.toggleLoan));
