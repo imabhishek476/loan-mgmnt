@@ -37,13 +37,26 @@ import { calculateLoanAmounts } from "../../utils/loanCalculations";
 import ClientViewModal from "../clients/components/ClientViewModal";
 import { toast } from "react-toastify";
 import FormModal from "../../components/FormModal";
+import CountUp from "react-countup";
 
 const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
   <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
     <div>
       <p className="text-sm text-gray-500 whitespace-nowrap">{title}</p>
       <div className="flex items-baseline gap-2">
-        <h2 className="text-md font-bold text-gray-800">{value}</h2>
+        <h2 className="text-md font-bold text-gray-800">
+          {typeof value === "number" ? (
+            <CountUp
+              end={value}
+              duration={1.5}
+              separator=","
+              decimals={0}
+              decimal="."
+            />
+          ) : (
+            value
+          )}
+        </h2>
         {subValue && (
           <span className="text-xs text-gray-500 font-medium">{subValue}</span>
         )}
@@ -83,7 +96,7 @@ const Dashboard = observer(() => {
   const [selectedClientForView, setSelectedClientForView] = useState<any>(null);
   const [editClientModalOpen, setEditClientModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
-  const [ setViewClient] = useState(null);
+  // const [ setViewClient] = useState(null);
     const tableRef = useRef<any>(null); 
 const handleViewClient = async (clientName: string) => {
   try {
@@ -262,7 +275,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
           ...refreshedClient,
           loans: prev?.loans || [],
         }));
-        setViewClient(refreshedClient);
+        // setViewClient(refreshedClient);
       }
       setEditingClient(null);
       setEditClientModalOpen(false);
@@ -378,19 +391,21 @@ const handleClientUpdate = async (_id: string, data: any) => {
         />
         <StatCard
           title="Total Loans"
-          value={`${stats.totalLoans} (${stats.totalPaidOffLoans} Paid Off)`}
+          value={stats.totalLoans} 
+          subValue={`(${stats.totalPaidOffLoans} Paid Off)`} 
           icon={CreditCard}
           color="bg-green-700"
         />
         <StatCard
           title="Total Loan Value"
-          value={formatCurrency(stats.totalLoanAmount)}
+          value={stats.totalLoanAmount} 
+          // subValue={formatCurrency(stats.totalLoanAmount)} 
           icon={DollarSign}
           color="bg-green-700"
         />
         <StatCard
           title="Total Recovered Amount"
-          value={formatCurrency(stats.totalPaymentsAmount)}
+          value={stats.totalPaymentsAmount}
           subValue={`(${recoveredPercentage}%)`}
           icon={DollarSign}
           color="bg-green-500"
