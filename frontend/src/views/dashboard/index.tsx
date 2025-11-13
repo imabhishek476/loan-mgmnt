@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { dashboardStore } from "../../store/DashboardStore";
 import {
@@ -84,6 +84,7 @@ const Dashboard = observer(() => {
   const [editClientModalOpen, setEditClientModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [ setViewClient] = useState(null);
+    const tableRef = useRef<any>(null); 
 const handleViewClient = async (clientName: string) => {
   try {
     const client = clientStore.clients.find((c) => c.fullName === clientName);
@@ -152,10 +153,7 @@ const getLoanEndDate = (issueDate: string, termMonths: number) => {
 
   const loadUpcomingPayoffs = async () => {
     try {
-      await Promise.all([
-      clientStore.fetchClients(),
-      companyStore.fetchCompany(),
-    ]);
+      await Promise.all([clientStore.setTableRef(tableRef),companyStore.fetchCompany()]);
 
     const today = moment();
 
@@ -301,23 +299,19 @@ const handleClientUpdate = async (_id: string, data: any) => {
       srNo: index + 1,
     })
   );
+  const totalPayments = stats.totalPaymentsAmount || 0;
   const combinedData = filteredLoansByCompany.map((item) => {
-  const company = companyStore.companies.find(
-    (c) => c.companyName === item._id
-  );
-  if (!company)
-    return { name: item._id, totalLoan: item.totalAmount, recovered: 0 };
-  const companyLoans = loanStore.getLoansByCompany(company._id);
-  const totalRecovered = companyLoans.reduce(
-    (sum, loan) => sum + (loan.paidAmount || 0),
-    0
-  );
-  return {
-    name: item._id || "",
-    totalLoan: item.totalAmount || 0,
-    recovered: totalRecovered,
-  };
-});
+    const companyName = item._id || "-";
+    const totalLoan = item.totalAmount || 0;
+    const recovered =
+      totalLoan > 0 ? (totalLoan / stats.totalLoanAmount) * totalPayments : 0;
+
+    return {
+      name: companyName,
+      totalLoan,
+      recovered,
+    };
+  });
 
   const renderBarChart = (data: any[]) => {
     if (!data || data.length === 0) {

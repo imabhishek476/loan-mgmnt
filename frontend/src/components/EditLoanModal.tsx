@@ -339,7 +339,7 @@ const handleSave = async () => {
       //   } merged successfully`
       // );
     }
-    await loanStore.fetchActiveLoans();
+    await loanStore.fetchActiveLoans(formData.client);
     await clientStore.refreshDataTable();
     
     toast.success("Loan updated successfully");
