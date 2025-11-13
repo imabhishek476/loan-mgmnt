@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import MaterialTable from "@material-table/core";
-import { Search, Trash2, Plus, Power } from "lucide-react";
+import { Search, Trash2, Plus, Power, RefreshCcw } from "lucide-react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 // import { TextField } from "@mui/material";
@@ -58,7 +58,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       } catch (err) {
         console.error(err);
         return { data: [], page: query.page, totalCount: 0 };
-      }
+      }finally{clientStore.setTableRef(tableRef);}
     },
     [searchInput, issueDateFilterInput]
   );
@@ -81,30 +81,25 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   };
 const handleToggleActive = async (id: string, isActive: boolean) => {
   Confirm({
-    title: isActive ? "Deactivate Client" : "Activate Client",
+    title: isActive ? "Deactivate Client" : "Recover Client",
     message: `Are you sure you want to ${
-      isActive ? "deactivate" : "activate"
+      isActive ? "deactivate" : "recover"
     } this client?`,
-    confirmText: isActive ? "Yes, Deactivate" : "Yes, Activate",
+    confirmText: isActive ? "Yes, Deactivate" : "Yes, Recover",
     onConfirm: async () => {
       try {
         await clientStore.toggleClientStatus(id, !isActive);
         toast.success(
-          `Client ${!isActive ? "activated" : "deactivated"} successfully`
+          `Client ${!isActive ? "recovered" : "deactivated"} successfully`
         );
         tableRef.current?.onQueryChange();
       } catch (error) {
-        toast.error("Failed to update status");
+        toast.error("Failed to update client status");
         console.error(error);
       }
-      },
-    });
-  };
-  useEffect(() => {
-    if (tableRef.current) {
-      tableRef.current.onQueryChange();
-    }
-  }, [clientStore.refreshTable]);
+    },
+  });
+};
 
   return (
     <div className="">
@@ -312,12 +307,16 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
             //   //@ts-ignore
             //   onClick: (event, rowData: any) => onEdit(rowData),
             // },
-            {
-              icon: () => <Power className="w-5 h-5 text-green-600" />,
-              tooltip: "Active / Deactive Client",
-              onClick: (_event, rowData: any) =>
-                handleToggleActive(rowData._id, rowData.isActive),
-            },
+            (rowData: any) => ({
+              icon: rowData.isActive
+                ? () => <Power className="w-5 h-5 text-green-600" />
+                : () => <RefreshCcw className="w-5 h-5 text-red-600" />,
+              tooltip: rowData.isActive
+                ? "Deactivate Client"
+                : "Recover Client",
+              onClick: (_event, data: any) =>
+                handleToggleActive(data._id, data.isActive),
+            }),
             {
               icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
               tooltip: "Delete",
@@ -354,14 +353,15 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           }}
           localization={{
             body: {
-              emptyDataSourceMessage:
-                `${searchInput
-                ? `No results found for "${searchInput}"`
-                : issueDateFilterInput
-                ? `No results found for "${moment(issueDateFilterInput).format(
-                    "MM-DD-YYYY"
-                  )}"`
-                : "No clients available. Add a new client to get started."}`,
+              emptyDataSourceMessage: `${
+                searchInput
+                  ? `No results found for "${searchInput}"`
+                  : issueDateFilterInput
+                  ? `No results found for "${moment(
+                      issueDateFilterInput
+                    ).format("MM-DD-YYYY")}"`
+                  : "No clients available. Add a new client to get started."
+              }`,
             },
           }}
         />
