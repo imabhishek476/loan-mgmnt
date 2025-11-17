@@ -266,6 +266,7 @@ const Loans = observer(
           monthlyRate: formData.monthlyRate,
           loanTerms: formData.loanTerms,
           totalLoan: formData.totalLoan,
+          tenures: formData.tenures,
           endDate,
           subTotal: (calculatedSubTotal + previousLoanAmount).toFixed(2),
           previousLoanAmount,
@@ -697,6 +698,7 @@ const Loans = observer(
                                 interestType: updated.interestType,
                                 monthlyRate: updated.monthlyRate,
                                 loanTerms: updated.loanTermMonths,
+                                tenures: updated.tenures,
                                 totalLoan: updated.totalLoan,
                                 previousLoanAmount: updated.previousLoanTotal,
                               }));

@@ -22,6 +22,7 @@ exports.LoansCreate = async (req, res) => {
       client: body.client,
       company: body.company,
       loanTerms: Number(body.loanTerms ?? 12),
+      tenures: body.tenures || [{}],
       baseAmount: Number(body.baseAmount),
       fees: body.fees || {},
       interestType: body.interestType ?? "flat",

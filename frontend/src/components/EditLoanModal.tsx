@@ -109,6 +109,23 @@ const calculateLoan = (
     totalWithInterest: parseFloat(total.toFixed(2)),
   };
 };
+const buildTenures = (
+  issueDateStr: string,
+  terms: number[],
+  outFormat: "iso" | "mm-dd-yyyy" = "mm-dd-yyyy" // default changed
+) => {
+  const start = moment(issueDateStr, "MM-DD-YYYY").startOf("day");
+  return terms.map((t) => {
+    const end = start.clone().add(t * 30, "days");
+    return {
+      term: t,
+      endDate:
+        outFormat === "iso"
+          ? end.format("YYYY-MM-DD")
+          : end.format("MM-DD-YYYY"),
+    };
+  });
+};
 
 const EditLoanModal = observer(
   ({ loanId, onClose }: { loanId: string; onClose: () => void }) => {
@@ -306,15 +323,13 @@ const handleSave = async () => {
     let status = "Active";
     if (paid >= totalDue) status = "Paid Off";
     else if (paid > 0 && paid < totalDue) status = "Partial Payment";
-    const teneur_endDate = moment(formData.issueDate)
-      .add(runningTenure, "months")
-      .toISOString();
+    const tenures = buildTenures(formData.issueDate, ALLOWED_TERMS, "mm-dd-yyyy");
     const payload = {
       ...formData,
+      tenures: tenures,
       previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
       subTotal: calc.subtotal,
       totalLoan: totalDue,
-      teneur_endDate,
       status,
     };
     await loanStore.updateLoan(loanId, payload);
@@ -360,6 +375,11 @@ const handleSave = async () => {
       if (!formData?.issueDate || !formData?.loanTerms) return;
       const start = moment(formData.issueDate, "MM-DD-YYYY");
       const end = start.clone().add(formData.loanTerms, "months");
+       const tenures = buildTenures(formData.issueDate, ALLOWED_TERMS, "iso");
+         setFormData((prev: any) => ({
+           ...prev,
+           tenures,
+         }));
       setEndDate(end.format("MM-DD-YYYY"));
     }, [formData?.loanTerms, formData?.issueDate]);
 
@@ -404,21 +424,24 @@ const handleSave = async () => {
                 );
 
                 const isSelected = term <= formData.loanTerms;
-                const termEnd = start.clone().add(term, "months");
+                const totalDays = term * 30;
+                const termEnd = start.clone().add(totalDays, "days");
 
                 return (
                   <div
                     key={term}
                     className={`flex-shrink-0 w-32 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
-              ${
-                isSelected
-                  ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
-                  : "bg-white border-gray-200 text-gray-700"
-              }`}
-                    onClick={() => {
-                      setFormData((prev: any) => ({
+                    ${
+                      isSelected
+                        ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
+                        : "bg-white border-gray-200 text-gray-700"
+                    }`}
+                onClick={() => {
+                  const updatedTenures = buildTenures(formData.issueDate, ALLOWED_TERMS, "iso");
+                  setFormData((prev) => ({
                         ...prev,
                         loanTerms: term,
+                    tenures: updatedTenures,
                       }));
                     }}
                   >
