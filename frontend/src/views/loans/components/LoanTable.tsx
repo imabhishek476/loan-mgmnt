@@ -292,14 +292,16 @@
                 {
                   title: "Term (months)",
                   render: (rowData) => {
-                    const today = moment();
-                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY");
-                    const monthsPassed =
-                      Math.floor(today.diff(issueDate, "days") / 30) + 1;
+                    const today = moment().startOf("day");
+                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY").startOf("day");
+                    const daysPassed = today.diff(issueDate, "days");
+                    let completedMonths = Math.floor(daysPassed / 30);
+                    if (daysPassed % 30 === 0 && daysPassed !== 0) {
+                      completedMonths -= 1;
+                    }
 
                     const runningTenure =
-                      ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
-                      ALLOWED_TERMS.at(-1);
+                      ALLOWED_TERMS.find((t) => completedMonths < t) || ALLOWED_TERMS.at(-1);
                     return <span>{runningTenure}</span>;
                   },
                   headerStyle: { whiteSpace: "nowrap" },

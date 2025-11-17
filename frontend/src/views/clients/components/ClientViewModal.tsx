@@ -90,7 +90,7 @@ const clientLoans = useMemo(() => {
   const getDefaultLoanTerm = (loan: any) => {
     const loanData = calculateLoanAmounts(loan);
     return (
-      LOAN_TERMS.find((t) => t >= loanData.monthsPassed) || loanData.dynamicTerm
+      LOAN_TERMS.find((t) => t > loanData.monthsPassed) || loanData.dynamicTerm
     );
   };
 
@@ -316,7 +316,7 @@ useEffect(() => {
                     paidAmount,
                   } = loanData;
                   const selectedDynamicTerm = currentTermMap[loan._id];
-
+                  // console.log(selectedDynamicTerm,'selectedDynamicTerm');
                   const selectedLoanData = calculateLoanAmounts({
                     ...loan,
                     loanTerms: selectedDynamicTerm,
@@ -344,9 +344,11 @@ useEffect(() => {
                     "months"
                   );
                   const end = Number(selectedDynamicTerm) * 30;
+                  // console.log(end,'end');
                   const currentEndDate = moment(loan.issueDate).add(end,
                     "day"
                   );
+                  // console.log(currentEndDate, "currentEndDate");
                   const isDelayed = today.isAfter(endDate, "day");
                   const isPaidOff = paidAmount >= totalLoan;
 
