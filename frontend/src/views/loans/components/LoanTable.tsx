@@ -308,7 +308,8 @@
                 {
                   title: "Issue Date",
                   render: (rowData) =>
-                    moment(rowData.issueDate).format("DD MMM YYYY"),
+                    moment(rowData.issueDate).format("MMM DD, YYYY"),
+
                   headerStyle: { whiteSpace: "nowrap" },
                   cellStyle: { whiteSpace: "nowrap", minWidth: 120 },
                 },
