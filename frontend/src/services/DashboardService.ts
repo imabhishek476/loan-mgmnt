@@ -10,3 +10,9 @@ export const fetchDashboardStatsByDate = async (from, to) => {
   });
   return res.data;
 };
+export const fetchPayoffStats = async (type, page = 1, limit = 10) => {
+  const res = await api.get("/dashboard/payoff-stats", {
+    params: { type, page, limit },
+  });
+  return res.data;
+};
