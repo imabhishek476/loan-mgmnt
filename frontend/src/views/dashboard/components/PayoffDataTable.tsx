@@ -3,6 +3,7 @@ import MaterialTable from "@material-table/core";
 import { Search,} from "lucide-react";
 import { Autocomplete, TextField } from "@mui/material";
 import { dashboardStore } from "../../../store/DashboardStore";
+import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
 
 interface PayoffDataTableProps {
   loading: boolean;
@@ -82,8 +83,27 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
           },
           {
             title: "Remaining",
-            render: (rowData: any) =>
-              `$${(rowData.remaining || 0).toLocaleString()}`,
+            render: (rowData: any) => {
+              const loanData = calculateLoanAmounts(rowData);
+              const remaining = loanData?.remaining || 0;
+              const paid = loanData?.paidAmount || 0;
+              const isPaidOff = ["Paid Off", "Merged"].includes(rowData.status);
+              return (
+                <span className="font-semibold">
+                  <span
+                    className={`${
+                      isPaidOff ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {formatUSD(remaining)}
+                  </span>
+                  <br />
+                  <span className="text-green-600 text-xs font-medium">
+                    (Paid: {formatUSD(paid)})
+                  </span>
+                </span>
+              );
+            },
           },
           {
             title: "Issue Date",
@@ -121,6 +141,8 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
                 className={`px-2 py-0.5 rounded-lg text-white ${
                   rowData.status === "Paid Off"
                     ? "bg-gray-600"
+                    : rowData.status === "Partial Payment"
+                    ? "bg-yellow-600"
                     : rowData.status === "Delayed"
                     ? "bg-red-600"
                     : "bg-green-600"

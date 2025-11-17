@@ -140,71 +140,78 @@ const getPayoffStats = async (req, res) => {
   try {
     const { type = "week", page = 1, limit = 10 } = req.query;
 
-    const start = moment();
-
-    let from = null, to = null;
+    const today = moment();
+    let from = null,
+      to = null;
 
     if (type === "day") {
-      from = start.clone().startOf("day");  //today day..
-      to = start.clone().endOf("day");
+      from = today.clone().startOf("day");
+      to = today.clone().endOf("day");
     } else if (type === "week") {
-      from = start.clone().startOf("week");
-      to = start.clone().endOf("week");
+      from = today.clone().startOf("week");
+      to = today.clone().endOf("week");
     } else if (type === "month") {
-      from = start.clone().startOf("month");
-      to = start.clone().endOf("month");
+      from = today.clone().startOf("month");
+      to = today.clone().endOf("month");
     }
 
     const skip = (page - 1) * limit;
 
-    const query = {
-      status: { $nin: ["Paid Off", "Merged"] },
-    };
-    if (!from && !to) {
-      console.error(err);
-      res.status(404).json({ message: "Something went wrong! Getting Payoff" });
-    }
-   
-       const loans = await Loan.find(query)
+    const loans = await Loan.find({ status: { $nin: ["Paid Off", "Merged"] } })
          .populate("client", "fullName")
          .populate("company", "companyName")
          .lean();
-    const enrichedLoans = loans.map((loan) => {
-      const calc = calculateLoanAmounts(loan);
+    const enrichedLoans = loans
+      .map((loan) => {
+        const calc = calculateLoanAmounts(loan);
+        const upcomingTenure = loan.tenures
+          .map((t) => ({
+            ...t,
+            startDate: moment(loan.issueDate, "MM-DD-YYYY")
+              .add(
+                loan.tenures.indexOf(t) === 0
+                  ? 0
+                  : loan.tenures[loan.tenures.indexOf(t) - 1].term * 30,
+                "days"
+              )
+              .format("MM-DD-YYYY"),
+            endDate: t.endDate,
+          }))
+          .find((t) => {
+            const end = moment(t.endDate, "MM-DD-YYYY");
+            return end.isSameOrAfter(from) && end.isSameOrBefore(to);
+          });
+
+        if (!upcomingTenure) return null; // skip if no upcoming payoff in period
 
       return {
         ...loan,
-        clientName: loan.client?.fullName ?? "",
-        companyName: loan.company?.companyName ?? "",
-        companyObject: loan.company ?? {},
+        clientName: loan.client?.fullName || "",
+        companyName: loan.company?.companyName || "",
+        calc: {
+            ...calc,
+            startDate: upcomingTenure.startDate,
+            endDate: upcomingTenure.endDate,
+            dynamicTerm: upcomingTenure.term,
+          },
+          currentTerm: upcomingTenure.term,
+          endDate: upcomingTenure.endDate,
+          issueDate: loan.issueDate,
+          subTotal: calc?.subtotal || 0,
+          total: calc?.total || 0,
+          paidAmount: loan.paidAmount || 0,
+          remaining: calc?.remaining || 0,
+          status: loan.status,
+        };
+      })
+      .filter(Boolean); 
 
-        calc,
-
-        subTotal: calc?.subtotal ?? 0,
-        total: calc?.total ?? 0,
-        paidAmount: loan.paidAmount ?? 0,
-        remaining: calc?.remaining ?? 0,
-        currentTerm: calc?.dynamicTerm ?? 0 ,
-        issueDate: loan.issueDate,
-        endDate: calc?.endDate, 
-        status: loan.status,
-      };
-    });
-
-    const filteredLoans = enrichedLoans.filter((loan) => {
-      if (!loan.endDate) return false;
-
-      const end = moment(loan.endDate);
-
-      return end.isSameOrAfter(from) && end.isSameOrBefore(to);
-    });
-
-    const paginated = filteredLoans.slice(skip, skip + Number(limit));
+    const paginated = enrichedLoans.slice(skip, skip + Number(limit));
 
     return res.json({
       page: Number(page),
       limit: Number(limit),
-      total: filteredLoans.length,
+      total: enrichedLoans.length,
       data: paginated,
     });
   } catch (err) {

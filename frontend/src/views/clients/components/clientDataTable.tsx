@@ -9,7 +9,7 @@ import { clientStore } from "../../../store/ClientStore";
 import { toast } from "react-toastify";
 import { getClientsSearch } from "../../../services/ClientServices";
 import Confirm from "../../../components/Confirm";
-// import { calculateLoanAmounts } from "../../../utils/loanCalculations";
+import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
   // clients: any[];
   loading: boolean;
@@ -205,31 +205,40 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
               ),
             },
             {
-              title: "Paid",
-              render: (rowData: any) => (
-                <span className="font-semibold text-blue-600">
-                  $
-                  {rowData.loanSummary?.totalPaid?.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }) || "0.00"}
-                  <br />
-                  {rowData.loanSummary?.totalPending > 0 && (
-                    <span className="text-red-600 text-xs font-medium">
-                      (Pending: $
-                      {rowData.loanSummary?.totalPending?.toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }
-                      )}
-                      )
-                    </span>
-                  )}
+        title: "Paid",
+        render: (rowData) => {
+          const clientLoans = rowData.allLoans.filter(
+            (loan) =>
+              loan.client === rowData._id ||
+              loan.client?._id === rowData._id
+          );
+          let totalPaid = 0;
+          let totalRemaining = 0;
+          clientLoans.forEach((loan) => {
+            const loanData = calculateLoanAmounts(loan);
+            totalPaid += loanData.paidAmount;
+            if (!["Paid Off", "Merged"].includes(loan.status)) {
+              totalRemaining += loanData.remaining;
+            }
+          });
+          const allPaidOff = clientLoans.every(
+            (loan) => loan.status === "Paid Off" || loan.status === "Merged"
+          );
+          return (
+            <span className="font-semibold">
+              <span className={`${allPaidOff ? "text-green-600" : "text-blue-600"}`}>
+                {formatUSD(totalPaid)}
+              </span>
+              <br />
+              {totalRemaining > 0 && (
+                <span className="text-red-600 text-xs font-medium">
+                  (Pending: {formatUSD(totalRemaining)})
                 </span>
-              ),
-            },
+              )}
+            </span>
+          );
+        },
+      },
 
             {
               title: "Issue Date",
