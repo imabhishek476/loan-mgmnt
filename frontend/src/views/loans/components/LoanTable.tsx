@@ -30,7 +30,7 @@
   const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
     const [search] = useState("");
     const [selectedLoan, setSelectedLoan] = useState(null);
-  const [, setLoansDataTable] = useState<any[]>([]);
+  // const [, setLoansDataTable] = useState<any[]>([]);
     const [searchInput, setSearchInput] = useState("");
     const [issueDateFilterInput, setIssueDateFilterInput] =
       useState<moment.Moment | null>(null);
