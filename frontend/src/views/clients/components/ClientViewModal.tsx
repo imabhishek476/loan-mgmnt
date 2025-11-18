@@ -437,8 +437,8 @@ useEffect(() => {
                         />
                       )}
                               <span>
-                                {loan.status !== "Merged" ||
-                                  (loan.loanStatus !== "Deactivated" && (
+                                {loan.status !== "Merged" && 
+                               loan.loanStatus !== "Deactivated" && (
                                   <Pencil
                                     size={16}
                                     className="text-green-700 inline-block cursor-pointer hover:text-green-900"
@@ -449,7 +449,7 @@ useEffect(() => {
                                       setEditingLoanId(loan._id);
                                     }}
                                   />
-                                ))}
+                                )}
                               </span>
                             </div>
                           </div>
