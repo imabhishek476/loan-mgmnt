@@ -266,12 +266,14 @@ const Dashboard = observer(() => {
               <DatePicker
                 label="From Date"
                 value={fromDate}
+                //@ts-ignore
                 onChange={(newValue) => newValue && setFromDate(newValue)}
                 maxDate={toDate || new Date()}
               />
               <DatePicker
                 label="To Date"
                 value={toDate}
+                //@ts-ignore
                 onChange={(newValue) => newValue && setToDate(newValue)}
                 minDate={fromDate}
                 maxDate={new Date()}
