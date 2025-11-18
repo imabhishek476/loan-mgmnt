@@ -59,7 +59,7 @@ const [editingLoanId, setEditingLoanId] = useState<any>(null);
          promises.push(clientStore.fetchClients());
        }
         if (loanStore.loans.length == 0) {
-          promises.push(loanStore.fetchActiveLoans());
+          promises.push(loanStore.fetchActiveLoans(client._id));
         }
       await Promise.all(promises);
     } catch (error) {
@@ -90,7 +90,7 @@ const clientLoans = useMemo(() => {
   const getDefaultLoanTerm = (loan: any) => {
     const loanData = calculateLoanAmounts(loan);
     return (
-      LOAN_TERMS.find((t) => t >= loanData.monthsPassed) || loanData.dynamicTerm
+      LOAN_TERMS.find((t) => t > loanData.monthsPassed) || loanData.dynamicTerm
     );
   };
 
@@ -99,7 +99,7 @@ const clientLoans = useMemo(() => {
       // loanStore.fetchActiveLoans();
   }, []);
   useEffect(() => {
-    if (client?._id) loanStore.fetchActiveLoans();
+    if (client?._id) loanStore.fetchActiveLoans(client?._id);
   }, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
@@ -316,7 +316,7 @@ useEffect(() => {
                     paidAmount,
                   } = loanData;
                   const selectedDynamicTerm = currentTermMap[loan._id];
-
+                  // console.log(selectedDynamicTerm,'selectedDynamicTerm');
                   const selectedLoanData = calculateLoanAmounts({
                     ...loan,
                     loanTerms: selectedDynamicTerm,
@@ -344,9 +344,11 @@ useEffect(() => {
                     "months"
                   );
                   const end = Number(selectedDynamicTerm) * 30;
+                  // console.log(end,'end');
                   const currentEndDate = moment(loan.issueDate).add(end,
                     "day"
                   );
+                  // console.log(currentEndDate, "currentEndDate");
                   const isDelayed = today.isAfter(endDate, "day");
                   const isPaidOff = paidAmount >= totalLoan;
 
@@ -401,7 +403,8 @@ useEffect(() => {
                               </span>
                               {!["Paid Off", "Merged"].includes(
                                 loan.status
-                              ) && (
+                              ) &&
+                                    loan.loanStatus !== "Deactivated" && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -428,10 +431,14 @@ useEffect(() => {
                              {isDelayed &&
                       loan.status !== "Paid Off" &&
                       loan.status !== "Merged" && (
-                        <AlertCircle size={16} className="text-red-600" />
+                        <AlertCircle
+                          size={16}
+                          className="text-red-600"
+                        />
                       )}
                               <span>
-                                {loan.status !== "Merged" && (
+                                {loan.status !== "Merged" ||
+                                  (loan.loanStatus !== "Deactivated" && (
                                   <Pencil
                                     size={16}
                                     className="text-green-700 inline-block cursor-pointer hover:text-green-900"
@@ -442,7 +449,7 @@ useEffect(() => {
                                       setEditingLoanId(loan._id);
                                     }}
                                   />
-                                )}
+                                ))}
                               </span>
                             </div>
                           </div>
@@ -556,9 +563,9 @@ useEffect(() => {
                                                 </span>{" "}
                                                 <span>
                                                   (
-                                                  {moment(currentEndDate).format(
-                                                    "MMM DD YYYY"
-                                                  )}
+                                                  {moment(
+                                                    currentEndDate
+                                                  ).format("MMM DD YYYY")}
                                                   )
                                                 </span>
                                                 {isDelayed && (
@@ -679,16 +686,24 @@ useEffect(() => {
                                     >
                                       <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
                                         {(() => {
-                                        const companyTerms = companyLoanTerms(loan);
-                                        const allTerms = companyTerms.includes(loan.loanTerms)
-                                          ? companyTerms
-                                          : [...companyTerms, loan.loanTerms].sort((a, b) => a - b);
+                                          const companyTerms =
+                                            companyLoanTerms(loan);
+                                          const allTerms =
+                                            companyTerms.includes(
+                                              loan.loanTerms
+                                            )
+                                              ? companyTerms
+                                              : [
+                                                  ...companyTerms,
+                                                  loan.loanTerms,
+                                                ].sort((a, b) => a - b);
 
                                         return showAllTermsMap[loan._id]
-                                          ? allTerms.filter((t) => t <= loan.loanTerms)
+                                          ? allTerms.filter(
+                                              (t) => t <= loan.loanTerms
+                                            )
                                           : [currentTermMap[loan._id]];
-                                      })()
-                                      .map((term) => {
+                                      })().map((term) => {
                                           const loanTermData =
                                             calculateLoanAmounts({
                                               ...loan,
@@ -747,7 +762,7 @@ useEffect(() => {
                 })
               ) : (
                 <p className="text-gray-600 text-center py-4">
-                  No loans available.
+                  No Active loans available.
                 </p>
               )}
             </div>

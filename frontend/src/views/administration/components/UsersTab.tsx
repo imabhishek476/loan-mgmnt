@@ -26,9 +26,11 @@ export const UsersTab = observer(({ activeTab }: any) => {
     try {
       if (editingUser) {
         await userStore.updateUser(editingUser._id, data);
+        userStore.setActiveAdminTab("users");
         toast.success("User updated successfully");
       } else {
         await userStore.createUser(data);
+        userStore.setActiveAdminTab("users");
         toast.success("User added successfully");
       }
       handleUserClose();
@@ -46,6 +48,7 @@ export const UsersTab = observer(({ activeTab }: any) => {
       onConfirm: async () => {
         await userStore.deleteUser(id);
         await userStore.fetchUsers();
+        userStore.setActiveAdminTab("users");
         toast.success("User deleted successfully");
       },
     });

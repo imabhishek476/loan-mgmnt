@@ -2,6 +2,8 @@ const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
 const Company = require("../models/companies");
 const { LoanPayment } = require("../models/LoanPayment");
+const { calculateLoanAmounts } = require("../utils/loanCalculation");
+const moment = require("moment");
 
 const calculateStats = async () => {
   const loansByCompany = await Loan.aggregate([
@@ -134,8 +136,126 @@ const getDashboardStats = async (req, res) => {
   res.json(stats);
 };
 
+const getPayoffStats = async (req, res) => {
+  try {
+    const { type = "week", page = 1, limit = 10 } = req.query;
+
+    const today = moment();
+    let from = null;
+    let to = null;
+
+    if (type === "day") {
+      from = today.clone().startOf("day").toDate();
+      to = today.clone().endOf("day").toDate();
+    } else if (type === "week") {
+      from = today.clone().startOf("week").toDate();
+      to = today.clone().endOf("week").toDate();
+    } else if (type === "month") {
+      from = today.clone().startOf("month").toDate();
+      to = today.clone().endOf("month").toDate();
+    }
+
+    const skip = (page - 1) * limit;
+
+    const loans = await Loan.aggregate([
+      // Exclude paid or merged loans
+      { $match: { status: { $nin: ["Paid Off", "Merged"] } } },
+
+      // Unwind the tenures array to check each tenure individually
+      { $unwind: "$tenures" },
+
+      // Convert tenure endDate string to ISODate
+      {
+        $addFields: {
+          "tenures.endDateObj": {
+            $dateFromString: {
+              dateString: "$tenures.endDate",
+              format: "%m-%d-%Y",
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          "tenures.endDateObj": { $gte: from, $lte: to },
+        },
+      },
+      {
+        $lookup: {
+          from: "clients",
+          localField: "client",
+          foreignField: "_id",
+          as: "client",
+        },
+      },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company",
+          foreignField: "_id",
+          as: "company",
+        },
+      },
+      {
+        $addFields: {
+          clientName: { $arrayElemAt: ["$client.fullName", 0] },
+          companyName: { $arrayElemAt: ["$company.companyName", 0] },
+          companycolour: { $arrayElemAt: ["$company.backgroundColor", 0] },
+        },
+      },
+
+      // Project only fields you need
+      {
+        $project: {
+          client: 0,
+          company: 0,
+          "tenures._id": 0,
+          "tenures.__v": 0,
+        },
+      },
+
+      // Sort by tenure endDate
+      { $sort: { "tenures.endDateObj": 1 } },
+
+      // Pagination
+      { $skip: skip },
+      { $limit: Number(limit) },
+    ]);
+
+    const totalCount = await Loan.aggregate([
+      { $match: { status: { $nin: ["Paid Off", "Merged"] } } },
+      { $unwind: "$tenures" },
+      {
+        $addFields: {
+          "tenures.endDateObj": {
+            $dateFromString: {
+              dateString: "$tenures.endDate",
+              format: "%m-%d-%Y",
+            },
+          },
+        },
+      },
+      { $match: { "tenures.endDateObj": { $gte: from, $lte: to } } },
+      { $count: "count" },
+    ]);
+
+    return res.json({
+      page: Number(page),
+      limit: Number(limit),
+      total: totalCount[0]?.count || 0,
+      data: loans,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching payoff stats" });
+  }
+};
+
+
+
 module.exports = {
   getLoansByCompanyByDate,
   getDashboardStatsByDate,
   getDashboardStats,
+  getPayoffStats,
 };

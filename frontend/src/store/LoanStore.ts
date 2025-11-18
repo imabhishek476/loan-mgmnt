@@ -37,18 +37,18 @@ class LoanStore {
   loading: boolean = false;
   currentPage: number = 0;
   limit: number = 10;
-  refreshTable = false;
-
+  tableRef: any = null; //table Ref is for loans table screen
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
-
+  setTableRef(ref: any) {
+    this.tableRef = ref; 
+  }
   // Add this method to LoanStore class
-  async updateLoan(id: string, updates: Partial<Loan>) {
+  async updateLoan(id: string, updates: any) {
     this.loading = true;
     try {
-      // @ts-ignore
       const updatedLoan = await updateLoan(id, updates);
       runInAction(() => {
         const index = this.loans.findIndex((l) => l._id === id);
@@ -69,6 +69,7 @@ class LoanStore {
         query: filters.query || "",
         issueDate: filters.issueDate || null,
         clientId: filters.clientId || null,
+        loanStatus: filters.loanStatus || null,
         page: filters.page ?? this.currentPage,
         limit: filters.limit ?? this.limit,
       };
@@ -83,22 +84,26 @@ class LoanStore {
       console.error("Failed to fetch loans:", error);
       toast.error("Failed to load loans");
     } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
+  async fetchActiveLoans(clientId: string) {
+    this.loading = true;
+    try {
+      console.log(clientId, "clientId");
+      const data = await activeLoans(clientId);
+      runInAction(() => {
+        this.loans = data;
+      });
+    } catch (err) {
+      console.error("Error fetching loans:", err);
+    } finally {
       runInAction(() => {
         this.loading = false;
       });
     }
   }
-  async fetchActiveLoans() {
-    this.loading = true;
-    try {
-      const data = await activeLoans();
-      runInAction(() => (this.loans = data));
-    } catch (err) {
-      console.error("Error fetching loans:", err);
-    } finally {
-      runInAction(() => (this.loading = false));
-    }
-  }
+
   async createLoan(payload: LoanPayload) {
     this.loading = true;
     try {
@@ -154,7 +159,11 @@ class LoanStore {
     return this.loans.filter((l) => l.company === companyId);
   }
   async refreshDataTable() {
-    runInAction(() => (this.refreshTable = !this.refreshTable));
+    if (this.tableRef?.current) {
+      this.tableRef.current.onQueryChange();
+    } else{
+      console.log('refresh table failed', this.tableRef)
+    }
   }
 }
 

@@ -1,3 +1,4 @@
+import moment from "moment";
 import React, { useEffect, useState } from "react";
 // import { Calculator } from "lucide-react";
 
@@ -24,6 +25,7 @@ type LoanCalculationProps = {
   endDate?: string;
 
   onChange: (updated: {
+    tenures: any;
     baseAmount: number;
     fees: Record<string, Fee>;
     interestType: "flat" | "compound";
@@ -165,9 +167,19 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
       includePreviousLoans ? previousLoanTotal : 0
     );
 
-    const start = issueDate ? new Date(issueDate) : new Date();
-    const end = endDate ? new Date(endDate) : new Date(start);
-    if (!endDate) end.setMonth(end.getMonth() + newTerm);
+  const startDate = issueDate ? new Date(issueDate) : new Date();
+  const mainEndDate = moment(startDate)
+    .add(newTerm * 30, "days")
+    .format("MM-DD-YYYY");
+  const tenures = ALL_LOAN_TERMS.map((t) => {
+    const end = moment(startDate)
+      .add(t * 30, "days")
+      .format("MM-DD-YYYY");
+    return {
+      term: t,
+      endDate: end,
+    };
+  });
 
     onChange({
       baseAmount: newBase,
@@ -179,7 +191,8 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
       totalLoan: result.totalWithInterest,
       previousLoanTotal: includePreviousLoans ? previousLoanTotal : 0,
       startDate: start.toISOString(),
-      endDate: end.toISOString(),
+      endDate: mainEndDate,
+      tenures,
     });
   };
 useEffect(() => {
@@ -473,8 +486,9 @@ const formatDate = (date: Date) =>
                 );
                 const isSelected = term <= loanTerm;
                 const start = issueDate ? new Date(issueDate) : new Date();
-                const termEnd = new Date(start);
-                termEnd.setMonth(start.getMonth() + term);
+                const termEnd = moment(start)
+                  .add(term * 30, "days")
+                  .toDate();
                 return (
                   <div
                     key={term}

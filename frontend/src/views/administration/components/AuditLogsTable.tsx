@@ -2,36 +2,19 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Eye } from "lucide-react";
-import { toast } from "react-toastify";
-import { fetchAuditLogs, type AuditLog } from "../../../services/AuditLogService";
+import {
+  fetchAuditLogs,
+  type AuditLog,
+} from "../../../services/AuditLogService";
 import moment from "moment";
 import { X } from "lucide-react";
 
 const AuditLogsTable: React.FC = () => {
-  const [, setLogs] = useState<AuditLog[]>([]);
   const [search, setSearch] = useState("");
-  const [, setLoading] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const tableRef = useRef<any>(null);
-
-    const loadLogs = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchAuditLogs();
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        //@ts-ignore
-        setLogs(data || []);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to fetch audit logs");
-      } finally {
-        setLoading(false);
-      }
-    };
-  useEffect(() => {
-    loadLogs();
-  }, []);
-
+  const firstLoad = useRef(true);
+  const mounted = useRef(false);
   const debouncedSearch = useMemo(
     () => debounce((value: string) => setSearch(value), 1000),
     []
@@ -176,11 +159,15 @@ const AuditLogsTable: React.FC = () => {
   ];
 
   const handleView = (log: AuditLog) => setSelectedLog(log);
-useEffect(() => {
-  if (tableRef.current) {
-    tableRef.current.onQueryChange();
-  }
-}, [search]);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true; 
+      return;
+    }
+    if (tableRef.current) {
+      tableRef.current.onQueryChange(); 
+    }
+  }, [search]);
   return (
     <div className="bg-white rounded-lg shadow border p-4">
       {/* Search Input */}
@@ -204,6 +191,9 @@ useEffect(() => {
           data={(query) =>
             new Promise(async (resolve, reject) => {
               try {
+                if (firstLoad.current) {
+                  firstLoad.current = false;
+                }
                 const res = await fetchAuditLogs(
                   query.page,
                   query.pageSize,
@@ -223,8 +213,7 @@ useEffect(() => {
             {
               icon: () => <Eye className="w-5 h-5 text-blue-600" />,
               tooltip: "View Details",
-              //@ts-ignore
-              onClick: (event, rowData) => handleView(rowData),
+              onClick: (_event, rowData) => handleView(rowData),
             },
           ]}
           options={{

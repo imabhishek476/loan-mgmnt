@@ -30,7 +30,7 @@
   const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
     const [search] = useState("");
     const [selectedLoan, setSelectedLoan] = useState(null);
-  const [, setLoansDataTable] = useState<any[]>([]);
+  // const [, setLoansDataTable] = useState<any[]>([]);
     const [searchInput, setSearchInput] = useState("");
     const [issueDateFilterInput, setIssueDateFilterInput] =
       useState<moment.Moment | null>(null);
@@ -66,13 +66,19 @@
             clientId: clientId || null,
           };
           const data = await getLoansSearch(filters);
-          setLoansDataTable(data.loans || []);
-          return { data: data.loans || [], page: query.page, totalCount: data.total || 0 };
+          // setLoansDataTable(data.loans || []);
+          
+          return {
+            data: data.loans || [],
+            page: query.page,
+            totalCount: data.total || 0,
+          };
         } catch (error) {
           console.error(error);
           toast.error("Failed to fetch loans");
           return { data: [], page: query.page, totalCount: 0 };
         } finally {
+          loanStore.setTableRef(tableRef);
           setLoading(false);
         }
       },
@@ -99,15 +105,15 @@
         if (tableRef.current) tableRef.current.onQueryChange();
 
         toast.success(
-        `Loan for "${
-          loan.client?.fullName || "client"
-        }" recovered successfully!`
-      );
-  } catch (error: any) {
-    const backendMessage =
-      error?.response?.data?.message ||
-      error?.message ||
-      "An unexpected error occurred.";
+          `Loan for "${
+            loan.client?.fullName || "client"
+          }" recovered successfully!`
+        );
+      } catch (error: any) {
+        const backendMessage =
+          error?.response?.data?.message ||
+          error?.message ||
+          "An unexpected error occurred.";
 
         toast.error(backendMessage);
       }
@@ -139,12 +145,7 @@
       remaining = details.remaining;
       total = details.total;
     }
-        useEffect(() => {
-          if (tableRef.current) {
-            tableRef.current.onQueryChange();
-          }
-        }, [loanStore.refreshTable]);
-      
+
     return (
       <div>
         <div className="mb-3 flex flex-col sm:flex-row gap-2">
@@ -291,14 +292,16 @@
                 {
                   title: "Term (months)",
                   render: (rowData) => {
-                    const today = moment();
-                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY");
-                    const monthsPassed =
-                      Math.floor(today.diff(issueDate, "days") / 30) + 1;
+                    const today = moment().startOf("day");
+                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY").startOf("day");
+                    const daysPassed = today.diff(issueDate, "days");
+                    let completedMonths = Math.floor(daysPassed / 30);
+                    if (daysPassed % 30 === 0 && daysPassed !== 0) {
+                      completedMonths -= 1;
+                    }
 
                     const runningTenure =
-                      ALLOWED_TERMS.find((t) => monthsPassed <= t) ||
-                      ALLOWED_TERMS.at(-1);
+                      ALLOWED_TERMS.find((t) => completedMonths < t) || ALLOWED_TERMS.at(-1);
                     return <span>{runningTenure}</span>;
                   },
                   headerStyle: { whiteSpace: "nowrap" },
@@ -307,7 +310,8 @@
                 {
                   title: "Issue Date",
                   render: (rowData) =>
-                    moment(rowData.issueDate).format("DD MMM YYYY"),
+                    moment(rowData.issueDate).format("MMM DD, YYYY"),
+
                   headerStyle: { whiteSpace: "nowrap" },
                   cellStyle: { whiteSpace: "nowrap", minWidth: 120 },
                 },
@@ -456,7 +460,7 @@
                 <h2 className="font-semibold text-xl text-green-700">
                   Loan Details
                 </h2>
-             
+
                 <button
                   onClick={handleClose}
                   className="text-gray-600 hover:text-red-500 transition"
@@ -467,7 +471,6 @@
 
               <div className="p-6 overflow-y-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800 text-sm mt-2">
-        
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Customer
