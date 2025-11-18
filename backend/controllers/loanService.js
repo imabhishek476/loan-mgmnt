@@ -83,7 +83,7 @@ exports.AllLoans = async (req, res) => {
 exports.activeLoans = async (req, res) => {
   try {
     const { clientId, page = 1, limit = 10 } = req.query;
-    const query = { loanStatus: "Active" };
+    const query = { loanStatus: { $in: ["Active", "Deactivated"] } };
     if (clientId) {
       query.client = new mongoose.Types.ObjectId(clientId);
     }
