@@ -119,15 +119,13 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
           {
             title: "Teneur",
             render: (rowData: any) =>
-              rowData.currentTerm || rowData.dynamicTerm
-                ? `${rowData.currentTerm || rowData.dynamicTerm} Months`
-                : "N/A",
+              rowData.tenures?.term ? `${rowData.tenures.term} Months` : "N/A",
           },
           {
             title: "End Date",
             render: (rowData: any) =>
-              rowData.endDate
-                ? new Date(rowData.endDate).toLocaleDateString("en-US", {
+              rowData.tenures.endDate
+                ? new Date(rowData.tenures.endDate).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "short",
                     day: "numeric",
@@ -175,9 +173,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
             height: 44,
             borderBottom: "1px solid #f1f1f1",
             backgroundColor: "#fff",
-            borderLeft: `6px solid ${
-              rowData.companyObject?.backgroundColor || "#555555"
-            }`,
+            borderLeft: `6px solid ${rowData.companycolour || "#555555"}`,
             borderRadius: "50px",
             boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)",
             margin: "4px 0",

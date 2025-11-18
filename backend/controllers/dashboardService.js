@@ -141,78 +141,109 @@ const getPayoffStats = async (req, res) => {
     const { type = "week", page = 1, limit = 10 } = req.query;
 
     const today = moment();
-    let from = null,
-      to = null;
+    let from = null;
+    let to = null;
 
     if (type === "day") {
-      from = today.clone().startOf("day");
-      to = today.clone().endOf("day");
+      from = today.clone().startOf("day").toDate();
+      to = today.clone().endOf("day").toDate();
     } else if (type === "week") {
-      from = today.clone().startOf("week");
-      to = today.clone().endOf("week");
+      from = today.clone().startOf("week").toDate();
+      to = today.clone().endOf("week").toDate();
     } else if (type === "month") {
-      from = today.clone().startOf("month");
-      to = today.clone().endOf("month");
+      from = today.clone().startOf("month").toDate();
+      to = today.clone().endOf("month").toDate();
     }
 
     const skip = (page - 1) * limit;
 
-    const loans = await Loan.find({ status: { $nin: ["Paid Off", "Merged"] } })
-         .populate("client", "fullName")
-         .populate("company", "companyName")
-         .lean();
-    const enrichedLoans = loans
-      .map((loan) => {
-        const calc = calculateLoanAmounts(loan);
-        const upcomingTenure = loan.tenures
-          .map((t) => ({
-            ...t,
-            startDate: moment(loan.issueDate, "MM-DD-YYYY")
-              .add(
-                loan.tenures.indexOf(t) === 0
-                  ? 0
-                  : loan.tenures[loan.tenures.indexOf(t) - 1].term * 30,
-                "days"
-              )
-              .format("MM-DD-YYYY"),
-            endDate: t.endDate,
-          }))
-          .find((t) => {
-            const end = moment(t.endDate, "MM-DD-YYYY");
-            return end.isSameOrAfter(from) && end.isSameOrBefore(to);
-          });
+    const loans = await Loan.aggregate([
+      // Exclude paid or merged loans
+      { $match: { status: { $nin: ["Paid Off", "Merged"] } } },
 
-        if (!upcomingTenure) return null; // skip if no upcoming payoff in period
+      // Unwind the tenures array to check each tenure individually
+      { $unwind: "$tenures" },
 
-      return {
-        ...loan,
-        clientName: loan.client?.fullName || "",
-        companyName: loan.company?.companyName || "",
-        calc: {
-            ...calc,
-            startDate: upcomingTenure.startDate,
-            endDate: upcomingTenure.endDate,
-            dynamicTerm: upcomingTenure.term,
+      // Convert tenure endDate string to ISODate
+      {
+        $addFields: {
+          "tenures.endDateObj": {
+            $dateFromString: {
+              dateString: "$tenures.endDate",
+              format: "%m-%d-%Y",
+            },
           },
-          currentTerm: upcomingTenure.term,
-          endDate: upcomingTenure.endDate,
-          issueDate: loan.issueDate,
-          subTotal: calc?.subtotal || 0,
-          total: calc?.total || 0,
-          paidAmount: loan.paidAmount || 0,
-          remaining: calc?.remaining || 0,
-          status: loan.status,
-        };
-      })
-      .filter(Boolean); 
+        },
+      },
+      {
+        $match: {
+          "tenures.endDateObj": { $gte: from, $lte: to },
+        },
+      },
+      {
+        $lookup: {
+          from: "clients",
+          localField: "client",
+          foreignField: "_id",
+          as: "client",
+        },
+      },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company",
+          foreignField: "_id",
+          as: "company",
+        },
+      },
+      {
+        $addFields: {
+          clientName: { $arrayElemAt: ["$client.fullName", 0] },
+          companyName: { $arrayElemAt: ["$company.companyName", 0] },
+          companycolour: { $arrayElemAt: ["$company.backgroundColor", 0] },
+        },
+      },
 
-    const paginated = enrichedLoans.slice(skip, skip + Number(limit));
+      // Project only fields you need
+      {
+        $project: {
+          client: 0,
+          company: 0,
+          "tenures._id": 0,
+          "tenures.__v": 0,
+        },
+      },
+
+      // Sort by tenure endDate
+      { $sort: { "tenures.endDateObj": 1 } },
+
+      // Pagination
+      { $skip: skip },
+      { $limit: Number(limit) },
+    ]);
+
+    const totalCount = await Loan.aggregate([
+      { $match: { status: { $nin: ["Paid Off", "Merged"] } } },
+      { $unwind: "$tenures" },
+      {
+        $addFields: {
+          "tenures.endDateObj": {
+            $dateFromString: {
+              dateString: "$tenures.endDate",
+              format: "%m-%d-%Y",
+            },
+          },
+        },
+      },
+      { $match: { "tenures.endDateObj": { $gte: from, $lte: to } } },
+      { $count: "count" },
+    ]);
 
     return res.json({
       page: Number(page),
       limit: Number(limit),
-      total: enrichedLoans.length,
-      data: paginated,
+      total: totalCount[0]?.count || 0,
+      data: loans,
     });
   } catch (err) {
     console.error(err);
