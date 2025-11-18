@@ -27,12 +27,13 @@ import FormModal from "../../components/FormModal";
 import CountUp from "react-countup";
 import PayoffDataTable from "./components/PayoffDataTable";
 
-const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
+const StatCard = ({ title, value, subValue, icon: Icon, color, isCurrency, }: any) => (
   <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
     <div>
       <p className="text-sm text-gray-500 whitespace-nowrap">{title}</p>
       <div className="flex items-baseline gap-2">
-        <h2 className="text-md font-bold text-gray-800">
+        <h2 className="text-md font-bold text-gray-800 flex items-baseline">
+          {isCurrency && <span className="mr-1">$</span>}
           {typeof value === "number" ? (
             <CountUp
               end={value}
@@ -233,6 +234,7 @@ const Dashboard = observer(() => {
           value={stats.totalLoanAmount}
           icon={DollarSign}
           color="bg-green-700"
+          isCurrency
         />
         <StatCard
           title="Total Recovered Amount"
@@ -240,6 +242,7 @@ const Dashboard = observer(() => {
           subValue={`(${recoveredPercentage}%)`}
           icon={DollarSign}
           color="bg-green-500"
+          isCurrency
         />
       </div>
 
