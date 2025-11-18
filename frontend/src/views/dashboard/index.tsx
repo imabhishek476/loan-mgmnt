@@ -11,39 +11,41 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { Users, Building2, CreditCard, DollarSign, Search } from "lucide-react";
 import {
- Users,
- Building2,
- CreditCard,
- DollarSign,
- Search,
-} from "lucide-react";
-import {
-  TextField,
   Box,
   ToggleButton,
   ToggleButtonGroup,
-  Autocomplete,
 } from "@mui/material";
-import MaterialTable from "@material-table/core";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { fetchDashboardStatsByDate } from "../../services/DashboardService";
-import { loanStore } from "../../store/LoanStore";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
-import moment from "moment";
-import { calculateLoanAmounts } from "../../utils/loanCalculations";
 import ClientViewModal from "../clients/components/ClientViewModal";
 import { toast } from "react-toastify";
 import FormModal from "../../components/FormModal";
+import CountUp from "react-countup";
+import PayoffDataTable from "./components/PayoffDataTable";
 
-const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
+const StatCard = ({ title, value, subValue, icon: Icon, color, isCurrency, }: any) => (
   <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
     <div>
       <p className="text-sm text-gray-500 whitespace-nowrap">{title}</p>
       <div className="flex items-baseline gap-2">
-        <h2 className="text-md font-bold text-gray-800">{value}</h2>
+        <h2 className="text-md font-bold text-gray-800 flex items-baseline">
+          {isCurrency && <span className="mr-1">$</span>}
+          {typeof value === "number" ? (
+            <CountUp
+              end={value}
+              duration={1.5}
+              separator=","
+              decimals={0}
+              decimal="."
+            />
+          ) : (
+            value
+          )}
+        </h2>
         {subValue && (
           <span className="text-xs text-gray-500 font-medium">{subValue}</span>
         )}
@@ -57,14 +59,6 @@ const StatCard = ({ title, value, subValue, icon: Icon, color }: any) => (
   </div>
 );
 
-const payoffOptions = [
-  { label: "Today", value: "day" },
-  { label: "This Week", value: "week" },
-  { label: "This Month", value: "month" },
-];
-const capitalizeFirst = (str: string) =>
-  str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
-
 const Dashboard = observer(() => {
   const [fromDate, setFromDate] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
@@ -73,28 +67,14 @@ const Dashboard = observer(() => {
   const [filteredLoansByCompany, setFilteredLoansByCompany] = useState<any[]>(
     []
   );
-  const [upcomingPayoffs, setUpcomingPayoffs] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<"graph" | "upcoming">("upcoming");
-  const [payoffFilter, setPayoffFilter] = useState<"day" | "week" | "month">("week");
   const [loadingGraph, setLoadingGraph] = useState(false);
-
   const stats = dashboardStore.stats;
+
   const [viewClientModalOpen, setViewClientModalOpen] = useState(false);
   const [selectedClientForView, setSelectedClientForView] = useState<any>(null);
   const [editClientModalOpen, setEditClientModalOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState(null);
-  const [ setViewClient] = useState(null);
-const handleViewClient = async (clientName: string) => {
-  try {
-    const client = clientStore.clients.find((c) => c.fullName === clientName);
-    if (!client) return;
-    const loans = loanStore.loans.filter((loan) => loan.client === client._id);
-    setSelectedClientForView({ ...client, loans });
-    setViewClientModalOpen(true);
-  } catch (error) {
-    console.error("Failed to fetch client data", error);
-  }
-};
+  const [editingClient, setEditingClient] = useState<any>(null);
 
   const formatCurrency = (value: number | undefined) =>
     `$${(value || 0).toLocaleString(undefined, {
@@ -102,37 +82,57 @@ const handleViewClient = async (clientName: string) => {
       maximumFractionDigits: 2,
     })}`;
 
-  const recoveredPercentage =
-    stats.totalLoanAmount > 0
-      ? ((stats.totalPaymentsAmount / stats.totalLoanAmount) * 100).toFixed(1)
-      : "0";
-
   const formatToMMDDYYYY = (date: Date) => {
     const mm = String(date.getMonth() + 1).padStart(2, "0");
     const dd = String(date.getDate()).padStart(2, "0");
     const yyyy = date.getFullYear();
     return `${mm}-${dd}-${yyyy}`;
   };
-  useEffect(() => {
-    loadDashboard();
-    loadUpcomingPayoffs();
-  }, []);
+
+  const recoveredPercentage =
+    stats.totalLoanAmount > 0
+      ? ((stats.totalPaymentsAmount / stats.totalLoanAmount) * 100).toFixed(1)
+      : "0";
+
+  const handleClientUpdate = async (_id: string, data: any) => {
+    try {
+      if (editingClient) {
+        await clientStore.updateClient(editingClient._id, data);
+        await clientStore.fetchClients();
+        const refreshedClient = clientStore.clients.find(
+          (c) => c._id === editingClient._id
+        );
+        if (refreshedClient) {
+          toast.success("Customer updated successfully");
+          setSelectedClientForView((prev: any) => ({
+            ...refreshedClient,
+            loans: prev?.loans || [],
+          }));
+        }
+        setEditingClient(null);
+        setEditClientModalOpen(false);
+      } else {
+        await clientStore.createClient(data);
+        await clientStore.fetchClients();
+        toast.success("New Customer added successfully");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to save Customer ❌");
+    }
+  };
 
   const loadDashboard = async () => {
     setLoadingGraph(true);
     try {
+      await Promise.all([
+        companyStore.fetchCompany(),
+      ]);
       await dashboardStore.loadStats();
       setFilteredLoansByCompany(dashboardStore.stats.loansByCompany || []);
     } finally {
       setLoadingGraph(false);
     }
   };
-const getLoanEndDate = (issueDate: string, termMonths: number) => {
-  if (!issueDate || !termMonths) return "-";
-  return moment(issueDate, "MM-DD-YYYY")
-    .add(termMonths * 30, "days")
-    .format("DD MMM YYYY");
-};
 
   const handleFilter = async () => {
     if (fromDate && toDate) {
@@ -140,236 +140,75 @@ const getLoanEndDate = (issueDate: string, termMonths: number) => {
       try {
         const fromStr = formatToMMDDYYYY(fromDate);
         const toStr = formatToMMDDYYYY(toDate);
-        const data = await fetchDashboardStatsByDate(fromStr, toStr);
-        setFilteredLoansByCompany(data.loansByCompany || []);
+        await dashboardStore.loadStatsByDate(fromStr, toStr);
+        setFilteredLoansByCompany(dashboardStore.stats.loansByCompany || []);
       } catch (err) {
-        console.error("Error fetching filtered loans by company", err);
+        console.error("Error fetching filtered data", err);
       } finally {
         setLoadingGraph(false);
       }
     }
   };
-
-  const loadUpcomingPayoffs = async () => {
-    try {
-      await Promise.all([
-      loanStore.fetchActiveLoans(),
-      clientStore.fetchClients(),
-      companyStore.fetchCompany(),
-    ]);
-
-    const today = moment();
-
-      const data = loanStore.loans
-        .filter(
-          (loan) => loan.status !== "Paid Off" && loan.status !== "Merged"
-        )
-        .map((loan) => {
-          const client = clientStore.clients.find((c) => c._id === loan.client);
-          const company = companyStore.companies.find(
-            (c) => c._id === loan.company
-          );
-
-          const loanData = calculateLoanAmounts(loan);
-          if (!loanData) {
-            console.warn("Skipped loan (no loanData):", loan._id);
-            return null;
-          }
-
-          const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
-          if (!issueDate.isValid()) {
-            console.warn("Invalid issueDate:", loan._id, loan.issueDate);
-            return null;
-          }
-
-          const daysPassed = today.diff(issueDate, "days");
-          const monthsSinceIssue = Math.floor(daysPassed / 30) + 1;
-          const tenureSteps: number[] = company?.loanTerms || [
-            6, 12, 18, 24, 30, 36, 40,
-          ];
-          const currentTenure =
-            tenureSteps.find((step) => monthsSinceIssue <= step) ||
-            tenureSteps[tenureSteps.length - 1];
-
-          const loanTerm = loan.loanTerms || currentTenure;
-
-          const totalLoan =
-            loan.interestType === "flat"
-              ? loanData.subtotal +
-                loanData.subtotal * (loan.monthlyRate / 100) * currentTenure
-              : loanData.subtotal *
-                Math.pow(1 + loan.monthlyRate / 100, currentTenure);
-
-          const paidAmount = loan.paidAmount || 0;
-          const remaining = Math.max(0, totalLoan - paidAmount);
-          const totalDays = loanTerm * 30;
-          const endDate = moment(issueDate).add(totalDays, "days");
-          const isDelayed = endDate.endOf("day").isBefore(today, "day");
-          const isPaidOff = paidAmount >= totalLoan;
-
-          const overdueMonths = isDelayed
-            ? Math.floor(today.diff(endDate, "days") / 30)
-            : 0;
-
-          const overdueInterest = isDelayed
-            ? loan.interestType === "flat"
-              ? loanData.subtotal * (loan.monthlyRate / 100) * overdueMonths
-              : loanData.subtotal *
-                (Math.pow(1 + loan.monthlyRate / 100, overdueMonths) - 1)
-            : 0;
-          return {
-            srNo: 0,
-            id: loan._id,
-            clientName: client?.fullName || "",
-            companyName: company?.companyName || "",
-            companyObject: company,
-            subTotal: loanData.subtotal,
-            total: totalLoan,
-            paidAmount,
-            remaining,
-            loanTerms: currentTenure,
-            originalTerm: loanTerm,
-            issueDate: issueDate.format("MM-DD-YYYY"),
-            endDate: endDate.format("MM-DD-YYYY"),
-            monthsPassed: loanData.monthsPassed,
-            status: isPaidOff ? "Paid Off" : isDelayed ? "Delayed" : "Active",
-            monthlyRate: loan.monthlyRate || 0,
-            interestAmount: totalLoan - loanData.subtotal,
-            overdueMonths,
-            overdueInterest,
-          };
-        })
-        .filter(Boolean)
-        .sort(
-          (a, b) =>
-            moment(a.endDate, "MM-DD-YYYY").valueOf() -
-            moment(b.endDate, "MM-DD-YYYY").valueOf()
-        )
-        .map((item, index) => ({ ...item, srNo: index + 1 }));
-    setUpcomingPayoffs(data);
-    } catch (error) {
-      console.error("Error loading upcoming payoffs", error);
-    }
-};
-const handleClientUpdate = async (_id: string, data: any) => {
-  try {
-    if (editingClient) {
-      await clientStore.updateClient(editingClient._id, data);
-      await clientStore.fetchClients();
-      const refreshedClient = clientStore.clients.find(
-        (c) => c._id === editingClient._id
-      );
-      if (refreshedClient) {
-        toast.success("Customer updated successfully");
-        setSelectedClientForView((prev: any) => ({
-          ...refreshedClient,
-          loans: prev?.loans || [],
-        }));
-        setViewClient(refreshedClient);
-      }
-      setEditingClient(null);
-      setEditClientModalOpen(false);
-    } else {
-      await clientStore.createClient(data);
-      await clientStore.fetchClients();
-      toast.success("New Customer added successfully");
-    }
-  } catch (error: any) {
-    toast.error(error.response?.data?.error || "Failed to save Customer ❌");
-  }
-};
-
-
-  const filteredUpcomingPayoffs = upcomingPayoffs.filter((loan) => {
-    const end = moment(loan.endDate, "MM-DD-YYYY").startOf("day");
-    const today = moment().startOf("day");
-
-    switch (payoffFilter) {
-    case "day":
-      return end.isSame(today, "day");
-      case "week":
-        return end.isSame(today, "week");
-      case "month":
-        return end.isSame(today, "month");
-      // case "all":
-      default:
-        return true;
-    }
-});
-  const filteredUpcomingPayoffsWithSrNo = filteredUpcomingPayoffs.map(
-    (item, index) => ({
-      ...item,
-      srNo: index + 1,
-    })
-  );
   const combinedData = filteredLoansByCompany.map((item) => {
-  const company = companyStore.companies.find(
-    (c) => c.companyName === item._id
-  );
-  if (!company)
-    return { name: item._id, totalLoan: item.totalAmount, recovered: 0 };
-  const companyLoans = loanStore.getLoansByCompany(company._id);
-  const totalRecovered = companyLoans.reduce(
-    (sum, loan) => sum + (loan.paidAmount || 0),
-    0
-  );
-  return {
-    name: item._id || "",
-    totalLoan: item.totalAmount || 0,
-    recovered: totalRecovered,
-  };
-});
+    const totalLoan = item.totalAmount || 0;
+    const recovered = totalLoan
+      ? (totalLoan / stats.totalLoanAmount) * (stats.totalPaymentsAmount || 0)
+      : 0;
+    return { name: item._id || "-", totalLoan, recovered };
+  });
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
   const renderBarChart = (data: any[]) => {
-    if (!data || data.length === 0) {
+    if (!data || !data.length)
       return (
         <div className="flex justify-center items-center h-64 text-gray-400 font-semibold">
           No data available for this date range
         </div>
       );
-    }
 
     return (
-     <div className="w-full h-[300px] sm:h-[400px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          margin={{ top: 20, right: 20, bottom: 20, left: 10 }}
-        >
-          <CartesianGrid strokeDasharray="4 4" />
-          <XAxis
-             dataKey="name"
-             tick={{ fontSize: 12 }}
-             interval={0}
-             angle={-0}
-             dy={10}
-           />
-          <YAxis tickFormatter={formatCurrency} />
-          <Tooltip formatter={formatCurrency} />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar
-            dataKey="totalLoan"
-            name="Total Loan"
-            fill="#4f46e5"
-            barSize={30}
-          />
-          <Bar
-            dataKey="recovered"
-            name="Total Recovered"
-            fill="#1E824C"
-            barSize={30}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-     </div>
+      <div className="w-full h-[300px] sm:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 20, right: 20, bottom: 20, left: 10 }}
+          >
+            <CartesianGrid strokeDasharray="4 4" />
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 12 }}
+              interval={0}
+              dy={10}
+            />
+            <YAxis tickFormatter={formatCurrency} />
+            <Tooltip formatter={formatCurrency} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Bar
+              dataKey="totalLoan"
+              name="Total Loan"
+              fill="#4f46e5"
+              barSize={30}
+            />
+            <Bar
+              dataKey="recovered"
+              name="Total Recovered"
+              fill="#1E824C"
+              barSize={30}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     );
   };
-  useEffect(() => {
-    clientStore.fetchClients();
-  }, []);
+
   return (
     <div className="space-y-5 text-left relative">
+      {/* Dashboard Header */}
       <h1 className="text-2xl font-bold text-gray-800 mb-0">Dashboard</h1>
+
+      {/* Stats Cards */}
       <div className="flex gap-2 flex-wrap">
         <StatCard
           title="Total Customers"
@@ -385,24 +224,29 @@ const handleClientUpdate = async (_id: string, data: any) => {
         />
         <StatCard
           title="Total Loans"
-          value={`${stats.totalLoans} (${stats.totalPaidOffLoans} Paid Off)`}
+          value={stats.totalLoans}
+          subValue={`(${stats.totalPaidOffLoans} Paid Off)`}
           icon={CreditCard}
           color="bg-green-700"
         />
         <StatCard
           title="Total Loan Value"
-          value={formatCurrency(stats.totalLoanAmount)}
+          value={stats.totalLoanAmount}
           icon={DollarSign}
           color="bg-green-700"
+          isCurrency
         />
         <StatCard
           title="Total Recovered Amount"
-          value={formatCurrency(stats.totalPaymentsAmount)}
+          value={stats.totalPaymentsAmount}
           subValue={`(${recoveredPercentage}%)`}
           icon={DollarSign}
           color="bg-green-500"
+          isCurrency
         />
       </div>
+
+      {/* View Mode Toggle */}
       <div className="flex justify-between items-center">
         <ToggleButtonGroup
           value={viewMode}
@@ -413,6 +257,8 @@ const handleClientUpdate = async (_id: string, data: any) => {
           <ToggleButton value="graph">Companies Performance</ToggleButton>
         </ToggleButtonGroup>
       </div>
+
+      {/* Graph View */}
       {viewMode === "graph" && (
         <>
           <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -443,7 +289,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
           </LocalizationProvider>
 
           <div className="flex flex-wrap gap-4">
-            <div className="bg-white rounded-2xl shadow-lg flex-1  p-3">
+            <div className="bg-white rounded-2xl shadow-lg flex-1 p-3">
               <h2 className="font-semibold text-gray-800 text-lg mb-4">
                 Total Loan and Recovered by Company
               </h2>
@@ -458,197 +304,14 @@ const handleClientUpdate = async (_id: string, data: any) => {
           </div>
         </>
       )}
+
       {viewMode === "upcoming" && (
-        <div className="bg-white rounded-2xl shadow-lg p-5 mt-6 w-full mx-auto">
-          {/* <h2 className="font-semibold text-gray-800 text-lg mb-4">
-            Upcoming Payoffs
-          </h2> */}
-          <div className="flex gap-2 items-center mb-4 w-full max-w-xs">
-            <Autocomplete
-              fullWidth
-              options={payoffOptions}
-              value={payoffOptions.find((o) => o.value === payoffFilter)}
-              onChange={(_event, newValue) =>
-                newValue &&
-                setPayoffFilter(newValue.value as "day" | "week" | "month")
-              }
-              getOptionLabel={(option) => option.label}
-              renderInput={(params) => <TextField {...params} size="small" />}
-            />
-          </div>
-
-          <MaterialTable
-            title={null}
-            columns={[
-              {
-                title: "Sr.no",
-                field: "srNo",
-                width: "2%",
-                cellStyle: { whiteSpace: "nowrap" },
-              },
-              {
-                title: "Customer",
-                render: (rowData) => (
-                  <span
-                    className="text-green-600 cursor-pointer hover:underline"
-                    onClick={() => handleViewClient(rowData.clientName)}
-                  >
-                    {capitalizeFirst(rowData.clientName)}
-                  </span>
-                ),
-                cellStyle: {
-                  whiteSpace: "normal",
-                  wordBreak: "break-word",
-                  fontWeight: 500,
-                },
-              },
-              {
-                title: "Company",
-                render: (rowData) => (
-                  <span
-                    style={{
-                      // backgroundColor: `${rowData.companyObject?.backgroundColor}20`,
-                      color: rowData.companyObject?.backgroundColor,
-                      padding: "4px 0px",
-                      borderRadius: "20px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {rowData.companyName}
-                  </span>
-                ),
-                cellStyle: { width: 150, minWidth: 150 },
-              },
-              {
-                title: "Total Loan Amount ($)",
-                render: (rowData) =>
-                  `$${Number(rowData.subTotal || 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`,
-                width: "20%",
-                cellStyle: { whiteSpace: "nowrap" },
-              },
-              {
-                title: "Remaining ($)",
-                width: "13%",
-                render: (rowData) =>
-                  `$${Number(rowData.remaining || 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`,
-                cellStyle: { whiteSpace: "nowrap" },
-              },
-              {
-                title: "Current Tenure (Mo.)",
-                width: "25%",
-                render: (rowData) => {
-                  const issue = moment(rowData.issueDate, "MM-DD-YYYY");
-                  const today = moment();
-                  const daysPassed = today.diff(issue, "days");
-                  const monthsPassed = Math.floor(daysPassed / 30) + 1;
-                  const company = rowData.companyObject;
-                  const tenureSteps = company?.loanTerms || [
-                    6, 12, 18, 24, 30, 36, 40,
-                  ];
-                  const currentTenure =
-                    tenureSteps.find((step) => monthsPassed <= step) ||
-                    tenureSteps[tenureSteps.length - 1];
-
-                  return currentTenure;
-                },
-                cellStyle: { whiteSpace: "nowrap" },
-              },
-              // {
-              //   title: "Term (Mo.)",
-              //   field: "originalTerm",
-              //   width: "20%",
-              //   cellStyle: { whiteSpace: "nowrap" },
-              // },
-              {
-                title: "Issue Date",
-                width: "15%",
-                render: (rowData) =>
-                  moment(rowData.issueDate, "MM-DD-YYYY").format("DD MMM YYYY"),
-                cellStyle: { whiteSpace: "nowrap" },
-              },
-              {
-                title: "End Date",
-                width: "10%",
-                render: (rowData) =>
-                  getLoanEndDate(
-                    rowData.issueDate,
-                    rowData.loanTerms || rowData.term
-                  ),
-                cellStyle: { whiteSpace: "nowrap" },
-              },
-              {
-                title: "Status",
-                render: (rowData) => {
-                  const status = capitalizeFirst(rowData.status);
-                  const color =
-                    status === "Delayed"
-                      ? "text-white bg-red-600 py-1 px-2 rounded-lg"
-                      : status === "Paid Off"
-                      ? "text-white bg-gray-600 py-1 px-2 rounded-lg"
-                      : "text-white bg-green-600 py-1 px-2 rounded-lg";
-                  return (
-                    <div className="flex flex-col items-start">
-                      <span className={`font-semibold ${color}`}>{status}</span>
-                      {rowData.status === "Delayed" &&
-                        rowData.overdueMonths > 0 && (
-                          <small className="text-xs text-red-600">
-                            Overdue {rowData.overdueMonths} mo — Extra Interest:
-                            ${Number(rowData.overdueInterest || 0).toFixed(2)}
-                          </small>
-                        )}
-                    </div>
-                  );
-                },
-                cellStyle: { whiteSpace: "normal", wordBreak: "break-word" },
-              },
-            ]}
-            data={filteredUpcomingPayoffsWithSrNo}
-            options={{
-              paging: true,
-              pageSize: 10,
-              pageSizeOptions: [5, 10, 20],
-              sorting: true,
-              search: false,
-              actionsColumnIndex: -1,
-              headerStyle: {
-                fontWeight: 600,
-                backgroundColor: "#f9fafb",
-                color: "#374151",
-                fontSize: "13px",
-                height: 36,
-                padding: "6px 8px",
-                borderBottom: "1px solid #e5e7eb",
-                whiteSpace: "nowrap",
-              },
-              rowStyle: (rowData) => {
-                const borderColor =
-                  rowData.companyObject?.backgroundColor || "#555555";
-                return {
-                  fontSize: "13px",
-                  height: 44,
-                  borderBottom: "1px solid #f1f1f1",
-                  backgroundColor: "#fff",
-                  borderLeft: `6px solid ${borderColor}`,
-                  borderRadius: "50px",
-                  boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)",
-                  margin: "4px 0",
-                  transition: "all 0.2s ease",
-                  cursor: "pointer",
-                };
-              },
-              padding: "dense",
-              toolbar: false,
-              paginationType: "stepped",
-            }}
-          />
+        <div className="bg-white p-5 rounded-2xl shadow-lg">
+          <PayoffDataTable loading={dashboardStore.loading} />
         </div>
       )}
+
+      {/* Modals */}
       {viewClientModalOpen && selectedClientForView && (
         <ClientViewModal
           open={viewClientModalOpen}
@@ -660,6 +323,7 @@ const handleClientUpdate = async (_id: string, data: any) => {
           }}
         />
       )}
+
       {editClientModalOpen && editingClient && (
         <FormModal
           open={editClientModalOpen}

@@ -18,6 +18,19 @@ const LoanSchema = new mongoose.Schema(
       ref: "Company",
       required: true,
     },
+    tenures: [
+      {
+        term: {
+          type: Number,
+          enum: [6, 12, 18, 24, 30, 36, 48],
+          required: true,
+        },
+        endDate: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
     loanTerms: { type: Number, default: 12 },
     baseAmount: { type: Number, required: true },
     previousLoanAmount: { type: Number, default: 0 },
@@ -45,7 +58,11 @@ const LoanSchema = new mongoose.Schema(
       enum: ["Active", "Deactivated"],
       default: "Active",
     },
-    parentLoanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Loan', default: null }
+    parentLoanId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Loan",
+      default: null,
+    },
   },
   { timestamps: true }
 );

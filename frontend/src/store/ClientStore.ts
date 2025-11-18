@@ -37,12 +37,14 @@ class ClientStore {
   selectedClientLoans: Loan[] = [];
   loading = false;
   customFields:[];
-  refreshTable = false;
   toggleLoan = false;
+  tableRef: any = null; //table Ref is for customers table screen
   constructor() {
     makeAutoObservable(this);
   }
-
+  setTableRef(ref: any) {
+    this.tableRef = ref;
+  }
   async fetchClients(filters: { query?: string; page?: number; limit?: number; issueDate?: string } = {}) {
     this.loading = true;
     try {
@@ -72,7 +74,7 @@ class ClientStore {
     try {
       const { client: updatedClient } = await updateClient(id, client);
       runInAction(() => {
-        const idx = this.clients.findIndex((c) => c._id === id);
+        const idx = this.clients.findIndex((c) => c?._id === id);
         if (idx !== -1) this.clients[idx] = updatedClient;
       });
     } finally {
@@ -118,7 +120,11 @@ class ClientStore {
     }
   }
   async refreshDataTable() {
-    runInAction(() => (this.refreshTable = !this.refreshTable));
+    if (this.tableRef?.current) {
+      this.tableRef.current.onQueryChange();
+    } else {
+      console.log('refresh table failed', this.tableRef)
+    }
   }
   async toggleLoanModel() {
     runInAction(() => (this.toggleLoan = !this.toggleLoan));

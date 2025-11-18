@@ -9,6 +9,7 @@ import { clientStore, type Client } from "../../store/ClientStore";
 import { getClientLoans } from "../../services/ClientServices";
 import Loans from "../loans/index";
 import ClientViewModal from "../../views/clients/components/ClientViewModal";
+// import { loanStore } from "../../store/LoanStore";
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
@@ -26,6 +27,7 @@ const Clients = observer(() => {
     }
   };
   const handleAddLoan = (client: any) => {
+    // loanStore.fetchActiveLoans(client._id); //active loan
     setSelectedClientForLoan(client);
     clientStore.toggleLoanModel();
   };
@@ -50,34 +52,45 @@ const Clients = observer(() => {
       type: field.type === "text" || field.type === "textarea" ? "string" : field.type === "number" ? "number" : "string",
     }));
 
-  const handleSave = async (data: any) => {
-    try {
-      if (editingClient) {
-        await clientStore.updateClient(editingClient._id, data);
-      await clientStore.fetchClients();
-          const refreshedClient = clientStore.clients.find(
-            (c) => c._id === editingClient._id
-          );
-        await clientStore.refreshDataTable();
-         toast.success("Customer updated successfully");
-          if (refreshedClient) setViewClient(refreshedClient);
-        setEditingClient(null);
-      setModalOpen(false);
-      } else {
-        await clientStore.createClient(data);
-        await clientStore.refreshDataTable();
-      toast.success("New Customer added successfully");
-      setModalOpen(false);
-    }
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to save Customer");
-    }
-  };
+const handleSave = async (data: any) => {
+  try {
+    if (editingClient) {
+      await clientStore.updateClient(editingClient?._id, data);
 
-  // useEffect(() => {
-  //   clientStore.fetchClients();
-  //   loanStore.fetchLoans();
-  // }, []);
+      toast.success("Customer updated successfully");
+
+      // refresh data safely
+      try {
+        await clientStore.refreshDataTable();
+        const refreshedClient = clientStore.clients.find(
+          (c) => c?._id === editingClient?._id
+        );
+        if (refreshedClient) setViewClient(refreshedClient);
+      } catch (refreshError) {
+        console.error("Refresh error:", refreshError);
+      }
+
+      setEditingClient(null);
+      setModalOpen(false);
+    } else {
+      await clientStore.createClient(data);
+
+      toast.success("New Customer added successfully");
+
+      try {
+        await clientStore.refreshDataTable();
+      } catch (refreshError) {
+        console.error("Refresh error:", refreshError);
+      }
+
+      setModalOpen(false);
+    }
+  } catch (error: any) {
+    console.error("Save error:", error);
+    toast.error(error.response?.data?.error || "Failed to save Customer");
+  }
+};
+
 
   return (
     <div className="text-left flex flex-col transition-all duration-300">

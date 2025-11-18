@@ -12,9 +12,20 @@ interface AuthUser {
 }
 
 class UserStore {
-  // @ts-ignore
   searchUsers(query: string) {
-    throw new Error("Method not implemented.");
+    runInAction(() => {
+      if (!query.trim()) {
+        this.filteredUsers = this.users;
+        return;
+      }
+
+      const lowerQuery = query.toLowerCase();
+      this.filteredUsers = this.users.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(lowerQuery) ||
+          user.email?.toLowerCase().includes(lowerQuery)
+      );
+    });
   }
   user: AuthUser | null = null;
   users: UserResponse[] = [];
