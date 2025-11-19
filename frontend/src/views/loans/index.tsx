@@ -694,7 +694,16 @@ const Loans = observer(
                                 ...prev,
                                 baseAmount: updated.baseAmount,
                                 subtotal: updated.subtotal,
-                                fees: updated.fees,
+                                fees: {
+                                  administrativeFee:
+                                    updated.fees.administrativeFee,
+                                  applicationFee: updated.fees.applicationFee,
+                                  attorneyReviewFee:
+                                    updated.fees.attorneyReviewFee,
+                                  brokerFee: updated.fees.brokerFee,
+                                  annualMaintenanceFee:
+                                    updated.fees.annualMaintenanceFee,
+                                },
                                 interestType: updated.interestType,
                                 monthlyRate: updated.monthlyRate,
                                 loanTerms: updated.loanTermMonths,
