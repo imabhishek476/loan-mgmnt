@@ -470,16 +470,15 @@ useEffect(() => {
                               <div className="flex-1  pr-4 space-y-3 pt-2 border-r-2">
                                 <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                                   PayOff History
-                                  {/* {(loan.status === "Active" ||
-                                loan.status === "Partial Payment") &&
-                                !loanPayments[loan._id]?.length && (
+                                  {(loan.status === "Active" ||
+                                loan.status === "Partial Payment")&&(
                                   <button
                                     onClick={() => setPaymentLoan(loan)}
                                     className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
                                   >
                                     <Plus className="w-4 h-4" />
                                   </button>
-                                )} */}
+                                )}
                                 </h4>
 
                                 {loanPayments[loan._id]?.length > 0 ? (
