@@ -5,6 +5,9 @@ import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
 import { calculateLoanAmounts } from "../utils/loanCalculations"; 
 import { clientStore } from "../store/ClientStore";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import moment, { type Moment } from "moment";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 
 interface LoanPaymentModalProps {
   open: boolean;
@@ -32,6 +35,7 @@ const LoanPaymentModal = observer(
       checkNumber?: string;
     }>({});
     const formated_Outstanding = outstanding.toFixed(2);
+    const [payOffDate, setPayOffDate] = useState(moment());
 
 useEffect(() => {
   if (!loan) return;
@@ -60,10 +64,6 @@ useEffect(() => {
         newErrors.amount = `Cannot pay more than outstanding: $${formated_Outstanding}`;
       }
 
-      if (!checkNumber.trim()) {
-        newErrors.checkNumber = "Check Number is required";
-      }
-
       setErrors(newErrors);
       Object.values(newErrors).forEach((msg) => toast.error(msg));
       return Object.keys(newErrors).length === 0;
@@ -78,7 +78,7 @@ useEffect(() => {
           loanId: loan._id,
           clientId,
           paidAmount: Number(amount),
-          paidDate: new Date(),
+          paidDate: payOffDate,
           checkNumber,
           payoffLetter,
           formated_Outstanding,
@@ -91,8 +91,12 @@ useEffect(() => {
         toast.success("Payment recorded successfully");
         onClose();
       } catch (err) {
-        console.error(err);
-        toast.error("Payment failed. Try again.");
+        console.error("Payment error:", err?.response?.data || err);
+        toast.error(
+         err?.response?.data?.message ||
+           err?.message ||
+           "Payment failed. Try again."
+       );
       } finally {
         setLoading(false);
       }
@@ -139,11 +143,24 @@ useEffect(() => {
                 Outstanding: ${Number(formated_Outstanding).toLocaleString()}
               </p>
             </div>
-
+            <div className="flex flex-col text-left py-1 z-20">
+              <label className="mb-1 font-medium text-gray-700">
+                Payoff Date
+              </label>
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+              <DatePicker
+                value={payOffDate}
+                onChange={(date: Moment | null) =>
+                  setPayOffDate(date)
+                }
+                slotProps={{ textField: { size: "small" } }}
+              />
+              </LocalizationProvider>
+            </div>
             {/* Check Number */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
-                Check Number <span className="text-red-500">*</span>
+                Check Number
               </label>
               <input
                 type="text"
@@ -157,17 +174,9 @@ useEffect(() => {
                       : "Check Number is required",
                   }));
                 }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
-                  errors.checkNumber
-                    ? "border-red-500 focus:ring-red-300"
-                    : "border-gray-300 focus:ring-green-300"
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring`}
               />
-              {errors.checkNumber && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.checkNumber}
-                </p>
-              )}
+             
             </div>
 
             {/* Payoff Letter */}

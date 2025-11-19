@@ -642,7 +642,7 @@
                     <p
                       className={`font-semibold ${
                         selectedLoan.status === "Paid Off"
-                          ? "text-green-600"
+                          ? "text-gray-500"
                           : selectedLoan.status === "Merged"
                           ? "text-green-600"
                           : selectedLoan.status === "Active"

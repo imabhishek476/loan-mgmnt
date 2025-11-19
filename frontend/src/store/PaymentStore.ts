@@ -36,9 +36,9 @@ class PaymentStore {
         this.payments[payload.loanId].push(payment);
       });
       return payment;
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error adding payment:", err);
-      throw new Error(err?.message || "Payment failed");
+      throw err;
     } finally {
       runInAction(() => (this.loading = false));
     }

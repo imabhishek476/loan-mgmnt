@@ -9,5 +9,10 @@ const LoanPaymentSchema = new mongoose.Schema({
   checkNumber: { type: String },
   payoffLetter: { type: String },
 }, { timestamps: true });
+LoanPaymentSchema.index({ loanId: 1 });
+LoanPaymentSchema.index({ clientId: 1 });
+LoanPaymentSchema.index({ paidAmount: 1 });
+LoanPaymentSchema.index({ checkNumber: 1 });
+LoanPaymentSchema.index({ paidDate: 1 });
 
 module.exports.LoanPayment = mongoose.model("LoanPayment", LoanPaymentSchema);

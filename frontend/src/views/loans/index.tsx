@@ -165,11 +165,16 @@ const Loans = observer(
          const clientId =
            typeof loan?.client === "object" ? loan?.client?._id : loan?.client;
 
+        const loanIssueDate = loan?.issueDate;
+        const selectedIssueDate = formData.issueDate ? formData.issueDate : null;
          return (
            clientId === formData.client &&
            loan?.status !== "Paid Off" &&
            loan?.status !== "Merged" &&
-           loan?.loanStatus !== "Deactivated"
+           loan?.loanStatus !== "Deactivated" &&
+          (loanIssueDate && selectedIssueDate
+            ? loanIssueDate <= selectedIssueDate
+            : true)
          );
        }) || [];
      setActiveLoans(loans);
@@ -180,7 +185,7 @@ const Loans = observer(
      setSelectedLoanIds([]);
      setOverlapMode(false);
    }
- }, [formData.client, formData.company, loanStore.loans]);
+}, [formData.client, formData.company, loanStore.loans, formData.issueDate]);
 
     const resetForm = () => {
       setFormData(getInitialFormData());
@@ -193,7 +198,10 @@ const Loans = observer(
     };
     const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
     const getLoanRunningDetails = (loan: any) => {
-      const { monthsPassed } = calculateDynamicTermAndPayment(loan);
+      const { monthsPassed } = calculateDynamicTermAndPayment(
+        loan,
+        formData.issueDate
+      );
       const runningTenure =
         ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
 
@@ -606,6 +614,12 @@ const Loans = observer(
                                         )}
                                       </span>
                                       <span className="font-semibold">
+                                        Company Name:{" "}
+                                        {companyStore.companies.find(
+                                          (c) => c._id === loan.company
+                                        )?.companyName || "-"}
+                                      </span>
+                                      <span className="font-semibold">
                                         Current Tenure:{" "}
                                         <b>{runningTenure} Months</b>
                                       </span>
@@ -694,7 +708,16 @@ const Loans = observer(
                                 ...prev,
                                 baseAmount: updated.baseAmount,
                                 subtotal: updated.subtotal,
-                                fees: updated.fees,
+                                fees: {
+                                  administrativeFee:
+                                    updated.fees.administrativeFee,
+                                  applicationFee: updated.fees.applicationFee,
+                                  attorneyReviewFee:
+                                    updated.fees.attorneyReviewFee,
+                                  brokerFee: updated.fees.brokerFee,
+                                  annualMaintenanceFee:
+                                    updated.fees.annualMaintenanceFee,
+                                },
                                 interestType: updated.interestType,
                                 monthlyRate: updated.monthlyRate,
                                 loanTerms: updated.loanTermMonths,
@@ -772,7 +795,7 @@ const Loans = observer(
                     </p>
                     <p className="font-medium">
                       {clientStore.clients.find(
-                        (c) => c?._id === selectedLoan.client
+                        (c) => c?._id ===(selectedLoan.client?._id || selectedLoan.client)
                       )?.fullName || "-"}
                     </p>
                   </div>
@@ -896,7 +919,7 @@ const Loans = observer(
                     <p
                       className={`font-semibold ${
                         selectedLoan.status === "Paid Off"
-                          ? "text-green-700"
+                          ? "text-gray-500"
                           : selectedLoan.status === "Partial Payment"
                           ? "text-blue-700"
                           : "text-yellow-700"
