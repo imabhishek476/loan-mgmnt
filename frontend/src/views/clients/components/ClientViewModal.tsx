@@ -344,11 +344,9 @@ useEffect(() => {
                     "months"
                   );
                   const end = Number(selectedDynamicTerm) * 30;
-                  // console.log(end,'end');
                   const currentEndDate = moment(loan.issueDate).add(end,
                     "day"
                   );
-                  // console.log(currentEndDate, "currentEndDate");
                   const isDelayed = today.isAfter(endDate, "day");
                   const isPaidOff = paidAmount >= totalLoan;
 

@@ -31,8 +31,9 @@ const parseNumber = (val: any): number => {
 };
 
 const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
-const getLoanRunningDetails = (loan: any) => {
-  const { monthsPassed } = calculateDynamicTermAndPayment(loan);
+const getLoanRunningDetails = (loan: any, currentIssueDate: null) => {
+  const baseDate = moment(currentIssueDate, "MM-DD-YYYY").format("MM-DD-YYYY");
+  const { monthsPassed } = calculateDynamicTermAndPayment(loan, baseDate);
   const runningTenure =
     ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
 
@@ -167,9 +168,6 @@ const EditLoanModal = observer(
             promises.push(loanStore.fetchLoans());
           }
           await Promise.all(promises);
-              //@ts-ignore
-        const normalizeId = (id: any) =>
-          id == null ? "" : typeof id === "string" ? id : id.toString();
         const mergedLoans = loan.previousLoans || [];
 
         if (mergedLoans.length > 0) {
@@ -258,7 +256,7 @@ const EditLoanModal = observer(
               loan.previousLoans.includes(l._id)
             );
             const totalRemaining = previousLoans.reduce((sum, l) => {
-              const details = getLoanRunningDetails(l);
+              const details = getLoanRunningDetails(l, formData.issueDate);
               return sum + (details?.remaining || 0);
             }, 0);
             setFormData((prev) => ({
@@ -284,7 +282,7 @@ const EditLoanModal = observer(
 
     const selectedPreviousLoanTotal = activeLoans
       .filter((loan) => selectedLoanIds.includes(loan._id))
-      .reduce((sum, loan) => sum + getLoanRunningDetails(loan).remaining, 0);
+      .reduce((sum, loan) => sum + getLoanRunningDetails(loan, formData.issueDate).remaining, 0);
 
     const handleView = async (loan: any) => {
       try {
@@ -308,7 +306,7 @@ const handleSave = async () => {
     const loan = await fetchLoanById(loanId);
     if (!loan) return toast.error("Loan not found");
 
-    const { runningTenure } = getLoanRunningDetails(loan);
+    const { runningTenure } = getLoanRunningDetails(loan, formData.issueDate);
     const calc = calculateLoan(
       formData.baseAmount,
       formData.fees,
@@ -382,6 +380,40 @@ const handleSave = async () => {
          }));
       setEndDate(end.format("MM-DD-YYYY"));
     }, [formData?.loanTerms, formData?.issueDate]);
+useEffect(() => {
+  if (!formData || !formData.issueDate || !originalLoan) return;
+  if (!loanStore?.loans) return;
+
+  const selectedIssue = new Date(formData.issueDate);
+
+  const filteredLoans = loanStore.loans.filter((l) => {
+    const lClient = l.client?._id?.toString() || l.client?.toString();
+    const originalClient =
+      originalLoan.client?._id?.toString() || originalLoan.client?.toString();
+
+    if (lClient !== originalClient) return false;
+    if (l._id?.toString() === originalLoan._id?.toString()) return false;
+    if (l.status === "Paid Off" || l.status === "Merged") return false;
+    if (l.loanStatus === "Deactivated") return false;
+
+    const issue = l.issueDate ? new Date(l.issueDate) : null;
+
+    return !issue || issue <= selectedIssue;
+  });
+
+  setActiveLoans(filteredLoans);
+  const totalRemaining = filteredLoans
+    .filter((l) => selectedLoanIds.includes(l._id))
+    .reduce((sum, loan) => {
+      const details = getLoanRunningDetails(loan, formData.issueDate);
+      return sum + (details?.remaining || 0);
+    }, 0);
+
+  setFormData((prev) => ({
+    ...prev,
+    previousLoanAmount: totalRemaining,
+  }));
+}, [formData?.issueDate, selectedLoanIds, loanStore.loans]);
 
     if (loading) {
       return (
@@ -631,7 +663,7 @@ const handleSave = async () => {
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
-                <div className="flex items-center justify-between mt-3 mb-2">
+                <div className="flex items-center justify-between mt-4 p-2 border-l-4 border-yellow-500 rounded">
                   <label className="text-sm font-medium text-gray-800 flex items-center gap-2">
                     <RefreshCw size={14} className="text-gray-500" /> Previous
                     Loan
@@ -651,12 +683,10 @@ const handleSave = async () => {
                 {/* Overlap Mode */}
                 {overlapMode && activeLoans.length > 0 && (
                   <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
-                
-
                     <div className="transition-all duration-700 ease-in-out overflow-auto max-h-40 opacity-100">
                       {activeLoans.map((loan) => {
                         const { runningTenure, total, remaining } =
-                          getLoanRunningDetails(loan);
+                          getLoanRunningDetails(loan, formData.issueDate);
                         const loanIdStr = loan._id?.toString?.();
                         const alreadyMerged = loan.status === "Merged";
                         const isSelected = selectedLoanIds.includes(loanIdStr);
@@ -687,6 +717,12 @@ const handleSave = async () => {
                               <div className="flex flex-col text-xs">
                                 <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
                                   Issue Date: {formatDate(loan.issueDate)}
+                                </span>
+                                <span className="font-semibold mt-1">
+                                  Company Name:{" "}
+                                  {companyStore.companies.find(
+                                    (c) => c._id === loan.company
+                                  )?.companyName || "-"}
                                 </span>
                                 <span className="font-semibold">
                                   Current Tenure: <b>{runningTenure} Months</b>
@@ -1040,7 +1076,9 @@ const handleSave = async () => {
                     </p>
                     <p className="font-semibold">
                       {clientStore.clients.find(
-                        (c) => c._id === viewLoan.client
+                        (c) =>
+                          c?._id ===
+                          (viewLoan.client?._id || viewLoan.client)
                       )?.fullName || "-"}
                     </p>
                   </div>
@@ -1097,12 +1135,12 @@ const handleSave = async () => {
                     </p>
                     <p className="font-semibold text-green-700">
                       $
-                      {getLoanRunningDetails(viewLoan).total.toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 2,
-                        }
-                      )}
+                      {getLoanRunningDetails(
+                        viewLoan,
+                        formData.issueDate
+                      ).total.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
                     </p>
                   </div>
 
@@ -1114,7 +1152,7 @@ const handleSave = async () => {
                       $
                       {(viewLoan.status === "Merged"
                         ? 0
-                        : getLoanRunningDetails(viewLoan).remaining
+                        : getLoanRunningDetails(viewLoan,formData.issueDate).remaining
                       ).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                       })}

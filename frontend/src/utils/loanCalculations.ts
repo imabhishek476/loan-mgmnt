@@ -10,13 +10,13 @@ export const calculateLoanAmounts = (loan: any) => {
     const paidAmount = loan.paidAmount || 0;
     const subtotal = loan.subTotal || 0;
     const today = moment();
-    const daysPassed = today.diff(issueDate, "days");
-    let monthsPassed = Math.floor(daysPassed / 30);
-    if (daysPassed % 30 === 0 && daysPassed !== 0) {
-        monthsPassed -= 1;
-    }
     const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
-    const dynamicTerm = allowedTerms.find((t) => monthsPassed < t) || allowedTerms.at(-1);
+    const originalTerm = loan.loanTerms || 0;
+    const monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) || 1 ;
+    const dynamicTerm =
+        originalTerm && allowedTerms.includes(originalTerm)
+            ? originalTerm
+            : allowedTerms.find((t) => t >= monthsPassed) || originalTerm;
     let total = subtotal;
     let interestAmount = 0;
     const rate = monthlyRate / 100;
@@ -59,9 +59,9 @@ export const formatUSD = (amount: number | string = 0) => {
     });
 };
 
-export const calculateDynamicTermAndPayment = (loan: any) => {
+export const calculateDynamicTermAndPayment = (loan: any, selectedIssueDate = null) => {
     const start = moment(loan.issueDate, "MM-DD-YYYY");
-    const today = moment();
+    const today = selectedIssueDate ? moment(selectedIssueDate) : moment();
     const monthsPassed = today.diff(start, "months") + 1;
 
     const originalTerm = loan.loanTerms || 0;
