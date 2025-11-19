@@ -91,8 +91,12 @@ useEffect(() => {
         toast.success("Payment recorded successfully");
         onClose();
       } catch (err) {
-        console.error(err);
-        toast.error("Payment failed. Try again.");
+        console.error("Payment error:", err?.response?.data || err);
+        toast.error(
+         err?.response?.data?.message ||
+           err?.message ||
+           "Payment failed. Try again."
+       );
       } finally {
         setLoading(false);
       }
