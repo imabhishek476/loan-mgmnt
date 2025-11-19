@@ -39,4 +39,14 @@ const ClientSchema = new mongoose.Schema(
 },
 { timestamps: true }
 );
+ClientSchema.index({ fullName: 1 },{unique:true});
+ClientSchema.index({ email: 1 });
+ClientSchema.index({ dob: 1 });
+ClientSchema.index({ phone: 1 });
+ClientSchema.index({ ssn: 1 });
+ClientSchema.index({ accidentDate: 1 });
+ClientSchema.index({ address: 1 });
+ClientSchema.index({ attorneyName: 1 });
+ClientSchema.index({ memo: 1 });
+ClientSchema.index({ isActive: 1 });
 module.exports.Client = mongoose.model("Client", ClientSchema);

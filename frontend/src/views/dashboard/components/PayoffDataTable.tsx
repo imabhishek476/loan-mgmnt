@@ -138,7 +138,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
               <span
                 className={`px-2 py-0.5 rounded-lg text-white ${
                   rowData.status === "Paid Off"
-                    ? "bg-gray-600"
+                    ? "bg-gray-500"
                     : rowData.status === "Partial Payment"
                     ? "bg-yellow-600"
                     : rowData.status === "Delayed"

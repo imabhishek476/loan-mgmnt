@@ -16,4 +16,10 @@ const auditLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 auditLogSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
+auditLogSchema.index({ action: 1 });
+auditLogSchema.index({ entity: 1 });
+auditLogSchema.index({ entityId: 1 });
+auditLogSchema.index({ userId: 1 });
+auditLogSchema.index({ data: 1 });
+auditLogSchema.index({ message: 1 });
 module.exports = mongoose.model("AuditLog", auditLogSchema);

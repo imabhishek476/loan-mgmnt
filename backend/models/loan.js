@@ -66,5 +66,14 @@ const LoanSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+LoanSchema.index({ client: 1 });
+LoanSchema.index({ issueDate: 1 });
+LoanSchema.index({ subTotal: 1 });
+LoanSchema.index({ status: 1 });
+LoanSchema.index({ parentLoanId: 1 });
+LoanSchema.index({ loanStatus: 1 });
+LoanSchema.index({ checkNumber: 1 });
+LoanSchema.index({ previousLoanAmount: 1 });
+LoanSchema.index({ baseAmount: 1 });
 
 module.exports.Loan = mongoose.model("Loan", LoanSchema);

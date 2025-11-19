@@ -13,7 +13,9 @@ const UserSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
+UserSchema.index({ name: 1 });
+UserSchema.index({ email: 1 },{unique:true});
+UserSchema.index({ userRole: 1 });
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
