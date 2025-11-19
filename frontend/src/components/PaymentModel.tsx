@@ -5,6 +5,9 @@ import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
 import { calculateLoanAmounts } from "../utils/loanCalculations"; 
 import { clientStore } from "../store/ClientStore";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import moment, { type Moment } from "moment";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 
 interface LoanPaymentModalProps {
   open: boolean;
@@ -32,6 +35,7 @@ const LoanPaymentModal = observer(
       checkNumber?: string;
     }>({});
     const formated_Outstanding = outstanding.toFixed(2);
+    const [payOffDate, setPayOffDate] = useState(moment());
 
 useEffect(() => {
   if (!loan) return;
@@ -74,7 +78,7 @@ useEffect(() => {
           loanId: loan._id,
           clientId,
           paidAmount: Number(amount),
-          paidDate: new Date(),
+          paidDate: payOffDate,
           checkNumber,
           payoffLetter,
           formated_Outstanding,
@@ -139,7 +143,20 @@ useEffect(() => {
                 Outstanding: ${Number(formated_Outstanding).toLocaleString()}
               </p>
             </div>
-
+            <div className="flex flex-col text-left py-1 z-20">
+              <label className="mb-1 font-medium text-gray-700">
+                Payoff Date
+              </label>
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+              <DatePicker
+                value={payOffDate}
+                onChange={(date: Moment | null) =>
+                  setPayOffDate(date)
+                }
+                slotProps={{ textField: { size: "small" } }}
+              />
+              </LocalizationProvider>
+            </div>
             {/* Check Number */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
