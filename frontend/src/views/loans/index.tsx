@@ -896,7 +896,7 @@ const Loans = observer(
                     <p
                       className={`font-semibold ${
                         selectedLoan.status === "Paid Off"
-                          ? "text-green-700"
+                          ? "text-gray-500"
                           : selectedLoan.status === "Partial Payment"
                           ? "text-blue-700"
                           : "text-yellow-700"

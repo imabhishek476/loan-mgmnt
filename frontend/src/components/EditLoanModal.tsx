@@ -1128,7 +1128,7 @@ const handleSave = async () => {
                     <p
                       className={`font-bold ${
                         viewLoan.status === "Paid Off"
-                          ? "text-green-600"
+                          ? "text-gray-500"
                           : viewLoan.status === "Merged"
                           ? "text-green-600"
                           : viewLoan.status === "Active"
