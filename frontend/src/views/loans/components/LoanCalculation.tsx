@@ -82,10 +82,12 @@ const calculateLoan = (
   const subtotal = totalBase + feeTotal;
   let interest = 0;
   let total = subtotal;
+  let monthInt = 0 ;
   if (termNum > 0 && rateNum > 0) {
     if (type === "flat") {
       for (let i = 6; i <= termNum; i += 6) {
         const stepInterest = total * (rateNum / 100) * 6;
+        monthInt = total * (rateNum / 100);
         total += stepInterest;
         if (i === 18 || i === 30) total += 200;
       }
@@ -96,10 +98,12 @@ const calculateLoan = (
          if (i === 18 || i === 30) total += 200; 
        }
       interest = total - subtotal;
+      monthInt = interest / termNum;
     }
   }
 
   return {
+    monthInt: parseFloat(monthInt.toFixed(2)),
     subtotal: parseFloat(subtotal.toFixed(2)),
     interestAmount: parseFloat(interest.toFixed(2)),
     totalWithInterest: parseFloat(total.toFixed(2)),
@@ -492,7 +496,7 @@ const formatDate = (date: Date) =>
                 return (
                   <div
                     key={term}
-                    className={`flex-shrink-0 w-32 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
+                    className={`flex-shrink-0 w-36 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
             ${
               isSelected
                 ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
@@ -511,6 +515,13 @@ const formatDate = (date: Date) =>
                   >
                     <div className="font-medium text-sm font-semibold">
                       {term} months
+                    </div>
+                    <div
+                      className={`text-xs whitespace-nowrap font-medium mb-1 ${
+                        isSelected ? "text-yellow-300" : "text-gray-700"
+                      }`}
+                    >
+                      Month Int. : {usd.format(termResult.monthInt || 0)}
                     </div>
                     <div
                       className={`text-xs font-medium mb-1 ${
