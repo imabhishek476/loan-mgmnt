@@ -1,20 +1,6 @@
 const { Loan } = require("../models/loan");
 const { LoanPayment } = require("../models/LoanPayment");
 const createAuditLog = require("../utils/auditLog");
-const moment = require("moment");
-
-// function recalculateLoan(loan) {
-//   const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
-//   const monthsPassed = moment().diff(issueDate, "months") + 1;
-//   const monthlyRate = loan.monthlyRate || 0;
-//   const baseAmount = loan.baseAmount || 0;
-//   const subTotal = loan.subTotal || 0;
-
-//   const interestAmount = (baseAmount * monthlyRate * monthsPassed) / 100;
-//   const newTotal = baseAmount + subTotal + interestAmount;
-//   console.log(newTotal);
-//   return { newTotal };
-// }
 
 exports.addPayment = async (req, res) => {
   try {
@@ -36,13 +22,23 @@ exports.addPayment = async (req, res) => {
     const subTotal = to2(loan.subTotal || 0);
     const monthlyRate = to2(loan.monthlyRate || 0);
     const term = Number(currentTerm);
-    let totalLoan = 0;
+    let totalLoan = subTotal;
     if (loan.interestType === "flat") {
-      totalLoan = to2(subTotal + subTotal * (monthlyRate / 100) * term);
+      for (let i = 6; i <= term; i += 6) {
+        const stepInterest = totalLoan * (monthlyRate / 100) * 6;
+        totalLoan += stepInterest;
+        if (i === 18 || i === 30) totalLoan += 200;
+      }
     } else {
-      totalLoan = to2(subTotal * Math.pow(1 + monthlyRate / 100, term));
+      for (let i = 1; i <= term; i++) {
+        totalLoan *= 1 + monthlyRate / 100;
+        if (i === 18 || i === 30) totalLoan += 200;
+      }
     }
-    const alreadyPaid = to2(loan.paidAmount || 0);
+    const previousLoan = await LoanPayment.find({ loanId }).lean();
+    const alreadyPaid = previousLoan.reduce((total, item) => {
+      return total + (Number(item.paidAmount) || 0);
+    }, 0);
     const remainingAmount = to2(totalLoan - alreadyPaid);
     if (Number(paidAmount) > remainingAmount) {
       return res
