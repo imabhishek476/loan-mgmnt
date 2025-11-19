@@ -482,29 +482,36 @@ useEffect(() => {
                                 </h4>
 
                                 {loanPayments[loan._id]?.length > 0 ? (
-                                  <div className="mt-2 max-h-48 overflow-y-auto  rounded-md  ">
+                                  <div className="mt-2 max-h-48 overflow-y-auto rounded-md">
                                     {loanPayments[loan._id].map((p) => (
                                       <div
                                         key={p._id}
-                                        className="flex justify-between items-center text-left text-sm text-gray-700 border-b pb-1 px-1 "
+                                        className="flex justify-between items-start text-left text-sm text-gray-700 border-b pb-2 px-1"
                                       >
-                                        <span className="font-medium">
+                                        <span className="font-medium w-28">
                                           {moment(p.paidDate).format(
                                             "MMM DD, YYYY"
                                           )}
                                         </span>
-                                        <span className="text-right">
-                                          <span>
+                                        <div className="flex-1">
+                                          <span className="block font-medium">
                                             {formatUSD(
                                               p.paidAmount?.toFixed(2)
                                             )}
                                           </span>
-                                          {p.checkNumber && (
-                                            <span className="ml-1 text-gray-500 whitespace-nowrap">
-                                              (Check No: {p.checkNumber})
-                                            </span>
-                                          )}
-                                        </span>
+                                          <div className="text-gray-500 text-xs mt-0.5 space-x-2">
+                                            {p.checkNumber && (
+                                              <span>
+                                                Check No: {p.checkNumber}
+                                              </span>
+                                            )}
+                                            {p.payoffLetter && (
+                                              <span>
+                                                Payoff Letter: {p.payoffLetter}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>

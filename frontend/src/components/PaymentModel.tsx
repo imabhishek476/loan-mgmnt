@@ -60,10 +60,6 @@ useEffect(() => {
         newErrors.amount = `Cannot pay more than outstanding: $${formated_Outstanding}`;
       }
 
-      if (!checkNumber.trim()) {
-        newErrors.checkNumber = "Check Number is required";
-      }
-
       setErrors(newErrors);
       Object.values(newErrors).forEach((msg) => toast.error(msg));
       return Object.keys(newErrors).length === 0;
@@ -147,7 +143,7 @@ useEffect(() => {
             {/* Check Number */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
-                Check Number <span className="text-red-500">*</span>
+                Check Number
               </label>
               <input
                 type="text"
@@ -161,17 +157,9 @@ useEffect(() => {
                       : "Check Number is required",
                   }));
                 }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
-                  errors.checkNumber
-                    ? "border-red-500 focus:ring-red-300"
-                    : "border-gray-300 focus:ring-green-300"
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring`}
               />
-              {errors.checkNumber && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.checkNumber}
-                </p>
-              )}
+             
             </div>
 
             {/* Payoff Letter */}
