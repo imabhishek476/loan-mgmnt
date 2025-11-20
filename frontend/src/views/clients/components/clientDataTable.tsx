@@ -102,7 +102,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
 };
   const getTermForToDate = (toDate, tenures) => {
     const start = moment(toDate, "MM-DD-YYYY");
-    for (let i = 0; i < tenures.length; i++) {
+    for (let i = 0; i < tenures?.length; i++) {
       const end = moment(tenures[i].endDate, "MM-DD-YYYY");
 
       if (start.isBefore(end)) {
