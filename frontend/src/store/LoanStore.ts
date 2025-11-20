@@ -90,7 +90,6 @@ class LoanStore {
   async fetchActiveLoans(clientId: string) {
     this.loading = true;
     try {
-      console.log(clientId, "clientId");
       const data = await activeLoans(clientId);
       runInAction(() => {
         this.loans = data;

@@ -8,7 +8,7 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { toast } from "react-toastify";
-import { getClientsSearch } from "../../../services/ClientServices";
+import { getClientsSearch, toggleClientStatus } from "../../../services/ClientServices";
 import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
@@ -88,7 +88,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
     confirmText: isActive ? "Yes, Deactivate" : "Yes, Recover",
     onConfirm: async () => {
       try {
-        await clientStore.toggleClientStatus(id, !isActive);
+        await toggleClientStatus(id);
         toast.success(
           `Client ${!isActive ? "recovered" : "deactivated"} successfully`
         );
