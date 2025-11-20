@@ -25,3 +25,12 @@ export const addPayment = async (payload: PaymentPayload): Promise<Payment> => {
   const { data } = await api.post("/payments/store", payload);
   return data.payment; // matches your backend response
 };
+export const editPayment = async (  paymentId: string,  payload: PaymentPayload): Promise<Payment> => {
+  const { data } = await api.put(`/payments/edit/${paymentId}`, payload);
+  return data.payment; 
+};
+
+export const deletePayment = async (paymentId: string) => {
+  const { data } = await api.delete(`/payments/delete/${paymentId}`);
+  return data;
+};

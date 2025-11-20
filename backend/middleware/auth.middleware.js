@@ -23,7 +23,7 @@ exports.isAdmin = async (req, res, next) => {
       return res.status(401).json({ msg: "Not authenticated" });
     }
     const user = await User.findById(req.user.id);
-    const role = user.userRole;
+    const role = user.userRole.toLowerCase();
 
     const allowedRoles = ["admin"];
 
