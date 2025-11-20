@@ -441,8 +441,9 @@ const Loans = observer(
                       : fromClientPage && formData.client
                       ? `Create New Loan - ${
                           clientStore.clients.find(
-                            (c) => c?._id === formData.client
-                          )?.fullName || "Unknown"
+                            (c) =>
+                              c?._id?.toString() === formData.client?.toString()
+                          )?.fullName || "-"
                         }`
                       : "Create New Loan"}
                   </h2>

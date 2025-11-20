@@ -100,14 +100,17 @@
       });
     };
     const handleRecover = async (loan: any) => {
+       Confirm({
+      title: "Recover Loan",
+      message: `Are you sure you want to recover the loan for "${loan.client?.fullName || "client"}"?`,
+      confirmText: "Yes, Recover",
+      cancelText: "Cancel",
+      onConfirm: async () => {
       try {
         await loanStore.recoverLoan(loan._id);
         if (tableRef.current) tableRef.current.onQueryChange();
-
         toast.success(
-          `Loan for "${
-            loan.client?.fullName || "client"
-          }" recovered successfully!`
+          `Loan for "${loan.client?.fullName || "client"}" recovered successfully!`
         );
       } catch (error: any) {
         const backendMessage =
@@ -117,6 +120,8 @@
 
         toast.error(backendMessage);
       }
+    },
+  });
     };
     const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
     const getLoanRunningDetails = (loan: any) => {
