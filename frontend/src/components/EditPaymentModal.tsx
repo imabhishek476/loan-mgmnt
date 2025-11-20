@@ -34,15 +34,15 @@ const EditPaymentModal = observer(
     const [outstanding, setOutstanding] = useState(0);
     const [errors, setErrors] = useState<{ amount?: string }>({});
     const [payOffDate, setPayOffDate] = useState<Moment>(moment());
+    const [currentTerm, setCurrentTerm] = useState();
 
     useEffect(() => {
       if (!loan || !payment) return;
 
       const loanData = calculateLoanAmounts(loan);
-      console.log(loanData.remaining, "loanData remaining");
       const remaining = loanData?.remaining || 0;
-      const adjustedOutstanding = remaining + Number(payment.paidAmount);
-
+      const adjustedOutstanding = remaining ;
+      setCurrentTerm(loanData.currentTerm);
       setOutstanding(adjustedOutstanding);
       setAmount(payment.paidAmount.toString());
       setCheckNumber(payment.checkNumber || "");
@@ -83,7 +83,7 @@ const EditPaymentModal = observer(
           paidDate: payOffDate,
           checkNumber,
           payoffLetter,
-          currentTerm: loan.loanTerms,
+          currentTerm: currentTerm,
         });
 
         await loanStore.fetchActiveLoans(clientId);
@@ -118,6 +118,7 @@ const EditPaymentModal = observer(
                 min={0}
                 step="0.01"
                 onChange={(e) => setAmount(e.target.value)}
+                onBlur={(e) => validate()}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
                   errors.amount
                     ? "border-red-500 focus:ring-red-300"

@@ -16,13 +16,12 @@ import { toast } from "react-toastify";
 import moment from "moment";
 import { observer } from "mobx-react-lite";
 import LoanPaymentModal from "../../../components/PaymentModel";
-import { fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
+import { deletePayment, fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
 import { Button } from "@mui/material";
 import Loans from "../../loans";
 import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
-import { paymentStore } from "../../../store/PaymentStore";
 import Confirm from "../../../components/Confirm";
 
 interface ClientViewModalProps {
@@ -138,8 +137,10 @@ const handleDeletePayment = async (payment: any) => {
     message: "Are you sure you want to delete this Payment?",
     confirmText: "Yes, Delete",
     onConfirm: async () => {
-      await paymentStore.deletePayment(payment._id!);
+      await deletePayment(payment._id!);
       refreshPayments(payment.loanId);
+       await loanStore.fetchActiveLoans(payment.clientId);
+      await clientStore.refreshDataTable();
       toast.success("Payment deleted successfully");
     },
   });

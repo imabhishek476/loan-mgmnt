@@ -13,10 +13,7 @@ export const calculateLoanAmounts = (loan: any) => {
     const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
     const originalTerm = loan.loanTerms || 0;
     const monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) || 1 ;
-    const dynamicTerm =
-        originalTerm && allowedTerms.includes(originalTerm)
-            ? originalTerm
-            : allowedTerms.find((t) => t >= monthsPassed) || originalTerm;
+    const dynamicTerm = allowedTerms.find((t) => t >= monthsPassed) || originalTerm;
     let total = subtotal;
     let interestAmount = 0;
     const rate = monthlyRate / 100;
@@ -37,7 +34,6 @@ export const calculateLoanAmounts = (loan: any) => {
     }
 
     const remaining = Math.max(0, total - paidAmount);
-
     return {
         subtotal,
         interestAmount,
