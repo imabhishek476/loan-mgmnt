@@ -131,7 +131,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
   const [interestType, setInterestType] = useState<"flat" | "compound">(
     interestTypeProp
   );
-  const defaultTermSet = React.useRef<{ [companyName: string]: boolean }>({});
+  // const defaultTermSet = React.useRef<{ [companyName: string]: boolean }>({});
   const [loanTerm, setLoanTerm] = useState<number>(termProp || 24);
   const ALL_LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
@@ -199,14 +199,14 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
       tenures,
     });
   };
-useEffect(() => {
-  const defaultTerm = company?.loanTerms?.at(-1) || 24;
-  if (!company || !company.loanTerms?.length) return;
-  setLoanTerm(defaultTerm);
-  emitChange(parseNumberInput(baseInput), fees, interestType, parseNumberInput(rateInput), defaultTerm);
-  //@ts-ignore
-  defaultTermSet.current[company.name || "Claim Advance"] = defaultTerm;
-}, [company?.name, company?.loanTerms]);
+// useEffect(() => {
+//   const defaultTerm = company?.loanTerms?.at(-1) || 24;
+//   if (!company || !company.loanTerms?.length) return;
+//   setLoanTerm(defaultTerm);
+//   emitChange(parseNumberInput(baseInput), fees, interestType, parseNumberInput(rateInput), defaultTerm);
+//   //@ts-ignore
+//   defaultTermSet.current[company.name || "Claim Advance"] = defaultTerm;
+// }, [company?.name, company?.loanTerms]);
 
 
 
@@ -282,6 +282,33 @@ const formatDate = (date: Date) =>
     style: "currency",
     currency: "USD",
   });
+  useEffect(() => {
+    if (!company) return;
+    const defaultBase = parseNumberInput(baseProp?.toString() || "0");
+    setBaseInput(defaultBase.toString());
+    const defaultRate = parseNumberInput(rateProp?.toString() || "0");
+    setRateInput(defaultRate.toString());
+    setInterestType(interestTypeProp || "flat");
+    const defaultFees: Record<string, Fee> = {};
+    for (const key of Object.keys(feesProp)) {
+      defaultFees[key] = {
+        value: feesProp[key].value ?? 0,
+        type: feesProp[key].type ?? "flat",
+      };
+    }
+    setFees(defaultFees);
+    const defaultTerm = company?.loanTerms?.at(-1) || 24;
+      if (!company || !company.loanTerms?.length) return;
+      setLoanTerm(defaultTerm);
+
+    emitChange(
+      defaultBase,
+      defaultFees,
+      interestTypeProp || "flat",
+      defaultRate,
+      defaultTerm
+    );
+  }, [company?.name, company?.loanTerms]);
   return (
     <div className="rounded-xl shadow-sm px-0 min-w-0" style={bgStyle}>
       {" "}
