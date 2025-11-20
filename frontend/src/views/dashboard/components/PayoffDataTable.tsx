@@ -98,7 +98,10 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
           {
             title: "Remaining",
             render: (rowData: any) => {
-              const loanTerms = getTermForToDate(moment().format("MM-DD-YYYY"),rowData.tenures || []);
+              const loanTerms = getTermForToDate(
+                moment().format("MM-DD-YYYY"),
+                rowData.tenures || []
+              );
               const loanData = calculateLoanAmounts({ ...rowData, loanTerms });
               const remaining = loanData?.remaining || 0;
               const paid = loanData?.paidAmount || 0;
@@ -132,9 +135,12 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
                 : "N/A",
           },
           {
-            title: "Teneur",
+            title: "Tenure",
             render: (rowData: any) => {
-              const tenure = getTermForToDate(moment().format("MM-DD-YYYY"),rowData.tenures);
+              const tenure = getTermForToDate(
+                moment().format("MM-DD-YYYY"),
+                rowData.tenures
+              );
               if (!tenure) return "N/A";
               const endDate = moment(tenure.endDate, "MM-DD-YYYY");
               const isPaidOff = ["Paid Off", "Merged"].includes(rowData.status);
@@ -142,9 +148,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
               return (
                 <span
                   className={`px-2 py-0.5 rounded-lg font-semibold ${
-                    isOverdue
-                      ? "bg-red-600 text-white blink"
-                      :null
+                    isOverdue ? "bg-red-600 text-white blink" : null
                   }`}
                 >
                   {tenure.term} Months
@@ -156,11 +160,14 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
             title: "End Date",
             render: (rowData: any) =>
               rowData.tenures.endDate
-                ? new Date(rowData.tenures.endDate).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })
+                ? new Date(rowData.tenures.endDate).toLocaleDateString(
+                    "en-US",
+                    {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    }
+                  )
                 : "N/A",
           },
           {
