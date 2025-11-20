@@ -444,6 +444,77 @@ useEffect(() => {
 
     const formatDate = (dateStr: string) =>
       moment(dateStr, "MM-DD-YYYY").format("MMM DD, YYYY");
+    const handleCompanyChange = (selectedCompany: any) => {
+    if (!selectedCompany) {
+      setFormData((prev) => {
+        const issueDate = prev?.issueDate || moment().format("MM-DD-YYYY");
+        const defaultTerm = 24;
+        const tenures = buildTenures(issueDate, [defaultTerm], "iso");
+
+        return {
+          ...prev,
+          company: "",
+          companyName: "",
+          backgroundColor: "#555555",
+          fees: {
+            administrativeFee: { value: 0, type: "flat" },
+            applicationFee: { value: 0, type: "flat" },
+            attorneyReviewFee: { value: 0, type: "flat" },
+            brokerFee: { value: 0, type: "flat" },
+            annualMaintenanceFee: { value: 0, type: "flat" },
+          },
+          interestType: "flat",
+          monthlyRate: 0,
+          loanTermMonths: defaultTerm,
+          loanTerms: [defaultTerm],
+          tenures,
+        };
+      });
+      setCompanyData(null);
+      return;
+    }
+
+  const mapFee = (fee: any) => ({
+    value: fee?.value || 0,
+    type: fee?.type === "percentage" ? "percentage" : "flat",
+  });
+
+  const defaultLoanTerm =
+    selectedCompany.loanTerms?.[selectedCompany.loanTerms.length - 1] || 24;
+
+  setFormData((prev) => {
+    const issueDate = prev?.issueDate || moment().format("MM-DD-YYYY");
+    const tenures = buildTenures(
+      issueDate,
+      selectedCompany.loanTerms || [defaultLoanTerm],
+      "iso"
+    );
+
+    return {
+      ...prev,
+      company: selectedCompany._id,
+      companyName: selectedCompany.companyName || "",
+      backgroundColor: selectedCompany.backgroundColor || "#555555",
+      fees: {
+        administrativeFee: mapFee(selectedCompany.fees?.administrativeFee),
+        applicationFee: mapFee(selectedCompany.fees?.applicationFee),
+        attorneyReviewFee: mapFee(selectedCompany.fees?.attorneyReviewFee),
+        brokerFee: mapFee(selectedCompany.fees?.brokerFee),
+        annualMaintenanceFee: mapFee(
+          selectedCompany.fees?.annualMaintenanceFee
+        ),
+      },
+      interestType: selectedCompany.interestRate?.interestType || "flat",
+      monthlyRate: selectedCompany.interestRate?.monthlyRate || 0,
+      loanTermMonths: defaultLoanTerm,
+      loanTerms: defaultLoanTerm,
+      tenures,
+      status: "Active",
+    };
+  });
+
+  setCompanyData(selectedCompany);
+};
 
     const LoanTemsCard = () => {
       const start = moment(formData.issueDate, "MM-DD-YYYY");
@@ -613,24 +684,7 @@ useEffect(() => {
                       const selectedCompany = companyStore.companies.find(
                         (c) => c._id === newValue?.value
                       );
-                      if (selectedCompany) {
-                        setFormData((prev: any) => ({
-                          ...prev,
-                          company: selectedCompany._id,
-                          companyName: selectedCompany.companyName || "",
-                          backgroundColor:
-                            selectedCompany.backgroundColor || "#555555",
-                        }));
-                        setCompanyData(selectedCompany);
-                      } else {
-                        setFormData((prev: any) => ({
-                          ...prev,
-                          company: "",
-                          companyName: "",
-                          backgroundColor: "#555555",
-                        }));
-                        setCompanyData(null);
-                      }
+                      handleCompanyChange(selectedCompany);
                     }}
                     renderInput={(params) => (
                       <MuiTextField
@@ -647,6 +701,7 @@ useEffect(() => {
                   <label className="mb-1 font-medium text-gray-700">
                     Issue Date
                   </label>
+                  <LocalizationProvider dateAdapter={AdapterMoment}>
                   <DatePicker
                     value={moment(formData.issueDate, "MM-DD-YYYY")}
                     onChange={(date: Moment | null) =>
@@ -657,6 +712,7 @@ useEffect(() => {
                     }
                     slotProps={{ textField: { size: "small" } }}
                   />
+                  </LocalizationProvider>
                 </div>
 
                 {/* Check Number */}
@@ -1090,8 +1146,7 @@ useEffect(() => {
                     <p className="font-semibold">
                       {clientStore.clients.find(
                         (c) =>
-                          c?._id ===
-                          (viewLoan.client?._id || viewLoan.client)
+                          c?._id === (viewLoan.client?._id || viewLoan.client)
                       )?.fullName || "-"}
                     </p>
                   </div>
@@ -1165,7 +1220,8 @@ useEffect(() => {
                       $
                       {(viewLoan.status === "Merged"
                         ? 0
-                        : getLoanRunningDetails(viewLoan,formData.issueDate).remaining
+                        : getLoanRunningDetails(viewLoan, formData.issueDate)
+                            .remaining
                       ).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                       })}
