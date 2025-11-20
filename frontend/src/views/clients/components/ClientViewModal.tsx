@@ -139,14 +139,14 @@ useEffect(() => {
   const total = loan.totalLoan || 0;
   const lower = loan.status?.toLowerCase() || "";
   if (paid >= total && lower === "paid off") 
-    return "bg-green-600 text-white";
+    return "bg-gray-500 text-white";
   if (lower === "merged") 
     return "bg-green-600 text-white";
   if (lower === "active") 
     return "bg-green-600 text-white";
   if (lower === "partial payment") 
     return "bg-yellow-500 text-white";
-  return "bg-gray-400 text-white";
+  return "bg-gray-500 text-white";
 };
 
 
@@ -522,8 +522,7 @@ useEffect(() => {
 
                               {/* Loan Details */}
                               <div className="flex-2 text-sm text-gray-700 space-y-1 pt-2">
-                                {loan.status !== "Paid Off" &&
-                                loan.status !== "Merged" ? (
+                          
                                   <>
                                     {(() => {
                                       return (
@@ -549,6 +548,9 @@ useEffect(() => {
                                                 {loan.checkNumber}
                                               </td>
                                             </tr>
+                                            {loan.status !== "Paid Off" &&
+                                              loan.status !== "Merged" && (
+                                                <>
                                             <tr className="">
                                               <td className="font-semibold py-0">
                                                 Current Tenure:
@@ -561,10 +563,7 @@ useEffect(() => {
                                                       ? "text-red-400 font-bold animate-pulse"
                                                       : ""
                                                   }`}
-                                                >
-                                                  {/* ( {selectedTerm} month
-                                                  {selectedTerm !== 1 && "s"}) */}
-                                                </span>{" "}
+                                                  ></span>{" "}
                                                 <span>
                                                   (
                                                   {moment(
@@ -579,16 +578,6 @@ useEffect(() => {
                                                 )}
                                               </td>
                                             </tr>
-                                            {/* 
-                                            <tr className="">
-                                              <td className="font-semibold py-0">
-                                                Loan Amount:
-                                              </td>
-                                              <td className="py-0">
-                                                {formatUSD(loan.subTotal)}
-                                              </td>
-                                            </tr> */}
-
                                             <tr className="">
                                               <td className="font-semibold py-0">
                                                 Interest:
@@ -614,6 +603,17 @@ useEffect(() => {
                                                 per month)
                                               </td>
                                             </tr>
+                                          </>
+                                          )}
+                                            {/* 
+                                            <tr className="">
+                                              <td className="font-semibold py-0">
+                                                Loan Amount:
+                                              </td>
+                                              <td className="py-0">
+                                                {formatUSD(loan.subTotal)}
+                                              </td>
+                                            </tr> */}
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
                                                 Total Loan Amount:
@@ -627,6 +627,18 @@ useEffect(() => {
                                               </td>
                                             </tr>
                                             <tr>
+                                              {loan.status === "Paid Off" && (
+                                                <p className="text-green-600 font-semibold">
+                                                  This loan has been fully paid
+                                                  off.
+                                                </p>
+                                              )}
+                                              {loan.status === "Merged" && (
+                                                <p className="text-blue-600 font-semibold">
+                                                  This loan has been merged with
+                                                  a new loan.
+                                                </p>
+                                              )}
                                               {/* <td className="font-semibold py-0">
                                                 Paid Amount:
                                               </td>
@@ -747,15 +759,6 @@ useEffect(() => {
                                       </ul>
                                     </div>
                                   </>
-                                ) : loan.status === "Paid Off" ? (
-                                  <p className="text-gray-500 italic">
-                                    This loan has been fully paid off.
-                                  </p>
-                                ) : (
-                                  <p className="text-gray-500 italic">
-                                    This loan has been merged with a new loan.
-                                  </p>
-                                )}
                               </div>
                             </>
                           )}
