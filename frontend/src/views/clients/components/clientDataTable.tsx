@@ -39,7 +39,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   };
   const fetchClientsData = useCallback(
     async (query: any) => {
-      console.log(query.page, "1");
       const filters = {
         query: searchInput,
         page: query.page,
@@ -105,7 +104,6 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
     const start = moment(toDate, "MM-DD-YYYY");
     for (let i = 0; i < tenures.length; i++) {
       const end = moment(tenures[i].endDate, "MM-DD-YYYY");
-      console.log(end, "end");
 
       if (start.isBefore(end)) {
         return tenures[i].term;
@@ -125,7 +123,6 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
       if (!["Paid Off", "Merged"].includes(loan.status)) {
         totalRemaining += loanData.remaining;
       }
-      console.log(totalRemaining, "remaining");
     }
     return { totalPaid, totalRemaining };
   }
