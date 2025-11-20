@@ -4,6 +4,7 @@ import { Search,} from "lucide-react";
 import { Autocomplete, TextField } from "@mui/material";
 import { dashboardStore } from "../../../store/DashboardStore";
 import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
+import moment from "moment";
 
 interface PayoffDataTableProps {
   loading: boolean;
@@ -42,6 +43,19 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
     },
     [payoffFilter]
   );
+  const getTermForToDate = (toDate: string, tenures: any) => {
+    const start = moment(toDate, "MM-DD-YYYY");
+    if (!tenures) return null;
+    const tenureArray = Array.isArray(tenures) ? tenures : [tenures];
+    for (let i = 0; i < tenureArray.length; i++) {
+      const end = moment(tenureArray[i].endDate, "MM-DD-YYYY");
+      if (start.isBefore(end)) {
+        return tenureArray[i]; 
+      }
+    }
+    // All end dates are before today → return last tenure (overdue)
+    return tenureArray[tenureArray.length - 1];
+  };
 
   return (
     <div>
@@ -84,7 +98,8 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
           {
             title: "Remaining",
             render: (rowData: any) => {
-              const loanData = calculateLoanAmounts(rowData);
+              const loanTerms = getTermForToDate(moment().format("MM-DD-YYYY"),rowData.tenures || []);
+              const loanData = calculateLoanAmounts({ ...rowData, loanTerms });
               const remaining = loanData?.remaining || 0;
               const paid = loanData?.paidAmount || 0;
               const isPaidOff = ["Paid Off", "Merged"].includes(rowData.status);
@@ -118,8 +133,24 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
           },
           {
             title: "Teneur",
-            render: (rowData: any) =>
-              rowData.tenures?.term ? `${rowData.tenures.term} Months` : "N/A",
+            render: (rowData: any) => {
+              const tenure = getTermForToDate(moment().format("MM-DD-YYYY"),rowData.tenures);
+              if (!tenure) return "N/A";
+              const endDate = moment(tenure.endDate, "MM-DD-YYYY");
+              const isPaidOff = ["Paid Off", "Merged"].includes(rowData.status);
+              const isOverdue = !isPaidOff && endDate.isBefore(moment());
+              return (
+                <span
+                  className={`px-2 py-0.5 rounded-lg font-semibold ${
+                    isOverdue
+                      ? "bg-red-600 text-white blink"
+                      : "bg-green-100 text-green-800"
+                  }`}
+                >
+                  {tenure.term} Months
+                </span>
+              );
+            },
           },
           {
             title: "End Date",
