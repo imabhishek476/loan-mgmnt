@@ -24,9 +24,7 @@ class PaymentStore {
     }
   }
 
-  // Add a new payment
-  //@ts-ignore
-  async addPayment(payload: PaymentPayload) {
+  async addPayment(payload) {
     this.loading = true;
     try {
       const payment = await addPayment(payload);
@@ -42,7 +40,7 @@ class PaymentStore {
       runInAction(() => (this.loading = false));
     }
   }
-  async editPayment(paymentId: string, payload: PaymentPayload) {
+  async editPayment(paymentId: string, payload) {
     this.loading = true;
     try {
       const updated = await editPayment(paymentId, payload); 

@@ -118,7 +118,7 @@ const EditPaymentModal = observer(
                 min={0}
                 step="0.01"
                 onChange={(e) => setAmount(e.target.value)}
-                onBlur={(e) => validate()}
+                onBlur={() => validate()}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
                   errors.amount
                     ? "border-red-500 focus:ring-red-300"
@@ -142,7 +142,7 @@ const EditPaymentModal = observer(
               <LocalizationProvider dateAdapter={AdapterMoment}>
                 <DatePicker
                   value={payOffDate}
-                  onChange={(date) => date && setPayOffDate(date)}
+                  onChange={(date) => date && setPayOffDate(moment(date))}
                 />
               </LocalizationProvider>
             </div>
