@@ -21,6 +21,9 @@ import { Button } from "@mui/material";
 import Loans from "../../loans";
 import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
+import EditPaymentModal from "../../../components/EditPaymentModal";
+import { paymentStore } from "../../../store/PaymentStore";
+import Confirm from "../../../components/Confirm";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -33,6 +36,7 @@ interface ClientViewModalProps {
 // eslint-disable-next-line react-refresh/only-export-components
 const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModalProps) => {
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
+  const [editPaymentLoan, setEditPaymentLoan] = useState<any>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
   const [loanPayments, setLoanPayments] = useState<Record<string, any[]>>({});
@@ -49,6 +53,8 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
   };
 const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({});
 const [editingLoanId, setEditingLoanId] = useState<any>(null);
+const [editingPayment, setEditingPayment] = useState<any>(null);
+const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
   const loadInitialData = async () => {
     try {
       const promises = [];
@@ -126,9 +132,18 @@ useEffect(() => {
       toast.error("Failed to fetch payment history");
     }
   };
-
-
-
+const handleDeletePayment = async (payment: any) => {
+  Confirm({
+    title: "Confirm Delete",
+    message: "Are you sure you want to delete this Payment?",
+    confirmText: "Yes, Delete",
+    onConfirm: async () => {
+      await paymentStore.deletePayment(payment._id!);
+      refreshPayments(payment.loanId);
+      toast.success("Payment deleted successfully");
+    },
+  });
+};
   const toggleShowAllTerms = (loanId: string) => {
     setShowAllTermsMap((prev) => ({ ...prev, [loanId]: !prev[loanId] }));
   };
@@ -486,18 +501,18 @@ useEffect(() => {
                                         key={p._id}
                                         className="flex justify-between items-start text-left text-sm text-gray-700 border-b pb-2 px-1"
                                       >
+                                        <div className="flex items-center gap-2">
                                         <span className="font-medium w-28">
                                           {moment(p.paidDate).format(
                                             "MMM DD, YYYY"
                                           )}
                                         </span>
-                                        <div className="flex-1">
                                           <span className="block font-medium">
                                             {formatUSD(
                                               p.paidAmount?.toFixed(2)
                                             )}
                                           </span>
-                                          <div className="text-gray-500 text-xs mt-0.5 space-x-2">
+                                          <div className="text-xs mt-0.5 flex flex-col">
                                             {p.checkNumber && (
                                               <span>
                                                 Check No: {p.checkNumber}
@@ -509,6 +524,31 @@ useEffect(() => {
                                               </span>
                                             )}
                                           </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {loan.status !== "Merged" && loan.status !== "Paid Off" && (
+    <>
+                                          <button
+                                            onClick={() => {
+                                              setEditingPayment(p);
+                                              setEditPaymentLoan(loan);
+                                              setEditPaymentModalOpen(true);
+                                            }}
+                                            className="text-green-700 cursor-pointer hover:text-green-900   transition md:w-5 md:h-5"
+                                          >
+                                            <Pencil size={16} />
+                                          </button>
+                                          <button
+                                            onClick={() =>
+                                              handleDeletePayment(p)
+                                            }
+                                            className="p-1 rounded-full  hover:bg-red-200 text-red-600 transition"
+                                            title="Delete Payment"
+                                          >
+                                            <X size={14} />
+                                          </button>
+                                           </>
+                                          )}
                                         </div>
                                       </div>
                                     ))}
@@ -790,7 +830,7 @@ useEffect(() => {
           onClose={() => {
             setEditLoanModalOpen(false);
             setEditingLoanId(null);
-            // loanStore.fetchLoans();
+            loanStore.fetchActiveLoans(client._id);
           }}
         />
       )}
@@ -804,6 +844,18 @@ useEffect(() => {
           }}
           clientId={client._id}
           onPaymentSuccess={() => refreshPayments(paymentLoan._id)}
+        />
+      )}
+      {editPaymentModalOpen && (
+        <EditPaymentModal
+          open={editPaymentModalOpen}
+          onClose={() => {
+            setEditPaymentModalOpen(false);
+          }}
+          clientId={client._id}
+          payment={editingPayment}
+          loan={editPaymentLoan}
+          onPaymentSuccess={() => refreshPayments(editPaymentLoan._id)}
         />
       )}
     </div>

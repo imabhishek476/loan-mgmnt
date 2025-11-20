@@ -144,7 +144,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
                   className={`px-2 py-0.5 rounded-lg font-semibold ${
                     isOverdue
                       ? "bg-red-600 text-white blink"
-                      : "bg-green-100 text-green-800"
+                      :null
                   }`}
                 >
                   {tenure.term} Months

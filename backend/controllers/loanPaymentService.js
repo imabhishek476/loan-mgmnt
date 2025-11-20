@@ -1,5 +1,7 @@
+const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
 const { LoanPayment } = require("../models/LoanPayment");
+const User = require("../models/User");
 const createAuditLog = require("../utils/auditLog");
 
 exports.addPayment = async (req, res) => {
@@ -57,12 +59,17 @@ exports.addPayment = async (req, res) => {
     loan.paidAmount = to2(alreadyPaid + Number(paidAmount));
     loan.status = loan.paidAmount >= totalLoan ? "Paid Off" : "Partial Payment";
     await loan.save();
+    const user = await User.findById(req.user?.id).select("name email");
+    const client = await Client.findById(clientId).select("fullName");
+
+    const createdBy = user.name || user.email || "Unknown User";
+    const clientName = client?.fullName || "";
 
     await createAuditLog(
-      req.user?.id || null,
-      req.user?.userRole || null,
+      user?.id || null,
+      user?.userRole || null,
+      ` Create Loan Payment done for ${clientName} by ${createdBy}`,
       "Create",
-      "Loan Payment",
       payment._id,
       { after: payment }
     );
@@ -89,5 +96,114 @@ exports.getPayments = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+exports.editPayment = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    const { paidAmount, paidDate, checkNumber, payoffLetter } = req.body;
+
+    const to2 = (num) => parseFloat(Number(num).toFixed(2));
+    const payment = await LoanPayment.findById(paymentId);
+    if (!payment) return res.status(404).json({ message: "Payment not found" });
+
+    const loan = await Loan.findById(payment.loanId);
+    if (!loan) return res.status(404).json({ message: "Loan not found" });
+
+    const previousPayments = await LoanPayment.find({
+      loanId: loan._id,
+      _id: { $ne: paymentId },
+    }).lean();
+
+    const alreadyPaid = previousPayments.reduce(
+      (sum, p) => sum + (Number(p.paidAmount) || 0),
+      0
+    );
+
+    const totalLoan = Number(loan.subTotal);
+    const remainingAmount = to2(totalLoan - alreadyPaid);
+    if (paidAmount !== undefined && Number(paidAmount) > remainingAmount) {
+      return res
+        .status(400)
+        .json({ message: "Paid amount exceeds outstanding balance" });
+    }
+
+    const beforeUpdate = payment.toObject();
+    if (paidAmount !== undefined) payment.paidAmount = to2(paidAmount);
+    if (paidDate !== undefined) payment.paidDate = paidDate;
+    if (checkNumber !== undefined) payment.checkNumber = checkNumber;
+    if (payoffLetter !== undefined) payment.payoffLetter = payoffLetter;
+
+    await payment.save();
+    loan.paidAmount = to2(
+      alreadyPaid + Number(paidAmount ?? payment.paidAmount)
+    );
+    loan.status = loan.paidAmount >= totalLoan ? "Paid Off" : "Partial Payment";
+    await loan.save();
+   const user = await User.findById(req.user?.id).select("name email");
+   const client = await Client.findById(clientId).select("fullName");
+
+   const createdBy = user.name || user.email || "Unknown User";
+   const clientName = client?.fullName || "";
+
+   await createAuditLog(
+     user?.id || null,
+     user?.userRole || null,
+     ` Update Loan Payment done for ${clientName} by ${createdBy}`,
+     "Update",
+     payment._id,
+     { after: payment }
+   );
+
+
+    return res.json({
+      success: true,
+      message: "Payment updated successfully",
+      payment,
+    });
+  } catch (error) {
+    console.error("editPayment error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.deletePayment = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    console.log(paymentId, "paymentId");
+    const payment = await LoanPayment.findById(paymentId);
+    console.log(payment, "payment");
+
+    const deleted = await LoanPayment.findByIdAndDelete(paymentId);
+    console.log(deleted, "deleted");
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found",
+      });
+    }
+  const user = await User.findById(req.user?.id).select("name email");
+
+  const createdBy = user.name || user.email || "Unknown User";
+  const clientName = client?.fullName || "";
+
+  await createAuditLog(
+    user?.id || null,
+    user?.userRole || null,
+    ` Delete Loan Payment by ${createdBy}`,
+    "Delete",
+    payment._id,
+    { after: payment }
+  );
+    return res.json({
+      success: true,
+      message: "Payment deleted successfully",
+    });
+  } catch (err) {
+    console.error("Delete Payment Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while deleting payment",
+    });
   }
 };

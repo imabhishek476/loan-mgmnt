@@ -1,11 +1,10 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { fetchPaymentsByLoan, addPayment } from "../services/LoanPaymentServices";
+import { fetchPaymentsByLoan, addPayment, deletePayment, editPayment } from "../services/LoanPaymentServices";
 
 class PaymentStore {
   //@ts-ignore
   payments: Record<string, Payment[]> = {};
   loading = false;
-
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
@@ -38,6 +37,48 @@ class PaymentStore {
       return payment;
     } catch (err) {
       console.error("Error adding payment:", err);
+      throw err;
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
+  async editPayment(paymentId: string, payload: PaymentPayload) {
+    this.loading = true;
+    try {
+      const updated = await editPayment(paymentId, payload); 
+
+      runInAction(() => {
+        const loanId = payload.loanId;
+
+        if (!this.payments[loanId]) return;
+
+        this.payments[loanId] = this.payments[loanId].map((p) =>
+          p._id === paymentId ? updated : p
+        );
+      });
+
+      return updated;
+    } catch (err) {
+      console.error("Error editing payment:", err);
+      throw err;
+    } finally {
+      runInAction(() => (this.loading = false));
+    }
+  }
+  async deletePayment(paymentId: string) {
+    this.loading = true;
+    try {
+      await deletePayment(paymentId);
+
+      runInAction(() => {
+        for (const loanId in this.payments) {
+          this.payments[loanId] = this.payments[loanId].filter(
+            (p) => p._id !== paymentId
+          );
+        }
+      });
+    } catch (err) {
+      console.error("Error deleting payment:", err);
       throw err;
     } finally {
       runInAction(() => (this.loading = false));
