@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useCallback } from "react";
 import MaterialTable from "@material-table/core";
 import { Search, Trash2, Plus, Power, RefreshCcw } from "lucide-react";
@@ -7,7 +8,7 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { toast } from "react-toastify";
-import { getClientsSearch } from "../../../services/ClientServices";
+import { getClientsSearch, toggleClientStatus } from "../../../services/ClientServices";
 import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
@@ -38,7 +39,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   };
   const fetchClientsData = useCallback(
     async (query: any) => {
-      console.log(query.page, "1");
       const filters = {
         query: searchInput,
         page: query.page,
@@ -88,7 +88,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
     confirmText: isActive ? "Yes, Deactivate" : "Yes, Recover",
     onConfirm: async () => {
       try {
-        await clientStore.toggleClientStatus(id, !isActive);
+        await toggleClientStatus(id);
         toast.success(
           `Client ${!isActive ? "recovered" : "deactivated"} successfully`
         );
@@ -100,6 +100,32 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
     },
   });
 };
+  const getTermForToDate = (toDate, tenures) => {
+    const start = moment(toDate, "MM-DD-YYYY");
+    for (let i = 0; i < tenures.length; i++) {
+      const end = moment(tenures[i].endDate, "MM-DD-YYYY");
+
+      if (start.isBefore(end)) {
+        return tenures[i].term;
+      }
+    }
+  };
+  function calculateLoanTotals(clientLoans) {
+    let totalPaid = 0;
+    let totalRemaining = 0;
+    for (const loan of clientLoans) {
+      const Terms = getTermForToDate(moment(), loan.tenures);
+      const loanData = calculateLoanAmounts({
+        ...loan,
+        loanTerms: Terms,
+      });
+      totalPaid += loanData.paidAmount;
+      if (!["Paid Off", "Merged"].includes(loan.status)) {
+        totalRemaining += loanData.remaining;
+      }
+    }
+    return { totalPaid, totalRemaining };
+  }
 
   return (
     <div className="">
@@ -206,21 +232,14 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
             },
             {
         title: "Paid",
-        render: (rowData) => {
+        render: (rowData: any) => {
           const clientLoans = rowData.allLoans.filter(
             (loan) =>
               loan.client === rowData._id ||
               loan.client?._id === rowData._id
           );
-          let totalPaid = 0;
-          let totalRemaining = 0;
-          clientLoans.forEach((loan) => {
-            const loanData = calculateLoanAmounts(loan);
-            totalPaid += loanData.paidAmount;
-            if (!["Paid Off", "Merged"].includes(loan.status)) {
-              totalRemaining += loanData.remaining;
-            }
-          });
+                const { totalPaid, totalRemaining } =
+                  calculateLoanTotals(clientLoans);
           const allPaidOff = clientLoans.every(
             (loan) => loan.status === "Paid Off" || loan.status === "Merged"
           );

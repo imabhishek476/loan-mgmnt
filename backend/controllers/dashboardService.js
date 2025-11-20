@@ -2,7 +2,6 @@ const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
 const Company = require("../models/companies");
 const { LoanPayment } = require("../models/LoanPayment");
-const { calculateLoanAmounts } = require("../utils/loanCalculation");
 const moment = require("moment");
 
 const calculateStats = async () => {
