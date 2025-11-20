@@ -131,7 +131,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
   const [interestType, setInterestType] = useState<"flat" | "compound">(
     interestTypeProp
   );
-  const defaultTermSet = React.useRef<{ [companyName: string]: boolean }>({});
+  // const defaultTermSet = React.useRef<{ [companyName: string]: boolean }>({});
   const [loanTerm, setLoanTerm] = useState<number>(termProp || 24);
   const ALL_LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
