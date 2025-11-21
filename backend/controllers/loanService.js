@@ -253,9 +253,10 @@ exports.searchLoans = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
- exports.deleteLoan = async (req, res) => {
+exports.deleteLoan = async (req, res) => {
   try {
     const { id } = req.params;
+
 
     const loan = await Loan.findByIdAndUpdate(
       id,
@@ -263,22 +264,26 @@ exports.searchLoans = async (req, res) => {
       { new: true }
     );
 
-    if (!loan)
-      return res.status(404).json({
-        success: false,
-        message: "Loan not found",
-      });
-  const [client, company, user] = await Promise.all([
+    if (!loan) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Loan not found" });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Loan status set to Deactivated",
+      data: loan,
+    });
+   Promise.all([
     Client.findById(loan.client).select("fullName"),
     Company.findById(loan.company).select("companyName"),
     User.findById(req.user?.id).select("name email"),
-  ]);
-
-  const clientName = client?.fullName || "";
-  const companyName = company?.companyName || "";
-  const deletedBy = user?.name || user?.email || "";
-
-  await createAuditLog(
+  ])
+      .then(([client, company, user]) => {
+        const clientName = client?.fullName || "";
+        const companyName = company?.companyName || "";
+        const deletedBy = user?.name || user?.email || "";
+        return createAuditLog(
     req.user?.id || null,
     req.user?.userRole || null,
     `Loan deactivated for ${clientName} under ${companyName} by ${deletedBy}`,
@@ -286,41 +291,31 @@ exports.searchLoans = async (req, res) => {
     loan._id,
     { after: loan }
   );
-    res.status(200).json({
-      success: true,
-      message: "Loan status set to Deactivated",
-      data: loan,
-    });
+      })
+      .catch((err) => console.error("Audit log failed:", err));
   } catch (error) {
     console.error("Error in deleteLoan:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 exports.recoverLoan = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existingLoan = await Loan.findById(id);
-    if (!existingLoan) {
-      return res.status(404).json({
-        success: false,
-        message: "Loan not found.",
-      });
-    }
-    const client = await Client.findById(existingLoan.client);
-    if (!client) {
-      return res.status(404).json({
-        success: false,
-        message: "Client not found.",
-      });
-    }
+    const existingLoan = await Loan.findById(id).populate("client");
+    if (!existingLoan)
+      return res
+        .status(404)
+        .json({ success: false, message: "Loan not found." });
+    const client = existingLoan.client;
+    if (!client)
+      return res
+        .status(404)
+        .json({ success: false, message: "Client not found." });
     if (!client.isActive) {
       return res.status(400).json({
         success: false,
-        message: `Client "${client.fullName}" is currently inactive. Please activate this client before recovering their loan.`,
+        message: `Client "${client.fullName}" is inactive. Activate client before recovering loan.`,
       });
     }
     const recoveredLoan = await Loan.findByIdAndUpdate(
@@ -335,27 +330,32 @@ exports.recoverLoan = async (req, res) => {
         message: "Failed to update loan status.",
       });
     }
-    const [company, user] = await Promise.all([
-       Company.findById(recoveredLoan.company).select("companyName"),
-       User.findById(req.user?.id).select("name email"),
-     ]);
-
-    const recoveredBy = user?.name || user?.email || "System";
-    const companyName = company?.companyName || "Unknown Company";
-
-    await createAuditLog(
-      req.user?.id || null,
-      req.user?.userRole || null,
-      `Loan for client "${client.fullName}" under "${companyName}" was recovered by ${recoveredBy}`,
-      "Loan",
-      recoveredLoan._id,
-      { after: recoveredLoan }
-    );
     res.status(200).json({
       success: true,
       message: `Loan for client "${client.fullName}" recovered successfully.`,
       data: recoveredLoan,
     });
+    (async () => {
+      try {
+        const [company, user] = await Promise.all([
+          Company.findById(recoveredLoan.company).select("companyName"),
+          User.findById(req.user?.id).select("name email"),
+        ]);
+
+        await createAuditLog(
+          req.user?.id || null,
+          req.user?.userRole || null,
+          `Loan for client "${client.fullName}" under "${
+            company?.companyName || "Unknown Company"
+          }" was recovered by ${user?.name || user?.email || "System"}`,
+          "Loan",
+          recoveredLoan._id,
+          { after: recoveredLoan }
+        );
+      } catch (err) {
+        console.error("Audit log failed:", err);
+      }
+    })();
   } catch (error) {
     console.error("Recover Loan Error:", error);
     res.status(500).json({

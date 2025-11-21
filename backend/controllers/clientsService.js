@@ -268,13 +268,23 @@ exports.updateClient = async (req, res) => {
 exports.deleteClient = async (req, res) => {
   try {
     const { id } = req.params;
-    const client = await Client.findByIdAndDelete(id);
+    const clientPromise = Client.findByIdAndDelete(id);
+    const loansPromise = Loan.deleteMany({ client: id });
+    const [client, deletedLoans] = await Promise.all([
+      clientPromise,
+      loansPromise,
+    ]);
     if (!client) {
       return res
         .status(404)
         .json({ success: false, error: "Customer not found" });
     }
-    const deletedLoans = await Loan.deleteMany({ client: id });
+    res.status(200).json({
+      success: true,
+      message: `Customer deleted successfully along with ${deletedLoans.deletedCount} related loan(s)`,
+    });
+    (async () => {
+      try {
     const user = await User.findById(req.user?.id).select("name email");
     const deletedBy = user?.name || user?.email || "-";
   await createAuditLog(
@@ -293,12 +303,10 @@ exports.deleteClient = async (req, res) => {
       deletedLoansCount: deletedLoans.deletedCount,
     }
   );
-
-
-    res.status(200).json({
-      success: true,
-      message: `Customer deleted successfully along with ${deletedLoans.deletedCount} related loan(s)`,
-    });
+    } catch (err) {
+        console.error("Audit log failed:", err);
+      }
+    })();
   } catch (error) {
     console.error("Error deleting customer and loans:", error);
     res.status(500).json({ success: false, error: error.message });
@@ -322,36 +330,46 @@ exports.toggleClientStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const client = await Client.findById(id);
-    if (!client) {
+    if (!client)
       return res
         .status(404)
         .json({ success: false, error: "Client not found" });
-    }
 
     client.isActive = !client.isActive;
     await client.save();
+    res.status(200).json({
+      success: true,
+      message: `Customer "${client.fullName}" ${
+        client.isActive ? "activated" : "deactivated"
+      } successfully.`,
+      newStatus: client.isActive,
+    });
+
     const newLoanStatus = client.isActive ? "Active" : "Deactivated";
 
-    const updatedLoans = await Loan.updateMany(
+    const updateLoansPromise = Loan.updateMany(
       { client: id },
       { loanStatus: newLoanStatus }
-    );
+    ).exec();
 
-    const user = await User.findById(req.user?.id).select("name email");
+  (async () => {
+    try {
+    const [user, updatedLoans] = await Promise.all([
+      User.findById(req.user?.id).select("name email"),
+      updateLoansPromise,
+    ]);
     const actionBy = user?.name || user?.email || "-";
 
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
-      `Customer "${client.fullName || "-"}" marked as "${
+      `Customer "${client.fullName}" marked as "${
         client.isActive ? "Active" : "Inactive"
-      }" by ${actionBy} — ${
-        updatedLoans.modifiedCount
-      } related loan(s) also set to "${newLoanStatus}"`,
+      }" by ${actionBy}`,
       "Customer",
       client._id,
       {
-        message: `Customer "${client.fullName || "-"}" was marked as "${
+        message: `Customer "${client.fullName}" was marked as "${
           client.isActive ? "Active" : "Inactive"
         }" and ${
           updatedLoans.modifiedCount
@@ -361,15 +379,10 @@ exports.toggleClientStatus = async (req, res) => {
         performedBy: actionBy,
       }
     );
-
-    res.status(200).json({
-      success: true,
-      message: `Customer "${client.fullName || "-"}" ${
-        client.isActive ? "activated" : "deactivated"
-      } successfully, along with ${
-        updatedLoans.modifiedCount
-      } related loan(s).`,
-    });
+  } catch (err) {
+        console.error("Audit log failed:", err);
+      }
+    })();
   } catch (error) {
     console.error("Error toggling client status:", error);
     res.status(500).json({ success: false, error: error.message });

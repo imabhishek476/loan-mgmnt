@@ -89,10 +89,10 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
     onConfirm: async () => {
       try {
         await toggleClientStatus(id);
+        tableRef.current?.onQueryChange();
         toast.success(
           `Client ${!isActive ? "recovered" : "deactivated"} successfully`
         );
-        tableRef.current?.onQueryChange();
       } catch (error) {
         toast.error("Failed to update client status");
         console.error(error);
