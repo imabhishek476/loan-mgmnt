@@ -1,15 +1,16 @@
-import { useState} from "react";
+import React, { useState} from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
 import { Plus, Save } from "lucide-react";
 import ClientsDataTable from "./components/clientDataTable";
-import FormModal, { type FieldConfig } from "../../components/FormModal";
+import { type FieldConfig } from "../../components/FormModal";
 import { clientStore, type Client } from "../../store/ClientStore";
 import { getClientLoans } from "../../services/ClientServices";
 import Loans from "../loans/index";
-import ClientViewModal from "../../views/clients/components/ClientViewModal";
 // import { loanStore } from "../../store/LoanStore";
+const ClientViewModal = React.lazy(() => import("../../views/clients/components/ClientViewModal"));
+const FormModal = React.lazy(()=> import("../../components/FormModal"))
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
@@ -170,7 +171,6 @@ const handleSave = async (data: any) => {
       )}
       {/* Data Table */}
       <ClientsDataTable
-        loading={clientStore.loading}
         onAddLoan={handleAddLoan}
         onViewClient={handleViewClient}
       />
