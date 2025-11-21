@@ -34,15 +34,12 @@ const EditPaymentModal = observer(
     const [outstanding, setOutstanding] = useState(0);
     const [errors, setErrors] = useState<{ amount?: string }>({});
     const [payOffDate, setPayOffDate] = useState<Moment>(moment());
-    const [currentTerm, setCurrentTerm] = useState();
 
     useEffect(() => {
       if (!loan || !payment) return;
-
       const loanData = calculateLoanAmounts(loan);
       const remaining = loanData?.remaining || 0;
       const adjustedOutstanding = remaining ;
-      setCurrentTerm(loanData.currentTerm);
       setOutstanding(adjustedOutstanding);
       setAmount(payment.paidAmount.toString());
       setCheckNumber(payment.checkNumber || "");
@@ -58,9 +55,12 @@ const EditPaymentModal = observer(
     const validate = () => {
       const newErrors: typeof errors = {};
       const numAmount = Number(amount);
+      const originalAmount = payment?.paidAmount || 0;
 
       if (!amount || isNaN(numAmount) || numAmount <= 0) {
         newErrors.amount = "Paid Amount is required and must be greater than 0";
+      } else if (numAmount < originalAmount) {
+        newErrors.amount = `Amount cannot be less than original payment: $${originalAmount.toFixed(2)}`;
       } else if (numAmount > Number(formattedOutstanding)) {
         newErrors.amount = `Cannot pay more than outstanding: $${formattedOutstanding}`;
       }
@@ -83,7 +83,7 @@ const EditPaymentModal = observer(
           paidDate: payOffDate,
           checkNumber,
           payoffLetter,
-          currentTerm: currentTerm,
+          currentTerm: loan.loanTerms,
         });
 
         await loanStore.fetchActiveLoans(clientId);

@@ -13,13 +13,11 @@ import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
 interface ClientsDataTableProps {
   // clients: any[];
-  loading: boolean;
   onAddLoan: (client: any) => void;
   onViewClient: (client: any) => void;
 }
 
 const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
-  loading,
   onAddLoan,
   onViewClient,
 }) => {
@@ -89,10 +87,10 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
     onConfirm: async () => {
       try {
         await toggleClientStatus(id);
+        tableRef.current?.onQueryChange();
         toast.success(
           `Client ${!isActive ? "recovered" : "deactivated"} successfully`
         );
-        tableRef.current?.onQueryChange();
       } catch (error) {
         toast.error("Failed to update client status");
         console.error(error);
@@ -197,7 +195,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
 
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
         <MaterialTable
-          isLoading={loading}
+          isLoading={false}
           title={null}
           tableRef={tableRef}
           data={fetchClientsData}
@@ -212,12 +210,16 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
 
               cellStyle: { fontWeight: 500 },
               render: (rowData) => (
-                <span
+                <a 
+                  href='#'
                   className="text-green-600 cursor-pointer hover:underline"
-                  onClick={() => onViewClient?.(rowData)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onViewClient?.(rowData)
+                  }}
                 >
                   {rowData?.fullName}
-                </span>
+                </a>
               ),
             },
             { title: "Email", field: "email" },

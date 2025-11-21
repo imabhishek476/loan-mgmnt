@@ -328,9 +328,7 @@ const handleDeletePayment = async (payment: any) => {
                   const loanData = calculateLoanAmounts(loan);
                   if (!loanData) return null;
 
-                  const {
-                    paidAmount,
-                  } = loanData;
+                  const { paidAmount } = loanData;
                   const selectedDynamicTerm = currentTermMap[loan._id];
                   // console.log(selectedDynamicTerm,'selectedDynamicTerm');
                   const selectedLoanData = calculateLoanAmounts({
@@ -853,9 +851,12 @@ const handleDeletePayment = async (payment: any) => {
           onClose={() => {
             setEditPaymentModalOpen(false);
           }}
+          loan={{
+            ...editPaymentLoan,
+            loanTerms: currentTermMap[editPaymentLoan?._id],
+          }}
           clientId={client._id}
           payment={editingPayment}
-          loan={editPaymentLoan}
           onPaymentSuccess={() => refreshPayments(editPaymentLoan._id)}
         />
       )}
