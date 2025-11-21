@@ -147,7 +147,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
               const isOverdue = !isPaidOff && endDate.isBefore(moment());
               return (
                 <span
-                  className={`px-2 py-0.5 rounded-lg font-semibold ${
+                  className={`px-2 py-0.5 rounded-lg font-semibold text-nowrap ${
                     isOverdue ? "bg-red-600 text-white blink" : null
                   }`}
                 >
