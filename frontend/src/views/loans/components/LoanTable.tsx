@@ -20,7 +20,7 @@
     calculateDynamicTermAndPayment,
     calculateLoanAmounts,
   } from "../../../utils/loanCalculations";
-  import { getLoansSearch } from "../../../services/LoanService";
+  import { deleteLoan, getLoansSearch, recoverLoan } from "../../../services/LoanService";
 
   interface LoanTableProps {
     onDelete: (id: string) => void;
@@ -93,7 +93,7 @@
         message: "Are you sure you want to deactivate this loan?",
         confirmText: "Yes, Deactivate",
         onConfirm: async () => {
-          await loanStore.deleteLoan(id);
+          await deleteLoan(id);
           tableRef.current?.onQueryChange();
           toast.success("Loan Deactivated successfully");
         },
@@ -107,7 +107,7 @@
       cancelText: "Cancel",
       onConfirm: async () => {
       try {
-        await loanStore.recoverLoan(loan._id);
+        await recoverLoan(loan._id);
         if (tableRef.current) tableRef.current.onQueryChange();
         toast.success(
           `Loan for "${loan.client?.fullName || "client"}" recovered successfully!`

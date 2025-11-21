@@ -18,10 +18,11 @@ const Clients = observer(() => {
   const [viewClient, setViewClient] = useState(null);
 
   const handleViewClient = async (client: Client) => {
+    setViewClient({ ...client, loans: [] });
+    setViewModalOpen(true);
     try {
       const loans = await getClientLoans(client._id!);
-      setViewClient({ ...client, loans });
-      setViewModalOpen(true);
+      setViewClient((prev) => ({ ...prev!, loans }));
     } catch (error) {
       console.error("Failed to fetch Customer loans", error);
     }
