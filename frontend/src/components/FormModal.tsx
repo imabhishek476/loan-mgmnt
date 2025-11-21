@@ -1,6 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, type ReactNode } from "react";
 import { toast } from "react-toastify";
-import { X, Plus, DollarSign, Percent } from "lucide-react";
+import { X, Plus, DollarSign, Percent, Trash } from "lucide-react";
 import {
   TextField as MuiTextField,
   Switch,
@@ -58,7 +62,7 @@ interface FormModalProps {
   ) => React.ReactElement;
   renderLoanTerms?: () => React.ReactElement;
   customFields?: {
-    id: number;
+    _id: number;
     name: string;
     value: string | number | boolean;
     type: "string" | "number";
@@ -87,44 +91,34 @@ const FormModal = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const [customFields, setCustomFields] = useState<any[]>(
-    initialCustomFields && initialCustomFields.length > 0
-    ? initialCustomFields
-    : [{ id: 1, name: "", value: "", type: "string" }]
-  );
-  const [fieldCounter, setFieldCounter] = useState(
-    initialCustomFields && initialCustomFields.length > 0
-    ? initialCustomFields.length + 1
-    : 2
-  );
+  const [customFields, setCustomFields] = useState<any>([]);
 
   useEffect(() => {
     setFormData(initialData || {});
     if (initialData?.customFields && initialData.customFields.length > 0) {
       setCustomFields(initialData.customFields);
-      setFieldCounter(initialData.customFields.length + 1);
-  } else {
-    setCustomFields([{ id: 1, name: "", value: "", type: "string" }]);
-    setFieldCounter(2);
+    } else if (open) {
+    setCustomFields([{ _id: 1, name: "", value: "", type: "string" }]);
     }
-  }, [initialData]);
+  }, [initialData, open]);
 
   const addCustomField = () => {
     setCustomFields([
       ...customFields,
-      { id: fieldCounter, name: "", value: "", type: "string" },
+      { _id: Math.random(), name: "", value: "", type: "string" },
     ]);
-    setFieldCounter(fieldCounter + 1);
+  
   };
 
-  const removeCustomField = (id: number) => {
-    setCustomFields(customFields.filter((f) => f.id !== id));
+  const removeCustomField = (_id: any) => {
+    if (_id) {
+    setCustomFields(customFields.filter((f) => f._id !== _id));
+    }
   };
 
-  const handleCustomFieldChange = (id: number, key: string, value: any) => {
+  const handleCustomFieldChange = (_id: number, key: string, value: any) => {
     setCustomFields(
-      customFields.map((f) => (f.id === id ? { ...f, [key]: value } : f))
+      customFields.map((f) => (f._id === _id ? { ...f, [key]: value } : f))
     );
   };
 
@@ -156,10 +150,14 @@ const FormModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const arrayCustomFields = customFields.map((item) => {
+        delete item["_id"];
+        return item;
+    });
     if (!validate()) return;
     setLoading(true);
     try {
-      await onSubmit({ ...formData, customFields });
+      await onSubmit({ ...formData, customFields: arrayCustomFields });
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Failed to save data");
@@ -172,7 +170,7 @@ const FormModal = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterMoment}>
-      <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto z-[9999]">
+      <div className="fixed inset-0 z-[9999] flex justify-center items-start pt-10 bg-black/70 overflow-auto">
         <div className="bg-white rounded-lg w-full max-w-4xl shadow-lg relative mx-2 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
           <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
             <h2 className="text-xl font-bold text-gray-800">{title}</h2>
@@ -375,7 +373,7 @@ const FormModal = ({
                       if (typeof value === "number") {
                         const index = Math.round(value);
                         //@ts-ignore
-                        const selected = loanTermOptions[index];
+                        // const selected = loanTermOptions[index];
 
                         // Store all values up to the selected index
                         const selectedTerms = loanTermOptions.slice(
@@ -606,7 +604,7 @@ const FormModal = ({
                         onChange={(e) =>
                           handleChange(field.key, e.target.value)
                         }
-                        className="h-10 rounded-lg rounded-lg  focus:ring-2 focus:ring-green-500 focus:outline-none resize-none w-20 p-1"
+                        className="h-10 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none resize-none w-20 p-1"
                       />
                       {errors[field.key] && (
                         <span className="text-red-600 text-sm">
@@ -754,9 +752,9 @@ const FormModal = ({
             {initialCustomFields && (
               <div className="sm:col-span-2 flex flex-col gap-3">
                 <h3 className="font-semibold text-gray-800">Custom Fields</h3>
-                {customFields.map((field) => (
+                {customFields?.map((field) => (
                   <div
-                    key={field.id}
+                    key={field?._id}
                     className="flex flex-col sm:flex-row gap-2 items-start sm:items-center"
                   >
                     <input
@@ -765,7 +763,7 @@ const FormModal = ({
                       value={field.name}
                       onChange={(e) =>
                         handleCustomFieldChange(
-                          field.id,
+                          field._id,
                           "name",
                           e.target.value
                         )
@@ -779,7 +777,7 @@ const FormModal = ({
                       value={field.value as string | number}
                       onChange={(e) =>
                         handleCustomFieldChange(
-                          field.id,
+                          field._id,
                           "value",
                           e.target.value
                         )
@@ -791,7 +789,7 @@ const FormModal = ({
                       value={field.type}
                       onChange={(e) =>
                         handleCustomFieldChange(
-                          field.id,
+                          field._id,
                           "type",
                           e.target.value
                         )
@@ -804,10 +802,10 @@ const FormModal = ({
 
                     <button
                       type="button"
-                      onClick={() => removeCustomField(field.id)}
+                      onClick={() => removeCustomField(field._id)}
                       className="text-red-600 hover:text-red-800 transition"
                     >
-                      <X className="w-5 h-5" />
+                      <Trash className="w-5 h-5" />
                     </button>
                   </div>
                 ))}
