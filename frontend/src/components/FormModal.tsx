@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, type ReactNode } from "react";
 import { toast } from "react-toastify";
 import { X, Plus, DollarSign, Percent, Trash } from "lucide-react";
