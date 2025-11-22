@@ -30,6 +30,8 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   const clearedSearch = "";
   const clearedDate = null;
   const tableRef = useRef<any>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPageSize, setCurrentPageSize] = useState(10);
   const handleReset = async () => {
     setSearchInput(clearedSearch);
     setIssueDateFilterInput(clearedDate);
@@ -39,6 +41,8 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   };
   const fetchClientsData = useCallback(
     async (query: any) => {
+      setCurrentPage(query.page);
+      setCurrentPageSize(query.pageSize);
       const filters = {
         query: searchInput,
         page: query.page,
@@ -204,7 +208,13 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           columns={[
             {
               title: "Sr.no",
-              render: (rowData: any) => rowData.tableData.id + 1,
+              render: (rowData: any) => {
+              return (
+                rowData.tableData.id +
+                1 +
+                currentPage * currentPageSize
+              );
+            }
             },
             {
               title: "Name",
