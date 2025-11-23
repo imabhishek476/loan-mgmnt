@@ -32,7 +32,7 @@ const Administration = observer(() => {
           </p>
         </div>
       </div>
-      <div className="flex bg-gray-100 rounded-lg p-1 w-full mx-auto mb-6 flex-wrap">
+      <div className="flex gap-1 bg-gray-300 rounded-lg p-1 w-full mx-auto mb-6 flex-wrap">
         {tabs.map((tab) => (
           <button
             key={tab.key}
