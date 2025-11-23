@@ -24,6 +24,7 @@ import {
   calculateDynamicTermAndPayment,
   calculateLoanAmounts,
 } from "../utils/loanCalculations";
+import { getClientById } from "../services/ClientServices";
 
 const parseNumber = (val: any): number => {
   if (typeof val === "string") return parseFloat(val) || 0;
@@ -220,7 +221,11 @@ const EditLoanModal = observer(
           const company = companyStore.companies.find(
             (c) => c._id === loan.company
           );
-          const client = clientStore.clients.find((c) => c._id === loan.client);
+          let client = clientStore.clients.find((c) => c._id === loan.client);
+
+          if(!client){
+            client = await getClientById(loan.client);
+          }
           if (!company || !client) {
             toast.error("Client or company missing");
             onClose();
