@@ -44,8 +44,15 @@ class UserStore {
 
     if (this.isUsersFetched || this.isFetching) return;
 
-    this.isFetching = true;
-    this.loading = true;
+    // this.isFetching = true;
+    // this.loading = true;
+    if (this.users.length > 0) {
+      runInAction(() => {
+        this.loading = false;
+        this.isFetching = false;
+      });
+      return;
+    }
 
     try {
       const { data } = await UserService.fetchUsers();
@@ -96,6 +103,14 @@ class UserStore {
             email: data.email,
             role: data.userRole,
           };
+          const fIndex = this.filteredUsers.findIndex(u => u._id === id);
+          const uIndex = this.users.findIndex(u => u._id === id);
+          if (fIndex >= 0){
+            this.filteredUsers[fIndex] = data;
+          }
+          if (uIndex >= 0){
+            this.users[uIndex] = data;
+          }
         }
       });
     } finally {

@@ -66,7 +66,11 @@ class CompanyStore {
     this.loading = true;
 
     try {
-      const  companies  = await  fetchCompanies();
+      if (this.companies.length > 0) {
+        this.loading = false;
+        return;
+      }
+      const companies = await fetchCompanies();
       runInAction(() => {
         const validCompanies = (companies || []).filter(Boolean);
         this.companies = validCompanies;
@@ -82,7 +86,9 @@ class CompanyStore {
   async searchCompanies(query: string) {
     this.loading = true;
     try {
-      const companies = await fetchCompanies(query);
+      const companies = this.companies.filter((company) =>
+        company.companyName.toLowerCase().includes(query.toLowerCase())
+      );
       runInAction(() => {
         this.filteredCompanies = companies;
       });
