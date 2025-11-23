@@ -41,3 +41,8 @@ export const toggleClientStatus = async (id: string) => {
   const { data } = await api.put(`/client/toggle/${id}`);
   return data;
 };
+
+export const getClientById = async (id: string) => {
+  const { data } = await api.get(`/client/${id}`);
+  return data;
+};

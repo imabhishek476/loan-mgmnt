@@ -389,5 +389,17 @@ exports.toggleClientStatus = async (req, res) => {
   }
 };
 
+exports.getClientById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const client = await Client.findById(id);
+    if (!client)
+      return res.status(404).json({ success: false, error: "Client not found" });
+    res.status(200).json({ success: true, client });
+  } catch (error) {
+    console.error("Error fetching client by ID:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 
