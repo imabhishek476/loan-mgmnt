@@ -1,5 +1,5 @@
 // src/components/EditLoanModal.tsx
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import { X, Save, Eye, RefreshCw } from "lucide-react";
@@ -404,7 +404,7 @@ useEffect(() => {
 
     if (lClient !== originalClient) return false;
     if (l._id?.toString() === originalLoan._id?.toString()) return false;
-    if (l.status === "Paid Off" || l.status === "Merged") return false;
+    if (l.status === "Paid Off") return false;
     if (l.loanStatus === "Deactivated") return false;
 
     const issue = l.issueDate ? new Date(l.issueDate) : null;

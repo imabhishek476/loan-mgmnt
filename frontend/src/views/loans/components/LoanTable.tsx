@@ -39,6 +39,8 @@
       return text.charAt(0).toUpperCase() + text.slice(1);
     };
     const tableRef = useRef<any>(null);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [currentPageSize, setCurrentPageSize] = useState(10);
     const handleSearch = () => {
       if (tableRef.current) tableRef.current.onQueryChange();
     };
@@ -55,6 +57,8 @@
     const fetchLoansData = useCallback(
       async (query: any) => {
         setLoading(true);
+        setCurrentPage(query.page);
+        setCurrentPageSize(query.pageSize);
         try {
           const filters = {
             query: searchInput,
@@ -228,7 +232,11 @@
               columns={[
                 {
                   title: "Sr.no",
-                  render: (rowData) => (rowData?.tableData?.id ?? 0) + 1,
+                  render: (rowData: any) => {
+                    return (
+                      rowData.tableData.id + 1 + currentPage * currentPageSize
+                    );
+                  },
                   width: 70,
                   headerStyle: { whiteSpace: "nowrap" },
                   cellStyle: { whiteSpace: "nowrap" },

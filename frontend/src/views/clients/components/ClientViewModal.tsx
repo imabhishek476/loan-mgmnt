@@ -666,6 +666,7 @@ const handleDeletePayment = async (payment: any) => {
                                               </td>
                                             </tr>
                                             <tr>
+                                            <td>
                                               {loan.status === "Paid Off" && (
                                                 <p className="text-green-600 font-semibold">
                                                   This loan has been fully paid
@@ -705,6 +706,7 @@ const handleDeletePayment = async (payment: any) => {
                                               </button>
                                             )}
                                           </td> */}
+                                            </td>
                                             </tr>
                                             <tr className="">
                                               <td className="font-semibold py-0">

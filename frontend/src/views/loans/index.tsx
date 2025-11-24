@@ -166,15 +166,23 @@ const Loans = observer(
            typeof loan?.client === "object" ? loan?.client?._id : loan?.client;
 
         const loanIssueDate = loan?.issueDate;
-        const selectedIssueDate = formData.issueDate ? formData.issueDate : null;
+        const selectedIssueDate = formData.issueDate;
+            if (!loanIssueDate || !selectedIssueDate) return false;
+            const loanParts = loanIssueDate.split("-");
+            const loanNormalized = loanParts[2] + loanParts[0] + loanParts[1]; // YYYYMMDD
+            const selParts = selectedIssueDate.split("-");
+            let selectedNormalized = "";
+            if (selParts[0].length === 4) {
+               selectedNormalized = selParts[0] + selParts[1] + selParts[2];
+            } else {
+              selectedNormalized = selParts[2] + selParts[0] + selParts[1];
+            }
          return (
            clientId === formData.client &&
            loan?.status !== "Paid Off" &&
            loan?.status !== "Merged" &&
            loan?.loanStatus !== "Deactivated" &&
-          (loanIssueDate && selectedIssueDate
-            ? loanIssueDate <= selectedIssueDate
-            : true)
+              loanNormalized <= selectedNormalized
          );
        }) || [];
      setActiveLoans(loans);
