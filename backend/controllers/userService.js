@@ -12,8 +12,8 @@ exports.createUser = async (req, res) => {
         .status(400)
         .json({ error: "Email already in use. Please use a different email." });
     }
-    const hashed = password ? await bcrypt.hash(password, 10) : "";
-    const user = await User.create({ name, email, password: hashed, userRole });
+    // const hashed = password ? await bcrypt.hash(password, 10) : "";
+    const user = await User.create({ name, email, password: password, userRole });
     const loggedInUser = await User.findById(req.user?.id).select("name email");
 
     await createAuditLog(
