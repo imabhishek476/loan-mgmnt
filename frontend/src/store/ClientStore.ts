@@ -45,14 +45,14 @@ class ClientStore {
   setTableRef(ref: any) {
     this.tableRef = ref;
   }
-  async fetchClients(filters: { query?: string; page?: number; limit?: number; issueDate?: string } = {},getData = false) {
+  setClients(data: any) {
+    runInAction(() => (this.clients = data));
+  }
+  async fetchClients(filters: { query?: string; page?: number; limit?: number; issueDate?: string } = {}) {
     this.loading = true;
     try {
       const data = await getClientsSearch(filters);
       runInAction(() => (this.clients = data.clients));
-      if(getData){
-        return data;
-      }
       return data.total;
     } catch (error) {
       console.error("Error fetching clients:", error);
