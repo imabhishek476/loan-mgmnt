@@ -451,13 +451,11 @@ const handleSave = async () => {
     }, [formData?.issueDate, selectedLoanIds, loanStore.loans]);
     useEffect(() => {
         async function callFun() {
-          console.log('calling');
           const { subtotal }: any = await loanStore.calculateLoanAmounts({
             loan: formData,
             prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
             calculate: true,
           });
-          console.log(subtotal, "subtotal");
           setSubTotal(subtotal);
         }
         callFun();   
