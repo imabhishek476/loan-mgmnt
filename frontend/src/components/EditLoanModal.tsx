@@ -20,42 +20,20 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker } from "@mui/x-date-pickers";
 import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
 import { fetchLoanById } from "../services/LoanService";
-import {
-  calculateDynamicTermAndPayment,
-  calculateLoanAmounts,
-} from "../utils/loanCalculations";
 import { getClientById } from "../services/ClientServices";
 import { convertToUsd, isDateBefore } from "../utils/helpers";
 import { LoanTermsCard } from "./LoanTermsCard";
+import { ALLOWED_TERMS } from "../utils/constants";
+import { PreviousLoan } from "./PreviousLoan";
 
 const parseNumber = (val: any): number => {
   if (typeof val === "string") return parseFloat(val) || 0;
   return val || 0;
 };
-
-const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
-const getLoanRunningDetails = (loan: any, currentIssueDate: null) => {
-  const baseDate = moment(currentIssueDate, "MM-DD-YYYY").format("MM-DD-YYYY");
-  const { monthsPassed } = calculateDynamicTermAndPayment(loan, baseDate);
-  const runningTenure =
-    ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
-
-  const loanCalc = calculateLoanAmounts({
-    ...loan,
-    loanTerms: runningTenure,
-  });
-
-  return {
-    monthsPassed,
-    runningTenure,
-    total: loanCalc?.total || 0,
-    remaining: loanCalc?.remaining || 0,
-  };
-};
 const buildTenures = (
   issueDateStr: string,
   terms: number[],
-  outFormat: "iso" | "mm-dd-yyyy" = "mm-dd-yyyy" // default changed
+  outFormat: "iso" | "mm-dd-yyyy" = "mm-dd-yyyy" 
 ) => {
   const start = moment(issueDateStr, "MM-DD-YYYY").startOf("day");
   return terms.map((t) => {
@@ -79,16 +57,20 @@ const EditLoanModal = observer(
     const [overlapMode, setOverlapMode] = useState(false);
     const [saving, setSaving] = useState(false);
     const [subTotal, setSubTotal] = useState(0);
+    const [modalTotal, setModalTotal] = useState(0);
+    const [modalRemaining, setModalRemaining] = useState(0);
+
+
     // @ts-ignore
     const [endDate, setEndDate] = useState<string | null>(null);
     const [viewLoan, setViewLoan] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [previousToggleDisabled, setPreviousToggleDisabled] = useState(false);
     const [originalLoan, setOriginalLoan] = useState<any>(null);
+    const [selectedPreviousLoanTotal, setSelectedPreviousLoanTotal] = useState(0);
 
     useEffect(() => {
       let mounted = true;
-
       const load = async () => {
         try {
           setLoading(true);
@@ -111,57 +93,10 @@ const EditLoanModal = observer(
             promises.push(loanStore.fetchLoans());
           }
           await Promise.all(promises);
-        const mergedLoans = loan.previousLoans || [];
-
-        if (mergedLoans.length > 0) {
-          const mergedIds = mergedLoans.map((m: any) =>
-            typeof m === "string" ? m : m._id?.toString?.()
-          );
-          const clientId =
-            loan.client?._id?.toString?.() || loan.client?.toString?.();
-          const filtered = loanStore.loans.filter((l) => {
-            const lClient =
-              l.client?.["_id"]?.toString?.() || l.client?.toString?.();
-            return (
-              lClient === clientId &&
-              l._id?.toString?.() !== loanId?.toString?.()
-            );
-          });
-
-          setActiveLoans(filtered);
-          setSelectedLoanIds(
-            filtered
-              .filter((l) => mergedIds.includes(l._id?.toString?.()))
-              .map((l) => l._id?.toString?.())
-          );
-          setPreviousToggleDisabled(false);
-          setOverlapMode(true);
-        } else {
-          const availableLoans =
-            loanStore.loans?.filter((l) => {
-              const lClient =
-                l.client?.["_id"]?.toString?.() || l.client?.toString?.();
-              return (
-                lClient ===
-                  (loan.client?._id?.toString?.() ||
-                    loan.client?.toString?.()) &&
-                l.status !== "Paid Off" &&
-                l.status !== "Merged" &&
-                l.loanStatus !== "Deactivated" &&
-                l._id?.toString?.() !== loanId?.toString?.()
-              );
-            }) || [];
-          setActiveLoans(availableLoans);
-        }
-
           const company = companyStore.companies.find(
             (c) => c._id === loan.company
           );
-          let client = clientStore.clients.find((c) => c._id === loan.client);
-
-          if (!client) {
-            client = await getClientById(loan.client);
-          }
+          const client = clientStore.clients.find((c) => c._id === loan.client);
           if (!company || !client) {
             toast.error("Client or company missing");
             onClose();
@@ -180,7 +115,6 @@ const EditLoanModal = observer(
             brokerFee: mapFee(loan.fees?.brokerFee),
             annualMaintenanceFee: mapFee(loan.fees?.annualMaintenanceFee),
           };
-
           setFormData({
             ...loan,
             client: loan.client,
@@ -195,17 +129,24 @@ const EditLoanModal = observer(
             previousLoanAmount: loan.previousLoanAmount || 0,
             paidAmount: loan.paidAmount || 0,
           });
-
           setCompanyData(company);
 
           if (loan.previousLoans?.length > 0) {
             const previousLoans = loanStore.loans.filter((l) =>
               loan.previousLoans.includes(l._id)
             );
-            const totalRemaining = previousLoans.reduce((sum, l) => {
-              const details = getLoanRunningDetails(l, formData.issueDate);
-              return sum + (details?.remaining || 0);
-            }, 0);
+            let totalRemaining = 0;
+
+            for (const l of previousLoans) {
+              const result = await loanStore.calculateLoanAmounts({
+                loan: l,
+                date: formData.issueDate,
+              });
+
+              totalRemaining += result?.remaining || 0;
+            }
+
+            
             setFormData((prev) => ({
               ...prev,
               previousLoanAmount: loan.previousLoanAmount || totalRemaining,
@@ -220,20 +161,12 @@ const EditLoanModal = observer(
           if (mounted) setLoading(false);
         }
       };
-
       load();
       return () => {
         mounted = false;
       };
     }, [loanId]);
 
-    const selectedPreviousLoanTotal = activeLoans
-      .filter((loan) => selectedLoanIds.includes(loan._id))
-      .reduce(
-        (sum, loan) =>
-          sum + getLoanRunningDetails(loan, formData.issueDate).remaining,
-        0
-      );
 
     const handleView = async (loan: any) => {
       try {
@@ -279,7 +212,7 @@ const handleSave = async () => {
     const loan = await fetchLoanById(loanId);
     if (!loan) return toast.error("Loan not found");
      const { totalWithInterest, subtotal } =
- await loanStore.calculateLoanAmounts({
+      await loanStore.calculateLoanAmounts({
             loan: formData,
             date: null,
             prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
@@ -353,7 +286,7 @@ const handleSave = async () => {
       if (!loanStore?.loans) return;
 
       const selectedIssue = new Date(formData.issueDate);
-
+      
       const filteredLoans = loanStore.loans.filter((l) => {
         const lClient = l.client?._id?.toString() || l.client?.toString();
         const originalClient =
@@ -364,6 +297,10 @@ const handleSave = async () => {
         if (l._id?.toString() === originalLoan._id?.toString()) return false;
         if (l.status === "Paid Off") return false;
         if (l.loanStatus === "Deactivated") return false;
+        console.log(formData._id, "formData._id");
+        console.log(l.parentLoanId, l.status, "l.parentLoanId,l.status");
+
+        if (l.status === "Merged" && l.parentLoanId !== formData._id ) return false;
 
         const issue = l.issueDate ? new Date(l.issueDate) : null;
 
@@ -371,28 +308,70 @@ const handleSave = async () => {
       });
 
       setActiveLoans(filteredLoans);
-      const totalRemaining = filteredLoans
-        .filter((l) => selectedLoanIds.includes(l._id))
-        .reduce((sum, loan) => {
-          const details = getLoanRunningDetails(loan, formData.issueDate);
-          return sum + (details?.remaining || 0);
-        }, 0);
+        async function call() {
+          const filteredLoansrray = filteredLoans
+        .filter((l) => selectedLoanIds.includes(l._id));
+      
+                  let totalRemaining = 0;
+
+                  for (const l of filteredLoansrray) {
+                    const result = await loanStore.calculateLoanAmounts({
+                      loan: l,
+                      date: formData.issueDate,
+                    });
+
+                    totalRemaining += result?.remaining || 0;
+                  }
+          return totalRemaining;
+        }
+const totalRemaining = call();
+       
 
       setFormData((prev) => ({
         ...prev,
         previousLoanAmount: totalRemaining,
       }));
     }, [formData?.issueDate, selectedLoanIds, loanStore.loans]);
+    
     useEffect(() => {
-        async function callFun() {
-          const { subtotal }: any = await loanStore.calculateLoanAmounts({
-            loan: formData,
-            prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
-            calculate: true,
-          });
-          setSubTotal(subtotal);
+        let selectedPreviousTotal = 0; 
+        async function callFun2() {
+          console.log("callFun2");
+        for (const loan of activeLoans) {
+            if (selectedLoanIds.includes(loan._id)) {
+              const result = await loanStore.calculateLoanAmounts({
+                loan,
+                date: formData.issueDate,
+                calculate: true,
+              });
+            
+              const remaining = result?.remaining || 0;
+              selectedPreviousTotal += remaining;
+            }
+          }
+
+          setSelectedPreviousLoanTotal(selectedPreviousTotal);
+          console.log(selectedPreviousTotal, "selectedPreviousTotal");
         }
-        callFun();   
+          async function callFun() {
+            const result =  await loanStore.calculateLoanAmounts({
+                loan: formData,
+                // prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
+                prevLoanTotal:selectedPreviousTotal,
+                calculate: true,
+              });
+             const {subtotal, total, remaining}:any = result
+               console.log(result, "result");
+          console.log(selectedPreviousTotal, "selectedPreviousTotal");
+
+            setSubTotal(subtotal);
+            setModalTotal(total);
+            setModalRemaining(remaining);
+          }
+
+        callFun2();
+
+        callFun();  
     }, [formData])
 
     if (loading) {
@@ -416,8 +395,7 @@ const handleSave = async () => {
       { key: "annualMaintenanceFee", label: "Annual Maintenance Fee" },
     ];
 
-    const formatDate = (dateStr: string) =>
-      moment(dateStr, "MM-DD-YYYY").format("MMM DD, YYYY");
+   
     const handleCompanyChange = (selectedCompany: any) => {
       if (!selectedCompany) {
         setFormData((prev) => {
@@ -586,11 +564,11 @@ const handleSave = async () => {
                     Issue Date
                   </label>
                   <LocalizationProvider dateAdapter={AdapterMoment}>
-                  <DatePicker
-                    value={moment(formData.issueDate, "MM-DD-YYYY")}
-                    onChange={handleIssueDateChange}
-                    slotProps={{ textField: { size: "small" } }}
-                  />
+                    <DatePicker
+                      value={moment(formData.issueDate, "MM-DD-YYYY")}
+                      onChange={handleIssueDateChange}
+                      slotProps={{ textField: { size: "small" } }}
+                    />
                   </LocalizationProvider>
                 </div>
 
@@ -630,106 +608,14 @@ const handleSave = async () => {
                 </div>
                 {/* Overlap Mode */}
                 {overlapMode && activeLoans.length > 0 && (
-                  <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
-                    <div className="transition-all duration-700 ease-in-out overflow-auto max-h-40 opacity-100">
-                      {activeLoans.map((loan) => {
-                        const { runningTenure, total, remaining } =
-                          getLoanRunningDetails(loan, formData.issueDate);
-                        const loanIdStr = loan._id?.toString?.();
-                        const alreadyMerged = loan.status === "Merged";
-                        const isSelected = selectedLoanIds.includes(loanIdStr);
-                        const isDisabled =
-                          alreadyMerged || previousToggleDisabled;
-                        const checked = alreadyMerged ? true : isSelected;
-
-                        return (
-                          <div
-                            key={loanIdStr}
-                            className={`flex justify-between items-center p-3 border rounded-lg shadow-sm transition ${
-                              checked
-                                ? "bg-green-100 border-green-400"
-                                : "bg-white hover:bg-gray-50"
-                            } ${
-                              isDisabled ? "opacity-70 cursor-not-allowed" : ""
-                            }`}
-                            onClick={() => {
-                              if (isDisabled) return;
-                              setSelectedLoanIds((prev) =>
-                                prev.includes(loanIdStr)
-                                  ? prev.filter((id) => id !== loanIdStr)
-                                  : [...prev, loanIdStr]
-                              );
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="flex flex-col text-xs">
-                                <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
-                                  Issue Date: {formatDate(loan.issueDate)}
-                                </span>
-                                <span className="font-semibold mt-1">
-                                  Company Name:{" "}
-                                  {companyStore.companies.find(
-                                    (c) => c._id === loan.company
-                                  )?.companyName || "-"}
-                                </span>
-                                <span className="font-semibold">
-                                  Current Tenure: <b>{runningTenure} Months</b>
-                                </span>
-                                <span className="text-green-700 font-bold">
-                                  Total: $
-                                  {total.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                  })}{" "}
-                                  (
-                                  <span className="text-red-600 font-bold">
-                                    Remaining: $
-                                    {(alreadyMerged
-                                      ? 0
-                                      : remaining
-                                    ).toLocaleString(undefined, {
-                                      minimumFractionDigits: 2,
-                                    })}
-                                  </span>
-                                  )
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <IconButton
-                                size="small"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleView(loan);
-                                }}
-                              >
-                                <Eye size={18} />
-                              </IconButton>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  if (isDisabled) return;
-                                  setSelectedLoanIds((prev) =>
-                                    prev.includes(loanIdStr)
-                                      ? prev.filter((id) => id !== loanIdStr)
-                                      : [...prev, loanIdStr]
-                                  );
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                className={`w-4 h-4 m-0 accent-green-600 ${
-                                  isDisabled
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"
-                                }`}
-                                disabled={isDisabled}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <PreviousLoan
+                    activeLoans={activeLoans}
+                    formData={formData}
+                    selectedLoanIds={selectedLoanIds}
+                    previousToggleDisabled={previousToggleDisabled}
+                    setSelectedLoanIds={setSelectedLoanIds}
+                    handleView={handleView}
+                  />
                 )}
               </div>
 
@@ -930,7 +816,7 @@ const handleSave = async () => {
                           : "Loan Amount (Base + Additional Fees)"}
                       </span>
                       <span className="text-md text-green-700 px-2 rounded-md bg-white">
-                        {convertToUsd.format(subTotal)}
+                        {convertToUsd.format(subTotal + selectedPreviousLoanTotal)}
                       </span>
                     </div>
                   </div>
@@ -1089,10 +975,7 @@ const handleSave = async () => {
                     </p>
                     <p className="font-semibold text-green-700">
                       $
-                      {getLoanRunningDetails(
-                        viewLoan,
-                        formData.issueDate
-                      ).total.toLocaleString(undefined, {
+                      {modalTotal.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                       })}
                     </p>
@@ -1106,8 +989,7 @@ const handleSave = async () => {
                       $
                       {(viewLoan.status === "Merged"
                         ? 0
-                        : getLoanRunningDetails(viewLoan, formData.issueDate)
-                            .remaining
+                        : modalRemaining
                       ).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                       })}

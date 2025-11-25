@@ -167,19 +167,18 @@ class LoanStore {
     }
   }
   async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0, calculate = false }) {
-    if (!loan) return null;
 
-    const interestType = loan.interestType || "flat";
-    const monthlyRate = loan.monthlyRate || 0;
-    const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
-    const paidAmount = loan.paidAmount || 0;
-    let subtotal = loan.subTotal || 0;
+    const interestType = loan?.interestType || "flat";
+    const monthlyRate = loan?.monthlyRate || 0;
+    const issueDate = moment(loan?.issueDate, "MM-DD-YYYY");
+    const paidAmount = loan?.paidAmount || 0;
+    let subtotal = loan?.subTotal || 0;
     let total = subtotal;
     let today = moment();
     if (date) {
       today = date ? moment(date, "MM-DD-YYYY") : moment();
     }
-    let originalTerm = loan.loanTerms || 0;
+    let originalTerm = loan?.loanTerms || 0;
     const monthsPassed =
       Math.floor(today.diff(issueDate, "days") / 30) || 1;
     const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed) || ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
@@ -195,10 +194,12 @@ class LoanStore {
     else {
       rate = monthlyRate / 100;
     }
+    console.log(prevLoanTotal, 'prevLoanTotal');
 
 
-    const baseNum = convertToNumber(loan.baseAmount);
+    const baseNum = convertToNumber(loan?.baseAmount);
     const prevLoan = convertToNumber(prevLoanTotal);
+    console.log(prevLoan,'prevLoan');
     const totalBase = baseNum + prevLoan;
     if (totalBase <= 0)
       return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
@@ -214,7 +215,7 @@ class LoanStore {
     ];
 
     const feeTotal = feeKeys.reduce((sum, key) => {
-      const fee = loan.fees[key];
+      const fee = loan?.fees[key];
       if (!fee) return sum;
       const value = convertToNumber(fee.value);
       return fee.type === "percentage"
@@ -252,36 +253,26 @@ class LoanStore {
       }
     }
     const remaining = Math.max(0, total - paidAmount);
-    console.log("Loan Calculation Debug:", {
+    const obj = {
       baseNum,
+      monthInt: monthInt ?  parseFloat(monthInt.toFixed(2)) : 0 ,
+      subtotal: subtotal ? parseFloat(subtotal.toFixed(2)) : 0 ,
+      interestAmount: interest ?  parseFloat(interest.toFixed(2)): 0,
+      totalWithInterest:total ?  parseFloat(total.toFixed(2)) : 0,
+      total,
+      paidAmount,
+      remaining,
+      monthsPassed,
+      currentTerm: dynamicTerm,
+      dynamicTerm,
       termNum,
       rateNum,
       interestType,
       monthlyRate,
       issueDate,
-      monthInt,
-      subtotal,
-      interestAmount: interest,
-      totalWithInterest: total,
-      total,
-      paidAmount,
-      remaining,
-      monthsPassed,
-      currentTerm: dynamicTerm,
-      dynamicTerm,
-    });
-    return {
-      monthInt: parseFloat(monthInt.toFixed(2)),
-      subtotal: parseFloat(subtotal.toFixed(2)),
-      interestAmount: parseFloat(interest.toFixed(2)),
-      totalWithInterest: parseFloat(total.toFixed(2)),
-      total,
-      paidAmount,
-      remaining,
-      monthsPassed,
-      currentTerm: dynamicTerm,
-      dynamicTerm,
-    };
+      prevLoan,
+    }
+    return obj;
   }
 }
 
