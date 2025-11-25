@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { loanStore } from "../store/LoanStore";
 import { companyStore } from "../store/CompanyStore";
 import { formatDate } from "../utils/helpers";
@@ -9,7 +9,6 @@ export const PreviousLoan = ({
   activeLoans,
   formData,
   selectedLoanIds,
-  previousToggleDisabled,
   setSelectedLoanIds,
   handleView,
 }) => {
@@ -17,7 +16,7 @@ export const PreviousLoan = ({
 
   useEffect(() => {
     const calculate = async () => {
-      const results: any[] = [];
+      const results: unknown[] = [];
 
       for (const loan of activeLoans) {
         const result = await loanStore.calculateLoanAmounts({
@@ -37,7 +36,7 @@ export const PreviousLoan = ({
     };
 
     calculate();
-  }, [formData]);
+  }, [activeLoans, formData]);
   return (
     <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
       <div className="transition-all duration-700 ease-in-out overflow-auto max-h-40 opacity-100">
@@ -46,7 +45,7 @@ export const PreviousLoan = ({
           const loanIdStr = loan._id?.toString?.();
           const alreadyMerged = loan.status === "Merged";
           const isSelected = selectedLoanIds.includes(loanIdStr);
-          const isDisabled = alreadyMerged || previousToggleDisabled;
+          const isDisabled = alreadyMerged;
           const checked = alreadyMerged ? true : isSelected;
 
           return (

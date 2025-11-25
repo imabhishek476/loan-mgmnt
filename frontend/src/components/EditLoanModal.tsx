@@ -12,7 +12,6 @@ import {
   Switch,
   Autocomplete,
   TextField as MuiTextField,
-  IconButton,
   CircularProgress,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -20,7 +19,6 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker } from "@mui/x-date-pickers";
 import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
 import { fetchLoanById } from "../services/LoanService";
-import { getClientById } from "../services/ClientServices";
 import { convertToUsd, isDateBefore } from "../utils/helpers";
 import { LoanTermsCard } from "./LoanTermsCard";
 import { ALLOWED_TERMS } from "../utils/constants";
@@ -33,7 +31,7 @@ const parseNumber = (val: any): number => {
 const buildTenures = (
   issueDateStr: string,
   terms: number[],
-  outFormat: "iso" | "mm-dd-yyyy" = "mm-dd-yyyy" 
+  outFormat: "iso" | "mm-dd-yyyy" = "mm-dd-yyyy"
 ) => {
   const start = moment(issueDateStr, "MM-DD-YYYY").startOf("day");
   return terms.map((t) => {
@@ -55,19 +53,19 @@ const EditLoanModal = observer(
     const [activeLoans, setActiveLoans] = useState<any[]>([]);
     const [selectedLoanIds, setSelectedLoanIds] = useState<string[]>([]);
     const [overlapMode, setOverlapMode] = useState(false);
+    const [disabledoverlapMode, setDisabledOverlapMode] = useState(false);
     const [saving, setSaving] = useState(false);
     const [subTotal, setSubTotal] = useState(0);
     const [modalTotal, setModalTotal] = useState(0);
     const [modalRemaining, setModalRemaining] = useState(0);
 
-
     // @ts-ignore
-    const [endDate, setEndDate] = useState<string | null>(null);
+    const [, setEndDate] = useState<string | null>(null);
     const [viewLoan, setViewLoan] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [previousToggleDisabled, setPreviousToggleDisabled] = useState(false);
     const [originalLoan, setOriginalLoan] = useState<any>(null);
-    const [selectedPreviousLoanTotal, setSelectedPreviousLoanTotal] = useState(0);
+    const [selectedPreviousLoanTotal, setSelectedPreviousLoanTotal] =
+      useState(0);
 
     useEffect(() => {
       let mounted = true;
@@ -138,15 +136,13 @@ const EditLoanModal = observer(
             let totalRemaining = 0;
 
             for (const l of previousLoans) {
-              const result = await loanStore.calculateLoanAmounts({
+              const result :any = await loanStore.calculateLoanAmounts({
                 loan: l,
                 date: formData.issueDate,
               });
 
               totalRemaining += result?.remaining || 0;
             }
-
-            
             setFormData((prev) => ({
               ...prev,
               previousLoanAmount: loan.previousLoanAmount || totalRemaining,
@@ -167,7 +163,6 @@ const EditLoanModal = observer(
       };
     }, [loanId]);
 
-
     const handleView = async (loan: any) => {
       try {
         await fetchPaymentsByLoan(loan._id);
@@ -176,43 +171,43 @@ const EditLoanModal = observer(
     };
 
     const handleCloseView = () => setViewLoan(null);
-const handleIssueDateChange = (newDate: Moment | null) => {
-  if (!newDate) return;
+    const handleIssueDateChange = (newDate: Moment | null) => {
+      if (!newDate) return;
 
-  const formattedDate = newDate.format("MM-DD-YYYY");
-  const selectedMergedLoans = activeLoans.filter((l) =>
-    selectedLoanIds.includes(l._id)
-  );
-  for (const loan of selectedMergedLoans) {
-    const mergedIssueDate = moment(loan.issueDate).format("MM-DD-YYYY");
-
-    if (isDateBefore(formattedDate, mergedIssueDate)) {
-      toast.warn(
-        `Issue Date cannot be earlier than merged loan issued on ${mergedIssueDate}!`
+      const formattedDate = newDate.format("MM-DD-YYYY");
+      const selectedMergedLoans = activeLoans.filter((l) =>
+        selectedLoanIds.includes(l._id)
       );
-      return; 
-    }
-  }
-  setFormData((prev: any) => ({
-    ...prev,
-    issueDate: formattedDate,
-  }));
-};
+      for (const loan of selectedMergedLoans) {
+        const mergedIssueDate = moment(loan.issueDate).format("MM-DD-YYYY");
 
-const handleSave = async () => {
-  try {
-    if (saving) return;
-    setSaving(true);
-    if (!formData.client) return toast.error("Please select a client");
-    if (!formData.company) return toast.error("Please select a company");
-    if (!formData.baseAmount || formData.baseAmount <= 0)
-      return toast.error("Base amount must be greater than 0");
-    if (!formData.loanTerms || formData.loanTerms <= 0)
-      return toast.error("Please enter valid loan terms");
-    const loan = await fetchLoanById(loanId);
-    if (!loan) return toast.error("Loan not found");
-     const { totalWithInterest, subtotal } =
-      await loanStore.calculateLoanAmounts({
+        if (isDateBefore(formattedDate, mergedIssueDate)) {
+          toast.warn(
+            `Issue Date cannot be earlier than merged loan issued on ${mergedIssueDate}!`
+          );
+          return;
+        }
+      }
+      setFormData((prev: any) => ({
+        ...prev,
+        issueDate: formattedDate,
+      }));
+    };
+
+    const handleSave = async () => {
+      try {
+        if (saving) return;
+        setSaving(true);
+        if (!formData.client) return toast.error("Please select a client");
+        if (!formData.company) return toast.error("Please select a company");
+        if (!formData.baseAmount || formData.baseAmount <= 0)
+          return toast.error("Base amount must be greater than 0");
+        if (!formData.loanTerms || formData.loanTerms <= 0)
+          return toast.error("Please enter valid loan terms");
+        const loan = await fetchLoanById(loanId);
+        if (!loan) return toast.error("Loan not found");
+        const { totalWithInterest, subtotal } =
+          await loanStore.calculateLoanAmounts({
             loan: formData,
             date: null,
             prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
@@ -286,7 +281,7 @@ const handleSave = async () => {
       if (!loanStore?.loans) return;
 
       const selectedIssue = new Date(formData.issueDate);
-      
+
       const filteredLoans = loanStore.loans.filter((l) => {
         const lClient = l.client?._id?.toString() || l.client?.toString();
         const originalClient =
@@ -297,82 +292,72 @@ const handleSave = async () => {
         if (l._id?.toString() === originalLoan._id?.toString()) return false;
         if (l.status === "Paid Off") return false;
         if (l.loanStatus === "Deactivated") return false;
-        console.log(formData._id, "formData._id");
-        console.log(l.parentLoanId, l.status, "l.parentLoanId,l.status");
-
-        if (l.status === "Merged" && l.parentLoanId !== formData._id ) return false;
+        if (l.status === "Merged" && l.parentLoanId !== formData._id){
+              return false;
+        }else if (l.status === "Merged" && l.parentLoanId === formData._id){
+          setOverlapMode(true);
+          setDisabledOverlapMode(true);
+        }
+          
 
         const issue = l.issueDate ? new Date(l.issueDate) : null;
-
         return !issue || issue <= selectedIssue;
       });
-
       setActiveLoans(filteredLoans);
-        async function call() {
-          const filteredLoansrray = filteredLoans
-        .filter((l) => selectedLoanIds.includes(l._id));
-      
-                  let totalRemaining = 0;
+      async function filterTotalRems() {
+        const filteredLoansrray = filteredLoans.filter((l) =>
+          selectedLoanIds.includes(l._id)
+        );
 
-                  for (const l of filteredLoansrray) {
-                    const result = await loanStore.calculateLoanAmounts({
-                      loan: l,
-                      date: formData.issueDate,
-                    });
+        let totalRemaining = 0;
 
-                    totalRemaining += result?.remaining || 0;
-                  }
-          return totalRemaining;
+        for (const l of filteredLoansrray) {
+          const result:any = await loanStore.calculateLoanAmounts({
+            loan: l,
+            date: formData.issueDate,
+          });
+
+          totalRemaining += result?.remaining || 0;
         }
-const totalRemaining = call();
-       
-
+        return totalRemaining;
+      }
+      const totalRemaining = filterTotalRems();
       setFormData((prev) => ({
         ...prev,
         previousLoanAmount: totalRemaining,
       }));
     }, [formData?.issueDate, selectedLoanIds, loanStore.loans]);
-    
+
     useEffect(() => {
-        let selectedPreviousTotal = 0; 
-        async function callFun2() {
-          console.log("callFun2");
+      let selectedPreviousTotal = 0;
+      async function filterTotalRems() {
         for (const loan of activeLoans) {
-            if (selectedLoanIds.includes(loan._id)) {
-              const result = await loanStore.calculateLoanAmounts({
-                loan,
-                date: formData.issueDate,
-                calculate: true,
-              });
-            
-              const remaining = result?.remaining || 0;
-              selectedPreviousTotal += remaining;
-            }
+          if (selectedLoanIds.includes(loan._id)) {
+            const result: any = await loanStore.calculateLoanAmounts({
+              loan,
+              date: formData.issueDate,
+              calculate: true,
+            });
+            const remaining = result?.remaining || 0;
+            selectedPreviousTotal += remaining;
           }
-
-          setSelectedPreviousLoanTotal(selectedPreviousTotal);
-          console.log(selectedPreviousTotal, "selectedPreviousTotal");
         }
-          async function callFun() {
-            const result =  await loanStore.calculateLoanAmounts({
-                loan: formData,
-                // prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
-                prevLoanTotal:selectedPreviousTotal,
-                calculate: true,
-              });
-             const {subtotal, total, remaining}:any = result
-               console.log(result, "result");
-          console.log(selectedPreviousTotal, "selectedPreviousTotal");
-
-            setSubTotal(subtotal);
-            setModalTotal(total);
-            setModalRemaining(remaining);
-          }
-
-        callFun2();
-
-        callFun();  
-    }, [formData])
+        setSelectedPreviousLoanTotal(selectedPreviousTotal);
+      }
+      async function getCurrentLoan() {
+        const result = await loanStore.calculateLoanAmounts({
+          loan: formData,
+          prevLoanTotal: selectedPreviousTotal,
+          calculate: true,
+        });
+        const { subtotal, total, remaining }: any = result;
+        setSubTotal(subtotal);
+        setModalTotal(total);
+        setModalRemaining(remaining);
+      }
+      filterTotalRems();
+      getCurrentLoan();
+    }, [formData]);
 
     if (loading) {
       return (
@@ -395,7 +380,6 @@ const totalRemaining = call();
       { key: "annualMaintenanceFee", label: "Annual Maintenance Fee" },
     ];
 
-   
     const handleCompanyChange = (selectedCompany: any) => {
       if (!selectedCompany) {
         setFormData((prev) => {
@@ -598,6 +582,7 @@ const totalRemaining = call();
                     color="success"
                     size="small"
                     checked={overlapMode}
+                    disabled={disabledoverlapMode}
                     onChange={(e) => {
                       setOverlapMode(e.target.checked);
                       if (!e.target.checked) {
@@ -612,7 +597,6 @@ const totalRemaining = call();
                     activeLoans={activeLoans}
                     formData={formData}
                     selectedLoanIds={selectedLoanIds}
-                    previousToggleDisabled={previousToggleDisabled}
                     setSelectedLoanIds={setSelectedLoanIds}
                     handleView={handleView}
                   />
@@ -816,7 +800,9 @@ const totalRemaining = call();
                           : "Loan Amount (Base + Additional Fees)"}
                       </span>
                       <span className="text-md text-green-700 px-2 rounded-md bg-white">
-                        {convertToUsd.format(subTotal + selectedPreviousLoanTotal)}
+                        {convertToUsd.format(
+                          subTotal + selectedPreviousLoanTotal
+                        )}
                       </span>
                     </div>
                   </div>

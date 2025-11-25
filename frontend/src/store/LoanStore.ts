@@ -194,12 +194,10 @@ class LoanStore {
     else {
       rate = monthlyRate / 100;
     }
-    console.log(prevLoanTotal, 'prevLoanTotal');
 
 
     const baseNum = convertToNumber(loan?.baseAmount);
     const prevLoan = convertToNumber(prevLoanTotal);
-    console.log(prevLoan,'prevLoan');
     const totalBase = baseNum + prevLoan;
     if (totalBase <= 0)
       return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
