@@ -144,6 +144,7 @@ const EditLoanModal = observer(
     const [selectedLoanIds, setSelectedLoanIds] = useState<string[]>([]);
     const [overlapMode, setOverlapMode] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [subTotal, setSubTotal] = useState(0);
     // @ts-ignore
     const [endDate, setEndDate] = useState<string | null>(null);
     const [viewLoan, setViewLoan] = useState<any>(null);
@@ -448,6 +449,19 @@ const handleSave = async () => {
         previousLoanAmount: totalRemaining,
       }));
     }, [formData?.issueDate, selectedLoanIds, loanStore.loans]);
+    useEffect(() => {
+        async function callFun() {
+          console.log('calling');
+          const { subtotal }: any = await loanStore.calculateLoanAmounts({
+            loan: formData,
+            prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
+            calculate: true,
+          });
+          console.log(subtotal, "subtotal");
+          setSubTotal(subtotal);
+        }
+        callFun();   
+    }, [formData])
 
     if (loading) {
       return (
@@ -543,14 +557,6 @@ const handleSave = async () => {
 
       setCompanyData(selectedCompany);
     };
-    const currentCalc = calculateLoan(
-      formData.baseAmount || 0,
-      formData.fees,
-      formData.interestType || "flat",
-      formData.monthlyRate || 0,
-      formData.loanTerms || 24,
-      overlapMode ? selectedPreviousLoanTotal : 0
-    );
     return (
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2">
@@ -992,7 +998,7 @@ const handleSave = async () => {
                           : "Loan Amount (Base + Additional Fees)"}
                       </span>
                       <span className="text-md text-green-700 px-2 rounded-md bg-white">
-                        {convertToUsd.format(currentCalc.subtotal)}
+                        {convertToUsd.format(subTotal)}
                       </span>
                     </div>
                   </div>
