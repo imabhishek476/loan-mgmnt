@@ -50,7 +50,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
           : null,
       };
       try {
-        const data = await getClientsSearch(filters);
+        const data = await clientStore.fetchClients(filters,true);
         setClientsList(data.clients);
         return {
           data: data.clients,
