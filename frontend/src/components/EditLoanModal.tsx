@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { X, Save, Eye, RefreshCw } from "lucide-react";
+import { X, Save, RefreshCw } from "lucide-react";
 import { clientStore } from "../store/ClientStore";
 import { companyStore } from "../store/CompanyStore";
 import { loanStore} from "../store/LoanStore";

@@ -1,5 +1,5 @@
 import moment from 'moment';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ALLOWED_TERMS } from '../utils/constants';
 import { loanStore } from '../store/LoanStore';
 import { convertToUsd } from '../utils/helpers';
