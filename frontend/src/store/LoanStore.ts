@@ -180,14 +180,13 @@ class LoanStore {
           today = date ? moment(date, "MM-DD-YYYY") : moment();
         }
         let originalTerm = loan.loanTerms || 0;
-        if (selectedTerm) {
-          originalTerm = selectedTerm 
-            }
         const monthsPassed =
       Math.floor(today.diff(issueDate, "days") / 30) || 1;
     //  const dynamicTerm =originalTerm && ALLOWED_TERMS.includes(originalTerm)? originalTerm : ALLOWED_TERMS.find((t) => t >= monthsPassed) || originalTerm;
     const  dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed) || ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
-    if (monthsPassed  < dynamicTerm){
+    if (selectedTerm) {
+      originalTerm = selectedTerm
+    }else if (monthsPassed  < dynamicTerm){
       originalTerm = dynamicTerm;
         }
         let rate = null;
@@ -198,7 +197,6 @@ class LoanStore {
           rate = monthlyRate / 100;
         }
         const remaining = Math.max(0, total - paidAmount);
-// --------------------------
 
     const baseNum = convertToNumber(loan.baseAmount);
     const prevLoan = convertToNumber(prevLoanTotal);
