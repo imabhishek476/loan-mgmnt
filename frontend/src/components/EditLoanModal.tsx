@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { X, Save, Eye, RefreshCw } from "lucide-react";
 import { clientStore } from "../store/ClientStore";
 import { companyStore } from "../store/CompanyStore";
-import { loanStore } from "../store/LoanStore";
+import { loanStore} from "../store/LoanStore";
 import moment from "moment";
 import type { Moment } from "moment";
 import {
@@ -316,19 +316,18 @@ const handleSave = async () => {
       return toast.error("Please enter valid loan terms");
     const loan = await fetchLoanById(loanId);
     if (!loan) return toast.error("Loan not found");
-
-    const { runningTenure } = getLoanRunningDetails(loan, formData.issueDate);
-    const calc = calculateLoan(
-      formData.baseAmount,
-      formData.fees,
-      formData.interestType,
-      formData.monthlyRate,
-      runningTenure,
-      overlapMode ? selectedPreviousLoanTotal : 0
-    );
-
-    const totalDue = calc.totalWithInterest || 0;
+     const { totalWithInterest, subtotal} = await  loanStore.calculateLoanAmounts({
+       loan: formData,
+       date: null,
+       selectedTerm: formData.loanTerms,
+       prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
+       calculate :  true,
+     });
+    const totalDue = totalWithInterest || 0;
     const paid = parseFloat(formData.paidAmount || 0);
+    console.log(formData.loanTerms, "selectedTerm");
+   console.log(totalDue, "totalDue");
+    console.log(paid, "totalDue");
     let status = "Active";
     if (paid >= totalDue) status = "Paid Off";
     else if (paid > 0 && paid < totalDue) status = "Partial Payment";
@@ -337,7 +336,7 @@ const handleSave = async () => {
       ...formData,
       tenures: tenures,
       previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
-      subTotal: calc.subtotal,
+      subTotal: subtotal,
       totalLoan: totalDue,
       status,
     };

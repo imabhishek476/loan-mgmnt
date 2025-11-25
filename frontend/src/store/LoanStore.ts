@@ -9,6 +9,9 @@ import {
   type LoanPayload,
 } from "../services/LoanService";
 import { toast } from "react-toastify";
+import moment from "moment";
+import { ALLOWED_TERMS } from "../utils/constants";
+import { convertToNumber } from "../utils/helpers";
 
 export interface Loan {
   paidAmount: number;
@@ -45,7 +48,6 @@ class LoanStore {
   setTableRef(ref: any) {
     this.tableRef = ref; 
   }
-  // Add this method to LoanStore class
   async updateLoan(id: string, updates: any) {
     this.loading = true;
     try {
@@ -164,6 +166,102 @@ class LoanStore {
       console.log('refresh table failed', this.tableRef)
     }
   }
+  async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0,calculate=false}) {
+        if (!loan) return null;
+    
+        const interestType = loan.interestType || "flat";
+        const monthlyRate = loan.monthlyRate || 0;
+        const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+        const paidAmount = loan.paidAmount || 0;
+        let subtotal = loan.subTotal || 0;
+        let total = subtotal;
+        let today = moment();
+        if(date){
+          today = date ? moment(date, "MM-DD-YYYY") : moment();
+        }
+        let originalTerm = loan.loanTerms || 0;
+        if (selectedTerm) {
+          originalTerm = selectedTerm 
+            }
+        const monthsPassed =
+      Math.floor(today.diff(issueDate, "days") / 30) || 1;
+    //  const dynamicTerm =originalTerm && ALLOWED_TERMS.includes(originalTerm)? originalTerm : ALLOWED_TERMS.find((t) => t >= monthsPassed) || originalTerm;
+    const  dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed) || ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
+    if (monthsPassed  < dynamicTerm){
+      originalTerm = dynamicTerm;
+        }
+        let rate = null;
+        if(calculate){
+          rate = monthlyRate;
+        }
+        else{        
+          rate = monthlyRate / 100;
+        }
+        const remaining = Math.max(0, total - paidAmount);
+// --------------------------
+
+    const baseNum = convertToNumber(loan.baseAmount);
+    const prevLoan = convertToNumber(prevLoanTotal);
+  const totalBase = baseNum + prevLoan;
+  if (totalBase <= 0)
+    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
+
+    const rateNum = convertToNumber(rate);
+    const termNum = Math.max(0, Math.floor(convertToNumber(originalTerm)));
+    const feeKeys = [
+      "administrativeFee",
+      "applicationFee",
+      "attorneyReviewFee",
+      "brokerFee",
+      "annualMaintenanceFee",
+    ];
+
+  const feeTotal = feeKeys.reduce((sum, key) => {
+    const fee = loan.fees[key];
+    if (!fee) return sum;
+    const value = convertToNumber(fee.value);
+    return fee.type === "percentage"
+      ? sum + (baseNum * value) / 100
+      : sum + value;
+  }, 0);
+    if (calculate) {
+      subtotal = totalBase + feeTotal;
+    }
+  let interest = 0;
+  let monthInt = 0;
+  if (termNum > 0 && rateNum > 0) {
+    if (interestType === "flat") {
+      for (let i = 6; i <= termNum; i += 6) {
+        const stepInterest = total * (rateNum / 100) * 6;
+        monthInt = total * (rateNum / 100);
+        total += stepInterest;
+        if (i === 18 || i === 30) total += 200;
+      }
+      interest = total - subtotal;
+    } else {
+      for (let i = 1; i <= termNum; i++) {
+          total *= 1 + rateNum / 100;
+        if (i === 18 || i === 30) total += 200;
+      }      
+      interest = total - subtotal;
+      monthInt = interest / termNum;
+    
+    }
+  }
+
+  return {
+    monthInt: parseFloat(monthInt.toFixed(2)),
+    subtotal: parseFloat(subtotal.toFixed(2)),
+    interestAmount: parseFloat(interest.toFixed(2)),
+    totalWithInterest: parseFloat(total.toFixed(2)),
+    total,
+    paidAmount,
+    remaining,
+    monthsPassed,
+    currentTerm: dynamicTerm,
+    dynamicTerm,
+        };
+    }
 }
 
 export const loanStore = new LoanStore();
