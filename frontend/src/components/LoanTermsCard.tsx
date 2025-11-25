@@ -44,7 +44,6 @@ useEffect(() => {
       });
     }
     setLoanResults(results);
-    console.log(results, 'loanResults');
   };
 
   calculate();

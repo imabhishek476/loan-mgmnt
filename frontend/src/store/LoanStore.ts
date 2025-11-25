@@ -166,7 +166,7 @@ class LoanStore {
       console.log('refresh table failed', this.tableRef)
     }
   }
-  async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0,      calculate = false }) {
+  async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0, calculate = false }) {
     if (!loan) return null;
 
     const interestType = loan.interestType || "flat";
@@ -195,7 +195,7 @@ class LoanStore {
     else {
       rate = monthlyRate / 100;
     }
-    const remaining = Math.max(0, total - paidAmount);
+
 
     const baseNum = convertToNumber(loan.baseAmount);
     const prevLoan = convertToNumber(prevLoanTotal);
@@ -223,18 +223,22 @@ class LoanStore {
     }, 0);
     if (calculate) {
       subtotal = totalBase + feeTotal;
+      total = subtotal;
     }
 
     let interest = 0;
     let monthInt = 0;
     if (termNum > 0 && rateNum > 0) {
       if (interestType === "flat") {
+
         for (let i = 6; i <= termNum; i += 6) {
           const stepInterest = total * (rateNum / 100) * 6;
           monthInt = total * (rateNum / 100);
           total += stepInterest;
           if (i === 18 || i === 30) total += 200;
         }
+
+
         interest = total - subtotal;
       } else {
         for (let i = 1; i <= termNum; i++) {
@@ -244,9 +248,28 @@ class LoanStore {
         interest = total - subtotal;
         monthInt = interest / termNum;
 
+
       }
     }
-
+    const remaining = Math.max(0, total - paidAmount);
+    console.log("Loan Calculation Debug:", {
+      baseNum,
+      termNum,
+      rateNum,
+      interestType,
+      monthlyRate,
+      issueDate,
+      monthInt,
+      subtotal,
+      interestAmount: interest,
+      totalWithInterest: total,
+      total,
+      paidAmount,
+      remaining,
+      monthsPassed,
+      currentTerm: dynamicTerm,
+      dynamicTerm,
+    });
     return {
       monthInt: parseFloat(monthInt.toFixed(2)),
       subtotal: parseFloat(subtotal.toFixed(2)),
