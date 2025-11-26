@@ -138,7 +138,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           <div className="relative flex-grow min-w-[250px] max-w-md">
             <input
               type="text"
-              placeholder="Search by Customer or Company"
+              placeholder="Search by Customer Details"
               className="w-full sm:p-2 pr-10 pl-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
