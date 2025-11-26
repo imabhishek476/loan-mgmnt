@@ -19,7 +19,8 @@ const AuditLogsTable: React.FC = () => {
     () => debounce((value: string) => setSearch(value), 1000),
     []
   );
-
+  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPageSize, setCurrentPageSize] = useState(10);
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
   };
@@ -125,7 +126,7 @@ const AuditLogsTable: React.FC = () => {
   const columns = [
     {
       title: "Sr.no",
-      render: (rowData: any) => rowData.tableData.id + 1,
+      render: (rowData: any) =>rowData.tableData.id + 1 + currentPage * currentPageSize,
       width: "5%",
     },
     {
@@ -191,6 +192,8 @@ const AuditLogsTable: React.FC = () => {
           data={(query) =>
             new Promise(async (resolve, reject) => {
               try {
+                   setCurrentPage(query.page);
+                   setCurrentPageSize(query.pageSize);
                 if (firstLoad.current) {
                   firstLoad.current = false;
                 }
