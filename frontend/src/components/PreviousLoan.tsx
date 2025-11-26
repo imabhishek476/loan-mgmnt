@@ -50,7 +50,7 @@ export const PreviousLoan = ({
             remaining,
             issueDate,
             company,
-            monthsPassed,
+            // monthsPassed,
           } = loan;
           const loanIdStr = loan._id?.toString?.();
           const alreadyMerged = loan.status === "Merged";
@@ -86,25 +86,21 @@ export const PreviousLoan = ({
                     {companyStore.companies.find((c) => c._id === company)
                       ?.companyName || "-"}
                   </span>
-                  {currentTerm > monthsPassed ? (
                     <span className="font-semibold">
                       Current Tenure: <b>{currentTerm} Months</b>
                     </span>
-                  ) : (
-                    <span className="font-semibold blink text-red-600">
-                      Delayed
-                    </span>
-                  )}
                   <span className="text-green-700 font-bold">
                     Total: $
-                    {total.toLocaleString(undefined, {
+                    {Number(total).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
                     })}{" "}
                   </span>
                   <span className="text-red-600 font-bold">
                     (Remaining: $
-                    {(alreadyMerged ? 0 : remaining).toLocaleString(undefined, {
+                    {Number(alreadyMerged ? 0 : remaining).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
                     })}
                     )
                   </span>
