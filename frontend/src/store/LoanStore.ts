@@ -188,7 +188,7 @@ class LoanStore {
        monthsPassed = today.diff(issueDate, "months") + 1;
       // console.log(monthsPassed, 'monthsPassed previous loan');
     } 
-    const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed) || ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
+    const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
     if (selectedTerm) {
       originalTerm = selectedTerm
     } else if (monthsPassed < dynamicTerm) {
