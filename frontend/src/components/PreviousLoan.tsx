@@ -22,13 +22,15 @@ export const PreviousLoan = ({
         const result = await loanStore.calculateLoanAmounts({
           loan: loan,
           calculate: true,
+          date: formData.issueDate,
         });
         results.push({
           ...result,
-          company: loan.company,
-          issueDate: loan.issueDate,
-          status: loan.status,
-          _id: loan._id,
+          company: loan?.company,
+          client: loan?.client?._id,
+          issueDate: loan?.issueDate,
+          status: loan?.status,
+          _id: loan?._id,
         });
       }
 
@@ -41,7 +43,14 @@ export const PreviousLoan = ({
     <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
       <div className="transition-all duration-700 ease-in-out overflow-auto max-h-40 opacity-100">
         {loanResults.map((loan) => {
-          const { currentTerm, total, remaining, issueDate, company } = loan;
+          const {
+            currentTerm,
+            total,
+            remaining,
+            issueDate,
+            company,
+            monthsPassed,
+          } = loan;
           const loanIdStr = loan._id?.toString?.();
           const alreadyMerged = loan.status === "Merged";
           const isSelected = selectedLoanIds.includes(loanIdStr);
@@ -76,9 +85,15 @@ export const PreviousLoan = ({
                     {companyStore.companies.find((c) => c._id === company)
                       ?.companyName || "-"}
                   </span>
-                  <span className="font-semibold">
-                    Current Tenure: <b>{currentTerm} Months</b>
-                  </span>
+                  {currentTerm > monthsPassed ? (
+                    <span className="font-semibold">
+                      Current Tenure: <b>{currentTerm} Months</b>
+                    </span>
+                  ) : (
+                    <span className="font-semibold blink text-red-600">
+                      Delayed
+                    </span>
+                  )}
                   <span className="text-green-700 font-bold">
                     Total: $
                     {total.toLocaleString(undefined, {

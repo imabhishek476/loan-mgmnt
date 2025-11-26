@@ -903,9 +903,8 @@ const EditLoanModal = observer(
                     </p>
                     <p className="font-semibold">
                       {clientStore.clients.find(
-                        (c) =>
-                          c?._id === (viewLoan.client?._id || viewLoan.client)
-                      )?.fullName || "-"}
+                        (c) => c?._id === (viewLoan?.client )
+                      )?.fullName ?? "-"}
                     </p>
                   </div>
 
@@ -931,14 +930,14 @@ const EditLoanModal = observer(
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Loan Term
                     </p>
-                    <p>{viewLoan.loanTerms} months</p>
+                    <p>{viewLoan?.currentTerm} months</p>
                   </div>
 
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Interest Type
                     </p>
-                    <p className="capitalize">{viewLoan.interestType}</p>
+                    <p className="capitalize">{viewLoan?.interestType}</p>
                   </div>
 
                   <div>
@@ -952,7 +951,7 @@ const EditLoanModal = observer(
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Base Amount
                     </p>
-                    <p>${(viewLoan.baseAmount || 0).toLocaleString()}</p>
+                    <p>${(viewLoan?.baseNum || 0).toLocaleString()}</p>
                   </div>
 
                   <div>
@@ -997,7 +996,7 @@ const EditLoanModal = observer(
                           : "text-yellow-600"
                       }`}
                     >
-                      {viewLoan.status}
+                      {viewLoan?.status}
                     </p>
                   </div>
 
@@ -1006,7 +1005,7 @@ const EditLoanModal = observer(
                       <p className="text-gray-500 text-xs uppercase mb-1">
                         Check Number
                       </p>
-                      <p>{viewLoan.checkNumber}</p>
+                      <p>{viewLoan?.checkNumber}</p>
                     </div>
                   )}
                 </div>
