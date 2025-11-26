@@ -166,7 +166,7 @@ class LoanStore {
       console.log('refresh table failed', this.tableRef)
     }
   }
-  async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0, calculate = false }) {
+  async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0, calculate = false ,calcType = null}) {
 
     const interestType = loan?.interestType || "flat";
     const monthlyRate = loan?.monthlyRate || 0;
@@ -179,8 +179,15 @@ class LoanStore {
       today = date ? moment(date, "MM-DD-YYYY") : moment();
     }
     let originalTerm = loan?.loanTerms || 0;
-    const monthsPassed =
-      Math.floor(today.diff(issueDate, "days") / 30) || 1;
+    let monthsPassed =  0;
+    // const todaydiff = today.diff(issueDate, "days") / 30; 
+    monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) || 1;
+    // console.log(todaydiff,'todaydiff');
+    if (calcType == "prevLoans") {
+      // console.log("CALC TYPE PREV LOANS");
+       monthsPassed = today.diff(issueDate, "months") + 1;
+      // console.log(monthsPassed, 'monthsPassed previous loan');
+    } 
     const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed) || ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
     if (selectedTerm) {
       originalTerm = selectedTerm
@@ -194,8 +201,6 @@ class LoanStore {
     else {
       rate = monthlyRate / 100;
     }
-
-
     const baseNum = convertToNumber(loan?.baseAmount);
     const prevLoan = convertToNumber(prevLoanTotal);
     const totalBase = baseNum + prevLoan;
@@ -220,6 +225,7 @@ class LoanStore {
         ? sum + (baseNum * value) / 100
         : sum + value;
     }, 0);
+
     if (calculate) {
       subtotal = totalBase + feeTotal;
       total = subtotal;
@@ -253,6 +259,8 @@ class LoanStore {
     const remaining = Math.max(0, total - paidAmount);
     const obj = {
       baseNum,
+      selectedTerm,
+      calculate,
       monthInt: monthInt ?  parseFloat(monthInt.toFixed(2)) : 0 ,
       subtotal: subtotal ? parseFloat(subtotal.toFixed(2)) : 0 ,
       interestAmount: interest ?  parseFloat(interest.toFixed(2)): 0,
@@ -270,6 +278,9 @@ class LoanStore {
       issueDate,
       prevLoan,
     }
+    // if (calcType === "prevLoans") {
+    //   console.log("CALC", obj);
+    // }
     return obj;
   }
 }

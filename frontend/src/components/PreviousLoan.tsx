@@ -23,6 +23,7 @@ export const PreviousLoan = ({
           loan: loan,
           calculate: true,
           date: formData.issueDate,
+          calcType: "prevLoans",
         });
         results.push({
           ...result,

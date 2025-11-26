@@ -136,9 +136,10 @@ const EditLoanModal = observer(
             let totalRemaining = 0;
 
             for (const l of previousLoans) {
-              const result :any = await loanStore.calculateLoanAmounts({
+              const result: any = await loanStore.calculateLoanAmounts({
                 loan: l,
                 date: formData.issueDate,
+                calcType: "prevLoans",
               });
 
               totalRemaining += result?.remaining || 0;
@@ -188,6 +189,7 @@ const EditLoanModal = observer(
           return;
         }
       }
+       setOverlapMode(false);
       setFormData((prev: any) => ({
         ...prev,
         issueDate: formattedDate,
@@ -212,6 +214,7 @@ const EditLoanModal = observer(
             date: null,
             prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
             calculate: true,
+            calcType:"singleLoan",
           });
         const totalDue = totalWithInterest || 0;
         const paid = parseFloat(formData.paidAmount || 0);
@@ -312,9 +315,10 @@ const EditLoanModal = observer(
         let totalRemaining = 0;
 
         for (const l of filteredLoansrray) {
-          const result:any = await loanStore.calculateLoanAmounts({
+          const result: any = await loanStore.calculateLoanAmounts({
             loan: l,
             date: formData.issueDate,
+            calcType: "prevLoans",
           });
 
           totalRemaining += result?.remaining || 0;
@@ -337,6 +341,7 @@ const EditLoanModal = observer(
               loan,
               date: formData.issueDate,
               calculate: true,
+              calcType: "prevLoans",
             });
             const remaining = result?.remaining || 0;
             selectedPreviousTotal += remaining;
@@ -349,6 +354,7 @@ const EditLoanModal = observer(
           loan: formData,
           prevLoanTotal: selectedPreviousTotal,
           calculate: true,
+          calcType: "singleLoan",
         });
         const { subtotal, total, remaining }: any = result;
         setSubTotal(subtotal);

@@ -36,6 +36,7 @@ useEffect(() => {
         selectedTerm: term,
         prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
         calculate: true,
+        calcType:"terms",
       });
 
       results.push({
