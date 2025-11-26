@@ -61,7 +61,7 @@ export const calculateDynamicTermAndPayment = (loan: any, selectedIssueDate = nu
     const monthsPassed = today.diff(start, "months") + 1;
 
     const originalTerm = loan.loanTerms || 0;
-    const allowedTerms = [6, 12, 18, 24, 30, 36, 48, 60];
+    const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
     let dynamicTerm = originalTerm;
     if (monthsPassed > originalTerm) {
         dynamicTerm =
