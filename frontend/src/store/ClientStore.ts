@@ -45,6 +45,9 @@ class ClientStore {
   setTableRef(ref: any) {
     this.tableRef = ref;
   }
+  setClients(data: any) {
+    runInAction(() => (this.clients = data));
+  }
   async fetchClients(filters: { query?: string; page?: number; limit?: number; issueDate?: string } = {}) {
     this.loading = true;
     try {

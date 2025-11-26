@@ -2,17 +2,16 @@
 import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
-import { X, Save, Eye, RefreshCw } from "lucide-react";
+import { X, Save, RefreshCw } from "lucide-react";
 import { clientStore } from "../store/ClientStore";
 import { companyStore } from "../store/CompanyStore";
-import { loanStore } from "../store/LoanStore";
+import { loanStore} from "../store/LoanStore";
 import moment from "moment";
 import type { Moment } from "moment";
 import {
   Switch,
   Autocomplete,
   TextField as MuiTextField,
-  IconButton,
   CircularProgress,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -20,107 +19,19 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker } from "@mui/x-date-pickers";
 import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
 import { fetchLoanById } from "../services/LoanService";
-import {
-  calculateDynamicTermAndPayment,
-  calculateLoanAmounts,
-} from "../utils/loanCalculations";
-import { getClientById } from "../services/ClientServices";
+import { convertToUsd, isDateBefore } from "../utils/helpers";
+import { LoanTermsCard } from "./LoanTermsCard";
+import { ALLOWED_TERMS } from "../utils/constants";
+import { PreviousLoan } from "./PreviousLoan";
 
 const parseNumber = (val: any): number => {
   if (typeof val === "string") return parseFloat(val) || 0;
   return val || 0;
 };
-
-const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
-const getLoanRunningDetails = (loan: any, currentIssueDate: null) => {
-  const baseDate = moment(currentIssueDate, "MM-DD-YYYY").format("MM-DD-YYYY");
-  const { monthsPassed } = calculateDynamicTermAndPayment(loan, baseDate);
-  const runningTenure =
-    ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
-
-  const loanCalc = calculateLoanAmounts({
-    ...loan,
-    loanTerms: runningTenure,
-  });
-
-  return {
-    monthsPassed,
-    runningTenure,
-    total: loanCalc?.total || 0,
-    remaining: loanCalc?.remaining || 0,
-  };
-};
-const calculateLoan = (
-  base: number,
-  fees: Record<string, { value: number; type: "flat" | "percentage" }>,
-  type: "flat" | "compound",
-  rate: number,
-  term: number,
-  previousLoanTotal: number = 0
-) => {
-  const num = (val: any): number =>
-    typeof val === "string" ? parseFloat(val) || 0 : val || 0;
-
-  const baseNum = num(base);
-  const prevLoan = num(previousLoanTotal);
-  const totalBase = baseNum + prevLoan;
-  if (totalBase <= 0)
-    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
-
-  const rateNum = num(rate);
-  const termNum = Math.max(0, Math.floor(num(term)));
-  const feeKeys = [
-    "administrativeFee",
-    "applicationFee",
-    "attorneyReviewFee",
-    "brokerFee",
-    "annualMaintenanceFee",
-  ];
-
-  const feeTotal = feeKeys.reduce((sum, key) => {
-    const fee = fees[key];
-    if (!fee) return sum;
-    const value = num(fee.value);
-    return fee.type === "percentage"
-      ? sum + (baseNum * value) / 100
-      : sum + value;
-  }, 0);
-
-  const subtotal = totalBase + feeTotal;
-  let interest = 0;
-  let total = subtotal;
-  let monthInt = 0;
-  if (termNum > 0 && rateNum > 0) {
-    if (type === "flat") {
-      for (let i = 6; i <= termNum; i += 6) {
-        const stepInterest = total * (rateNum / 100) * 6;
-        monthInt = total * (rateNum / 100);
-        total += stepInterest;
-        if (i === 18 || i === 30) total += 200;
-      }
-      interest = total - subtotal;
-    } else {
-      for (let i = 1; i <= termNum; i++) {
-          total *= 1 + rateNum / 100;
-        if (i === 18 || i === 30) total += 200;
-      }      
-      interest = total - subtotal;
-      monthInt = interest / termNum;
-    
-    }
-  }
-
-  return {
-    monthInt: parseFloat(monthInt.toFixed(2)),
-    subtotal: parseFloat(subtotal.toFixed(2)),
-    interestAmount: parseFloat(interest.toFixed(2)),
-    totalWithInterest: parseFloat(total.toFixed(2)),
-  };
-};
 const buildTenures = (
   issueDateStr: string,
   terms: number[],
-  outFormat: "iso" | "mm-dd-yyyy" = "mm-dd-yyyy" // default changed
+  outFormat: "iso" | "mm-dd-yyyy" = "mm-dd-yyyy"
 ) => {
   const start = moment(issueDateStr, "MM-DD-YYYY").startOf("day");
   return terms.map((t) => {
@@ -142,17 +53,22 @@ const EditLoanModal = observer(
     const [activeLoans, setActiveLoans] = useState<any[]>([]);
     const [selectedLoanIds, setSelectedLoanIds] = useState<string[]>([]);
     const [overlapMode, setOverlapMode] = useState(false);
+    const [disabledoverlapMode, setDisabledOverlapMode] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [subTotal, setSubTotal] = useState(0);
+    const [modalTotal, setModalTotal] = useState(0);
+    const [modalRemaining, setModalRemaining] = useState(0);
+
     // @ts-ignore
-    const [endDate, setEndDate] = useState<string | null>(null);
+    const [, setEndDate] = useState<string | null>(null);
     const [viewLoan, setViewLoan] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [previousToggleDisabled, setPreviousToggleDisabled] = useState(false);
     const [originalLoan, setOriginalLoan] = useState<any>(null);
+    const [selectedPreviousLoanTotal, setSelectedPreviousLoanTotal] =
+      useState(0);
 
     useEffect(() => {
       let mounted = true;
-
       const load = async () => {
         try {
           setLoading(true);
@@ -175,57 +91,10 @@ const EditLoanModal = observer(
             promises.push(loanStore.fetchLoans());
           }
           await Promise.all(promises);
-        const mergedLoans = loan.previousLoans || [];
-
-        if (mergedLoans.length > 0) {
-          const mergedIds = mergedLoans.map((m: any) =>
-            typeof m === "string" ? m : m._id?.toString?.()
-          );
-          const clientId =
-            loan.client?._id?.toString?.() || loan.client?.toString?.();
-          const filtered = loanStore.loans.filter((l) => {
-            const lClient =
-              l.client?.["_id"]?.toString?.() || l.client?.toString?.();
-            return (
-              lClient === clientId &&
-              l._id?.toString?.() !== loanId?.toString?.()
-            );
-          });
-
-          setActiveLoans(filtered);
-          setSelectedLoanIds(
-            filtered
-              .filter((l) => mergedIds.includes(l._id?.toString?.()))
-              .map((l) => l._id?.toString?.())
-          );
-          setPreviousToggleDisabled(false); 
-          setOverlapMode(true);
-        } else {
-          const availableLoans =
-            loanStore.loans?.filter((l) => {
-              const lClient =
-                l.client?.["_id"]?.toString?.() || l.client?.toString?.();
-              return (
-                lClient ===
-                  (loan.client?._id?.toString?.() ||
-                    loan.client?.toString?.()) &&
-                l.status !== "Paid Off" &&
-                l.status !== "Merged" &&
-                l.loanStatus !== "Deactivated" &&
-                l._id?.toString?.() !== loanId?.toString?.()
-              );
-            }) || [];
-          setActiveLoans(availableLoans);
-        }
-
           const company = companyStore.companies.find(
             (c) => c._id === loan.company
           );
-          let client = clientStore.clients.find((c) => c._id === loan.client);
-
-          if(!client){
-            client = await getClientById(loan.client);
-          }
+          const client = clientStore.clients.find((c) => c._id === loan.client);
           if (!company || !client) {
             toast.error("Client or company missing");
             onClose();
@@ -244,7 +113,6 @@ const EditLoanModal = observer(
             brokerFee: mapFee(loan.fees?.brokerFee),
             annualMaintenanceFee: mapFee(loan.fees?.annualMaintenanceFee),
           };
-
           setFormData({
             ...loan,
             client: loan.client,
@@ -259,17 +127,23 @@ const EditLoanModal = observer(
             previousLoanAmount: loan.previousLoanAmount || 0,
             paidAmount: loan.paidAmount || 0,
           });
-
           setCompanyData(company);
 
           if (loan.previousLoans?.length > 0) {
             const previousLoans = loanStore.loans.filter((l) =>
               loan.previousLoans.includes(l._id)
             );
-            const totalRemaining = previousLoans.reduce((sum, l) => {
-              const details = getLoanRunningDetails(l, formData.issueDate);
-              return sum + (details?.remaining || 0);
-            }, 0);
+            let totalRemaining = 0;
+
+            for (const l of previousLoans) {
+              const result: any = await loanStore.calculateLoanAmounts({
+                loan: l,
+                date: formData.issueDate,
+                calcType: "prevLoans",
+              });
+
+              totalRemaining += result?.remaining || 0;
+            }
             setFormData((prev) => ({
               ...prev,
               previousLoanAmount: loan.previousLoanAmount || totalRemaining,
@@ -284,16 +158,11 @@ const EditLoanModal = observer(
           if (mounted) setLoading(false);
         }
       };
-
       load();
       return () => {
         mounted = false;
       };
     }, [loanId]);
-
-    const selectedPreviousLoanTotal = activeLoans
-      .filter((loan) => selectedLoanIds.includes(loan._id))
-      .reduce((sum, loan) => sum + getLoanRunningDetails(loan, formData.issueDate).remaining, 0);
 
     const handleView = async (loan: any) => {
       try {
@@ -303,128 +172,198 @@ const EditLoanModal = observer(
     };
 
     const handleCloseView = () => setViewLoan(null);
+    const handleIssueDateChange = (newDate: Moment | null) => {
+      if (!newDate) return;
 
-const handleSave = async () => {
-  try {
-    if (saving) return;
-    setSaving(true);
-    if (!formData.client) return toast.error("Please select a client");
-    if (!formData.company) return toast.error("Please select a company");
-    if (!formData.baseAmount || formData.baseAmount <= 0)
-      return toast.error("Base amount must be greater than 0");
-    if (!formData.loanTerms || formData.loanTerms <= 0)
-      return toast.error("Please enter valid loan terms");
-    const loan = await fetchLoanById(loanId);
-    if (!loan) return toast.error("Loan not found");
+      const formattedDate = newDate.format("MM-DD-YYYY");
+      const selectedMergedLoans = activeLoans.filter((l) =>
+        selectedLoanIds.includes(l._id)
+      );
+      for (const loan of selectedMergedLoans) {
+        const mergedIssueDate = moment(loan.issueDate).format("MM-DD-YYYY");
 
-    const { runningTenure } = getLoanRunningDetails(loan, formData.issueDate);
-    const calc = calculateLoan(
-      formData.baseAmount,
-      formData.fees,
-      formData.interestType,
-      formData.monthlyRate,
-      runningTenure,
-      overlapMode ? selectedPreviousLoanTotal : 0
-    );
-
-    const totalDue = calc.totalWithInterest || 0;
-    const paid = parseFloat(formData.paidAmount || 0);
-    let status = "Active";
-    if (paid >= totalDue) status = "Paid Off";
-    else if (paid > 0 && paid < totalDue) status = "Partial Payment";
-    const tenures = buildTenures(formData.issueDate, ALLOWED_TERMS, "mm-dd-yyyy");
-    const payload = {
-      ...formData,
-      tenures: tenures,
-      previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
-      subTotal: calc.subtotal,
-      totalLoan: totalDue,
-      status,
-    };
-    await loanStore.updateLoan(loanId, payload);
-    if (overlapMode && selectedLoanIds.length > 0) {
-      const selectedIds =
-        activeLoans
-          ?.filter(
-            (loan) =>
-              selectedLoanIds.includes(loan._id) && loan.status !== "Merged"
-          )
-          ?.map((loan) => loan._id) || [];
-
-      for (const id of selectedIds) {
-        await loanStore.updateLoan(id, {
-          status: "Merged",
-          parentLoanId: loanId,
-        });
+        if (isDateBefore(formattedDate, mergedIssueDate)) {
+          toast.warn(
+            `Issue Date cannot be earlier than merged loan issued on ${mergedIssueDate}!`
+          );
+          return;
+        }
       }
-      // toast.success(
-      //   `${selectedIds.length} previous loan${
-      //     selectedIds.length > 1 ? "s" : ""
-      //   } merged successfully`
-      // );
-    }
-    await loanStore.fetchActiveLoans(formData.client);
-    await clientStore.refreshDataTable();
-    
-    toast.success("Loan updated successfully");
-    onClose();
-  } catch (error: any) {
-    const message =
-      error?.response?.data?.message ||
-      error?.message ||
-      "Failed to update loan";
-    toast.error(message);
-    console.error("Error saving loan:", error);
-  } finally {
-    setSaving(false);
-  }
-};
+       setOverlapMode(false);
+      setFormData((prev: any) => ({
+        ...prev,
+        issueDate: formattedDate,
+      }));
+    };
+
+    const handleSave = async () => {
+      try {
+        if (saving) return;
+        setSaving(true);
+        if (!formData.client) return toast.error("Please select a client");
+        if (!formData.company) return toast.error("Please select a company");
+        if (!formData.baseAmount || formData.baseAmount <= 0)
+          return toast.error("Base amount must be greater than 0");
+        if (!formData.loanTerms || formData.loanTerms <= 0)
+          return toast.error("Please enter valid loan terms");
+        const loan = await fetchLoanById(loanId);
+        if (!loan) return toast.error("Loan not found");
+        const { totalWithInterest, subtotal } =
+          await loanStore.calculateLoanAmounts({
+            loan: formData,
+            date: null,
+            prevLoanTotal: overlapMode ? selectedPreviousLoanTotal : 0,
+            calculate: true,
+            calcType:"singleLoan",
+          });
+        const totalDue = totalWithInterest || 0;
+        const paid = parseFloat(formData.paidAmount || 0);
+        let status = "Active";
+        if (paid >= totalDue) status = "Paid Off";
+        else if (paid > 0 && paid < totalDue) status = "Partial Payment";
+        const tenures = buildTenures(
+          formData.issueDate,
+          ALLOWED_TERMS,
+          "mm-dd-yyyy"
+        );
+        const payload = {
+          ...formData,
+          tenures: tenures,
+          previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
+          subTotal: subtotal,
+          totalLoan: totalDue,
+          status,
+        };
+        await loanStore.updateLoan(loanId, payload);
+        if (overlapMode && selectedLoanIds.length > 0) {
+          const selectedIds =
+            activeLoans
+              ?.filter(
+                (loan) =>
+                  selectedLoanIds.includes(loan._id) && loan.status !== "Merged"
+              )
+              ?.map((loan) => loan._id) || [];
+
+          for (const id of selectedIds) {
+            await loanStore.updateLoan(id, {
+              status: "Merged",
+              parentLoanId: loanId,
+            });
+          }
+        }
+        await loanStore.fetchActiveLoans(formData.client);
+        await clientStore.refreshDataTable();
+
+        toast.success("Loan updated successfully");
+        onClose();
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update loan";
+        toast.error(message);
+        console.error("Error saving loan:", error);
+      } finally {
+        setSaving(false);
+      }
+    };
 
     useEffect(() => {
       if (!formData?.issueDate || !formData?.loanTerms) return;
       const start = moment(formData.issueDate, "MM-DD-YYYY");
       const end = start.clone().add(formData.loanTerms, "months");
-       const tenures = buildTenures(formData.issueDate, ALLOWED_TERMS, "iso");
-         setFormData((prev: any) => ({
-           ...prev,
-           tenures,
-         }));
+      const tenures = buildTenures(formData.issueDate, ALLOWED_TERMS, "iso");
+      setFormData((prev: any) => ({
+        ...prev,
+        tenures,
+      }));
       setEndDate(end.format("MM-DD-YYYY"));
     }, [formData?.loanTerms, formData?.issueDate]);
-useEffect(() => {
-  if (!formData || !formData.issueDate || !originalLoan) return;
-  if (!loanStore?.loans) return;
+    useEffect(() => {
+      if (!formData || !formData.issueDate || !originalLoan) return;
+      if (!loanStore?.loans) return;
 
-  const selectedIssue = new Date(formData.issueDate);
+      const selectedIssue = new Date(formData.issueDate);
 
-  const filteredLoans = loanStore.loans.filter((l) => {
-    const lClient = l.client?._id?.toString() || l.client?.toString();
-    const originalClient =
-      originalLoan.client?._id?.toString() || originalLoan.client?.toString();
+      const filteredLoans = loanStore.loans.filter((l) => {
+        const lClient = l.client?._id?.toString() || l.client?.toString();
+        const originalClient =
+          originalLoan.client?._id?.toString() ||
+          originalLoan.client?.toString();
 
-    if (lClient !== originalClient) return false;
-    if (l._id?.toString() === originalLoan._id?.toString()) return false;
-    if (l.status === "Paid Off") return false;
-    if (l.loanStatus === "Deactivated") return false;
+        if (lClient !== originalClient) return false;
+        if (l._id?.toString() === originalLoan._id?.toString()) return false;
+        if (l.status === "Paid Off") return false;
+        if (l.loanStatus === "Deactivated") return false;
+        if (l.status === "Merged" && l.parentLoanId !== formData._id){
+              return false;
+        }else if (l.status === "Merged" && l.parentLoanId === formData._id){
+          setOverlapMode(true);
+          setDisabledOverlapMode(true);
+        }
+          
 
-    const issue = l.issueDate ? new Date(l.issueDate) : null;
+        const issue = l.issueDate ? new Date(l.issueDate) : null;
+        return !issue || issue <= selectedIssue;
+      });
+      setActiveLoans(filteredLoans);
+      async function filterTotalRems() {
+        const filteredLoansrray = filteredLoans.filter((l) =>
+          selectedLoanIds.includes(l._id)
+        );
 
-    return !issue || issue <= selectedIssue;
-  });
+        let totalRemaining = 0;
 
-  setActiveLoans(filteredLoans);
-  const totalRemaining = filteredLoans
-    .filter((l) => selectedLoanIds.includes(l._id))
-    .reduce((sum, loan) => {
-      const details = getLoanRunningDetails(loan, formData.issueDate);
-      return sum + (details?.remaining || 0);
-    }, 0);
+        for (const l of filteredLoansrray) {
+          const result: any = await loanStore.calculateLoanAmounts({
+            loan: l,
+            date: formData.issueDate,
+            calcType: "prevLoans",
+          });
 
-  setFormData((prev) => ({
-    ...prev,
-    previousLoanAmount: totalRemaining,
-  }));
-}, [formData?.issueDate, selectedLoanIds, loanStore.loans]);
+          totalRemaining += result?.remaining || 0;
+        }
+        return totalRemaining;
+      }
+      const totalRemaining = filterTotalRems();
+      setFormData((prev) => ({
+        ...prev,
+        previousLoanAmount: totalRemaining,
+      }));
+    }, [formData?.issueDate, selectedLoanIds, loanStore.loans]);
+
+    useEffect(() => {
+      let selectedPreviousTotal = 0;
+      async function filterTotalRems() {
+        for (const loan of activeLoans) {
+          if (selectedLoanIds.includes(loan._id)) {
+            const result: any = await loanStore.calculateLoanAmounts({
+              loan,
+              date: formData.issueDate,
+              calculate: true,
+              calcType: "prevLoans",
+            });
+            const remaining = result?.remaining || 0;
+            selectedPreviousTotal += remaining;
+          }
+        }
+        setSelectedPreviousLoanTotal(selectedPreviousTotal);
+      }
+      async function getCurrentLoan() {
+        const result = await loanStore.calculateLoanAmounts({
+          loan: formData,
+          prevLoanTotal: selectedPreviousTotal,
+          calculate: true,
+          calcType: "singleLoan",
+        });
+        const { subtotal, total, remaining }: any = result;
+        setSubTotal(subtotal);
+        setModalTotal(total);
+        setModalRemaining(remaining);
+      }
+      filterTotalRems();
+      getCurrentLoan();
+    }, [formData]);
 
     if (loading) {
       return (
@@ -447,169 +386,77 @@ useEffect(() => {
       { key: "annualMaintenanceFee", label: "Annual Maintenance Fee" },
     ];
 
-    const formatDate = (dateStr: string) =>
-      moment(dateStr, "MM-DD-YYYY").format("MMM DD, YYYY");
     const handleCompanyChange = (selectedCompany: any) => {
-    if (!selectedCompany) {
+      if (!selectedCompany) {
+        setFormData((prev) => {
+          const issueDate = prev?.issueDate || moment().format("MM-DD-YYYY");
+          const defaultTerm = 24;
+          const tenures = buildTenures(issueDate, [defaultTerm], "iso");
+
+          return {
+            ...prev,
+            company: "",
+            companyName: "",
+            backgroundColor: "#555555",
+            fees: {
+              administrativeFee: { value: 0, type: "flat" },
+              applicationFee: { value: 0, type: "flat" },
+              attorneyReviewFee: { value: 0, type: "flat" },
+              brokerFee: { value: 0, type: "flat" },
+              annualMaintenanceFee: { value: 0, type: "flat" },
+            },
+            interestType: "flat",
+            monthlyRate: 0,
+            loanTermMonths: defaultTerm,
+            loanTerms: [defaultTerm],
+            tenures,
+          };
+        });
+        setCompanyData(null);
+        return;
+      }
+
+      const mapFee = (fee: any) => ({
+        value: fee?.value || 0,
+        type: fee?.type === "percentage" ? "percentage" : "flat",
+      });
+
+      const defaultLoanTerm =
+        selectedCompany.loanTerms?.[selectedCompany.loanTerms.length - 1] || 24;
+
       setFormData((prev) => {
         const issueDate = prev?.issueDate || moment().format("MM-DD-YYYY");
-        const defaultTerm = 24;
-        const tenures = buildTenures(issueDate, [defaultTerm], "iso");
+        const tenures = buildTenures(
+          issueDate,
+          selectedCompany.loanTerms || [defaultLoanTerm],
+          "iso"
+        );
 
         return {
           ...prev,
-          company: "",
-          companyName: "",
-          backgroundColor: "#555555",
+          company: selectedCompany._id,
+          companyName: selectedCompany.companyName || "",
+          backgroundColor: selectedCompany.backgroundColor || "#555555",
           fees: {
-            administrativeFee: { value: 0, type: "flat" },
-            applicationFee: { value: 0, type: "flat" },
-            attorneyReviewFee: { value: 0, type: "flat" },
-            brokerFee: { value: 0, type: "flat" },
-            annualMaintenanceFee: { value: 0, type: "flat" },
+            administrativeFee: mapFee(selectedCompany.fees?.administrativeFee),
+            applicationFee: mapFee(selectedCompany.fees?.applicationFee),
+            attorneyReviewFee: mapFee(selectedCompany.fees?.attorneyReviewFee),
+            brokerFee: mapFee(selectedCompany.fees?.brokerFee),
+            annualMaintenanceFee: mapFee(
+              selectedCompany.fees?.annualMaintenanceFee
+            ),
           },
-          interestType: "flat",
-          monthlyRate: 0,
-          loanTermMonths: defaultTerm,
-          loanTerms: [defaultTerm],
+          interestType: selectedCompany.interestRate?.interestType || "flat",
+          monthlyRate: selectedCompany.interestRate?.monthlyRate || 0,
+          loanTermMonths: defaultLoanTerm,
+          loanTerms: defaultLoanTerm,
           tenures,
+          status: "Active",
         };
       });
-      setCompanyData(null);
-      return;
-    }
 
-  const mapFee = (fee: any) => ({
-    value: fee?.value || 0,
-    type: fee?.type === "percentage" ? "percentage" : "flat",
-  });
-
-  const defaultLoanTerm =
-    selectedCompany.loanTerms?.[selectedCompany.loanTerms.length - 1] || 24;
-
-  setFormData((prev) => {
-    const issueDate = prev?.issueDate || moment().format("MM-DD-YYYY");
-    const tenures = buildTenures(
-      issueDate,
-      selectedCompany.loanTerms || [defaultLoanTerm],
-      "iso"
-    );
-
-    return {
-      ...prev,
-      company: selectedCompany._id,
-      companyName: selectedCompany.companyName || "",
-      backgroundColor: selectedCompany.backgroundColor || "#555555",
-      fees: {
-        administrativeFee: mapFee(selectedCompany.fees?.administrativeFee),
-        applicationFee: mapFee(selectedCompany.fees?.applicationFee),
-        attorneyReviewFee: mapFee(selectedCompany.fees?.attorneyReviewFee),
-        brokerFee: mapFee(selectedCompany.fees?.brokerFee),
-        annualMaintenanceFee: mapFee(
-          selectedCompany.fees?.annualMaintenanceFee
-        ),
-      },
-      interestType: selectedCompany.interestRate?.interestType || "flat",
-      monthlyRate: selectedCompany.interestRate?.monthlyRate || 0,
-      loanTermMonths: defaultLoanTerm,
-      loanTerms: defaultLoanTerm,
-      tenures,
-      status: "Active",
+      setCompanyData(selectedCompany);
     };
-  });
-
-  setCompanyData(selectedCompany);
-};
-
-    const LoanTemsCard = () => {
-      const start = moment(formData.issueDate, "MM-DD-YYYY");
-      return (
-        <div className="px-2 py-2">
-          <div className="overflow-x-auto pb-2 -mx-2 px-2">
-            <div className="flex space-x-2 min-w-max">
-              {ALLOWED_TERMS.map((term) => {
-                const result = calculateLoan(
-                  formData.baseAmount || 0,
-                  formData.fees,
-                  formData.interestType || "flat",
-                  formData.monthlyRate || 0,
-                  term,
-                  overlapMode ? selectedPreviousLoanTotal : 0
-                );
-
-                const isSelected = term <= formData.loanTerms;
-                const totalDays = term * 30;
-                const termEnd = start.clone().add(totalDays, "days");
-
-                return (
-                  <div
-                    key={term}
-                    className={`flex-shrink-0 w-36 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
-                    ${
-                      isSelected
-                        ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
-                        : "bg-white border-gray-200 text-gray-700"
-                    }`}
-                onClick={() => {
-                  const updatedTenures = buildTenures(formData.issueDate, ALLOWED_TERMS, "iso");
-                  setFormData((prev) => ({
-                        ...prev,
-                        loanTerms: term,
-                    tenures: updatedTenures,
-                      }));
-                    }}
-                  >
-                    <div className="font-medium text-sm font-semibold">
-                      {term} months
-                    </div>
-                    <div
-                      className={`text-xs whitespace-nowrap font-medium mb-1 ${
-                        isSelected ? "text-yellow-300" : "text-gray-700"
-                      }`}
-                    >
-                      Month Int. : {usd.format(result.monthInt || 0)}
-                    </div>
-                    <div
-                      className={`text-xs font-medium mb-1 ${
-                        isSelected ? "text-yellow-300" : "text-gray-700"
-                      }`}
-                    >
-                      Interest: {usd.format(result.interestAmount)}
-                    </div>
-                    <div
-                      className={`text-xs font-medium mb-1 ${
-                        isSelected ? "text-yellow-300" : "text-gray-700"
-                      }`}
-                    >
-                      Total: {usd.format(result.totalWithInterest)}
-                    </div>
-                    <div
-                      className={`text-xs ${
-                        isSelected ? "text-white" : "text-gray-700"
-                      }`}
-                    >
-                      Date: {termEnd.format("MMM DD, YYYY")}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      );
-    };
-    const currentCalc = calculateLoan(
-      formData.baseAmount || 0,
-      formData.fees,
-      formData.interestType || "flat",
-      formData.monthlyRate || 0,
-      formData.loanTerms || 24,
-      overlapMode ? selectedPreviousLoanTotal : 0
-    );
- const usd = new Intl.NumberFormat("en-US", {
-   style: "currency",
-   currency: "USD",
- });
     return (
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2">
@@ -707,16 +554,11 @@ useEffect(() => {
                     Issue Date
                   </label>
                   <LocalizationProvider dateAdapter={AdapterMoment}>
-                  <DatePicker
-                    value={moment(formData.issueDate, "MM-DD-YYYY")}
-                    onChange={(date: Moment | null) =>
-                      setFormData((prev: any) => ({
-                        ...prev,
-                        issueDate: date ? date.format("MM-DD-YYYY") : "",
-                      }))
-                    }
-                    slotProps={{ textField: { size: "small" } }}
-                  />
+                    <DatePicker
+                      value={moment(formData.issueDate, "MM-DD-YYYY")}
+                      onChange={handleIssueDateChange}
+                      slotProps={{ textField: { size: "small" } }}
+                    />
                   </LocalizationProvider>
                 </div>
 
@@ -746,6 +588,7 @@ useEffect(() => {
                     color="success"
                     size="small"
                     checked={overlapMode}
+                    disabled={disabledoverlapMode}
                     onChange={(e) => {
                       setOverlapMode(e.target.checked);
                       if (!e.target.checked) {
@@ -756,106 +599,13 @@ useEffect(() => {
                 </div>
                 {/* Overlap Mode */}
                 {overlapMode && activeLoans.length > 0 && (
-                  <div className="mt-4 p-2 bg-green-100 border-l-4 border-yellow-500 rounded">
-                    <div className="transition-all duration-700 ease-in-out overflow-auto max-h-40 opacity-100">
-                      {activeLoans.map((loan) => {
-                        const { runningTenure, total, remaining } =
-                          getLoanRunningDetails(loan, formData.issueDate);
-                        const loanIdStr = loan._id?.toString?.();
-                        const alreadyMerged = loan.status === "Merged";
-                        const isSelected = selectedLoanIds.includes(loanIdStr);
-                        const isDisabled =
-                          alreadyMerged || previousToggleDisabled;
-                        const checked = alreadyMerged ? true : isSelected;
-
-                        return (
-                          <div
-                            key={loanIdStr}
-                            className={`flex justify-between items-center p-3 border rounded-lg shadow-sm transition ${
-                              checked
-                                ? "bg-green-100 border-green-400"
-                                : "bg-white hover:bg-gray-50"
-                            } ${
-                              isDisabled ? "opacity-70 cursor-not-allowed" : ""
-                            }`}
-                            onClick={() => {
-                              if (isDisabled) return;
-                              setSelectedLoanIds((prev) =>
-                                prev.includes(loanIdStr)
-                                  ? prev.filter((id) => id !== loanIdStr)
-                                  : [...prev, loanIdStr]
-                              );
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="flex flex-col text-xs">
-                                <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
-                                  Issue Date: {formatDate(loan.issueDate)}
-                                </span>
-                                <span className="font-semibold mt-1">
-                                  Company Name:{" "}
-                                  {companyStore.companies.find(
-                                    (c) => c._id === loan.company
-                                  )?.companyName || "-"}
-                                </span>
-                                <span className="font-semibold">
-                                  Current Tenure: <b>{runningTenure} Months</b>
-                                </span>
-                                <span className="text-green-700 font-bold">
-                                  Total: $
-                                  {total.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                  })}{" "}
-                                  (
-                                  <span className="text-red-600 font-bold">
-                                    Remaining: $
-                                    {(alreadyMerged
-                                      ? 0
-                                      : remaining
-                                    ).toLocaleString(undefined, {
-                                      minimumFractionDigits: 2,
-                                    })}
-                                  </span>
-                                  )
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <IconButton
-                                size="small"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleView(loan);
-                                }}
-                              >
-                                <Eye size={18} />
-                              </IconButton>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  if (isDisabled) return;
-                                  setSelectedLoanIds((prev) =>
-                                    prev.includes(loanIdStr)
-                                      ? prev.filter((id) => id !== loanIdStr)
-                                      : [...prev, loanIdStr]
-                                  );
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                className={`w-4 h-4 m-0 accent-green-600 ${
-                                  isDisabled
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"
-                                }`}
-                                disabled={isDisabled}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <PreviousLoan
+                    activeLoans={activeLoans}
+                    formData={formData}
+                    selectedLoanIds={selectedLoanIds}
+                    setSelectedLoanIds={setSelectedLoanIds}
+                    handleView={handleView}
+                  />
                 )}
               </div>
 
@@ -1044,7 +794,9 @@ useEffect(() => {
                     {overlapMode && selectedPreviousLoanTotal > 0 && (
                       <div className="flex justify-between text-yellow-300 font-semibold mt-2">
                         <span>Previous Loan Amount Carry Forward:</span>
-                        <span>{usd.format(selectedPreviousLoanTotal)}</span>
+                        <span>
+                          {convertToUsd.format(selectedPreviousLoanTotal)}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between items-center">
@@ -1054,7 +806,9 @@ useEffect(() => {
                           : "Loan Amount (Base + Additional Fees)"}
                       </span>
                       <span className="text-md text-green-700 px-2 rounded-md bg-white">
-                        {usd.format(currentCalc.subtotal)}
+                        {convertToUsd.format(
+                          subTotal + selectedPreviousLoanTotal
+                        )}
                       </span>
                     </div>
                   </div>
@@ -1094,7 +848,12 @@ useEffect(() => {
                       }}
                       className="w-full accent-white cursor-pointer"
                     />
-                    <LoanTemsCard />
+                    <LoanTermsCard
+                      formData={formData}
+                      setFormData={setFormData}
+                      overlapMode={overlapMode}
+                      selectedPreviousLoanTotal={selectedPreviousLoanTotal}
+                    />
                   </div>
                 </div>
               </div>
@@ -1150,9 +909,8 @@ useEffect(() => {
                     </p>
                     <p className="font-semibold">
                       {clientStore.clients.find(
-                        (c) =>
-                          c?._id === (viewLoan.client?._id || viewLoan.client)
-                      )?.fullName || "-"}
+                        (c) => c?._id === (viewLoan?.client )
+                      )?.fullName ?? "-"}
                     </p>
                   </div>
 
@@ -1178,14 +936,14 @@ useEffect(() => {
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Loan Term
                     </p>
-                    <p>{viewLoan.loanTerms} months</p>
+                    <p>{viewLoan?.currentTerm} months</p>
                   </div>
 
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Interest Type
                     </p>
-                    <p className="capitalize">{viewLoan.interestType}</p>
+                    <p className="capitalize">{viewLoan?.interestType}</p>
                   </div>
 
                   <div>
@@ -1199,7 +957,7 @@ useEffect(() => {
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Base Amount
                     </p>
-                    <p>${(viewLoan.baseAmount || 0).toLocaleString()}</p>
+                    <p>${(viewLoan?.baseNum || 0).toLocaleString()}</p>
                   </div>
 
                   <div>
@@ -1208,10 +966,7 @@ useEffect(() => {
                     </p>
                     <p className="font-semibold text-green-700">
                       $
-                      {getLoanRunningDetails(
-                        viewLoan,
-                        formData.issueDate
-                      ).total.toLocaleString(undefined, {
+                      {modalTotal.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                       })}
                     </p>
@@ -1225,8 +980,7 @@ useEffect(() => {
                       $
                       {(viewLoan.status === "Merged"
                         ? 0
-                        : getLoanRunningDetails(viewLoan, formData.issueDate)
-                            .remaining
+                        : modalRemaining
                       ).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                       })}
@@ -1248,7 +1002,7 @@ useEffect(() => {
                           : "text-yellow-600"
                       }`}
                     >
-                      {viewLoan.status}
+                      {viewLoan?.status}
                     </p>
                   </div>
 
@@ -1257,7 +1011,7 @@ useEffect(() => {
                       <p className="text-gray-500 text-xs uppercase mb-1">
                         Check Number
                       </p>
-                      <p>{viewLoan.checkNumber}</p>
+                      <p>{viewLoan?.checkNumber}</p>
                     </div>
                   )}
                 </div>

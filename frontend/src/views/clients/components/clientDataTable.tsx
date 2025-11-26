@@ -52,6 +52,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       try {
         const data = await getClientsSearch(filters);
         setClientsList(data.clients);
+        clientStore.setClients(data.clients);
         return {
           data: data.clients,
           page: query.page,
