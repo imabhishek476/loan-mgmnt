@@ -6,7 +6,7 @@ import { Plus, Save } from "lucide-react";
 import ClientsDataTable from "./components/clientDataTable";
 import { type FieldConfig } from "../../components/FormModal";
 import { clientStore, type Client } from "../../store/ClientStore";
-import { getClientLoans } from "../../services/ClientServices";
+import { activeLoans } from "../../services/LoanService";
 import Loans from "../loans/index";
 // import { loanStore } from "../../store/LoanStore";
 const ClientViewModal = React.lazy(() => import("../../views/clients/components/ClientViewModal"));
@@ -22,7 +22,7 @@ const Clients = observer(() => {
     setViewClient({ ...client, loans: [] });
     setViewModalOpen(true);
     try {
-      const loans = await getClientLoans(client._id!);
+      const loans = await activeLoans(client._id!);
       setViewClient((prev) => ({ ...prev!, loans }));
     } catch (error) {
       console.error("Failed to fetch Customer loans", error);
