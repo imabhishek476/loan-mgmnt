@@ -627,11 +627,6 @@ const EditLoanModal = observer(
                     <div className="flex flex-col">
                       <label className="text-sm text-white mb-1 font-medium">
                         Base Amount
-                        {originalLoan && (
-                          <span className="text-xs text-gray-300 ml-2">
-                            (min: ${originalLoan.baseAmount?.toLocaleString()})
-                          </span>
-                        )}
                       </label>
                       <input
                         type="number"
@@ -650,23 +645,6 @@ const EditLoanModal = observer(
                             baseAmount:
                               rawValue === "" ? "" : parseFloat(rawValue),
                           }));
-                        }}
-                        onBlur={() => {
-                          const value = Number(formData.baseAmount);
-                          if (!isNaN(value)) {
-                            if (
-                              originalLoan &&
-                              value < (originalLoan.baseAmount || 0)
-                            ) {
-                              toast.error(
-                                `Base amount cannot be less than $${originalLoan.baseAmount}`
-                              );
-                              setFormData((prev: any) => ({
-                                ...prev,
-                                baseAmount: originalLoan.baseAmount,
-                              }));
-                            }
-                          }
                         }}
                         className="w-full px-2 h-8 py-2 border rounded-lg bg-white text-gray-800"
                       />

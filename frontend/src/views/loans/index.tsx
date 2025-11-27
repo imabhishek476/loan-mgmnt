@@ -24,6 +24,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
+import { ALLOWED_TERMS } from "../../utils/constants";
 
 const Loans = observer(
   ({
@@ -44,7 +45,6 @@ const Loans = observer(
     const [activeLoans, setActiveLoans] = useState<any[]>([]);
     const [selectedLoanIds, setSelectedLoanIds] = useState<string[]>([]);
     const [overlapMode, setOverlapMode] = useState(false);
-    const [calculatedSubTotal, setCalculatedSubTotal] = useState(0);
     const [previousLoanAmount, setPreviousLoanAmount] = useState(0);
     const [endDate, setEndDate] = useState<string | null>(null);
     const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
@@ -197,22 +197,19 @@ const Loans = observer(
 
     const resetForm = () => {
       setFormData(getInitialFormData());
-      setCalculatedSubTotal(0);
       setPreviousLoanAmount(0);
       setEndDate(null);
       setSelectedLoanIds([]);
       setOverlapMode(false);
       setEditingLoan(null);
     };
-    const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
     const getLoanRunningDetails = (loan: any) => {
       const { monthsPassed } = calculateDynamicTermAndPayment(
         loan,
         formData.issueDate
       );
       const runningTenure =
-        ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
-
+        ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
       const loanCalc = calculateLoanAmounts({
         ...loan,
         loanTerms: runningTenure,
@@ -284,7 +281,7 @@ const Loans = observer(
           totalLoan: formData.totalLoan,
           tenures: formData.tenures,
           endDate,
-          subTotal: (calculatedSubTotal + previousLoanAmount).toFixed(2),
+          subTotal: loanStore.loanDetails.subtotal.toFixed(2),
           previousLoanAmount,
           status: "Active",
         };
@@ -300,6 +297,10 @@ const Loans = observer(
               parentLoanId: createdLoan?._id || null,
             });
           }
+          // console.log(loanStore.loanDetails, "loanStore.loanDetails");
+          // console.log(payload.subTotal, "subTotal");
+          
+          // return
         if (fromClientPage) {
           await loanStore.fetchActiveLoans(createdLoan.clientId);
         } await loanStore.refreshDataTable();
@@ -734,7 +735,6 @@ const Loans = observer(
                                 totalLoan: updated.totalLoan,
                                 previousLoanAmount: updated.previousLoanTotal,
                               }));
-                              setCalculatedSubTotal(updated.subtotal);
                               setPreviousLoanAmount(
                                 updated.previousLoanTotal || 0
                               );

@@ -93,7 +93,7 @@ const clientLoans = useMemo(() => {
     const LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
   const getDefaultLoanTerm = (loan: any) => {
-    const loanData = calculateLoanAmounts(loan);
+   const loanData = calculateLoanAmounts(loan,mergedLoans,"mergedDate");
     return (
       LOAN_TERMS.find((t) => t > loanData.monthsPassed) || loanData.dynamicTerm
     );
@@ -103,9 +103,11 @@ const clientLoans = useMemo(() => {
       loadInitialData();
       // loanStore.fetchActiveLoans();
   }, []);
-  useEffect(() => {
-    if (client?._id) loanStore.fetchActiveLoans(client?._id);
-  }, [client?._id]);
+  // useEffect(() => {
+  //         console.log("fetching 2");
+
+  //   if (client?._id) loanStore.fetchActiveLoans(client?._id);
+  // }, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
   clientLoans.forEach((loan) => {
@@ -113,7 +115,17 @@ useEffect(() => {
   });
   setCurrentTermMap(newMap);
 }, [clientLoans]);
-
+  const mergedLoans = useMemo(() => {
+    return loanStore.loans
+      .filter((loan) => loan.status === "Active")
+      .map((loan) => ({
+        _id: loan._id,
+        issueDate: loan.issueDate,
+        parentLoanId: loan.parentLoanId,
+        status: loan.status,
+        loanTerms: loan.loanTerms,
+      }));
+  }, [loanStore.loans]);
   if (!open) return null;
 
   const handleToggleLoan = async (loanId: string) => {
@@ -766,6 +778,7 @@ const handleDeletePayment = async (payment: any) => {
                                               ...loan,
                                               loanTerms: term,
                                             })!;
+                                            
                                           // const isSelected =
                                           //   term ===
                                           //   currentTermMap[loan._id];

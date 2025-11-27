@@ -1,5 +1,6 @@
 import moment from "moment";
 import React, { useEffect, useState } from "react";
+import { loanStore } from "../../../store/LoanStore";
 // import { Calculator } from "lucide-react";
 
 type Fee = {
@@ -59,7 +60,7 @@ const calculateLoan = (
   const prevLoan = num(previousLoanTotal);
   const totalBase = baseNum + prevLoan;
   if (totalBase <= 0)
-    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
+    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0, monthInt: 0 };
 
   const rateNum = num(rate);
   const termNum = Math.max(0, Math.floor(num(term)));
@@ -101,13 +102,14 @@ const calculateLoan = (
       monthInt = interest / termNum;
     }
   }
-
-  return {
+  const obj = {
     monthInt: parseFloat(monthInt.toFixed(2)),
     subtotal: parseFloat(subtotal.toFixed(2)),
     interestAmount: parseFloat(interest.toFixed(2)),
     totalWithInterest: parseFloat(total.toFixed(2)),
   };
+  loanStore.setLoanDetails(obj);
+  return obj;
 };
 
 const LoanCalculation: React.FC<LoanCalculationProps> = ({
@@ -145,8 +147,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
     setInterestType(interestTypeProp);
   }, [baseProp, feesProp, interestTypeProp, rateProp]);
 
-  //@ts-ignore
-  const { subtotal, interestAmount, totalWithInterest } = calculateLoan(
+  const { subtotal} = calculateLoan(
     currentBase,
     fees,
     interestType,

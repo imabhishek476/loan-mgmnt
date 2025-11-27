@@ -41,10 +41,13 @@ class LoanStore {
   currentPage: number = 0;
   limit: number = 10;
   tableRef: any = null; //table Ref is for loans table screen
+  loanDetails: any = null;
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
-
+  setLoanDetails(loanDetails: any) {
+    this.loanDetails = loanDetails;
+  }
   setTableRef(ref: any) {
     this.tableRef = ref;
   }
