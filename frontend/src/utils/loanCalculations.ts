@@ -1,19 +1,34 @@
 import moment from "moment";
+import { ALLOWED_TERMS } from "./constants";
 
-export const calculateLoanAmounts = (loan: any) => {
+export const calculateLoanAmounts = (loan: any, mergedLoans = null, calcType: string = null) => {
     if (!loan) return null;
 
     const interestType = loan.interestType || "flat";
     const monthlyRate = loan.monthlyRate || 0;
     // const originalTerm = loan.loanTerms || 0;
-    const issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+    let issueDate = moment(loan.issueDate, "MM-DD-YYYY");
     const paidAmount = loan.paidAmount || 0;
     const subtotal = loan.subTotal || 0;
-    const today = moment();
-    const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
+    let today = moment();
     const originalTerm = loan.loanTerms || 0;
+    if (calcType === "mergedDate" && mergedLoans) {
+        mergedLoans.forEach((merged: any) => {
+            if (merged._id === loan.parentLoanId) {
+                issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+                today = moment(merged.issueDate);
+            }
+        });
+    }
     const monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) || 1 ;
-    const dynamicTerm =originalTerm && allowedTerms.includes(originalTerm) ? originalTerm : allowedTerms.find((t) => t >= monthsPassed) || originalTerm;
+    let dynamicTerm =originalTerm && ALLOWED_TERMS.includes(originalTerm) ? originalTerm : ALLOWED_TERMS.find((t) => t >= monthsPassed) || originalTerm;
+    if (calcType === "mergedDate" && mergedLoans) {
+        mergedLoans.forEach((merged: any) => {
+            if (merged._id === loan.parentLoanId) {
+                dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) ||originalTerm;
+            }
+        });
+    }
     let total = subtotal;
     let interestAmount = 0;
     const rate = monthlyRate / 100;
@@ -34,7 +49,9 @@ export const calculateLoanAmounts = (loan: any) => {
     }
 
     const remaining = Math.max(0, total - paidAmount);
-    return {
+    const obj = {
+        issueDate,
+        today,
         subtotal,
         interestAmount,
         total,
@@ -43,7 +60,8 @@ export const calculateLoanAmounts = (loan: any) => {
         monthsPassed,
         currentTerm: dynamicTerm,
         dynamicTerm,
-    };
+    } 
+    return obj;
 };
 export const formatUSD = (amount: number | string = 0) => {
     const num = Number(amount) || 0;
