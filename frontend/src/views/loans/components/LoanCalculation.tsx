@@ -60,7 +60,7 @@ const calculateLoan = (
   const prevLoan = num(previousLoanTotal);
   const totalBase = baseNum + prevLoan;
   if (totalBase <= 0)
-    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
+    return { subtotal: 0, interestAmount: 0, totalWithInterest: 0, monthInt: 0 };
 
   const rateNum = num(rate);
   const termNum = Math.max(0, Math.floor(num(term)));

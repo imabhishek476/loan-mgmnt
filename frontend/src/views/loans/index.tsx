@@ -45,7 +45,6 @@ const Loans = observer(
     const [activeLoans, setActiveLoans] = useState<any[]>([]);
     const [selectedLoanIds, setSelectedLoanIds] = useState<string[]>([]);
     const [overlapMode, setOverlapMode] = useState(false);
-    const [calculatedSubTotal, setCalculatedSubTotal] = useState(0);
     const [previousLoanAmount, setPreviousLoanAmount] = useState(0);
     const [endDate, setEndDate] = useState<string | null>(null);
     const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
@@ -198,7 +197,6 @@ const Loans = observer(
 
     const resetForm = () => {
       setFormData(getInitialFormData());
-      setCalculatedSubTotal(0);
       setPreviousLoanAmount(0);
       setEndDate(null);
       setSelectedLoanIds([]);
