@@ -21,14 +21,7 @@ export const calculateLoanAmounts = (loan: any, mergedLoans = null, calcType: st
         });
     }
     const monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) || 1 ;
-    let dynamicTerm =originalTerm && ALLOWED_TERMS.includes(originalTerm) ? originalTerm : ALLOWED_TERMS.find((t) => t >= monthsPassed) || originalTerm;
-    if (calcType === "mergedDate" && mergedLoans) {
-        mergedLoans.forEach((merged: any) => {
-            if (merged._id === loan.parentLoanId) {
-                dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) ||originalTerm;
-            }
-        });
-    }
+    const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
     let total = subtotal;
     let interestAmount = 0;
     const rate = monthlyRate / 100;

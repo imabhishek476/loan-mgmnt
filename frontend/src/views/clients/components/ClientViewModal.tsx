@@ -771,10 +771,11 @@ const handleDeletePayment = async (payment: any) => {
                                             )
                                           : [currentTermMap[loan._id]];
                                       })().map((term) => {
-                                          const loanTermData = calculateLoanAmounts({
+                                          const loanTermData =
+                                            calculateLoanAmounts({
                                               ...loan,
                                               loanTerms: term,
-                                            }, mergedLoans,"mergedDate");
+                                            })!;
                                             
                                           // const isSelected =
                                           //   term ===
