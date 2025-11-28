@@ -97,7 +97,7 @@ class LoanStore {
     try {
       const data = await activeLoans(clientId);
       runInAction(() => {
-        this.loans = data;
+        this.loans =data;
       });
     } catch (err) {
       console.error("Error fetching loans:", err);
@@ -172,6 +172,7 @@ class LoanStore {
   async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0, calculate = false ,calcType = null}) {
 
     const interestType = loan?.interestType || "flat";
+    prevLoanTotal = loan.previousLoanAmount || prevLoanTotal || 0;
     const monthlyRate = loan?.monthlyRate || 0;
     const issueDate = moment(loan?.issueDate, "MM-DD-YYYY");
     const paidAmount = loan?.paidAmount || 0;

@@ -297,8 +297,11 @@ const Loans = observer(
               parentLoanId: createdLoan?._id || null,
             });
           }
-          // console.log(loanStore.loanDetails, "loanStore.loanDetails");
-          // console.log(payload.subTotal, "subTotal");
+          // console.table({
+      //   loanDetails: loanStore.loanDetails,
+      //   previousLoanAmount,
+      //   subTotal: payload.subTotal,
+      // });
           
           // return
         if (fromClientPage) {
