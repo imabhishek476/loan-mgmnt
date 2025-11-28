@@ -297,13 +297,6 @@ const Loans = observer(
               parentLoanId: createdLoan?._id || null,
             });
           }
-          // console.table({
-      //   loanDetails: loanStore.loanDetails,
-      //   previousLoanAmount,
-      //   subTotal: payload.subTotal,
-      // });
-          
-          // return
         if (fromClientPage) {
           await loanStore.fetchActiveLoans(createdLoan.clientId);
         } await loanStore.refreshDataTable();
