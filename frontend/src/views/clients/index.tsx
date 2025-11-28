@@ -6,7 +6,7 @@ import { Plus, Save } from "lucide-react";
 import ClientsDataTable from "./components/clientDataTable";
 import { type FieldConfig } from "../../components/FormModal";
 import { clientStore, type Client } from "../../store/ClientStore";
-import { activeLoans } from "../../services/LoanService";
+// import { activeLoans } from "../../services/LoanService";
 import Loans from "../loans/index";
 // import { loanStore } from "../../store/LoanStore";
 const ClientViewModal = React.lazy(() => import("../../views/clients/components/ClientViewModal"));
