@@ -97,7 +97,7 @@ class LoanStore {
     try {
       const data = await activeLoans(clientId);
       runInAction(() => {
-        this.loans =data;
+        this.loans = data;
       });
     } catch (err) {
       console.error("Error fetching loans:", err);
