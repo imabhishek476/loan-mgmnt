@@ -100,14 +100,9 @@ const clientLoans = useMemo(() => {
   };
 
   useEffect(() => {
-      loadInitialData();
-      // loanStore.fetchActiveLoans();
-  }, []);
-  // useEffect(() => {
-  //         console.log("fetching 2");
-
-  //   if (client?._id) loanStore.fetchActiveLoans(client?._id);
-  // }, [client?._id]);
+    loadInitialData();
+  if (client?._id) loanStore.fetchActiveLoans(client?._id);
+  }, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
   clientLoans.forEach((loan) => {
