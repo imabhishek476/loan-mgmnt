@@ -172,7 +172,7 @@ class LoanStore {
   async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0, calculate = false ,calcType = null}) {
 
     const interestType = loan?.interestType || "flat";
-    prevLoanTotal = loan.previousLoanAmount || prevLoanTotal || 0;
+    // prevLoanTotal = loan.previousLoanAmount || prevLoanTotal || 0;
     const monthlyRate = loan?.monthlyRate || 0;
     const issueDate = moment(loan?.issueDate, "MM-DD-YYYY");
     const paidAmount = loan?.paidAmount || 0;
@@ -207,7 +207,12 @@ class LoanStore {
     }
     const baseNum = convertToNumber(loan?.baseAmount);
     const prevLoan = convertToNumber(prevLoanTotal);
-    const totalBase = baseNum + prevLoan;
+    let totalBase = baseNum + prevLoan;
+    if (calcType === "prevLoans") {
+      if (prevLoan == 0) {
+        totalBase = totalBase + loan.previousLoanAmount;
+      }
+    }
     if (totalBase <= 0)
       return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
 
@@ -283,7 +288,7 @@ class LoanStore {
       prevLoan,
     }
     // if (calcType === "prevLoans") {
-    //   console.log("CALC", obj);
+    //   console.log("CALC", obj,loan);
     // }
     return obj;
   }
