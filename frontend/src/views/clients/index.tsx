@@ -21,12 +21,12 @@ const Clients = observer(() => {
   const handleViewClient = async (client: Client) => {
     setViewClient({ ...client, loans: [] });
     setViewModalOpen(true);
-    try {
-      const loans = await activeLoans(client._id!);
-      setViewClient((prev) => ({ ...prev!, loans }));
-    } catch (error) {
-      console.error("Failed to fetch Customer loans", error);
-    }
+    // try {
+    //   const loans = await activeLoans(client._id!);
+    //   setViewClient((prev) => ({ ...prev!, loans }));
+    // } catch (error) {
+    //   console.error("Failed to fetch Customer loans", error);
+    // }
   };
   const handleAddLoan = (client: any) => {
     // loanStore.fetchActiveLoans(client._id); //active loan

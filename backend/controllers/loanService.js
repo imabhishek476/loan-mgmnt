@@ -89,7 +89,7 @@ exports.activeLoans = async (req, res) => {
     }
     let loans, total;
     if (clientId) {
-      loans = await Loan.find(query).populate("client").sort({ createdAt: -1 });
+      loans = await Loan.find(query).sort({ createdAt: -1 });
       total = loans.length;
     } else {
       const skip = (parseInt(page) - 1) * parseInt(limit);
