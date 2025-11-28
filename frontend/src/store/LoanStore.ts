@@ -172,7 +172,6 @@ class LoanStore {
   async calculateLoanAmounts({ loan = null, date = null, selectedTerm = null, prevLoanTotal = 0, calculate = false ,calcType = null}) {
 
     const interestType = loan?.interestType || "flat";
-    // prevLoanTotal = loan.previousLoanAmount || prevLoanTotal || 0;
     const monthlyRate = loan?.monthlyRate || 0;
     const issueDate = moment(loan?.issueDate, "MM-DD-YYYY");
     const paidAmount = loan?.paidAmount || 0;
@@ -184,13 +183,9 @@ class LoanStore {
     }
     let originalTerm = loan?.loanTerms || 0;
     let monthsPassed =  0;
-    // const todaydiff = today.diff(issueDate, "days") / 30; 
     monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) || 1;
-    // console.log(todaydiff,'todaydiff');
     if (calcType == "prevLoans") {
-      // console.log("CALC TYPE PREV LOANS");
        monthsPassed = today.diff(issueDate, "months") + 1;
-      // console.log(monthsPassed, 'monthsPassed previous loan');
     } 
     const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
     if (selectedTerm) {
@@ -287,9 +282,6 @@ class LoanStore {
       issueDate,
       prevLoan,
     }
-    // if (calcType === "prevLoans") {
-    //   console.log("CALC", obj,loan);
-    // }
     return obj;
   }
 }
