@@ -270,6 +270,10 @@ const Loans = observer(
           toast.error("Please enter valid loan terms");
           return;
         }
+          const selectedIds =
+          activeLoans
+            ?.filter((loan) => selectedLoanIds.includes(loan._id))
+            ?.map((loan) => loan._id) || [];
         const payload = {
           ...data,
           baseAmount: formData.baseAmount.toFixed(2),
@@ -284,19 +288,10 @@ const Loans = observer(
           subTotal: loanStore.loanDetails.subtotal.toFixed(2),
           previousLoanAmount,
           status: "Active",
+          mergeLoanIds: selectedIds,
         };
         if (!editingLoan) {
           const createdLoan = await loanStore.createLoan(payload);
-          const selectedIds =
-            activeLoans
-              ?.filter((loan) => selectedLoanIds.includes(loan._id))
-              ?.map((loan) => loan._id) || [];
-          for (const id of selectedIds) {
-            await loanStore.updateLoan(id, {
-              status: "Merged",
-              parentLoanId: createdLoan?._id || null,
-            });
-          }
         if (fromClientPage) {
           await loanStore.fetchActiveLoans(createdLoan.clientId);
         } await loanStore.refreshDataTable();
