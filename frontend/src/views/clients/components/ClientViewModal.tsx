@@ -25,7 +25,7 @@ import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
-import { deactivateLoan, deleteLoan, recoverLoan } from "../../../services/LoanService";
+import { deactivateLoan, recoverLoan } from "../../../services/LoanService";
 
 interface ClientViewModalProps {
   open: boolean;

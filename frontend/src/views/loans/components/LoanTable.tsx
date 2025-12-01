@@ -6,7 +6,7 @@
   } from "react";
   import MaterialTable from "@material-table/core";
   // import { debounce } from "lodash";
-  import { Search, Eye, Trash2, RefreshCcw, X } from "lucide-react";
+  import { Search, Eye, Trash2, X } from "lucide-react";
   import { loanStore } from "../../../store/LoanStore";
   import { clientStore } from "../../../store/ClientStore";
   import { companyStore } from "../../../store/CompanyStore";
@@ -362,7 +362,7 @@
                 //   hidden: rowData.loanStatus === "Deactivated",
                 //   onClick: (event, row) => onEdit?.(row),
                 // }),
-                (rowData: any) => ({
+                () => ({
                   icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                   tooltip: "View Loan",
                   hidden: false,
