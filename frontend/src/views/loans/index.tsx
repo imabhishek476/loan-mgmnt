@@ -325,15 +325,6 @@ const Loans = observer(
       }
     }, [clientStore.toggleLoan, defaultClient]);
     
-    const handleDelete = async (id: string) => {
-      if (!window.confirm("Are you sure you want to delete this loan?")) return;
-      try {
-        await loanStore.deleteLoan(id);
-        toast.success("Loan deleted successfully");
-      } catch {
-        toast.error("Failed to delete loan");
-      }
-    };
 
     const loanFields = [
       {
@@ -427,7 +418,6 @@ const Loans = observer(
               </Button>
             </div>
             <LoanTable
-              onDelete={handleDelete}
               //@ts-ignore
               onView={handleView}
             />
@@ -793,14 +783,15 @@ const Loans = observer(
               </div>
               <div className="p-6 overflow-y-auto">
                 <div className="grid grid-cols-1 mt-2 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
-           
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Customer
                     </p>
                     <p className="font-medium">
                       {clientStore.clients.find(
-                        (c) => c?._id ===(selectedLoan.client?._id || selectedLoan.client)
+                        (c) =>
+                          c?._id ===
+                          (selectedLoan.client?._id || selectedLoan.client)
                       )?.fullName || "-"}
                     </p>
                   </div>

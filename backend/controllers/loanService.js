@@ -5,7 +5,7 @@ const User = require("../models/User");
 const createAuditLog = require("../utils/auditLog");
 const mongoose = require("mongoose");
 const moment = require("moment"); 
-
+const { LoanPayment } = require("../models/LoanPayment");
 exports.LoansCreate = async (req, res) => {
   try {
     const body = req.body;
@@ -253,7 +253,7 @@ exports.searchLoans = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-exports.deleteLoan = async (req, res) => {
+exports.deactivateLoan = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -294,8 +294,55 @@ exports.deleteLoan = async (req, res) => {
       })
       .catch((err) => console.error("Audit log failed:", err));
   } catch (error) {
-    console.error("Error in deleteLoan:", error);
+    console.error("Error in deactivateLoan:", error);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+exports.deleteLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const loan = await Loan.findById(id);
+
+    if (!loan) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Loan not found" });
+    }
+    await LoanPayment.deleteMany({ loanId: id });
+    await Loan.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Loan and related payments deleted successfully",
+      data: loan,
+    });
+
+    Promise.all([
+      Client.findById(loan.client).select("fullName"),
+      Company.findById(loan.company).select("companyName"),
+      User.findById(req.user?.id).select("name email"),
+    ])
+      .then(([client, company, user]) => {
+        const clientName = client?.fullName || "";
+        const companyName = company?.companyName || "";
+        const deletedBy = user?.name || user?.email || "";
+
+        return createAuditLog(
+          req.user?.id || null,
+          req.user?.userRole || null,
+          `Loan and its payment history deleted for ${clientName} under ${companyName} by ${deletedBy}`,
+          "Loan",
+          loan._id,
+          { before: loan }
+        );
+      })
+      .catch((err) => console.error("Audit log failed:", err));
+  } catch (error) {
+    console.error("Error in deleteLoan:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 exports.recoverLoan = async (req, res) => {

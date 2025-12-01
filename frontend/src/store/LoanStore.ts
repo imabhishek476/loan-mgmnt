@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import {
   getLoansSearch,
   createLoan,
-  deleteLoan,
+  deactivateLoan,
   updateLoan,
   recoverLoan,
   activeLoans,
@@ -119,10 +119,10 @@ class LoanStore {
     }
   }
 
-  async deleteLoan(id: string) {
+  async deactivateLoan(id: string) {
     this.loading = true;
     try {
-      const updated = await deleteLoan(id);
+      const updated = await deactivateLoan(id);
       runInAction(() => {
         const index = this.loans.findIndex((l) => l._id === id);
         if (index !== -1) {
