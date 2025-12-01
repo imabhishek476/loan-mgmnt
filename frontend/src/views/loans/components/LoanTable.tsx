@@ -371,14 +371,14 @@
                 (rowData: any) => ({
                   icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
                   tooltip: "Delete Loan",
-                  hidden: rowData.loanStatus === "Delete",
+                  hidden: rowData.status === "Merged",
                   onClick: (_event, row) => handleDelete(row._id),
                 }),
               ]}
               options={{
                 paging: true,
-                pageSize: 10,
-                pageSizeOptions: [5, 10, 20],
+                pageSize: 15,
+                pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500],
                 sorting: true,
                 search: false,
                 actionsColumnIndex: -1,

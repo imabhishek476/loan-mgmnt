@@ -363,8 +363,8 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           ]}
           options={{
             paging: true,
-            pageSize: 10,
-            pageSizeOptions: [5, 10, 20],
+            pageSize: 15,
+            pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500],
             sorting: true,
             search: false,
             actionsColumnIndex: -1,

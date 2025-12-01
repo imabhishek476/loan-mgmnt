@@ -152,6 +152,10 @@ const getPayoffStats = async (req, res) => {
     } else if (type === "month") {
       from = today.clone().startOf("month").toDate();
       to = today.clone().endOf("month").toDate();
+    } else {
+      // If 'all' or any other value, set a wide range
+      from = new Date("1970-01-01");
+      to = new Date("2100-12-31");
     }
 
     const skip = (page - 1) * limit;
@@ -179,6 +183,9 @@ const getPayoffStats = async (req, res) => {
           "tenures.endDateObj": { $gte: from, $lte: to },
         },
       },
+      { $sort: { "tenures.endDateObj": 1 } },
+      { $skip: skip },
+      { $limit: Number(limit) },
       {
         $lookup: {
           from: "clients",
@@ -212,13 +219,6 @@ const getPayoffStats = async (req, res) => {
           "tenures.__v": 0,
         },
       },
-
-      // Sort by tenure endDate
-      { $sort: { "tenures.endDateObj": 1 } },
-
-      // Pagination
-      { $skip: skip },
-      { $limit: Number(limit) },
     ]);
 
     const totalCount = await Loan.aggregate([

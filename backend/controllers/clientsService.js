@@ -87,6 +87,9 @@ exports.Clientstore = async (req, res) => {
 exports.searchClients = async (req, res) => {
   try {
     const { query, issueDate, page = 0, limit = 10 } = req.query;
+    const numericLimit = Number(limit);
+    const numericPage = Number(page);
+
     const matchStage = {};
 
     if (query && query.trim() !== "") {
@@ -104,18 +107,26 @@ exports.searchClients = async (req, res) => {
       ];
     }
 
-    const pipeline = [
-      { $match: matchStage },
+    // Base pipeline (applied in both cases)
+    let pipeline = [{ $match: matchStage }];
+
+    // Case 1: issueDate is NOT provided → paginate first
+    if (!issueDate) {
+      pipeline.push(
+        { $sort: { createdAt: -1 } },
+        { $skip: numericPage * numericLimit },
+        { $limit: numericLimit }
+      );
+    }
+
+    // Lookup section
+    pipeline.push(
       {
         $lookup: {
           from: "loans",
           let: { clientId: "$_id" },
           pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$client", "$$clientId"] },
-              },
-            },
+            { $match: { $expr: { $eq: ["$client", "$$clientId"] } } },
             {
               $addFields: {
                 issueDateParsed: {
@@ -159,53 +170,45 @@ exports.searchClients = async (req, res) => {
               },
             },
           },
+          latestLoan: { $ifNull: [{ $arrayElemAt: ["$allLoans", 0] }, null] },
         },
-      },
-      {
-        $addFields: {
-          latestLoan: {
-            $ifNull: [{ $arrayElemAt: ["$allLoans", 0] }, null],
-          },
-        },
-      },
-      ...(issueDate
-        ? [
-            {
-              $match: {
-                "latestLoan.issueDate": issueDate,
-              },
-            },
-          ]
-        : []),
+      }
+    );
 
-      { $sort: { createdAt: -1 } },
-      { $skip: Number(page) * Number(limit) },
-      { $limit: Number(limit) },
-    ];
+    // Case 2: issueDate present → filter after lookup
+    if (issueDate) {
+      pipeline.push({ $match: { "latestLoan.issueDate": issueDate } });
+      pipeline.push({ $sort: { createdAt: -1 } });
+      pipeline.push({ $skip: numericPage * numericLimit });
+      pipeline.push({ $limit: numericLimit });
+    }
 
     const clients = await Client.aggregate(pipeline);
+
+    // Count query separately
+    const baseCountQuery = [{ $match: matchStage }];
     let total;
-    if (query || issueDate) {
-      const countPipeline = pipeline.filter(
-        (stage) => !("$skip" in stage) && !("$limit" in stage)
-      );
-      const filteredClients = await Client.aggregate(countPipeline);
-      total = filteredClients.length;
+    if (issueDate) {
+      const count = await Client.aggregate([
+        ...baseCountQuery,
+        ...pipeline.slice(1, pipeline.indexOf({ $skip: numericPage * numericLimit }))
+      ]);
+      total = count.length;
     } else {
-      total = await Client.countDocuments();
+      total = await Client.countDocuments(matchStage);
     }
 
     res.status(200).json({
       success: true,
+      clients,
       count: clients.length,
       total,
-      currentPage: Number(page),
-      totalPages: Math.ceil(total / Number(limit)),
-      clients,
+      currentPage: numericPage,
+      totalPages: Math.ceil(total / numericLimit),
     });
   } catch (error) {
     console.error("Error in searchClients:", error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

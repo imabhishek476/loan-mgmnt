@@ -648,7 +648,7 @@ const handleDeleteLoan = async (loanId) => {
                                                 handleDeleteLoan(loan._id);
                                               }}
                                               className="p-1 rounded-full  hover:bg-red-200 text-red-600 transition ml-2"
-                                              title="Delete Loan"
+                                              title="Deactivate Loan"
                                             >
                                               <Trash2 className="w-4 h-4" />
                                             </button>

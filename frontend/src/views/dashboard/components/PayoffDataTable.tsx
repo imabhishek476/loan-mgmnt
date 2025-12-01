@@ -14,12 +14,13 @@ const payoffOptions = [
   { label: "Today", value: "day" },
   { label: "This Week", value: "week" },
   { label: "This Month", value: "month" },
+  { label: "All", value: "all" },
 ];
 
 const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
   const tableRef = useRef<any>(null);
   const [payoffFilter, setPayoffFilter] = useState<
- "day" | "week" | "month"
+ "day" | "week" | "month" | "all"
   >("week");
 
   const fetchPayoffData = useCallback(
@@ -193,7 +194,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
         options={{
           paging: true,
           pageSize: 10,
-          pageSizeOptions: [5, 10, 20],
+          pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500],
           search: false,
           toolbar: false,
           headerStyle: {
