@@ -8,6 +8,8 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronDown,
+  Trash2,
+  RefreshCcw,
 } from "lucide-react";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -23,6 +25,7 @@ import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
+import { deactivateLoan, recoverLoan } from "../../../services/LoanService";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -149,6 +152,48 @@ const handleDeletePayment = async (payment: any) => {
        await loanStore.fetchActiveLoans(payment.clientId);
       await clientStore.refreshDataTable();
       toast.success("Payment deleted successfully");
+    },
+  });
+};
+const handleDeleteLoan = async (loanId) => {
+  try {
+       Confirm({
+             title: "Confirm Deactivate",
+             message: "Are you sure you want to deactivate this loan?",
+             confirmText: "Yes, Deactivate",
+             onConfirm: async () => {
+                 await deactivateLoan(loanId);
+                            await loanStore.fetchActiveLoans(client._id);
+                            await clientStore.refreshDataTable();
+               toast.success("Loan Deactivated successfully");
+             },
+           });   
+  } catch (err) {
+    toast.error("Failed to delete loan");
+  }
+};
+ const handleRecover = async (loanId) => {
+   Confirm({
+     title: "Recover Loan",
+     message: `Are you sure you want to recover the loan ?`,
+     confirmText: "Yes, Recover",
+     cancelText: "Cancel",
+     onConfirm: async () => {
+       try {
+         await recoverLoan(loanId);
+          await loanStore.fetchActiveLoans(client._id);
+          await clientStore.refreshDataTable();
+         toast.success(
+           `Loan has been recovered successfully!`
+         );
+       } catch (error: any) {
+         const backendMessage =
+           error?.response?.data?.message ||
+           error?.message ||
+           "An unexpected error occurred.";
+
+         toast.error(backendMessage);
+       }
     },
   });
 };
@@ -480,9 +525,21 @@ const handleDeletePayment = async (payment: any) => {
                       {expandedLoanId === loan._id && (
                         <div className="px-4 pb-1  bg-gray-50 flex  flex-col sm:flex-row gap-1 overflow-y-auto max-h-[50vh] md:max-h-none">
                           {loan.loanStatus === "Deactivated" ? (
+                            <>
                             <p className="text-gray-500 italic">
                               This loan has been deactivated.
                             </p>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRecover(loan._id);
+                                }}
+                                className="p-1 rounded-full  hover:bg-green-200 text-red-600 transition ml-2"
+                                title="Recover Loan"
+                              >
+                                <RefreshCcw className="w-5 h-5 text-green-600" />
+                              </button>
+                            </>
                           ) : (
                             <>
                               {/* Payment History */}
@@ -585,6 +642,16 @@ const handleDeletePayment = async (payment: any) => {
                                                     ).format("MMM DD, YYYY")
                                                   : "—"}
                                               </td>
+                                               <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteLoan(loan._id);
+                                              }}
+                                              className="p-1 rounded-full  hover:bg-red-200 text-red-600 transition ml-2"
+                                              title="Deactivate Loan"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </button>
                                             </tr>
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">

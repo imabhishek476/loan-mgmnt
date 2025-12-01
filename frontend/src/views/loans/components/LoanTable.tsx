@@ -6,7 +6,7 @@
   } from "react";
   import MaterialTable from "@material-table/core";
   // import { debounce } from "lodash";
-  import { Search, Eye, Trash2, RefreshCcw, X } from "lucide-react";
+  import { Search, Eye, Trash2, X } from "lucide-react";
   import { loanStore } from "../../../store/LoanStore";
   import { clientStore } from "../../../store/ClientStore";
   import { companyStore } from "../../../store/CompanyStore";
@@ -20,10 +20,9 @@
     calculateDynamicTermAndPayment,
     calculateLoanAmounts,
   } from "../../../utils/loanCalculations";
-  import { deleteLoan, getLoansSearch, recoverLoan } from "../../../services/LoanService";
+  import { deleteLoan, getLoansSearch} from "../../../services/LoanService";
 
   interface LoanTableProps {
-    onDelete: (id: string) => void;
     clientId?: string;
   }
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -93,37 +92,15 @@
     }, [clientId]);
     const handleDelete = async (id: string) => {
       Confirm({
-        title: "Confirm Deactivate",
-        message: "Are you sure you want to deactivate this loan?",
-        confirmText: "Yes, Deactivate",
+        title: "Confirm Delete",
+        message: "Are you sure you want to delete this Loan?",
+        confirmText: "Yes, Delete",
         onConfirm: async () => {
           await deleteLoan(id);
-          tableRef.current?.onQueryChange();
-          toast.success("Loan Deactivated successfully");
-        },
-      });
-    };
-    const handleRecover = async (loan: any) => {
-       Confirm({
-      title: "Recover Loan",
-      message: `Are you sure you want to recover the loan for "${loan.client?.fullName || "client"}"?`,
-      confirmText: "Yes, Recover",
-      cancelText: "Cancel",
-      onConfirm: async () => {
-      try {
-        await recoverLoan(loan._id);
         if (tableRef.current) tableRef.current.onQueryChange();
-        toast.success(
-          `Loan for "${loan.client?.fullName || "client"}" recovered successfully!`
-        );
-      } catch (error: any) {
-        const backendMessage =
-          error?.response?.data?.message ||
-          error?.message ||
-          "An unexpected error occurred.";
-
-        toast.error(backendMessage);
-      }
+             await loanStore.fetchActiveLoans(clientId);
+             await clientStore.refreshDataTable();
+          toast.success("Loan deleted successfully");
     },
   });
     };
@@ -385,8 +362,7 @@
                 //   hidden: rowData.loanStatus === "Deactivated",
                 //   onClick: (event, row) => onEdit?.(row),
                 // }),
-                // @ts-ignore
-                (rowData: any) => ({
+                () => ({
                   icon: () => <Eye className="w-5 h-5 text-blue-600" />,
                   tooltip: "View Loan",
                   hidden: false,
@@ -394,22 +370,15 @@
                 }),
                 (rowData: any) => ({
                   icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
-                  tooltip: "Deactivate Loan",
-                  hidden: rowData.loanStatus === "Deactivated",
-                  //@ts-ignore
+                  tooltip: "Delete Loan",
+                  hidden: rowData.status === "Merged",
                   onClick: (_event, row) => handleDelete(row._id),
-                }),
-                (rowData: any) => ({
-                  icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
-                  tooltip: "Recover Loan",
-                  hidden: rowData.loanStatus !== "Deactivated",
-                  onClick: (_event, row) => handleRecover(row),
                 }),
               ]}
               options={{
                 paging: true,
-                pageSize: 10,
-                pageSizeOptions: [5, 10, 20],
+                pageSize: 15,
+                pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500],
                 sorting: true,
                 search: false,
                 actionsColumnIndex: -1,

@@ -5,7 +5,7 @@ const User = require("../models/User");
 const createAuditLog = require("../utils/auditLog");
 const mongoose = require("mongoose");
 const moment = require("moment"); 
-
+const { LoanPayment } = require("../models/LoanPayment");
 exports.LoansCreate = async (req, res) => {
   try {
     const body = req.body;
@@ -17,7 +17,7 @@ exports.LoansCreate = async (req, res) => {
       });
     }
 
-    const loanData = {
+    const newLoan = await Loan.create({
       issueDate: body.issueDate || new Date(),
       client: body.client,
       company: body.company,
@@ -33,31 +33,36 @@ exports.LoansCreate = async (req, res) => {
       subTotal: Number(body.subTotal ?? 0),
       endDate: body.endDate || null,
       status: body.status || "Active",
-    };
-
-    const newLoan = await Loan.create(loanData);
-     const client = await Client.findById(body.client).select("fullName");
-     const company = await Company.findById(body.company).select("companyName");
-     const user = await User.findById(req.user?.id).select("name email");
-     const clientName = client?.fullName || "";
-     const companyName = company?.companyName || "";
-     const createdBy = user?.name || user?.email || "";     
+    });
+    if (Array.isArray(body.mergeLoanIds) && body.mergeLoanIds.length > 0) {
+      await Loan.updateMany(
+        { _id: { $in: body.mergeLoanIds } },
+        { $set: { status: "Merged", parentLoanId: newLoan._id } }
+      );
+    }
+    const [client, company, user] = await Promise.all([
+      Client.findById(body.client).select("fullName"),
+      Company.findById(body.company).select("companyName"),
+      User.findById(req.user?.id).select("name email"),
+    ]);
     await createAuditLog(
-      req.user?.id || null,
-      req.user?.userRole || null,
-      `Loan created for ${clientName} under ${companyName} by ${createdBy}`,
+      req.user?.id,
+      req.user?.userRole,
+      `Loan created for ${client?.fullName || ""} under ${company?.companyName || ""} by ${
+        user?.name || user?.email
+      }`,
       "Loan",
       newLoan._id,
       { after: newLoan }
     );
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Loan created successfully",
       data: newLoan,
     });
   } catch (error) {
     console.error("Error in LoansCreate:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
@@ -130,6 +135,20 @@ exports.updateLoan = async (req, res) => {
         message: "Loan not found",
       });
     }
+    if (
+      Array.isArray(updates.mergeLoanIds) &&
+      updates.mergeLoanIds.length > 0
+    ) {
+      const mergeResult = await Loan.updateMany(
+        { _id: { $in: updates.mergeLoanIds } },
+        {
+          $set: {
+            status: "Merged",
+            parentLoanId: loan._id,
+          },
+        }
+      );
+    }
    const [client, company, user] = await Promise.all([
      Client.findById(loan.client).select("fullName"),
      Company.findById(loan.company).select("companyName"),
@@ -147,16 +166,16 @@ exports.updateLoan = async (req, res) => {
      loan._id,
      { after: loan, changes: updates }
    );
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Loan updated successfully",
       data: loan,
     });
   } catch (error) {
-    console.error("Error in updateLoan:", error);
-    res.status(500).json({
+    console.error("🔥 Error in updateLoan:", error);
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -253,7 +272,7 @@ exports.searchLoans = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-exports.deleteLoan = async (req, res) => {
+exports.deactivateLoan = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -294,8 +313,55 @@ exports.deleteLoan = async (req, res) => {
       })
       .catch((err) => console.error("Audit log failed:", err));
   } catch (error) {
-    console.error("Error in deleteLoan:", error);
+    console.error("Error in deactivateLoan:", error);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+exports.deleteLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const loan = await Loan.findById(id);
+
+    if (!loan) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Loan not found" });
+    }
+    await LoanPayment.deleteMany({ loanId: id });
+    await Loan.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Loan and related payments deleted successfully",
+      data: loan,
+    });
+
+    Promise.all([
+      Client.findById(loan.client).select("fullName"),
+      Company.findById(loan.company).select("companyName"),
+      User.findById(req.user?.id).select("name email"),
+    ])
+      .then(([client, company, user]) => {
+        const clientName = client?.fullName || "";
+        const companyName = company?.companyName || "";
+        const deletedBy = user?.name || user?.email || "";
+
+        return createAuditLog(
+          req.user?.id || null,
+          req.user?.userRole || null,
+          `Loan and its payment history deleted for ${clientName} under ${companyName} by ${deletedBy}`,
+          "Loan",
+          loan._id,
+          { before: loan }
+        );
+      })
+      .catch((err) => console.error("Audit log failed:", err));
+  } catch (error) {
+    console.error("Error in deleteLoan:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 exports.recoverLoan = async (req, res) => {
