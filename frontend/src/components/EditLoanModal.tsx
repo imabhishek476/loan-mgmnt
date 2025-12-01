@@ -228,29 +228,16 @@ const EditLoanModal = observer(
         );
         const payload = {
           ...formData,
-          tenures: tenures,
+         tenures,
           previousLoanAmount: overlapMode ? selectedPreviousLoanTotal : 0,
           subTotal: subtotal,
           totalLoan: totalDue,
           status,
         };
-        await loanStore.updateLoan(loanId, payload);
         if (overlapMode && selectedLoanIds.length > 0) {
-          const selectedIds =
-            activeLoans
-              ?.filter(
-                (loan) =>
-                  selectedLoanIds.includes(loan._id) && loan.status !== "Merged"
-              )
-              ?.map((loan) => loan._id) || [];
-
-          for (const id of selectedIds) {
-            await loanStore.updateLoan(id, {
-              status: "Merged",
-              parentLoanId: loanId,
-            });
-          }
-        }
+         payload.mergeLoanIds = selectedLoanIds;
+         }
+       await loanStore.updateLoan(loanId, payload);
         await loanStore.fetchActiveLoans(formData.client);
         await clientStore.refreshDataTable();
 
