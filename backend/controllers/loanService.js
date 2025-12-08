@@ -462,4 +462,59 @@ exports.getLoanById = async (req, res) => {
     });
   }
 };
+exports.updateLoanStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Status is required",
+      });
+    }
+    const loan = await Loan.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!loan) {
+      return res.status(404).json({
+        success: false,
+        message: "Loan not found",
+      });
+    }
+    const [client, company, user] = await Promise.all([
+      Client.findById(loan.client).select("fullName"),
+      Company.findById(loan.company).select("companyName"),
+      User.findById(req.user?.id).select("name email"),
+    ]);
+
+    const clientName = client?.fullName || "";
+    const companyName = company?.companyName || "";
+    const updatedBy = user?.name || user?.email || "";
+
+    await createAuditLog(
+      req.user?.id || null,
+      req.user?.userRole || null,
+      `Loan status updated to "${status}" for ${clientName} under ${companyName} by ${updatedBy}`,
+      "Loan",
+      loan._id,
+      { after: loan, statusChangedTo: status }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Loan status updated successfully",
+      data: loan,
+    });
+  } catch (error) {
+    console.error("Error in updateLoanStatus:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 

@@ -25,7 +25,7 @@ import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
-import { deactivateLoan, recoverLoan } from "../../../services/LoanService";
+import { deactivateLoan, recoverLoan, updateLoanStatus } from "../../../services/LoanService";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -214,7 +214,24 @@ const handleDeleteLoan = async (loanId) => {
     return "bg-green-600 text-white";
   if (lower === "partial payment") 
     return "bg-yellow-500 text-white";
+  if (lower === "fraud") 
+    return "bg-red-600 text-white";
+  if (lower === "lost") 
+    return "bg-red-600 text-white";
+  if (lower === "denied") 
+    return "bg-red-600 text-white";
   return "bg-gray-500 text-white";
+};
+const handleStatusChange = async (loanId, newStatus) => {
+  try {
+    await updateLoanStatus(loanId, newStatus);
+    toast.success("Loan status updated");
+    await loanStore.fetchActiveLoans(client._id);
+    await clientStore.refreshDataTable();
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to update status");
+  }
 };
 
 
@@ -481,17 +498,23 @@ const handleDeleteLoan = async (loanId) => {
                                 </button>
                               )}
 
-                              <span
-                                className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
-                                  loan
-                                )}`}
-                              >
-                                {loan.loanStatus === "Deactivated"
-                                  ? "Deactivated"
-                                  : isPaidOff
-                                  ? "Paid Off"
-                                  : loan.status}
-                              </span>
+                            <div className="relative">
+                                  <select
+                                    className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap cursor-pointer  focus:outline-none focus:ring-0 focus:border-transparen ${getStatusStyles(
+                                      loan
+                                    )}`}
+                                    value={loan.status}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => handleStatusChange(loan._id, e.target.value)}
+                                  >
+                                    <option value="Active">Active</option>
+                                    <option value="Partial Payment">Partial Payment </option>
+                                    <option value="Paid Off">Paid Off</option>
+                                    <option value="Fraud">Fraud</option>
+                                    <option value="Lost">Lost</option>
+                                    <option value="Denied">Denied</option>
+                                  </select>
+                                </div>
                              {isDelayed &&
                       loan.status !== "Paid Off" &&
                       loan.status !== "Merged" && (
