@@ -25,7 +25,8 @@ import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
-import { deactivateLoan, recoverLoan, updateLoanStatus } from "../../../services/LoanService";
+import {deactivateLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
+import { getAllowedTerms } from "../../../utils/constants";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -93,12 +94,13 @@ const clientLoans = useMemo(() => {
       )
     : [];
 }, [loanStore.loans, client?._id]);
-    const LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
   const getDefaultLoanTerm = (loan: any) => {
+    const LOAN_TERMS = getAllowedTerms(loan.loanTerms);
    const loanData = calculateLoanAmounts(loan,mergedLoans,"mergedDate");
     return (
-      LOAN_TERMS.find((t) => t > loanData.monthsPassed) || loanData.dynamicTerm
+      LOAN_TERMS.find((t) => t > loanData.monthsPassed) ||
+      LOAN_TERMS[LOAN_TERMS.length - 1]
     );
   };
 

@@ -1,5 +1,5 @@
 import moment from "moment";
-import { ALLOWED_TERMS } from "./constants";
+import { getAllowedTerms } from "./constants";
 
 export const calculateLoanAmounts = (loan: any, mergedLoans = null, calcType: string = null) => {
     if (!loan) return null;
@@ -21,7 +21,11 @@ export const calculateLoanAmounts = (loan: any, mergedLoans = null, calcType: st
         });
     }
     const monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) || 1 ;
-    const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
+    // const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
+    const ALLOWED_TERMS = getAllowedTerms(originalTerm);
+    const dynamicTerm =
+        ALLOWED_TERMS.find((t) => t >= monthsPassed) ||
+        ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
     let total = subtotal;
     let interestAmount = 0;
     const rate = monthlyRate / 100;
