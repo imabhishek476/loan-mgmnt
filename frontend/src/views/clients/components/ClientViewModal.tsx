@@ -480,9 +480,14 @@ const handleStatusChange = async (loanId, newStatus) => {
                                   {formatUSD(selectedLoanData.paidAmount)}
                                 </span>{" "}
                                 /{" "}
-                                <span className="text-red-700 font-bold">
-                                  {formatUSD(selectedLoanData.remaining)}
+                              <span className="text-red-700 font-bold">
+                                 {formatUSD(
+                                    loan.status === "Paid Off"
+                                      ? 0
+                                      : loan.remaining
+                                  )}
                                 </span>
+
                               </span>
                               {!["Paid Off", "Merged"].includes(
                                 loan.status

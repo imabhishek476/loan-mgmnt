@@ -190,7 +190,7 @@ class LoanStore {
     const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
     if (selectedTerm) {
       originalTerm = selectedTerm
-    } else if (monthsPassed < dynamicTerm) {
+    } else if (monthsPassed <= dynamicTerm) {
       originalTerm = dynamicTerm;
     }
     let rate = null;

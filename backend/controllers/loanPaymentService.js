@@ -220,3 +220,26 @@ exports.deletePayment = async (req, res) => {
     });
   }
 };
+exports.getLastPaymentDate = async (req, res) => {
+  try {
+    const { loanId } = req.params;
+
+    const lastPayment = await LoanPayment.find({ loanId })
+      .sort({ createdAt: -1 }) 
+      .limit(1);
+
+    if (!lastPayment.length) {
+      return res.status(200).json({
+        success: true,
+        lastPaidDate: null, 
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      lastPaidDate: lastPayment[0].paidDate,
+    });
+  } catch (error) {
+    console.error("getLastPaymentDate error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
