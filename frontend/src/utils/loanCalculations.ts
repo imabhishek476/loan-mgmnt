@@ -24,8 +24,9 @@ export const calculateLoanAmounts = (loan: any, mergedLoans = null, calcType: st
     // const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
     const ALLOWED_TERMS = getAllowedTerms(originalTerm);
     const dynamicTerm =
-        ALLOWED_TERMS.find((t) => t >= monthsPassed) ||
-        ALLOWED_TERMS[ALLOWED_TERMS.length - 1];
+        originalTerm && ALLOWED_TERMS.includes(originalTerm)
+            ? originalTerm
+            : ALLOWED_TERMS.find((t) => t >= monthsPassed) || originalTerm;
     let total = subtotal;
     let interestAmount = 0;
     const rate = monthlyRate / 100;
