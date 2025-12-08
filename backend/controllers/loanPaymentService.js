@@ -37,6 +37,7 @@ exports.addPayment = async (req, res) => {
         if (i === 18 || i === 30) totalLoan += 200;
       }
     }
+    totalLoan = to2(totalLoan);
     const previousLoan = await LoanPayment.find({ loanId }).lean();
     const alreadyPaid = previousLoan.reduce((total, item) => {
       return total + (Number(item.paidAmount) || 0);
