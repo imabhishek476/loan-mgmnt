@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import { getClientsSearch, toggleClientStatus } from "../../../services/ClientServices";
 import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
+import { getAllowedTerms } from "../../../utils/constants";
 interface ClientsDataTableProps {
   // clients: any[];
   onAddLoan: (client: any) => void;
@@ -103,21 +104,14 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
     },
   });
 };
-  const getTermForToDate = (toDate, tenures) => {
-    const start = moment(toDate, "MM-DD-YYYY");
-    for (let i = 0; i < tenures?.length; i++) {
-      const end = moment(tenures[i].endDate, "MM-DD-YYYY");
-
-      if (start.isBefore(end)) {
-        return tenures[i].term;
-      }
-    }
-  };
   function calculateLoanTotals(clientLoans) {
     let totalPaid = 0;
     let totalRemaining = 0;
     for (const loan of clientLoans) {
-      const Terms = getTermForToDate(moment(), loan.tenures);
+      const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
+      const { monthsPassed } = calculateLoanAmounts(loan);
+      const runningTenure = ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
+      const Terms =  runningTenure;
       const loanData = calculateLoanAmounts({
         ...loan,
         loanTerms: Terms,
