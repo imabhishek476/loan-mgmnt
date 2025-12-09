@@ -8,6 +8,7 @@ import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { getLastPaymentDate } from "../services/LoanPaymentServices";
 
 interface EditPaymentModalProps {
   open: boolean;
@@ -34,6 +35,7 @@ const EditPaymentModal = observer(
     const [outstanding, setOutstanding] = useState(0);
     const [errors, setErrors] = useState<{ amount?: string }>({});
     const [payOffDate, setPayOffDate] = useState<Moment>(moment());
+    const [minDate, setMinDate] = useState<Moment | null>(null);
 
     useEffect(() => {
       if (!loan || !payment) return;
@@ -61,9 +63,10 @@ const EditPaymentModal = observer(
         newErrors.amount = "Paid Amount is required and must be greater than 0";
       } else if (numAmount < originalAmount) {
         newErrors.amount = `Amount cannot be less than original payment: $${originalAmount.toFixed(2)}`;
-      } else if (numAmount > Number(formattedOutstanding)) {
-        newErrors.amount = `Cannot pay more than outstanding: $${formattedOutstanding}`;
-      }
+      } 
+      // else if (numAmount > Number(formattedOutstanding)) {
+      //   newErrors.amount = `Cannot pay more than outstanding: $${formattedOutstanding}`;
+      // }
 
       setErrors(newErrors);
       Object.values(newErrors).forEach((msg) => toast.error(msg));
@@ -100,7 +103,48 @@ const EditPaymentModal = observer(
         setLoading(false);
       }
     };
+ 
+    useEffect(() => {
+      if (!loan?._id) return;
 
+      const fetchLastPayment = async () => {
+        try {
+          const lastPaid = await getLastPaymentDate(loan._id);
+
+          if (lastPaid) {
+            const formatted = moment(lastPaid);
+            setMinDate(formatted);
+          } else {
+            setMinDate(null);
+          }
+        } catch (err) {
+          console.error("Failed to fetch last payment:", err);
+        }
+      };
+
+      fetchLastPayment();
+    }, [loan?._id]);
+
+    useEffect(() => {
+        if (!loan || !payOffDate) return;
+
+        const fetchUpdatedAmount = async () => {
+          try {
+            const { remaining} =
+              await loanStore.calculateLoanAmounts({
+                loan,
+                date: payOffDate,
+                calculate: true,
+              });
+            setOutstanding(remaining);
+            setErrors({});
+          } catch (err) {
+            console.error("Recalculation error:", err);
+          }
+        };
+
+        fetchUpdatedAmount();
+      }, [payOffDate]);
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
@@ -142,6 +186,7 @@ const EditPaymentModal = observer(
               <LocalizationProvider dateAdapter={AdapterMoment}>
                 <DatePicker
                   value={payOffDate}
+                  minDate={minDate}
                   onChange={(date) => date && setPayOffDate(moment(date))}
                 />
               </LocalizationProvider>

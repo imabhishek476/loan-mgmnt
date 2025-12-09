@@ -484,7 +484,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                  {formatUSD(
                                     loan.status === "Paid Off"
                                       ? 0
-                                      : loan.remaining
+                                      : selectedLoanData.remaining
                                   )}
                                 </span>
 
@@ -505,23 +505,26 @@ const handleStatusChange = async (loanId, newStatus) => {
                                 </button>
                               )}
 
-                            <div className="relative">
-                                  <select
-                                    className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap cursor-pointer  focus:outline-none focus:ring-0 focus:border-transparen ${getStatusStyles(
-                                      loan
-                                    )}`}
-                                    value={loan.status}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={(e) => handleStatusChange(loan._id, e.target.value)}
-                                  >
-                                    <option value="Active">Active</option>
-                                    <option value="Partial Payment">Partial Payment </option>
-                                    <option value="Paid Off">Paid Off</option>
-                                    <option value="Fraud">Fraud</option>
-                                    <option value="Lost">Lost</option>
-                                    <option value="Denied">Denied</option>
-                                  </select>
-                                </div>
+                              <div className="relative">
+                                <select
+                                  className={`
+                                    px-3 py-1 rounded-sm text-xs font-semibold shadow-sm cursor-pointer
+                                    focus:outline-none focus:ring-0 
+                                    transition-all duration-200
+                                    ${getStatusStyles(loan)}
+                                  `}
+                                  value={loan.status}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => handleStatusChange(loan._id, e.target.value)}
+                                >
+                                  <option value="Active">Active</option>
+                                  <option value="Partial Payment">Partial Payment</option>
+                                  <option value="Paid Off">Paid Off</option>
+                                  <option value="Fraud">Fraud</option>
+                                  <option value="Lost">Lost</option>
+                                  <option value="Denied">Denied</option>
+                                </select>
+                              </div>
                              {isDelayed &&
                       loan.status !== "Paid Off" &&
                       loan.status !== "Merged" && (

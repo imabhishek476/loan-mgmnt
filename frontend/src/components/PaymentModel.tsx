@@ -42,7 +42,7 @@ const LoanPaymentModal = observer(
     const [minDate, setMinDate] = useState<Moment | null>(null);
     useEffect(() => {
       if (!loan || !payOffDate) return;
-        console.log('calling');
+        // console.log('calling');
       const fetchUpdatedAmount = async () => {
         try {
           const { remaining, dynamicTerm } =

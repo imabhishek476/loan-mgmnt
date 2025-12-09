@@ -138,11 +138,11 @@ exports.editPayment = async (req, res) => {
     );
 
     const remainingAmount = to2(totalLoan - alreadyPaid);
-    if (paidAmount !== undefined && Number(paidAmount) > remainingAmount) {
-      return res.status(400).json({
-        message: `Paid amount exceeds outstanding balance ${remainingAmount}`,
-      });
-    }
+    // if (paidAmount !== undefined && Number(paidAmount) > remainingAmount) {
+    //   return res.status(400).json({
+    //     message: `Paid amount exceeds outstanding balance ${remainingAmount}`,
+    //   });
+    // }
 
     if (paidAmount !== undefined) payment.paidAmount = to2(paidAmount);
     if (paidDate !== undefined) payment.paidDate = paidDate;
