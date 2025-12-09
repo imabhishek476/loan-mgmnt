@@ -80,11 +80,12 @@ const EditPaymentModal = observer(
 
         const fetchUpdatedAmount = async () => {
           try {
-            const { remaining , dynamicTerm} =
+            const { remaining , dynamicTerm } =
               await loanStore.calculateLoanAmounts({
                 loan,
                 date: payOffDate,
                 calculate: true,
+                calcType: "prevLoans",
               });
               setCurrentTerm(dynamicTerm);
              const totalRemaining = remaining + payment?.paidAmount;

@@ -50,7 +50,9 @@ const LoanPaymentModal = observer(
               loan,
               date: payOffDate,
               calculate: true,
+              calcType : "prevLoans",
             });
+            console.log(remaining);
           setCurrentTerm(dynamicTerm);
           setOutstanding(remaining);
           setAmount("");
