@@ -151,6 +151,19 @@ const EditPaymentModal = observer(
           <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Payment</h2>
 
           <div className="flex flex-col gap-4">
+             {/* Payoff Date */}
+            <div className="flex flex-col text-left py-1 z-20">
+              <label className="mb-1 font-medium text-gray-700">
+                Payoff Date
+              </label>
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+                <DatePicker
+                  value={payOffDate}
+                  minDate={minDate}
+                  onChange={(date) => date && setPayOffDate(moment(date))}
+                />
+              </LocalizationProvider>
+            </div>
             {/* Paid Amount */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
@@ -176,20 +189,6 @@ const EditPaymentModal = observer(
               <p className="text-sm text-gray-500 mt-1">
                 Outstanding: ${Number(formattedOutstanding).toLocaleString()}
               </p>
-            </div>
-
-            {/* Payoff Date */}
-            <div className="flex flex-col text-left py-1 z-20">
-              <label className="mb-1 font-medium text-gray-700">
-                Payoff Date
-              </label>
-              <LocalizationProvider dateAdapter={AdapterMoment}>
-                <DatePicker
-                  value={payOffDate}
-                  minDate={minDate}
-                  onChange={(date) => date && setPayOffDate(moment(date))}
-                />
-              </LocalizationProvider>
             </div>
 
             {/* Check Number */}
