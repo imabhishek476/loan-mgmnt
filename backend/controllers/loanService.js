@@ -249,6 +249,7 @@ exports.searchLoans = async (req, res) => {
           loanStatus: 1,
           monthlyRate: 1,
           interestType: 1,
+          loanTerms: 1,
           client: { _id: "$clientInfo._id", fullName: "$clientInfo.fullName" },
           company: {
             _id: "$companyInfo._id",

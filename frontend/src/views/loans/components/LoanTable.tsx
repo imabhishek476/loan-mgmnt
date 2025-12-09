@@ -21,6 +21,7 @@
     calculateLoanAmounts,
   } from "../../../utils/loanCalculations";
   import { deleteLoan, getLoansSearch} from "../../../services/LoanService";
+import { getAllowedTerms } from "../../../utils/constants";
 
   interface LoanTableProps {
     clientId?: string;
@@ -104,11 +105,10 @@
     },
   });
     };
-    const ALLOWED_TERMS = [6, 12, 18, 24, 30, 36, 48];
-    const getLoanRunningDetails = (loan: any) => {
+    const getLoanRunningDetails = (loan: any) => {          
+      const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
       const { monthsPassed } = calculateDynamicTermAndPayment(loan);
-      const runningTenure =
-        ALLOWED_TERMS.find((t) => monthsPassed <= t) || ALLOWED_TERMS.at(-1);
+      const runningTenure = ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
 
       const loanCalc = calculateLoanAmounts({
         ...loan,
@@ -289,9 +289,8 @@
                     if (daysPassed % 30 === 0 && daysPassed !== 0) {
                       completedMonths -= 1;
                     }
-
-                    const runningTenure =
-                      ALLOWED_TERMS.find((t) => completedMonths < t) || ALLOWED_TERMS.at(-1);
+                    const ALLOWED_TERMS = getAllowedTerms(rowData.loanTerms);
+                    const runningTenure = ALLOWED_TERMS.find((t) => completedMonths <= t) || rowData.loanTerms;
                     return <span>{runningTenure}</span>;
                   },
                   headerStyle: { whiteSpace: "nowrap" },
