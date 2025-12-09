@@ -211,7 +211,7 @@ const handleDeleteLoan = async (loanId) => {
   if (paid >= total && lower === "paid off") 
     return "bg-gray-500 text-white";
   if (lower === "merged") 
-    return "bg-green-600 text-white";
+    return "bg-gray-500 text-white";
   if (lower === "active") 
     return "bg-green-600 text-white";
   if (lower === "partial payment") 
@@ -514,15 +514,22 @@ const handleStatusChange = async (loanId, newStatus) => {
                                     ${getStatusStyles(loan)}
                                   `}
                                   value={loan.status}
+                                  disabled={loan.status === "Merged"} 
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={(e) => handleStatusChange(loan._id, e.target.value)}
                                 >
+                                   {loan.status === "Merged" ? (
+                                    <option value="Merged">Merged</option>
+                                   ):(
+                                  <>
                                   <option value="Active">Active</option>
                                   <option value="Partial Payment">Partial Payment</option>
                                   <option value="Paid Off">Paid Off</option>
                                   <option value="Fraud">Fraud</option>
                                   <option value="Lost">Lost</option>
                                   <option value="Denied">Denied</option>
+                                  </>
+                                  )}
                                 </select>
                               </div>
                              {isDelayed &&
