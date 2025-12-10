@@ -193,6 +193,9 @@ class LoanStore {
     } else if (monthsPassed <  dynamicTerm) {
       originalTerm = dynamicTerm;
     }
+    else if (monthsPassed = dynamicTerm) {
+      originalTerm = dynamicTerm;
+    }
     let rate = null;
     if (calculate) {
       rate = monthlyRate;
