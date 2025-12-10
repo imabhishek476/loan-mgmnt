@@ -24,7 +24,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
-import { ALLOWED_TERMS } from "../../utils/constants";
+import { getAllowedTerms } from "../../utils/constants";
 
 const Loans = observer(
   ({
@@ -208,6 +208,7 @@ const Loans = observer(
         loan,
         formData.issueDate
       );
+      const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
       const runningTenure =
         ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
       const loanCalc = calculateLoanAmounts({

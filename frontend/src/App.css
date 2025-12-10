@@ -36,4 +36,13 @@
 .no-spinner[type="number"] {
     -moz-appearance: textfield;
 }
-
+select {
+  border-radius: 5px !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+select option {
+ color:#000;
+ background-color:#fff;
+}

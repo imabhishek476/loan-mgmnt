@@ -37,6 +37,7 @@ exports.addPayment = async (req, res) => {
         if (i === 18 || i === 30) totalLoan += 200;
       }
     }
+    totalLoan = to2(totalLoan);
     const previousLoan = await LoanPayment.find({ loanId }).lean();
     const alreadyPaid = previousLoan.reduce((total, item) => {
       return total + (Number(item.paidAmount) || 0);
@@ -125,7 +126,7 @@ exports.editPayment = async (req, res) => {
         if (i === 18 || i === 30) totalLoan += 200;
       }
     }
-
+    totalLoan = to2(totalLoan);
     const previousPayments = await LoanPayment.find({
       loanId: loan._id,
       _id: { $ne: paymentId },
@@ -137,11 +138,11 @@ exports.editPayment = async (req, res) => {
     );
 
     const remainingAmount = to2(totalLoan - alreadyPaid);
-    if (paidAmount !== undefined && Number(paidAmount) > remainingAmount) {
-      return res.status(400).json({
-        message: `Paid amount exceeds outstanding balance ${remainingAmount}`,
-      });
-    }
+    // if (paidAmount !== undefined && Number(paidAmount) > remainingAmount) {
+    //   return res.status(400).json({
+    //     message: `Paid amount exceeds outstanding balance ${remainingAmount}`,
+    //   });
+    // }
 
     if (paidAmount !== undefined) payment.paidAmount = to2(paidAmount);
     if (paidDate !== undefined) payment.paidDate = paidDate;
@@ -217,5 +218,28 @@ exports.deletePayment = async (req, res) => {
       success: false,
       message: "Something went wrong while deleting payment",
     });
+  }
+};
+exports.getLastPaymentDate = async (req, res) => {
+  try {
+    const { loanId } = req.params;
+
+    const lastPayment = await LoanPayment.find({ loanId })
+      .sort({ createdAt: -1 }) 
+      .limit(1);
+
+    if (!lastPayment.length) {
+      return res.status(200).json({
+        success: true,
+        lastPaidDate: null, 
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      lastPaidDate: lastPayment[0].paidDate,
+    });
+  } catch (error) {
+    console.error("getLastPaymentDate error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
