@@ -34,3 +34,9 @@ export const deletePayment = async (paymentId: string) => {
   const { data } = await api.delete(`/payments/delete/${paymentId}`);
   return data;
 };
+export const getLastPaymentDate = async (loanId: string): Promise<string | null> => {
+  const { data } = await api.get(`/payments/${loanId}`); 
+  const payments = data.payments || [];
+  if (payments.length === 0) return null;
+  return payments[0].paidDate;
+};

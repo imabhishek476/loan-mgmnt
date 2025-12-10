@@ -25,7 +25,8 @@ import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
-import { deactivateLoan, recoverLoan } from "../../../services/LoanService";
+import {deactivateLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
+import { getAllowedTerms } from "../../../utils/constants";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -93,12 +94,13 @@ const clientLoans = useMemo(() => {
       )
     : [];
 }, [loanStore.loans, client?._id]);
-    const LOAN_TERMS = [6, 12, 18, 24, 30, 36, 48];
 
   const getDefaultLoanTerm = (loan: any) => {
+    const LOAN_TERMS = getAllowedTerms(loan.loanTerms);
    const loanData = calculateLoanAmounts(loan,mergedLoans,"mergedDate");
     return (
-      LOAN_TERMS.find((t) => t > loanData.monthsPassed) || loanData.dynamicTerm
+      LOAN_TERMS.find((t) => t > loanData.monthsPassed) ||
+      LOAN_TERMS[LOAN_TERMS.length - 1]
     );
   };
 
@@ -209,12 +211,29 @@ const handleDeleteLoan = async (loanId) => {
   if (paid >= total && lower === "paid off") 
     return "bg-gray-500 text-white";
   if (lower === "merged") 
-    return "bg-green-600 text-white";
+    return "bg-gray-500 text-white";
   if (lower === "active") 
     return "bg-green-600 text-white";
   if (lower === "partial payment") 
     return "bg-yellow-500 text-white";
+  if (lower === "fraud") 
+    return "bg-red-600 text-white";
+  if (lower === "lost") 
+    return "bg-red-600 text-white";
+  if (lower === "denied") 
+    return "bg-red-600 text-white";
   return "bg-gray-500 text-white";
+};
+const handleStatusChange = async (loanId, newStatus) => {
+  try {
+    await updateLoanStatus(loanId, newStatus);
+    toast.success("Loan status updated");
+    await loanStore.fetchActiveLoans(client._id);
+    await clientStore.refreshDataTable();
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to update status");
+  }
 };
 
 
@@ -461,9 +480,14 @@ const handleDeleteLoan = async (loanId) => {
                                   {formatUSD(selectedLoanData.paidAmount)}
                                 </span>{" "}
                                 /{" "}
-                                <span className="text-red-700 font-bold">
-                                  {formatUSD(selectedLoanData.remaining)}
+                              <span className="text-red-700 font-bold">
+                                 {formatUSD(
+                                    loan.status === "Paid Off"
+                                      ? 0
+                                      : selectedLoanData.remaining
+                                  )}
                                 </span>
+
                               </span>
                               {!["Paid Off", "Merged"].includes(
                                 loan.status
@@ -481,17 +505,33 @@ const handleDeleteLoan = async (loanId) => {
                                 </button>
                               )}
 
-                              <span
-                                className={`px-3 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap ${getStatusStyles(
-                                  loan
-                                )}`}
-                              >
-                                {loan.loanStatus === "Deactivated"
-                                  ? "Deactivated"
-                                  : isPaidOff
-                                  ? "Paid Off"
-                                  : loan.status}
-                              </span>
+                              <div className="relative">
+                                <select
+                                  className={`
+                                    px-3 py-1 rounded-sm text-xs font-semibold shadow-sm cursor-pointer
+                                    focus:outline-none focus:ring-0 
+                                    transition-all duration-200
+                                    ${getStatusStyles(loan)}
+                                  `}
+                                  value={loan.status}
+                                  disabled={loan.status === "Merged"} 
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => handleStatusChange(loan._id, e.target.value)}
+                                >
+                                   {loan.status === "Merged" ? (
+                                    <option value="Merged">Merged</option>
+                                   ):(
+                                  <>
+                                  <option value="Active">Active</option>
+                                  <option value="Partial Payment">Partial Payment</option>
+                                  <option value="Paid Off">Paid Off</option>
+                                  <option value="Fraud">Fraud</option>
+                                  <option value="Lost">Lost</option>
+                                  <option value="Denied">Denied</option>
+                                  </>
+                                  )}
+                                </select>
+                              </div>
                              {isDelayed &&
                       loan.status !== "Paid Off" &&
                       loan.status !== "Merged" && (
@@ -632,6 +672,22 @@ const handleDeleteLoan = async (loanId) => {
                                         <table className="w-full text-sm text-gray-700 border-collapse">
                                           <tbody>
                                             <tr className="">
+                                              <td>
+                                                {loan.status === "Paid Off" && (
+                                                  <p className="text-green-600 font-semibold">
+                                                    This loan has been fully
+                                                    paid off.
+                                                  </p>
+                                                )}
+                                                {loan.status === "Merged" && (
+                                                  <p className="text-blue-600 font-semibold">
+                                                    This loan has been merged
+                                                    with a new loan.
+                                                  </p>
+                                                )}
+                                              </td>
+                                            </tr>
+                                            <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
                                                 Issue Date:
                                               </td>
@@ -727,6 +783,7 @@ const handleDeleteLoan = async (loanId) => {
                                                 {formatUSD(loan.subTotal)}
                                               </td>
                                             </tr> */}
+                                            {loan.status !== "Paid Off" && (
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
                                                 Total Loan Amount:
@@ -739,20 +796,9 @@ const handleDeleteLoan = async (loanId) => {
                                                 )}
                                               </td>
                                             </tr>
+                                           )}
                                             <tr>
-                                            <td>
-                                              {loan.status === "Paid Off" && (
-                                                <p className="text-green-600 font-semibold">
-                                                  This loan has been fully paid
-                                                  off.
-                                                </p>
-                                              )}
-                                              {loan.status === "Merged" && (
-                                                <p className="text-blue-600 font-semibold">
-                                                  This loan has been merged with
-                                                  a new loan.
-                                                </p>
-                                              )}
+                                              <td>
                                               {/* <td className="font-semibold py-0">
                                                 Paid Amount:
                                               </td>
@@ -787,19 +833,13 @@ const handleDeleteLoan = async (loanId) => {
                                                 Terms:
                                               </td>
                                               <td className="py-0">
-                                                {companyLoanTerms(loan).length >
-                                                  1 && (
+                                                {(loan.status === "Paid Off" || companyLoanTerms(loan).length >
+                                                  1) && (
                                                   <button
-                                                    onClick={() =>
-                                                      toggleShowAllTerms(
-                                                        loan._id
-                                                      )
-                                                    }
+                                                    onClick={() => toggleShowAllTerms(loan._id)}
                                                     className="text-xs text-blue-600 hover:underline"
                                                   >
-                                                    {showAllTermsMap[loan._id]
-                                                      ? "Less..."
-                                                      : "More..."}
+                                                    {showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
                                                   </button>
                                                 )}
                                               </td>
@@ -810,33 +850,28 @@ const handleDeleteLoan = async (loanId) => {
                                     })()}
                                     <div
                                       className={`mt-0 overflow-y-auto transition-all duration-300 ${
-                                        showAllTermsMap[loan._id]
-                                          ? "max-h-[140px]"
-                                          : "max-h-[70px]"
+                                        showAllTermsMap[loan._id] ? "max-h-[140px]" : "max-h-[70px]"
                                       }`}
                                     >
                                       <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
                                         {(() => {
-                                          const companyTerms =
-                                            companyLoanTerms(loan);
-                                          const allTerms =
-                                            companyTerms.includes(
-                                              loan.loanTerms
-                                            )
-                                              ? companyTerms
-                                              : [
-                                                  ...companyTerms,
-                                                  loan.loanTerms,
-                                                ].sort((a, b) => a - b);
+                                          const companyTerms = companyLoanTerms(loan);
+                                          const allTerms = companyTerms.includes(
+                                              loan.loanTerms)
+                                            ? companyTerms
+                                            : [...companyTerms, loan.loanTerms].sort((a, b) => a - b);
+                                          let termsToShow;
 
-                                        return showAllTermsMap[loan._id]
-                                          ? allTerms.filter(
-                                              (t) => t <= loan.loanTerms
-                                            )
+                                          if (loan.status === "Paid Off") {
+                                            termsToShow = showAllTermsMap[loan._id] ? allTerms : [];
+                                          } else {
+                                            termsToShow = showAllTermsMap[loan._id]
+                                           ? allTerms.filter((t) => t <= loan.loanTerms)
                                           : [currentTermMap[loan._id]];
-                                      })().map((term) => {
-                                          const loanTermData =
-                                            calculateLoanAmounts({
+                                          }
+
+                                          return termsToShow.map((term) => {
+                                            const loanTermData = calculateLoanAmounts({
                                               ...loan,
                                               loanTerms: term,
                                             })!;
@@ -870,8 +905,9 @@ const handleDeleteLoan = async (loanId) => {
                                                 </div>
                                               </div>
                                             </li>
-                                          );
-                                        })}
+                                             );
+                                          });
+                                        })()}
                                       </ul>
                                     </div>
                                   </>

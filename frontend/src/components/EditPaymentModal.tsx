@@ -8,6 +8,7 @@ import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { getLastPaymentDate } from "../services/LoanPaymentServices";
 
 interface EditPaymentModalProps {
   open: boolean;
@@ -34,12 +35,14 @@ const EditPaymentModal = observer(
     const [outstanding, setOutstanding] = useState(0);
     const [errors, setErrors] = useState<{ amount?: string }>({});
     const [payOffDate, setPayOffDate] = useState<Moment>(moment());
+    const [currentTerm, setCurrentTerm] = useState(loan?.loanTerms || 0);
 
     useEffect(() => {
       if (!loan || !payment) return;
       const loanData = calculateLoanAmounts(loan);
       const remaining = loanData?.remaining || 0;
-      const adjustedOutstanding = remaining ;
+      const adjustedOutstanding = remaining + payment?.paidAmount;
+      console.log(adjustedOutstanding);
       setOutstanding(adjustedOutstanding);
       setAmount(payment.paidAmount.toString());
       setCheckNumber(payment.checkNumber || "");
@@ -61,9 +64,10 @@ const EditPaymentModal = observer(
         newErrors.amount = "Paid Amount is required and must be greater than 0";
       } else if (numAmount < originalAmount) {
         newErrors.amount = `Amount cannot be less than original payment: $${originalAmount.toFixed(2)}`;
-      } else if (numAmount > Number(formattedOutstanding)) {
-        newErrors.amount = `Cannot pay more than outstanding: $${formattedOutstanding}`;
-      }
+      } 
+      // else if (numAmount > Number(formattedOutstanding)) {
+      //   newErrors.amount = `Cannot pay more than outstanding: $${formattedOutstanding}`;
+      // }
 
       setErrors(newErrors);
       Object.values(newErrors).forEach((msg) => toast.error(msg));
@@ -71,6 +75,29 @@ const EditPaymentModal = observer(
       return Object.keys(newErrors).length === 0;
     };
 
+    useEffect(() => {
+        if (!loan || !payOffDate) return;
+
+        const fetchUpdatedAmount = async () => {
+          try {
+            const { remaining , dynamicTerm } =
+              await loanStore.calculateLoanAmounts({
+                loan,
+                date: payOffDate,
+                calculate: true,
+                calcType: "prevLoans",
+              });
+              setCurrentTerm(dynamicTerm);
+             const totalRemaining = remaining + payment?.paidAmount;
+            setOutstanding(totalRemaining);
+            setErrors({});
+          } catch (err) {
+            console.error("Recalculation error:", err);
+          }
+        };
+
+        fetchUpdatedAmount();
+      }, [payOffDate]);
     const handleEditPayment = async () => {
       if (!validate()) return;
 
@@ -83,7 +110,7 @@ const EditPaymentModal = observer(
           paidDate: payOffDate,
           checkNumber,
           payoffLetter,
-          currentTerm: loan.loanTerms,
+          currentTerm,
         });
 
         await loanStore.fetchActiveLoans(clientId);
@@ -100,13 +127,24 @@ const EditPaymentModal = observer(
         setLoading(false);
       }
     };
-
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Payment</h2>
 
           <div className="flex flex-col gap-4">
+             {/* Payoff Date */}
+            <div className="flex flex-col text-left py-1 z-20">
+              <label className="mb-1 font-medium text-gray-700">
+                Payoff Date
+              </label>
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+                <DatePicker
+                  value={payOffDate}
+                  onChange={(date) => date && setPayOffDate(moment(date))}
+                />
+              </LocalizationProvider>
+            </div>
             {/* Paid Amount */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
@@ -132,19 +170,6 @@ const EditPaymentModal = observer(
               <p className="text-sm text-gray-500 mt-1">
                 Outstanding: ${Number(formattedOutstanding).toLocaleString()}
               </p>
-            </div>
-
-            {/* Payoff Date */}
-            <div className="flex flex-col text-left py-1 z-20">
-              <label className="mb-1 font-medium text-gray-700">
-                Payoff Date
-              </label>
-              <LocalizationProvider dateAdapter={AdapterMoment}>
-                <DatePicker
-                  value={payOffDate}
-                  onChange={(date) => date && setPayOffDate(moment(date))}
-                />
-              </LocalizationProvider>
             </div>
 
             {/* Check Number */}

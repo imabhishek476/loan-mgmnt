@@ -8,6 +8,7 @@ import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { getLastPaymentDate } from "../services/LoanPaymentServices";
 
 interface LoanPaymentModalProps {
   open: boolean;
@@ -36,19 +37,60 @@ const LoanPaymentModal = observer(
     }>({});
     const formated_Outstanding = outstanding.toFixed(2);
     const [payOffDate, setPayOffDate] = useState(moment());
+    const [currentTerm, setCurrentTerm] = useState(loan?.loanTerms || 0);
 
-useEffect(() => {
-  if (!loan) return;
-  const loanData = calculateLoanAmounts(loan);
-  if (!loanData) return;
-  const { remaining } = loanData;
-  setOutstanding(remaining);
-        setAmount("");
-        setCheckNumber("");
-        setPayoffLetter("");
-        setErrors({});
-}, [loan]);
+    const [minDate, setMinDate] = useState<Moment | null>(null);
+    useEffect(() => {
+      if (!loan || !payOffDate) return;
+      const fetchUpdatedAmount = async () => {
+        try {
+          const { remaining, dynamicTerm } =
+            await loanStore.calculateLoanAmounts({
+              loan,
+              date: payOffDate,
+              calculate: true,
+              calcType : "prevLoans",
+            });
+          setCurrentTerm(dynamicTerm);
+          setOutstanding(remaining);
+          setAmount("");
+          setCheckNumber("");
+          setPayoffLetter("");
+          setErrors({});
+        } catch (err) {
+          console.error("Recalculation error:", err);
+        }
+      };
+      fetchUpdatedAmount();
+    }, [payOffDate]);
 
+    useEffect(() => {
+      if (!loan?._id) return;
+
+      const fetchLastPayment = async () => {
+        try {
+          const lastPaid = await getLastPaymentDate(loan._id);
+
+          if (lastPaid) {
+            const formatted = moment(lastPaid);
+            setMinDate(formatted);
+            const today = moment();
+
+            if (today.isBefore(formatted, "day")) {
+              setPayOffDate(formatted);
+            } else {
+              setPayOffDate(today);
+            }
+          } else {
+            setMinDate(null);
+            setPayOffDate(moment());
+          }
+        } catch (err) {
+          console.error("Failed to fetch last payment:", err);
+        }
+      };
+      fetchLastPayment();
+    }, [loan?._id]);
 
 
     if (!open || !loan) return null;
@@ -82,7 +124,7 @@ useEffect(() => {
           checkNumber,
           payoffLetter,
           formated_Outstanding,
-          currentTerm: loan.loanTerms,
+          currentTerm,
         });
 
         await loanStore.fetchActiveLoans(clientId);
@@ -107,6 +149,19 @@ useEffect(() => {
         <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Make Payment</h2>
           <div className="flex flex-col gap-4">
+            <div className="flex flex-col text-left py-1 z-20">
+              <label className="mb-1 font-medium text-gray-700">
+                Payoff Date
+              </label>
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+                <DatePicker
+                  value={payOffDate}
+                  minDate={minDate} 
+                  onChange={(date: Moment | null) => setPayOffDate(date)}
+                  slotProps={{ textField: { size: "small" } }}
+                />
+              </LocalizationProvider>
+            </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">
                 Paid Amount <span className="text-red-500">*</span>
@@ -142,20 +197,6 @@ useEffect(() => {
               <p className="text-sm text-gray-500 mt-1">
                 Outstanding: ${Number(formated_Outstanding).toLocaleString()}
               </p>
-            </div>
-            <div className="flex flex-col text-left py-1 z-20">
-              <label className="mb-1 font-medium text-gray-700">
-                Payoff Date
-              </label>
-              <LocalizationProvider dateAdapter={AdapterMoment}>
-              <DatePicker
-                value={payOffDate}
-                onChange={(date: Moment | null) =>
-                  setPayOffDate(date)
-                }
-                slotProps={{ textField: { size: "small" } }}
-              />
-              </LocalizationProvider>
             </div>
             {/* Check Number */}
             <div>
