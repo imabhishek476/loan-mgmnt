@@ -126,7 +126,7 @@ exports.editPayment = async (req, res) => {
         if (i === 18 || i === 30) totalLoan += 200;
       }
     }
-
+    totalLoan = to2(totalLoan);
     const previousPayments = await LoanPayment.find({
       loanId: loan._id,
       _id: { $ne: paymentId },

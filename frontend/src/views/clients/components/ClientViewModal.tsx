@@ -672,6 +672,22 @@ const handleStatusChange = async (loanId, newStatus) => {
                                         <table className="w-full text-sm text-gray-700 border-collapse">
                                           <tbody>
                                             <tr className="">
+                                              <td>
+                                                {loan.status === "Paid Off" && (
+                                                  <p className="text-green-600 font-semibold">
+                                                    This loan has been fully
+                                                    paid off.
+                                                  </p>
+                                                )}
+                                                {loan.status === "Merged" && (
+                                                  <p className="text-blue-600 font-semibold">
+                                                    This loan has been merged
+                                                    with a new loan.
+                                                  </p>
+                                                )}
+                                              </td>
+                                            </tr>
+                                            <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
                                                 Issue Date:
                                               </td>
@@ -767,6 +783,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                 {formatUSD(loan.subTotal)}
                                               </td>
                                             </tr> */}
+                                            {loan.status !== "Paid Off" && (
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
                                                 Total Loan Amount:
@@ -779,20 +796,9 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                 )}
                                               </td>
                                             </tr>
+                                           )}
                                             <tr>
-                                            <td>
-                                              {loan.status === "Paid Off" && (
-                                                <p className="text-green-600 font-semibold">
-                                                  This loan has been fully paid
-                                                  off.
-                                                </p>
-                                              )}
-                                              {loan.status === "Merged" && (
-                                                <p className="text-blue-600 font-semibold">
-                                                  This loan has been merged with
-                                                  a new loan.
-                                                </p>
-                                              )}
+                                              <td>
                                               {/* <td className="font-semibold py-0">
                                                 Paid Amount:
                                               </td>
@@ -827,19 +833,13 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                 Terms:
                                               </td>
                                               <td className="py-0">
-                                                {companyLoanTerms(loan).length >
-                                                  1 && (
+                                                {(loan.status === "Paid Off" || companyLoanTerms(loan).length >
+                                                  1) && (
                                                   <button
-                                                    onClick={() =>
-                                                      toggleShowAllTerms(
-                                                        loan._id
-                                                      )
-                                                    }
+                                                    onClick={() => toggleShowAllTerms(loan._id)}
                                                     className="text-xs text-blue-600 hover:underline"
                                                   >
-                                                    {showAllTermsMap[loan._id]
-                                                      ? "Less..."
-                                                      : "More..."}
+                                                    {showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
                                                   </button>
                                                 )}
                                               </td>
@@ -850,33 +850,28 @@ const handleStatusChange = async (loanId, newStatus) => {
                                     })()}
                                     <div
                                       className={`mt-0 overflow-y-auto transition-all duration-300 ${
-                                        showAllTermsMap[loan._id]
-                                          ? "max-h-[140px]"
-                                          : "max-h-[70px]"
+                                        showAllTermsMap[loan._id] ? "max-h-[140px]" : "max-h-[70px]"
                                       }`}
                                     >
                                       <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
                                         {(() => {
-                                          const companyTerms =
-                                            companyLoanTerms(loan);
-                                          const allTerms =
-                                            companyTerms.includes(
-                                              loan.loanTerms
-                                            )
-                                              ? companyTerms
-                                              : [
-                                                  ...companyTerms,
-                                                  loan.loanTerms,
-                                                ].sort((a, b) => a - b);
+                                          const companyTerms = companyLoanTerms(loan);
+                                          const allTerms = companyTerms.includes(
+                                              loan.loanTerms)
+                                            ? companyTerms
+                                            : [...companyTerms, loan.loanTerms].sort((a, b) => a - b);
+                                          let termsToShow;
 
-                                        return showAllTermsMap[loan._id]
-                                          ? allTerms.filter(
-                                              (t) => t <= loan.loanTerms
-                                            )
+                                          if (loan.status === "Paid Off") {
+                                            termsToShow = showAllTermsMap[loan._id] ? allTerms : [];
+                                          } else {
+                                            termsToShow = showAllTermsMap[loan._id]
+                                           ? allTerms.filter((t) => t <= loan.loanTerms)
                                           : [currentTermMap[loan._id]];
-                                      })().map((term) => {
-                                          const loanTermData =
-                                            calculateLoanAmounts({
+                                          }
+
+                                          return termsToShow.map((term) => {
+                                            const loanTermData = calculateLoanAmounts({
                                               ...loan,
                                               loanTerms: term,
                                             })!;
@@ -910,8 +905,9 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                 </div>
                                               </div>
                                             </li>
-                                          );
-                                        })}
+                                             );
+                                          });
+                                        })()}
                                       </ul>
                                     </div>
                                   </>
