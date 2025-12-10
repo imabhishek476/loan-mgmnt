@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef } from "react";
 import MaterialTable from "@material-table/core";
-import { Search, Trash2, Plus, Power, RefreshCcw } from "lucide-react";
+import { Trash2, Plus, Power, RefreshCcw } from "lucide-react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 // import { TextField } from "@mui/material";
@@ -22,54 +22,55 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   onAddLoan,
   onViewClient,
 }) => {
-  const [searchInput, setSearchInput] = useState("");
-  const [, setClientsList] = useState("");
+  const [searchInput,] = useState("");
 
-  const [issueDateFilterInput, setIssueDateFilterInput] = useState<any>(null);
-  const clearedSearch = "";
-  const clearedDate = null;
+  const [issueDateFilterInput] = useState<any>(null);
   const tableRef = useRef<any>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [currentPageSize, setCurrentPageSize] = useState(10);
-  const handleReset = async () => {
-    setSearchInput(clearedSearch);
-    setIssueDateFilterInput(clearedDate);
-    if (tableRef.current) {
-      tableRef.current.onQueryChange();
-    }
+  const [currentPage] = useState(0);
+  const [currentPageSize] = useState(10);
+  const [filters, setFilters] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    attorneyName: "",
+    status: "",
+    issueDate: null,
+  });
+  const handleReset = () => {
+    setFilters({
+      name: "",
+      email: "",
+      phone: "",
+      attorneyName: "",
+      status: "",
+      issueDate: null,
+    });
+    tableRef.current?.onQueryChange();
   };
-  const fetchClientsData = useCallback(
-    async (query: any) => {
-      setCurrentPage(query.page);
-      setCurrentPageSize(query.pageSize);
-      const filters = {
-        query: searchInput,
+  const handleSearch = () => {
+    tableRef.current?.onQueryChange();
+  };
+
+  const fetchClientsData = async (query: any) => {
+      const params = {
         page: query.page,
         limit: query.pageSize,
-        issueDate: issueDateFilterInput
-          ? moment(issueDateFilterInput).format("MM-DD-YYYY")
+        name: filters.name,
+        email: filters.email,
+        phone: filters.phone,
+        attorneyName: filters.attorneyName,
+        status: filters.status,
+        issueDate: filters.issueDate
+          ? moment(filters.issueDate).format("MM-DD-YYYY")
           : null,
       };
-      try {
-        const data = await getClientsSearch(filters);
-        setClientsList(data.clients);
-        clientStore.setClients(data.clients);
-        return {
-          data: data.clients,
-          page: query.page,
-          totalCount: data.total,
-        };
-      } catch (err) {
-        console.error(err);
-        return { data: [], page: query.page, totalCount: 0 };
-      }finally{clientStore.setTableRef(tableRef);}
-    },
-    [searchInput, issueDateFilterInput]
-  );
-  const handleSearch = () => {
-    if (tableRef.current) {
-      tableRef.current.onQueryChange();
-    }
+      const data = await getClientsSearch(params);
+      clientStore.setClients(data.clients);
+      return {
+        data: data.clients,
+        page: query.page,
+        totalCount: data.total,
+      };
   };
   const handleDelete = async (id: string) => {
     Confirm({
@@ -126,68 +127,88 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
 
   return (
     <div className="">
-      <div className="mb-3 flex flex-col sm:flex-row gap-2">
-        {/* Search */}
-        <div className="flex flex-col sm:flex-row  gap-2 items-left">
-          <div className="relative flex-grow min-w-[250px] max-w-md">
-            <input
-              type="text"
-              placeholder="Search by Customer Details"
-              className="w-full sm:p-2 pr-10 pl-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-            <span
-              className="absolute sm:hidden inset-y-0 right-0 flex items-center  pr-3  cursor-pointer"
-              onClick={handleSearch}
-            >
-              <Search className="w-5 h-5 text-green-700 " />
-            </span>
-          </div>
-
-          <button
-            className=" hidden sm:flex items-center gap-1 text-white bg-green-700 hover:bg-green-900 px-2 py-1 rounded transition-all duration-200 hover:shadow-lg font-medium"
-            onClick={handleSearch}
-          >
-            <Search size={15} />
-            <span className="font-sm">Search</span>
-          </button>
+      <div className="grid grid-cols-1 sm:grid-cols-8 gap-2 mb-2">
+        <div>
+          <label className="font-semibold text-gray-600">Name</label>
+          <input
+            className="border p-1.5 rounded text-sm w-full"
+            placeholder="Search Name"
+            value={filters.name}
+            onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+          />
         </div>
-        <div className="flex gap-2 items-center">
+
+        {/* Email */}
+        <div>
+          <label className="font-semibold text-gray-600">Email</label>
+          <input
+            className="border p-1.5 rounded text-sm w-full"
+            placeholder="Search Email"
+            value={filters.email}
+            onChange={(e) => setFilters({ ...filters, email: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="font-semibold text-gray-600">Phone</label>
+          <input
+            className="border p-1.5 rounded text-sm w-full"
+            placeholder="Search Phone"
+            value={filters.phone}
+            onChange={(e) => setFilters({ ...filters, phone: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="font-semibold text-gray-600">Attorney</label>
+          <input
+            className="border p-1.5 rounded text-sm w-full"
+            placeholder="Search Attorney"
+            value={filters.attorneyName}
+            onChange={(e) =>
+              setFilters({ ...filters, attorneyName: e.target.value })
+            }
+          />
+        </div>
+        <div>
+          <label className="font-semibold text-gray-600">Status</label>
+          <select
+            className="border p-1.5 rounded text-sm w-full"
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+          >
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+        <div>
+          <label className="font-semibold text-gray-600">Issue Date</label>
           <LocalizationProvider dateAdapter={AdapterMoment}>
             <DatePicker
-              label="Issue Date"
-              value={issueDateFilterInput}
-              onChange={(newValue) => setIssueDateFilterInput(newValue)}
               slotProps={{
                 textField: {
                   size: "small",
-                  sx: {
-                    "& .MuiInputBase-root": {
-                      padding: "0px 4px",
-                      minHeight: "32px", // make it a bit shorter
-                    },
-                    "& .MuiInputBase-input": {
-                      padding: "4px 6px", // actual text padding
-                    },
-                  },
+                  className: "border rounded text-sm w-full",
+                  inputProps: { className: "p-1.5 text-sm" },
                 },
               }}
+              value={filters.issueDate}
+              onChange={(v) => setFilters({ ...filters, issueDate: v })}
             />
           </LocalizationProvider>
+        </div>
+        <div className="gap-4 mt-6 flex">
           <button
-            className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-2 rounded transition-colors duration-200"
             onClick={handleSearch}
+            className="bg-green-700 text-white px-3 py-2 rounded text-sm"
           >
-            <Search size={20} />
-            <span className="font-medium">Filter</span>
+            Search
           </button>
 
           <button
-            className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-2 rounded transition-colors duration-200"
             onClick={handleReset}
+            className="bg-gray-500 text-white px-3 py-2 rounded text-sm"
           >
-            <span className="font-medium">Reset</span>
+            Reset
           </button>
         </div>
       </div>

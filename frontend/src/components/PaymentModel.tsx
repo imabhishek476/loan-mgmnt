@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
-import { calculateLoanAmounts } from "../utils/loanCalculations"; 
+// import { calculateLoanAmounts } from "../utils/loanCalculations"; 
 import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
@@ -44,12 +44,13 @@ const LoanPaymentModal = observer(
       if (!loan || !payOffDate) return;
       const fetchUpdatedAmount = async () => {
         try {
+          //@ts-ignore
           const { remaining, dynamicTerm } =
             await loanStore.calculateLoanAmounts({
               loan,
               date: payOffDate,
               calculate: true,
-              calcType : "prevLoans",
+              calcType: "prevLoans",
             });
           setCurrentTerm(dynamicTerm);
           setOutstanding(remaining);
