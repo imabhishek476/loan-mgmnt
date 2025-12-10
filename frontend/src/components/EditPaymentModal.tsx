@@ -8,7 +8,6 @@ import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { getLastPaymentDate } from "../services/LoanPaymentServices";
 
 interface EditPaymentModalProps {
   open: boolean;
@@ -80,6 +79,7 @@ const EditPaymentModal = observer(
 
         const fetchUpdatedAmount = async () => {
           try {
+            //@ts-ignore
             const { remaining , dynamicTerm } =
               await loanStore.calculateLoanAmounts({
                 loan,

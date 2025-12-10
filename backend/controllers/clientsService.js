@@ -86,55 +86,42 @@ exports.Clientstore = async (req, res) => {
 };
 exports.searchClients = async (req, res) => {
   try {
-    const { query, issueDate, page = 0, limit = 10 } = req.query;
-    const numericLimit = Number(limit);
-    const numericPage = Number(page);
+    const {
+      name,
+      email,
+      phone,
+      attorneyName,
+      status,
+      issueDate,
+      page = 0,
+      limit = 10,
+    } = req.query;
 
     const matchStage = {};
 
-    if (query && query.trim() !== "") {
-      const regex = new RegExp(query, "i");
-      matchStage.$or = [
-        { fullName: regex },
-        { email: regex },
-        { phone: regex },
-        { attorneyName: regex },
-        { ssn: regex },
-        { dob: regex },
-        { accidentDate: regex },
-        { "customFields.name": regex },
-        { "customFields.value": regex },
-      ];
-    }
-
-    // Base pipeline (applied in both cases)
-    let pipeline = [{ $match: matchStage }];
-
-    // Case 1: issueDate is NOT provided → paginate first
-    if (!issueDate) {
-      pipeline.push(
-        { $sort: { createdAt: -1 } },
-        { $skip: numericPage * numericLimit },
-        { $limit: numericLimit }
-      );
-    }
-
-    // Lookup section
-    pipeline.push(
+    if (name) matchStage.fullName = new RegExp(name, "i");
+    if (email) matchStage.email = new RegExp(email, "i");
+    if (phone) matchStage.phone = new RegExp(phone, "i");
+    if (attorneyName) matchStage.attorneyName = new RegExp(attorneyName, "i");
+    if (status) matchStage.isActive = status === "Active";
+    let pipeline = [
+      { $match: matchStage },
       {
         $lookup: {
           from: "loans",
           let: { clientId: "$_id" },
           pipeline: [
-            { $match: { $expr: { $eq: ["$client", "$$clientId"] } } },
+            {
+              $match: {
+                $expr: { $eq: ["$client", "$$clientId"] },
+              },
+            },
             {
               $addFields: {
                 issueDateParsed: {
                   $dateFromString: {
                     dateString: "$issueDate",
                     format: "%m-%d-%Y",
-                    onError: null,
-                    onNull: null,
                   },
                 },
               },
@@ -145,6 +132,21 @@ exports.searchClients = async (req, res) => {
         },
       },
       {
+        $addFields: {
+          latestLoan: { $arrayElemAt: ["$allLoans", 0] },
+        },
+      },
+    ];
+    if (issueDate) {
+      pipeline.push({
+        $match: {
+          "latestLoan.issueDateParsed": {
+            $eq: new Date(issueDate),
+          },
+        },
+      });
+    }
+      pipeline.push({
         $addFields: {
           loanSummary: {
             $let: {
@@ -166,45 +168,33 @@ exports.searchClients = async (req, res) => {
                     { $sum: "$$validLoans.totalLoan" },
                     { $sum: "$$validLoans.paidAmount" },
                   ],
-                },
               },
             },
           },
-          latestLoan: { $ifNull: [{ $arrayElemAt: ["$allLoans", 0] }, null] },
         },
-      }
+      },
+    });
+    pipeline.push({ $sort: { createdAt: -1 } });
+    pipeline.push(
+      { $skip: Number(page) * Number(limit) },
+      { $limit: Number(limit) }
     );
-
-    // Case 2: issueDate present → filter after lookup
-    if (issueDate) {
-      pipeline.push({ $match: { "latestLoan.issueDate": issueDate } });
-      pipeline.push({ $sort: { createdAt: -1 } });
-      pipeline.push({ $skip: numericPage * numericLimit });
-      pipeline.push({ $limit: numericLimit });
-    }
 
     const clients = await Client.aggregate(pipeline);
 
-    // Count query separately
-    const baseCountQuery = [{ $match: matchStage }];
-    let total;
-    if (issueDate) {
-      const count = await Client.aggregate([
-        ...baseCountQuery,
-        ...pipeline.slice(1, pipeline.indexOf({ $skip: numericPage * numericLimit }))
-      ]);
-      total = count.length;
-    } else {
-      total = await Client.countDocuments(matchStage);
-    }
+    const countPipeline = pipeline.filter((p) => !p.$skip && !p.$limit);
+    const totalDocs = await Client.aggregate([
+      ...countPipeline,
+      { $count: "count" },
+    ]);
 
-    res.status(200).json({
+    const total = totalDocs[0]?.count || 0;
+    res.json({
       success: true,
       clients,
-      count: clients.length,
       total,
-      currentPage: numericPage,
-      totalPages: Math.ceil(total / numericLimit),
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error("Error in searchClients:", error);

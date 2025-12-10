@@ -399,7 +399,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                   const loanData = calculateLoanAmounts(loan);
                   if (!loanData) return null;
 
-                  const { paidAmount } = loanData;
+                  // const { paidAmount } = loanData;
                   const selectedDynamicTerm = currentTermMap[loan._id];
                   // console.log(selectedDynamicTerm,'selectedDynamicTerm');
                   const selectedLoanData = calculateLoanAmounts({
@@ -411,19 +411,19 @@ const handleStatusChange = async (loanId, newStatus) => {
                     loanTerms: selectedDynamicTerm,
                   })!;
                   const today = moment();
-                  const totalLoan =
-                    loan.interestType === "flat"
-                      ? loanData.subtotal +
-                        loanData.subtotal *
-                          (loan.monthlyRate / 100) *
-                          // @ts-ignore
-                          selectedDynamicLoanData
-                      : loanData.subtotal *
-                        Math.pow(
-                          1 + loan.monthlyRate / 100,
-                          // @ts-ignore
-                          selectedDynamicLoanData
-                        );
+                  // const totalLoan =
+                  //   loan.interestType === "flat"
+                  //     ? loanData.subtotal +
+                  //       loanData.subtotal *
+                  //         (loan.monthlyRate / 100) *
+                  //         // @ts-ignore
+                  //         selectedDynamicLoanData
+                  //     : loanData.subtotal *
+                  //       Math.pow(
+                  //         1 + loan.monthlyRate / 100,
+                  //         // @ts-ignore
+                  //         selectedDynamicLoanData
+                  //       );
                   const endDate = moment(loan.issueDate).add(
                     loan.loanTerms,
                     "months"
@@ -433,7 +433,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                     "day"
                   );
                   const isDelayed = today.isAfter(endDate, "day");
-                  const isPaidOff = paidAmount >= totalLoan;
+                  // const isPaidOff = paidAmount >= totalLoan;
 
                   // const isDelayed =
                   //   selectedLoanData.monthsPassed != loan.loanTerms;
