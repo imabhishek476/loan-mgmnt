@@ -37,8 +37,11 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     phone: "",
     attorneyName: "",
     status: "",
-    loanStatus:"",
+    loanStatus: "",
     issueDate: null,
+    dob: null,
+    accidentDate: null,
+    ssn: "",
   });
   const handleReset = () => {
     setFilters({
@@ -49,6 +52,9 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       status: "",
       loanStatus: "",
       issueDate: null,
+      dob: null,
+      accidentDate:null,
+      ssn:"",
     });
     tableRef.current?.onQueryChange();
   };
@@ -56,7 +62,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     tableRef.current?.onQueryChange();
   };
 
-  const fetchClientsData = async (query: any) => {
+  const fetchClientsData = async (query) => {
       const params = {
         page: query.page,
         limit: query.pageSize,
@@ -66,8 +72,13 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
         attorneyName: filters.attorneyName,
         status: filters.status,
         loanStatus: filters.loanStatus,
+        ssn: filters.ssn,
         issueDate: filters.issueDate
           ? moment(filters.issueDate).format("MM-DD-YYYY")
+          : null,
+        dob: filters.dob ? moment(filters.dob).format("MM-DD-YYYY") : null,
+        accidentDate: filters.accidentDate
+          ? moment(filters.accidentDate).format("MM-DD-YYYY")
           : null,
       };
       const data = await getClientsSearch(params);
@@ -175,9 +186,10 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           };
   return (
     <div className="">
-      <div className="grid grid-cols-1 sm:grid-cols-7 gap-2 mb-2">
+    <div className="bg-gray-200 p-4 rounded-lg shadow-md mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 mb-2">
         <div>
-          <label className="font-semibold text-gray-600">Name</label>
+          <label className="font-semibold text-gray-800">Name</label>
           <input
             className="border rounded text-sm w-full h-10 px-3"
             placeholder="Search Name"
@@ -187,25 +199,29 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
         </div>
 
         <div>
-          <label className="font-semibold text-gray-600">Email</label>
+          <label className="font-semibold text-gray-800">Email</label>
           <input
             className="border rounded text-sm w-full h-10 px-3"
             placeholder="Search Email"
             value={filters.email}
-            onChange={(e) => setFilters({ ...filters, email: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, email: e.target.value })
+            }
           />
         </div>
         <div>
-          <label className="font-semibold text-gray-600">Phone</label>
+          <label className="font-semibold text-gray-800">Phone</label>
           <input
             className="border rounded text-sm w-full h-10 px-3"
             placeholder="Search Phone"
             value={filters.phone}
-            onChange={(e) => setFilters({ ...filters, phone: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, phone: e.target.value })
+            }
           />
         </div>
         <div>
-          <label className="font-semibold text-gray-600">Attorney</label>
+          <label className="font-semibold text-gray-800">Attorney</label>
           <input
             className="border rounded text-sm w-full h-10 px-3"
             placeholder="Search Attorney"
@@ -216,7 +232,16 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           />
         </div>
         <div>
-          <label className="font-semibold text-gray-600">Loan Status</label>
+          <label className="font-semibold text-gray-800">SSN</label>
+          <input
+            className="border rounded text-sm w-full h-10 px-3"
+            placeholder="Search SSN"
+            value={filters.ssn}
+            onChange={(e) => setFilters({ ...filters, ssn: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="font-semibold text-gray-800">Loan Status</label>
           <Autocomplete
             size="small"
             options={["Active", "Deactivated"]}
@@ -228,7 +253,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
               <TextField
                 {...params}
                 placeholder="Select Loan Status"
-                className="border rounded text-sm w-full h-10"
+                className="border bg-white rounded text-sm w-full h-10"
                 InputProps={{
                   ...params.InputProps,
                   className: "p-0 h-10 text-sm",
@@ -238,7 +263,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           />
         </div>
         <div>
-          <label className="font-semibold text-gray-600">Status</label>
+          <label className="font-semibold text-gray-800">Status</label>
           <Autocomplete
             size="small"
             options={["Active", "Inactive"]}
@@ -250,7 +275,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
               <TextField
                 {...params}
                 placeholder="Select Status"
-                className="border rounded text-sm w-full h-10"
+                className="border bg-white  rounded text-sm w-full h-10"
                 InputProps={{
                   ...params.InputProps,
                   className: "p-0 h-10 text-sm", // remove extra padding, same height
@@ -260,18 +285,50 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           />
         </div>
         <div>
-          <label className="font-semibold text-gray-600">Issue Date</label>
+          <label className="font-semibold text-gray-800">Issue Date</label>
           <LocalizationProvider dateAdapter={AdapterMoment}>
             <DatePicker
               slotProps={{
                 textField: {
                   size: "small",
-                  className: "border rounded text-sm w-full h-10",
+                  className: "border bg-white  rounded text-sm w-full h-10",
                   inputProps: { className: "p-0 h-10 text-sm" },
                 },
               }}
               value={filters.issueDate}
               onChange={(v) => setFilters({ ...filters, issueDate: v })}
+            />
+          </LocalizationProvider>
+        </div>
+        <div>
+          <label className="font-semibold text-gray-800">Date Of Birth</label>
+            <LocalizationProvider dateAdapter={AdapterMoment}>
+              <DatePicker
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    className: "border bg-white  rounded text-sm w-full h-10",
+                    inputProps: { className: "p-0 h-10 text-sm" },
+                  },
+                }}
+                value={filters.dob}
+                onChange={(v) => setFilters({ ...filters, dob: v })}
+              />
+            </LocalizationProvider>
+          </div>
+          <div>
+            <label className="font-semibold text-gray-800">Accident Date</label>
+            <LocalizationProvider dateAdapter={AdapterMoment}>
+              <DatePicker
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    className: "border bg-white  rounded text-sm w-full h-10",
+                    inputProps: { className: "p-0 h-10 text-sm" },
+                  },
+                }}
+                value={filters.accidentDate}
+                onChange={(v) => setFilters({ ...filters, accidentDate: v })}
             />
           </LocalizationProvider>
         </div>
@@ -291,6 +348,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           >
             Reset
           </button>
+          </div>
         </div>
       </div>
 
@@ -304,12 +362,8 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
             {
               title: "Sr.no",
               render: (rowData: any) => {
-              return (
-                rowData.tableData.id +
-                1 +
-                currentPage * currentPageSize
-              );
-            }
+                return rowData.tableData.id + 1 + currentPage * currentPageSize;
+              },
             },
             {
               title: "Name",
@@ -340,33 +394,38 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
               ),
             },
             {
-        title: "Paid",
-        render: (rowData: any) => {
-          const clientLoans = rowData.allLoans.filter(
-            (loan) =>
-              loan.client === rowData._id ||
-              loan.client?._id === rowData._id
-          );
+              title: "Paid",
+              render: (rowData: any) => {
+                const clientLoans = rowData.allLoans.filter(
+                  (loan) =>
+                    loan.client === rowData._id ||
+                    loan.client?._id === rowData._id
+                );
                 const { totalPaid, totalRemaining } =
                   calculateLoanTotals(clientLoans);
-          const allPaidOff = clientLoans.every(
-            (loan) => loan.status === "Paid Off" || loan.status === "Merged"
-          );
-          return (
-            <span className="font-semibold">
-              <span className={`${allPaidOff ? "text-green-600" : "text-blue-600"}`}>
-                {formatUSD(totalPaid)}
-              </span>
-              <br />
-              {totalRemaining > 0 && (
-                <span className="text-red-600 text-xs font-medium">
-                  (Pending: {formatUSD(totalRemaining)})
-                </span>
-              )}
-            </span>
-          );
-        },
-      },
+                const allPaidOff = clientLoans.every(
+                  (loan) =>
+                    loan.status === "Paid Off" || loan.status === "Merged"
+                );
+                return (
+                  <span className="font-semibold">
+                    <span
+                      className={`${
+                        allPaidOff ? "text-green-600" : "text-blue-600"
+                      }`}
+                    >
+                      {formatUSD(totalPaid)}
+                    </span>
+                    <br />
+                    {totalRemaining > 0 && (
+                      <span className="text-red-600 text-xs font-medium">
+                        (Pending: {formatUSD(totalRemaining)})
+                      </span>
+                    )}
+                  </span>
+                );
+              },
+            },
 
             {
               title: "Issue Date",
@@ -398,9 +457,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
 
                 if (!status) {
                   return (
-                    <span className="px-2 py-1 rounded-lg text-sm">
-                      -
-                    </span>
+                    <span className="px-2 py-1 rounded-lg text-sm">-</span>
                   );
                 }
 
@@ -452,10 +509,15 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
             //     ).length;
             //   },
             // },
-            // { title: "DOB", field: "dob", type: "date"  ,cellStyle: { width: 140, minWidth: 140 }, },
-            // { title: "Accident Date", field: "accidentDate", type: "date" },
+            {
+              title: "DOB",
+              field: "dob",
+              type: "date",
+              cellStyle: { width: 140, minWidth: 140 },
+            },
+            { title: "Accident Date", field: "accidentDate", type: "date" },
             { title: "Attorney", field: "attorneyName" },
-            // { title: "SSN", field: "ssn" },
+            { title: "SSN", field: "ssn" },
           ]}
           actions={[
             (rowData: any) =>
@@ -465,7 +527,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
                     tooltip: "Add Loan",
                     onClick: (_event, data: any) => onAddLoan(data),
                   }
-                : null, 
+                : null,
 
             (rowData: any) => ({
               icon: rowData.isActive
