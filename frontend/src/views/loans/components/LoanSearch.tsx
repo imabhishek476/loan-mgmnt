@@ -135,7 +135,7 @@ export const LoanSearch = observer(
         <div className="flex gap-2 items-end">
           <button
             title="Submit"
-            className="bg-green-700 hover:bg-green-800 text-white px-3 py-1.5 text-sm rounded w-full font-semibold"
+            className="bg-green-700 hover:bg-green-800 text-white px-3 py-2.5 text-sm rounded w-full font-semibold"
             onClick={handleSearch}
           >
             Submit
@@ -143,7 +143,7 @@ export const LoanSearch = observer(
 
           <button
             title="Reset"
-            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 text-sm rounded w-full font-semibold"
+            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2.5 text-sm rounded w-full font-semibold"
             onClick={handleReset}
           >
             Reset

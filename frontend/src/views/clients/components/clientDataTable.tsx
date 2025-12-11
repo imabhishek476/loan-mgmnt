@@ -12,6 +12,7 @@ import { getClientsSearch, toggleClientStatus } from "../../../services/ClientSe
 import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
 import { getAllowedTerms } from "../../../utils/constants";
+import { Autocomplete, TextField } from "@mui/material";
 interface ClientsDataTableProps {
   // clients: any[];
   onAddLoan: (client: any) => void;
@@ -127,22 +128,21 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
 
   return (
     <div className="">
-      <div className="grid grid-cols-1 sm:grid-cols-8 gap-2 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-7 gap-2 mb-2">
         <div>
           <label className="font-semibold text-gray-600">Name</label>
           <input
-            className="border p-1.5 rounded text-sm w-full"
+            className="border rounded text-sm w-full h-10 px-3"
             placeholder="Search Name"
             value={filters.name}
             onChange={(e) => setFilters({ ...filters, name: e.target.value })}
           />
         </div>
 
-        {/* Email */}
         <div>
           <label className="font-semibold text-gray-600">Email</label>
           <input
-            className="border p-1.5 rounded text-sm w-full"
+            className="border rounded text-sm w-full h-10 px-3"
             placeholder="Search Email"
             value={filters.email}
             onChange={(e) => setFilters({ ...filters, email: e.target.value })}
@@ -151,7 +151,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
         <div>
           <label className="font-semibold text-gray-600">Phone</label>
           <input
-            className="border p-1.5 rounded text-sm w-full"
+            className="border rounded text-sm w-full h-10 px-3"
             placeholder="Search Phone"
             value={filters.phone}
             onChange={(e) => setFilters({ ...filters, phone: e.target.value })}
@@ -160,7 +160,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
         <div>
           <label className="font-semibold text-gray-600">Attorney</label>
           <input
-            className="border p-1.5 rounded text-sm w-full"
+            className="border rounded text-sm w-full h-10 px-3"
             placeholder="Search Attorney"
             value={filters.attorneyName}
             onChange={(e) =>
@@ -170,15 +170,25 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
         </div>
         <div>
           <label className="font-semibold text-gray-600">Status</label>
-          <select
-            className="border p-1.5 rounded text-sm w-full"
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          >
-            <option value="">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
+          <Autocomplete
+            size="small"
+            options={["Active", "Inactive"]}
+            value={filters.status || null}
+            onChange={(_, value) =>
+              setFilters({ ...filters, status: value || "" })
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Select Status"
+                className="border rounded text-sm w-full h-10"
+                InputProps={{
+                  ...params.InputProps,
+                  className: "p-0 h-10 text-sm", // remove extra padding, same height
+                }}
+              />
+            )}
+          />
         </div>
         <div>
           <label className="font-semibold text-gray-600">Issue Date</label>
@@ -187,8 +197,8 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
               slotProps={{
                 textField: {
                   size: "small",
-                  className: "border rounded text-sm w-full",
-                  inputProps: { className: "p-1.5 text-sm" },
+                  className: "border rounded text-sm w-full h-10",
+                  inputProps: { className: "p-0 h-10 text-sm" },
                 },
               }}
               value={filters.issueDate}
@@ -200,7 +210,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           <button
             onClick={handleSearch}
             title="Submit"
-            className="bg-green-700 text-white px-3 py-2 rounded text-sm"
+            className="bg-green-700 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
           >
             Submit
           </button>
@@ -208,7 +218,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           <button
             title="Reset"
             onClick={handleReset}
-            className="bg-gray-500 text-white px-3 py-2 rounded text-sm"
+            className="bg-gray-500 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
           >
             Reset
           </button>
@@ -238,12 +248,12 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
 
               cellStyle: { fontWeight: 500 },
               render: (rowData) => (
-                <a 
-                  href='#'
+                <a
+                  href="#"
                   className="text-green-600 cursor-pointer hover:underline"
                   onClick={(e) => {
                     e.preventDefault();
-                    onViewClient?.(rowData)
+                    onViewClient?.(rowData);
                   }}
                 >
                   {rowData?.fullName}
