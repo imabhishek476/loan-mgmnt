@@ -117,7 +117,7 @@ useEffect(() => {
 }, [clientLoans]);
   const mergedLoans = useMemo(() => {
     return loanStore.loans
-      .filter((loan) => loan.status === "Active" || loan.status === "Partial Payment")
+      .filter((loan) => loan.status !== "Merged")
       .map((loan) => ({
         _id: loan._id,
         issueDate: loan.issueDate,
