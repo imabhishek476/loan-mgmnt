@@ -182,17 +182,26 @@ exports.updateLoan = async (req, res) => {
 exports.searchLoans = async (req, res) => {
   try {
     const {
-      query,
+      customer,
+      company,
       issueDate,
-      clientId,
+      paymentStatus,
       loanStatus,
+      clientId,
       page = 0,
       limit = 10,
     } = req.query;
 
     const matchStage = {};
-    if (clientId) matchStage.client = new mongoose.Types.ObjectId(clientId);
-    if (loanStatus) matchStage.loanStatus = loanStatus; 
+    if (clientId) {
+      matchStage.client = new mongoose.Types.ObjectId(clientId);
+    }
+    if (loanStatus) {
+      matchStage.loanStatus = loanStatus;
+    }
+    if (paymentStatus) {
+      matchStage.status = paymentStatus;
+    }
     if (issueDate) {
       const formattedDate = moment(issueDate, [
         "MM-DD-YYYY",
@@ -200,8 +209,8 @@ exports.searchLoans = async (req, res) => {
       ]).format("MM-DD-YYYY");
       matchStage.issueDate = formattedDate;
     }
-    const pipeline = [
-      { $match: matchStage },
+    const pipeline = [{ $match: matchStage }];
+    pipeline.push(
       {
         $lookup: {
           from: "clients",
@@ -210,7 +219,9 @@ exports.searchLoans = async (req, res) => {
           as: "clientInfo",
         },
       },
-      { $unwind: { path: "$clientInfo", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$clientInfo", preserveNullAndEmptyArrays: true } }
+    );
+    pipeline.push(
       {
         $lookup: {
           from: "companies",
@@ -219,26 +230,28 @@ exports.searchLoans = async (req, res) => {
           as: "companyInfo",
         },
       },
-      { $unwind: { path: "$companyInfo", preserveNullAndEmptyArrays: true } },
-    ];
-    if (query && query.trim() !== "") {
-      const regex = new RegExp(query, "i");
+      { $unwind: { path: "$companyInfo", preserveNullAndEmptyArrays: true } }
+    );
+    if (customer && customer.trim() !== "") {
       pipeline.push({
         $match: {
-          $or: [
-            { "clientInfo.fullName": regex },
-            { "companyInfo.companyName": regex },
-            { loanNumber: regex },
-            { status: regex },
-          ],
+          "clientInfo.fullName": new RegExp(customer, "i"),
+        },
+      });
+    }
+    if (company && company.trim() !== "") {
+      pipeline.push({
+        $match: {
+          "companyInfo._id": new mongoose.Types.ObjectId(company),
         },
       });
     }
     pipeline.push(
       { $sort: { createdAt: -1 } },
       { $skip: Number(page) * Number(limit) },
-      { $limit: Number(limit) },
-      {
+      { $limit: Number(limit) }
+    );
+      pipeline.push({
         $project: {
           _id: 1,
           loanNumber: 1,
@@ -250,18 +263,20 @@ exports.searchLoans = async (req, res) => {
           monthlyRate: 1,
           interestType: 1,
           loanTerms: 1,
-          client: { _id: "$clientInfo._id", fullName: "$clientInfo.fullName" },
+          client: {
+            _id: "$clientInfo._id",
+            fullName: "$clientInfo.fullName",
+          },
           company: {
             _id: "$companyInfo._id",
             companyName: "$companyInfo.companyName",
             backgroundColor: "$companyInfo.backgroundColor",
           },
         },
-      }
-    );
+      });
     const loans = await Loan.aggregate(pipeline);
     const total = await Loan.countDocuments(matchStage);
-    res.status(200).json({
+    res.json({
       success: true,
       loans,
       total,

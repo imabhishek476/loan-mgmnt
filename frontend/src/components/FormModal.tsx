@@ -172,6 +172,7 @@ const FormModal = ({
             <h2 className="text-xl font-bold text-gray-800">{title}</h2>
             <button
               onClick={onClose}
+              title="Close"
               className="text-gray-500 hover:text-gray-800"
             >
               <X className="w-6 h-6" />
@@ -798,6 +799,7 @@ const FormModal = ({
 
                     <button
                       type="button"
+                      title="Remove"
                       onClick={() => removeCustomField(field._id)}
                       className="text-red-600 hover:text-red-800 transition"
                     >
@@ -809,6 +811,7 @@ const FormModal = ({
                 <button
                   type="button"
                   onClick={addCustomField}
+                  title = {"Add Custom Field"}
                   className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-1 w-fit"
                 >
                   <Plus className="w-4 h-4" /> Add Custom Field
@@ -821,12 +824,14 @@ const FormModal = ({
             <button
               type="button"
               onClick={onClose}
+              title="Close" 
               className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
+              title="Create" 
               onClick={handleSubmit}
               disabled={loading}
               className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition flex items-center gap-2"

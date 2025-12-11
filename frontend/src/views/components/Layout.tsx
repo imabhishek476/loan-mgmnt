@@ -32,10 +32,10 @@ const Layout = observer(() => {
           <div className="fixed inset-y-0 left-0 w-64 bg-white z-50 shadow-lg transition-transform transform">
             <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
             <button
+              title={sidebarOpen ? "Close Sidebar" : "Open Sidebar"}
               className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
               onClick={() => setSidebarOpen(false)}
-            >
-            </button>
+            ></button>
           </div>
         </>
       )}

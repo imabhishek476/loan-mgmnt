@@ -118,6 +118,7 @@ const handleSave = async (data: any) => {
             px: 3,
             py: 1,
           }}
+          title="New Customer"
           startIcon={<Plus />}
           onClick={() => {
             setEditingClient(null);
