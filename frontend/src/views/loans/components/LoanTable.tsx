@@ -391,7 +391,7 @@
               ]}
               options={{
                 paging: true,
-                pageSize: 15,
+                pageSize: 10,
                 pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500],
                 sorting: true,
                 search: false,
@@ -400,6 +400,8 @@
                 toolbar: false,
                 // paginationType: "stepped",
                 tableLayout: "auto",
+                maxBodyHeight: "calc(100vh - 305px)", // adjust
+                minBodyHeight: "calc(100vh - 305px)", // optional but helpful
                 headerStyle: {
                   fontWeight: 600,
                   backgroundColor: "#f9fafb",

@@ -94,7 +94,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   const handleDelete = async (id: string) => {
     Confirm({
       title: "Confirm Delete",
-      message: "Are you sure you want to delete this customer?",
+      message: "Are you sure you want to delete this customer & their Loans?",
       confirmText: "Yes, Delete",
       onConfirm: async () => {
         await clientStore.deleteClient(id);
@@ -486,29 +486,6 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
                 ),
               cellStyle: { width: 100, textAlign: "left", padding: "6px" },
             },
-            // {
-            //   title: "Active Loans",
-            //   render: (rowData) => {
-            //     return loanStore.loans.filter(
-            //       (loan) =>
-            //         (loan.client === rowData._id ||
-            //           loan.client?.["_id"] === rowData._id) &&
-            //         loan.status !== "Paid Off"
-            //     ).length;
-            //   },
-            // },
-
-            // {
-            //   title: "Total Paid Off",
-            //   render: (rowData) => {
-            //     return loanStore.loans.filter(
-            //       (loan) =>
-            //         (loan.client === rowData._id ||
-            //           loan.client?.["_id"] === rowData._id) &&
-            //         loan.status === "Paid Off"
-            //     ).length;
-            //   },
-            // },
             {
               title: "DOB",
               field: "dob",
@@ -554,18 +531,19 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
             }),
             {
               icon: () => <XCircle className="w-5 h-5 text-red-600" />,
-              tooltip: "Delete",
+              tooltip: "Delete Customer",
               onClick: (_event, rowData: any) => handleDelete(rowData._id),
             },
           ]}
           options={{
             paging: true,
-            pageSize: 15,
+            pageSize: 10,
             pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500],
             sorting: true,
             search: false,
             actionsColumnIndex: -1,
             headerStyle: {
+              position: "sticky",
               fontWeight: "600",
               backgroundColor: "#f9fafb",
               color: "#374151",
@@ -574,6 +552,16 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
               padding: "6px 8px",
               borderBottom: "1px solid #e5e7eb",
               whiteSpace: "nowrap",
+              right: 0,
+              zIndex: 30,
+            },
+            maxBodyHeight: "calc(100vh - 400px)", // adjust
+            minBodyHeight: "calc(100vh - 400px)", // optional but helpful
+            actionsCellStyle: {
+              position: "sticky",
+              right: 0,
+              zIndex: 10,
+              background: "#fff",
             },
             rowStyle: {
               fontSize: "13px",
