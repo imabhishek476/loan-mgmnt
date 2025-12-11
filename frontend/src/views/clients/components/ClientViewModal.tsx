@@ -285,7 +285,6 @@ const handleStatusChange = async (loanId, newStatus) => {
               />
               </span>
               <button
-                title="Collapse"
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className="absolute top-2 right-2 items-center justify-center w-8 h-8 bg-green-700 text-white rounded-full shadow-lg hover:bg-green-800 transition-transform transform hover:scale-105"
                 title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}

@@ -5,7 +5,7 @@
     useRef,
   } from "react";
   import MaterialTable from "@material-table/core";
-  import { Eye, Save, Trash2, X } from "lucide-react";
+  import { Eye, Save, Trash2 } from "lucide-react";
   import { loanStore } from "../../../store/LoanStore";
   import { clientStore } from "../../../store/ClientStore";
   import { companyStore } from "../../../store/CompanyStore";
@@ -140,7 +140,7 @@
       remaining = details.remaining;
       total = details.total;
     }
-    const handleViewClient = async (client: Client) => {
+    const handleViewClient = async (client) => {
     setViewClient({ ...client, loans: [] });
     setViewModalOpen(true);
     };

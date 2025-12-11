@@ -44,6 +44,7 @@ export const LoanSearch = observer(
               companyStore.companies.find((c) => c._id === filters.company) ||
               null
             }
+            //@ts-ignore
             onChange={(event, value) =>
               setFilters({ ...filters, company: value?._id || "" })
             }
@@ -97,6 +98,7 @@ export const LoanSearch = observer(
               "Denied",
             ]}
             value={filters.paymentStatus || null}
+            //@ts-ignore
             onChange={(e, val) =>
               setFilters({ ...filters, paymentStatus: val || "" })
             }
@@ -118,6 +120,7 @@ export const LoanSearch = observer(
             size="small"
             options={["Active", "Deactivated"]}
             value={filters.loanStatus || null}
+            //@ts-ignore
             onChange={(e, val) =>
               setFilters({ ...filters, loanStatus: val || "" })
             }
