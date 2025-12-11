@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef } from "react";
 import MaterialTable from "@material-table/core";
-import { Trash2, Plus, Power, RefreshCcw } from "lucide-react";
+import { Trash2, Plus, Power, RefreshCcw, XCircle } from "lucide-react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 // import { TextField } from "@mui/material";
@@ -13,6 +13,7 @@ import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
 import { getAllowedTerms } from "../../../utils/constants";
 import { Autocomplete, TextField } from "@mui/material";
+import { deactivateLoan, recoverLoan } from "../../../services/LoanService";
 interface ClientsDataTableProps {
   // clients: any[];
   onAddLoan: (client: any) => void;
@@ -27,8 +28,9 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
 
   const [issueDateFilterInput] = useState<any>(null);
   const tableRef = useRef<any>(null);
-  const [currentPage] = useState(0);
-  const [currentPageSize] = useState(10);
+  const [currentPageSize, setCurrentPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(0);
+    
   const [filters, setFilters] = useState({
     name: "",
     email: "",
@@ -67,6 +69,8 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       };
       const data = await getClientsSearch(params);
       clientStore.setClients(data.clients);
+      setCurrentPage(query.page);
+      setCurrentPageSize(query.pageSize);
       return {
         data: data.clients,
         page: query.page,
@@ -125,7 +129,47 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
     }
     return { totalPaid, totalRemaining };
   }
+      const handleDeleteLoan = async (loanId) => {
+        try {
+          Confirm({
+            title: "Confirm Deactivate",
+            message: "Are you sure you want to deactivate this loan?",
+            confirmText: "Yes, Deactivate",
+            onConfirm: async () => {
+              await deactivateLoan(loanId);
+              await clientStore.refreshDataTable();
+              if (tableRef.current) tableRef.current.onQueryChange();
+              toast.success("Loan Deactivated successfully");
+            },
+          });
+        } catch (err) {
+          toast.error("Failed to delete loan");
+        }
+      };
+      const handleRecover = async (loan: any) => {
+            Confirm({
+            title: "Recover Loan",
+            message: `Are you sure you want to recover the loan for "${loan.client?.fullName || "client"}"?`,
+            confirmText: "Yes, Recover",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+            try {
+              await recoverLoan(loan._id);
+              if (tableRef.current) tableRef.current.onQueryChange();
+              toast.success(
+                `Loan for "${loan.client?.fullName || "client"}" recovered successfully!`
+              );
+            } catch (error: any) {
+              const backendMessage =
+                error?.response?.data?.message ||
+                error?.message ||
+                "An unexpected error occurred.";
 
+              toast.error(backendMessage);
+            }
+          },
+        });
+          };
   return (
     <div className="">
       <div className="grid grid-cols-1 sm:grid-cols-7 gap-2 mb-2">
@@ -303,7 +347,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
               title: "Issue Date",
               render: (rowData: any) => {
                 if (!rowData.latestLoan || !rowData.latestLoan.issueDate) {
-                  return <span className="text-gray-400 italic">N/A</span>;
+                  return <span className="text-gray-400 italic">-</span>;
                 }
 
                 return (
@@ -316,6 +360,32 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
                         day: "numeric",
                       }
                     )}
+                  </span>
+                );
+              },
+            },
+            {
+              title: "Loan Status",
+              headerStyle: { whiteSpace: "nowrap" },
+              cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
+              render: (rowData) => {
+                const status = rowData.latestLoan?.loanStatus;
+
+                if (!status) {
+                  return (
+                    <span className="px-2 py-1 rounded-lg text-sm">
+                      -
+                    </span>
+                  );
+                }
+
+                return (
+                  <span
+                    className={`px-2 py-1 rounded-lg text-white text-sm ${
+                      status === "Active" ? "bg-green-700" : "bg-red-500"
+                    }`}
+                  >
+                    {status}
                   </span>
                 );
               },
@@ -382,8 +452,21 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
               onClick: (_event, data: any) =>
                 handleToggleActive(data._id, data.isActive),
             }),
+            (rowData: any) => ({
+              icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
+              tooltip: "Deactivate Loan",
+              hidden: rowData.latestLoan?.loanStatus === "Deactivated",
+              //@ts-ignore
+              onClick: (_event) => handleDeleteLoan(rowData.latestLoan._id),
+            }),
+            (rowData: any) => ({
+              icon: () => <RefreshCcw className="w-5 h-5 text-green-600" />,
+              tooltip: "Recover Loan",
+              hidden: rowData.latestLoan?.loanStatus !== "Deactivated",
+              onClick: (_event) => handleRecover(rowData.latestLoan),
+            }),
             {
-              icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
+              icon: () => <XCircle className="w-5 h-5 text-red-600" />,
               tooltip: "Delete",
               onClick: (_event, rowData: any) => handleDelete(rowData._id),
             },

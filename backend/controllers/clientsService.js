@@ -126,7 +126,7 @@ exports.searchClients = async (req, res) => {
                 },
               },
             },
-            { $sort: { issueDateParsed: -1 } },
+            { $sort: { issueDateParsed: -1, createdAt: -1 } },
           ],
           as: "allLoans",
         },
@@ -193,7 +193,7 @@ exports.searchClients = async (req, res) => {
       success: true,
       clients,
       total,
-      currentPage: page,
+      currentPage: Number(page),
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
