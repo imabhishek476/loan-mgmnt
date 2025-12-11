@@ -199,12 +199,14 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
         <div className="gap-4 mt-6 flex">
           <button
             onClick={handleSearch}
+            title="Submit"
             className="bg-green-700 text-white px-3 py-2 rounded text-sm"
           >
-            Search
+            Submit
           </button>
 
           <button
+            title="Reset"
             onClick={handleReset}
             className="bg-gray-500 text-white px-3 py-2 rounded text-sm"
           >

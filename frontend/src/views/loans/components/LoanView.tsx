@@ -18,6 +18,7 @@ const LoanView = observer(
                 </h2>
                 <button
                   onClick={handleClose}
+                  title="Close"
                   className="text-gray-600 hover:text-red-500 transition"
                 >
                   <X size={18} />
@@ -222,6 +223,7 @@ const LoanView = observer(
               <div className="flex justify-end border-t px-6 py-3">
                 <button
                   type="button"
+                  title="Close"
                   onClick={handleClose}
                   className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                 >

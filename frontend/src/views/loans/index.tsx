@@ -382,6 +382,7 @@ const Loans = observer(
               </div>
               <Button
                 variant="contained"
+                title="New Loan"
                 startIcon={<Plus />}
                 sx={{
                   backgroundColor: "#15803d",
@@ -440,6 +441,7 @@ const Loans = observer(
                   </h2>
                   <button
                     className="text-gray-500 hover:text-gray-800"
+                    title="Close"
                     onClick={() => {
                       setModalOpen(false);
                     }}
@@ -733,6 +735,7 @@ const Loans = observer(
                 {/* Modal Footer */}
                 <div className="flex justify-end gap-3 p-4 bg-white sticky bottom-0 z-10 rounded-md">
                   <button
+                    title="Cancel"
                     onClick={() => {
                       setModalOpen(false);
                     }}
@@ -741,6 +744,7 @@ const Loans = observer(
                     Cancel
                   </button>
                   <button
+                    title={editingLoan ? "Update Loan" : "Create Loan"}
                     onClick={() => handleSave(formData)}
                     className="px-4 py-1 font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 w-fit"
                     disabled={saving}
@@ -772,6 +776,7 @@ const Loans = observer(
                 </h2>
                 <button
                   onClick={handleClose}
+                  title="Close"
                   className="text-gray-600 hover:text-red-500 transition"
                 >
                   <X size={20} />
@@ -924,6 +929,7 @@ const Loans = observer(
               </div>
               <div className="flex justify-end border-t px-6 py-3">
                 <button
+                  title="Close"
                   onClick={handleClose}
                   className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                 >

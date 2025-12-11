@@ -204,6 +204,7 @@ const EditPaymentModal = observer(
           <div className="flex justify-end gap-2 mt-6">
             <button
               onClick={onClose}
+              title="Cancel"
               disabled={loading}
               className="px-4 py-2 font-bold bg-[#dc2626] text-white rounded-lg hover:bg-red-700 transition"
             >
@@ -213,6 +214,7 @@ const EditPaymentModal = observer(
             <button
               onClick={handleEditPayment}
               disabled={loading}
+              title="Update"
               className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition"
             >
               {loading ? "Processing..." : "Update"}

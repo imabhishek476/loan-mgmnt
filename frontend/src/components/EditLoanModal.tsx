@@ -454,6 +454,7 @@ const EditLoanModal = observer(
               <button
                 className="text-gray-500 hover:text-gray-800"
                 onClick={onClose}
+                title="Close"
               >
                 <X />
               </button>
@@ -828,6 +829,7 @@ const EditLoanModal = observer(
             <div className="flex justify-end gap-3 p-4 bg-white sticky bottom-0 z-10 rounded-md">
               <button
                 onClick={onClose}
+                title="Cancel"
                 className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >
                 Cancel
@@ -835,6 +837,7 @@ const EditLoanModal = observer(
               <button
                 onClick={handleSave}
                 disabled={saving}
+                title="Update Loan"
                 className="px-4 py-1 font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
               >
                 {saving ? (
@@ -860,6 +863,7 @@ const EditLoanModal = observer(
                 </h2>
                 <button
                   onClick={handleCloseView}
+                  title="Close"
                   className="text-gray-600 hover:text-red-500 transition"
                 >
                   <X size={18} />
@@ -874,7 +878,7 @@ const EditLoanModal = observer(
                     </p>
                     <p className="font-semibold">
                       {clientStore.clients.find(
-                        (c) => c?._id === (viewLoan?.client )
+                        (c) => c?._id === viewLoan?.client
                       )?.fullName ?? "-"}
                     </p>
                   </div>
@@ -985,6 +989,7 @@ const EditLoanModal = observer(
               <div className="flex justify-end border-t px-6 py-3">
                 <button
                   onClick={handleCloseView}
+                  title="Close"
                   className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                 >
                   Close
