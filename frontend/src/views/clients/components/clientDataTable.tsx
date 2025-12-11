@@ -336,7 +336,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           <button
             onClick={handleSearch}
             title="Submit"
-            className="bg-green-700 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
+            className="bg-green-700 hover:bg-green-800 transition-all duration-200 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
           >
             Submit
           </button>
@@ -344,7 +344,7 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
           <button
             title="Reset"
             onClick={handleReset}
-            className="bg-gray-500 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
+            className="bg-gray-500 hover:bg-gray-600 transition-all duration-200 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
           >
             Reset
           </button>
