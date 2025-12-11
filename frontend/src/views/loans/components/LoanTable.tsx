@@ -5,7 +5,7 @@
     useRef,
   } from "react";
   import MaterialTable from "@material-table/core";
-  import { Eye, Trash2, X } from "lucide-react";
+  import { Eye, Save, Trash2, X } from "lucide-react";
   import { loanStore } from "../../../store/LoanStore";
   import { clientStore } from "../../../store/ClientStore";
   import { companyStore } from "../../../store/CompanyStore";
@@ -18,9 +18,11 @@
     calculateLoanAmounts,
   } from "../../../utils/loanCalculations";
   import { deleteLoan, getLoansSearch} from "../../../services/LoanService";
-import { getAllowedTerms } from "../../../utils/constants";
-import LoanView from "./LoanView";
-import LoanSearch from "./LoanSearch";
+  import { getAllowedTerms } from "../../../utils/constants";
+  import LoanView from "./LoanView";
+  import LoanSearch from "./LoanSearch";
+  import ClientViewModal from "../../clients/components/ClientViewModal";
+  import FormModal, { type FieldConfig } from "../../../components/FormModal";
 
   interface LoanTableProps {
     clientId?: string;
@@ -28,13 +30,12 @@ import LoanSearch from "./LoanSearch";
   const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
     const [search] = useState("");
     const [selectedLoan, setSelectedLoan] = useState(null);
-    const capitalizeFirst = (text?: string) => {
-      if (!text) return "";
-      return text.charAt(0).toUpperCase() + text.slice(1);
-    };
     const tableRef = useRef<any>(null);
+    const [modalOpen, setModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const [currentPageSize, setCurrentPageSize] = useState(10);
+    const [viewClient, setViewClient] = useState(null);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
     const handleSearch = () => {
       if (tableRef.current) tableRef.current.onQueryChange();
     };
@@ -57,6 +58,8 @@ import LoanSearch from "./LoanSearch";
     };
     const handleView = (loan: any) => setSelectedLoan(loan);
     const handleClose = () => setSelectedLoan(null);
+    const [editingClient, setEditingClient] = useState(null);
+    
     //@ts-ignore
     const [loading, setLoading] = useState(false);
     const fetchLoansData = useCallback(
@@ -137,7 +140,71 @@ import LoanSearch from "./LoanSearch";
       remaining = details.remaining;
       total = details.total;
     }
-
+    const handleViewClient = async (client: Client) => {
+    setViewClient({ ...client, loans: [] });
+    setViewModalOpen(true);
+    };
+    const customFields: {
+      id: number;
+      name: string;
+      value: string | number | boolean;
+      type: "string" | "number";
+    }[] = (clientStore.customFields || []).map(
+      (field: FieldConfig, idx: number) => ({
+        id: idx,
+        name: field.key,
+        value: "",
+        type:
+          field.type === "text" || field.type === "textarea"
+            ? "string"
+            : field.type === "number"
+            ? "number"
+            : "string",
+      })
+    );
+    const handleSave = async (data: any) => {
+      try {
+        if (editingClient) {
+          await clientStore.updateClient(editingClient?._id, data);  
+          toast.success("Customer updated successfully");
+          try {
+            await clientStore.refreshDataTable();
+            const refreshedClient = clientStore.clients.find(
+              (c) => c?._id === editingClient?._id
+            );
+            if (refreshedClient) setViewClient(refreshedClient);
+          } catch (refreshError) {
+            console.error("Refresh error:", refreshError);
+          }  
+          setEditingClient(null);
+          setModalOpen(false);
+        } else {
+          await clientStore.createClient(data);  
+          toast.success("New Customer added successfully");  
+          try {
+            await clientStore.refreshDataTable();
+          } catch (refreshError) {
+            console.error("Refresh error:", refreshError);
+          }  
+          setModalOpen(false);
+        }
+      } catch (error: any) {
+        console.error("Save error:", error);
+        toast.error(error.response?.data?.error || "Failed to save Customer");
+      }
+    };
+    const clientFields: FieldConfig[] = [
+      { label: "Full Name", key: "fullName", type: "text", required: true },
+      { label: "Email", key: "email", type: "email" },
+      { label: "Phone", key: "phone", type: "text" },
+      { label: "SSN", key: "ssn", type: "text" },
+      { label: "Date of Birth", key: "dob", type: "date" },
+      { label: "Accident Date", key: "accidentDate", type: "date" },
+      { label: "Attorney Name", key: "attorneyName", type: "text" },
+      { label: "Memo", key: "memo", required: false ,type: "textarea" },
+      { label: "Address", key: "address", type: "textarea" },
+    ];
+  
     return (
       <div>
         <LoanSearch
@@ -165,21 +232,19 @@ import LoanSearch from "./LoanSearch";
                 },
                 {
                   title: "Customer",
-                  cellStyle: {
-                    minWidth: 120,
-                    fontWeight: 600,
-                    whiteSpace: "nowrap",
-                  },
-                  headerStyle: { whiteSpace: "nowrap" },
-                  render: (rowData) => {
-                    const clientName =
-                      rowData.client?.fullName ||
-                      clientStore.clients.find(
-                        (c) => c._id === rowData.client?._id
-                      )?.fullName ||
-                      "";
-                    return capitalizeFirst(clientName);
-                  },
+                  render: (rowData: any) => (
+                    <a
+                      href="#"
+                      className="text-green-700 hover:underline font-medium cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        // Open Client Modal the same way as Clients Table
+                        handleViewClient?.(rowData.client);
+                      }}
+                    >
+                      {rowData.client?.fullName || "N/A"}
+                    </a>
+                  ),
                 },
 
                 {
@@ -228,14 +293,19 @@ import LoanSearch from "./LoanSearch";
                   title: "Term (months)",
                   render: (rowData) => {
                     const today = moment().startOf("day");
-                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY").startOf("day");
+                    const issueDate = moment(
+                      rowData.issueDate,
+                      "MM-DD-YYYY"
+                    ).startOf("day");
                     const daysPassed = today.diff(issueDate, "days");
                     let completedMonths = Math.floor(daysPassed / 30);
                     if (daysPassed % 30 === 0 && daysPassed !== 0) {
                       completedMonths -= 1;
                     }
                     const ALLOWED_TERMS = getAllowedTerms(rowData.loanTerms);
-                    const runningTenure = ALLOWED_TERMS.find((t) => completedMonths <= t) || rowData.loanTerms;
+                    const runningTenure =
+                      ALLOWED_TERMS.find((t) => completedMonths <= t) ||
+                      rowData.loanTerms;
                     return <span>{runningTenure}</span>;
                   },
                   headerStyle: { whiteSpace: "nowrap" },
@@ -382,6 +452,41 @@ import LoanSearch from "./LoanSearch";
           remaining={remaining}
           runningTenure={runningTenure}
         />
+        <FormModal
+          open={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setEditingClient(null);
+          }}
+          title={editingClient ? "Edit Customer" : "New Customer"}
+          fields={clientFields}
+          //@ts-ignore
+          customFields={customFields}
+          initialData={editingClient || {}}
+          submitButtonText={
+            editingClient ? (
+              "Update Customer"
+            ) : (
+              <>
+                <Save size={16} className="inline mr-1" /> Create Customer
+              </>
+            )
+          }
+          onSubmit={handleSave}
+        />
+        {viewModalOpen && viewClient && (
+          <ClientViewModal
+            open={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            client={viewClient}
+            //@ts-ignore
+            loans={viewClient?.loans || []}
+            onEditClient={(client) => {
+              setEditingClient(client);
+              setModalOpen(true);
+            }}
+          />
+        )}
       </div>
     );
   };

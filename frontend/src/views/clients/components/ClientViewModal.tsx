@@ -315,8 +315,8 @@ const handleStatusChange = async (loanId, newStatus) => {
                   <Info label="SSN" value={client.ssn} />
                   <Info
                     label="Custom Fields"
-                    value={client.customFields
-                      .map((field) => `${field.name}: ${field.value}`)
+                    value={client?.customFields
+                      ?.map((field) => `${field?.name}: ${field.value}`)
                       .join(", ")}
                   />
 
