@@ -21,6 +21,7 @@ const NotFound = () => {
         <Button
           variant="contained"
           color="success"
+          title="Back to Dashboard"
           startIcon={<Home size={18} />}
           onClick={() => navigate("/dashboard")}
           className="!capitalize !rounded-lg !px-6 !py-2.5 !text-white !font-medium shadow-md hover:shadow-lg transition-all duration-300"

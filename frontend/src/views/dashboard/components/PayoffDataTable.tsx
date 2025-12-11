@@ -74,6 +74,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
         <div
           className="flex items-center gap-1 cursor-pointer text-green-700 hover:bg-green-700 hover:text-white px-2 py-1 rounded transition-colors duration-200"
           onClick={() => tableRef.current?.onQueryChange()}
+          title="Search"
         >
           <Search size={26} />
           <span className="font-medium">Search</span>

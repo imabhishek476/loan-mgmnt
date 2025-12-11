@@ -86,6 +86,7 @@ export const UsersTab = observer(({ activeTab }: any) => {
             fontWeight: 600,
             borderRadius: 1,
           }}
+          title="Add User"
         >
           Add User
         </Button>

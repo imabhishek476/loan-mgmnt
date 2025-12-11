@@ -117,7 +117,7 @@ useEffect(() => {
 }, [clientLoans]);
   const mergedLoans = useMemo(() => {
     return loanStore.loans
-      .filter((loan) => loan.status === "Active")
+      .filter((loan) => loan.status !== "Merged")
       .map((loan) => ({
         _id: loan._id,
         issueDate: loan.issueDate,
@@ -249,6 +249,7 @@ const handleStatusChange = async (loanId, newStatus) => {
           <h2 className="font-bold text-gray-800">{client.fullName}</h2>
           <button
             onClick={onClose}
+            title="Close"
             className="text-gray-500 hover:text-gray-800"
           >
             <X className="w-6 h-6" />
@@ -274,6 +275,7 @@ const handleStatusChange = async (loanId, newStatus) => {
               >
                 Customer Information
               </h3>
+              <span title="Edit Customer">
               <Pencil
                 size={18}
                 className={`text-green-700 cursor-pointer hover:text-green-900 transition md:w-5 md:h-5 ${
@@ -281,6 +283,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                 }`}
                 onClick={() => onEditClient(client)}
               />
+              </span>
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className="absolute top-2 right-2 items-center justify-center w-8 h-8 bg-green-700 text-white rounded-full shadow-lg hover:bg-green-800 transition-transform transform hover:scale-105"
@@ -315,8 +318,8 @@ const handleStatusChange = async (loanId, newStatus) => {
                   <Info label="SSN" value={client.ssn} />
                   <Info
                     label="Custom Fields"
-                    value={client.customFields
-                      .map((field) => `${field.name}: ${field.value}`)
+                    value={client?.customFields
+                      ?.map((field) => `${field?.name}: ${field.value}`)
                       .join(", ")}
                   />
 
@@ -356,6 +359,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                 <Button
                   variant="contained"
                   startIcon={<Plus />}
+                  title="New Loan"
                   sx={{
                     backgroundColor: "#15803d",
                     "&:hover": { backgroundColor: "#166534" },
@@ -514,6 +518,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                     ${getStatusStyles(loan)}
                                   `}
                                   value={loan.status}
+                                  title="Status"
                                   disabled={loan.status === "Merged"} 
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={(e) => handleStatusChange(loan._id, e.target.value)}
@@ -543,6 +548,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                               <span>
                                 {loan.status !== "Merged" && 
                                loan.loanStatus !== "Deactivated" && (
+                                <span title="Edit Loan">
                                   <Pencil
                                     size={16}
                                     className="text-green-700 inline-block cursor-pointer hover:text-green-900"
@@ -553,6 +559,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                       setEditingLoanId(loan._id);
                                     }}
                                   />
+                                </span>
                                 )}
                               </span>
                             </div>
@@ -590,6 +597,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                 loan.status === "Partial Payment")&&(
                                   <button
                                     onClick={() => setPaymentLoan(loan)}
+                                    title="Add Payment"
                                     className="p-1.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
                                   >
                                     <Plus className="w-4 h-4" />
@@ -637,6 +645,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               setEditPaymentLoan(loan);
                                               setEditPaymentModalOpen(true);
                                             }}
+                                            title = "Edit Payment"
                                             className="text-green-700 cursor-pointer hover:text-green-900   transition md:w-5 md:h-5"
                                           >
                                             <Pencil size={16} />
@@ -838,6 +847,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                   <button
                                                     onClick={() => toggleShowAllTerms(loan._id)}
                                                     className="text-xs text-blue-600 hover:underline"
+                                                    title= {showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
                                                   >
                                                     {showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
                                                   </button>

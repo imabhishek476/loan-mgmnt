@@ -5,15 +5,12 @@
     useRef,
   } from "react";
   import MaterialTable from "@material-table/core";
-  // import { debounce } from "lodash";
-  import { Search, Eye, Trash2, X } from "lucide-react";
+  import { Eye, Save, Trash2 } from "lucide-react";
   import { loanStore } from "../../../store/LoanStore";
   import { clientStore } from "../../../store/ClientStore";
   import { companyStore } from "../../../store/CompanyStore";
   import moment from "moment";
   import { observer } from "mobx-react-lite";
-  import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
-  import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
   import Confirm from "../../../components/Confirm";
   import { toast } from "react-toastify";
   import {
@@ -21,37 +18,48 @@
     calculateLoanAmounts,
   } from "../../../utils/loanCalculations";
   import { deleteLoan, getLoansSearch} from "../../../services/LoanService";
-import { getAllowedTerms } from "../../../utils/constants";
+  import { getAllowedTerms } from "../../../utils/constants";
+  import LoanView from "./LoanView";
+  import LoanSearch from "./LoanSearch";
+  import ClientViewModal from "../../clients/components/ClientViewModal";
+  import FormModal, { type FieldConfig } from "../../../components/FormModal";
 
   interface LoanTableProps {
     clientId?: string;
   }
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   const LoanTable: React.FC<LoanTableProps> = ({clientId }) => {
     const [search] = useState("");
     const [selectedLoan, setSelectedLoan] = useState(null);
-  // const [, setLoansDataTable] = useState<any[]>([]);
-    const [searchInput, setSearchInput] = useState("");
-    const [issueDateFilterInput, setIssueDateFilterInput] =
-      useState<moment.Moment | null>(null);
-    const capitalizeFirst = (text?: string) => {
-      if (!text) return "";
-      return text.charAt(0).toUpperCase() + text.slice(1);
-    };
     const tableRef = useRef<any>(null);
+    const [modalOpen, setModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const [currentPageSize, setCurrentPageSize] = useState(10);
+    const [viewClient, setViewClient] = useState(null);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
     const handleSearch = () => {
       if (tableRef.current) tableRef.current.onQueryChange();
     };
-
-    const handleReset = async () => {
-      setSearchInput("");
-      setIssueDateFilterInput(null);
+    const [filters, setFilters] = useState({
+      customer: "",
+      company: "",
+      issueDate: null,
+      paymentStatus: "",
+      loanStatus: "",
+    });
+    const handleReset = () => {
+      setFilters({
+        customer: "",
+        company: "",
+        issueDate: null,
+        paymentStatus: "",
+        loanStatus: "",
+      });
       if (tableRef.current) tableRef.current.onQueryChange();
     };
     const handleView = (loan: any) => setSelectedLoan(loan);
     const handleClose = () => setSelectedLoan(null);
+    const [editingClient, setEditingClient] = useState(null);
+    
     //@ts-ignore
     const [loading, setLoading] = useState(false);
     const fetchLoansData = useCallback(
@@ -60,18 +68,19 @@ import { getAllowedTerms } from "../../../utils/constants";
         setCurrentPage(query.page);
         setCurrentPageSize(query.pageSize);
         try {
-          const filters = {
-            query: searchInput,
+          const filterData = {
+            customer: filters.customer,
+            company: filters.company,
+            issueDate: filters.issueDate
+              ? moment(filters.issueDate).format("MM-DD-YYYY")
+              : null,
+            paymentStatus: filters.paymentStatus,
+            loanStatus: filters.loanStatus,
             page: query.page,
             limit: query.pageSize,
-            issueDate: issueDateFilterInput
-              ? moment(issueDateFilterInput).format("MM-DD-YYYY")
-              : null,
             clientId: clientId || null,
           };
-          const data = await getLoansSearch(filters);
-          // setLoansDataTable(data.loans || []);
-          
+          const data = await getLoansSearch(filterData);
           return {
             data: data.loans || [],
             page: query.page,
@@ -86,7 +95,7 @@ import { getAllowedTerms } from "../../../utils/constants";
           setLoading(false);
         }
       },
-      [searchInput, issueDateFilterInput, clientId]
+      [filters, clientId]
     );
     useEffect(() => {
       if (clientId) clientStore.fetchClientLoans(clientId);
@@ -103,7 +112,7 @@ import { getAllowedTerms } from "../../../utils/constants";
              await clientStore.refreshDataTable();
           toast.success("Loan deleted successfully");
     },
-  });
+    });
     };
     const getLoanRunningDetails = (loan: any) => {          
       const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
@@ -131,76 +140,79 @@ import { getAllowedTerms } from "../../../utils/constants";
       remaining = details.remaining;
       total = details.total;
     }
-
+    const handleViewClient = async (client) => {
+    setViewClient({ ...client, loans: [] });
+    setViewModalOpen(true);
+    };
+    const customFields: {
+      id: number;
+      name: string;
+      value: string | number | boolean;
+      type: "string" | "number";
+    }[] = (clientStore.customFields || []).map(
+      (field: FieldConfig, idx: number) => ({
+        id: idx,
+        name: field.key,
+        value: "",
+        type:
+          field.type === "text" || field.type === "textarea"
+            ? "string"
+            : field.type === "number"
+            ? "number"
+            : "string",
+      })
+    );
+    const handleSave = async (data: any) => {
+      try {
+        if (editingClient) {
+          await clientStore.updateClient(editingClient?._id, data);  
+          toast.success("Customer updated successfully");
+          try {
+            await clientStore.refreshDataTable();
+            const refreshedClient = clientStore.clients.find(
+              (c) => c?._id === editingClient?._id
+            );
+            if (refreshedClient) setViewClient(refreshedClient);
+          } catch (refreshError) {
+            console.error("Refresh error:", refreshError);
+          }  
+          setEditingClient(null);
+          setModalOpen(false);
+        } else {
+          await clientStore.createClient(data);  
+          toast.success("New Customer added successfully");  
+          try {
+            await clientStore.refreshDataTable();
+          } catch (refreshError) {
+            console.error("Refresh error:", refreshError);
+          }  
+          setModalOpen(false);
+        }
+      } catch (error: any) {
+        console.error("Save error:", error);
+        toast.error(error.response?.data?.error || "Failed to save Customer");
+      }
+    };
+    const clientFields: FieldConfig[] = [
+      { label: "Full Name", key: "fullName", type: "text", required: true },
+      { label: "Email", key: "email", type: "email" },
+      { label: "Phone", key: "phone", type: "text" },
+      { label: "SSN", key: "ssn", type: "text" },
+      { label: "Date of Birth", key: "dob", type: "date" },
+      { label: "Accident Date", key: "accidentDate", type: "date" },
+      { label: "Attorney Name", key: "attorneyName", type: "text" },
+      { label: "Memo", key: "memo", required: false ,type: "textarea" },
+      { label: "Address", key: "address", type: "textarea" },
+    ];
+  
     return (
       <div>
-        <div className="mb-3 flex flex-col sm:flex-row gap-2">
-          {/* Search input */}
-          <div className="flex flex-col sm:flex-row  gap-2 items-left">
-            <div className="relative flex-grow min-w-[250px] max-w-md">
-              <input
-                type="text"
-                placeholder="Search by Customer or Company"
-                className="w-full sm:p-2 pr-10 pl-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-              <span
-                className="absolute sm:hidden inset-y-0 right-0 flex items-center  pr-3  cursor-pointer"
-                onClick={handleSearch}
-              >
-                <Search className="w-5 h-5 text-green-700" />
-              </span>
-            </div>
-            <div className="sm:w-auto">
-              <button
-                className=" hidden sm:flex items-center gap-1 text-white bg-green-700 hover:bg-green-900 px-2 py-1 rounded transition-all duration-200 hover:shadow-lg"
-                onClick={handleSearch}
-              >
-                <Search size={20} />
-                <span className="font-medium py-1">Search</span>
-              </button>
-            </div>
-          </div>
-          <div className="flex gap-2 items-center">
-            <LocalizationProvider dateAdapter={AdapterMoment}>
-              <DatePicker
-                label="Issue Date"
-                value={issueDateFilterInput}
-                //@ts-ignore
-                onChange={(newValue) => setIssueDateFilterInput(newValue)}
-                slotProps={{
-                  textField: {
-                    size: "small",
-                    sx: {
-                      "& .MuiInputBase-root": {
-                        padding: "0px 4px",
-                        minHeight: "32px", // make it a bit shorter
-                      },
-                      "& .MuiInputBase-input": {
-                        padding: "4px 6px", // actual text padding
-                      },
-                    },
-                  },
-                }}
-              />
-            </LocalizationProvider>
-            <button
-              className="flex items-center gap-1 text-white bg-green-700 hover:bg-green-800 px-3 py-2 rounded transition-colors duration-200"
-              onClick={handleSearch}
-            >
-              <Search size={20} />
-              <span className="font-medium">Filter</span>
-            </button>
-            <button
-              className="flex items-center gap-1 text-white bg-gray-500 hover:bg-gray-600 px-3 py-2 rounded transition-colors duration-200"
-              onClick={handleReset}
-            >
-              <span className="font-medium">Reset</span>
-            </button>
-          </div>
-        </div>
-
+        <LoanSearch
+          filters={filters}
+          setFilters={setFilters}
+          handleSearch={handleSearch}
+          handleReset={handleReset}
+        />
         <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
           <div className="w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
             <MaterialTable
@@ -220,21 +232,19 @@ import { getAllowedTerms } from "../../../utils/constants";
                 },
                 {
                   title: "Customer",
-                  cellStyle: {
-                    minWidth: 120,
-                    fontWeight: 600,
-                    whiteSpace: "nowrap",
-                  },
-                  headerStyle: { whiteSpace: "nowrap" },
-                  render: (rowData) => {
-                    const clientName =
-                      rowData.client?.fullName ||
-                      clientStore.clients.find(
-                        (c) => c._id === rowData.client?._id
-                      )?.fullName ||
-                      "";
-                    return capitalizeFirst(clientName);
-                  },
+                  render: (rowData: any) => (
+                    <a
+                      href="#"
+                      className="text-green-700 hover:underline font-medium cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        // Open Client Modal the same way as Clients Table
+                        handleViewClient?.(rowData.client);
+                      }}
+                    >
+                      {rowData.client?.fullName || "N/A"}
+                    </a>
+                  ),
                 },
 
                 {
@@ -283,14 +293,19 @@ import { getAllowedTerms } from "../../../utils/constants";
                   title: "Term (months)",
                   render: (rowData) => {
                     const today = moment().startOf("day");
-                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY").startOf("day");
+                    const issueDate = moment(
+                      rowData.issueDate,
+                      "MM-DD-YYYY"
+                    ).startOf("day");
                     const daysPassed = today.diff(issueDate, "days");
                     let completedMonths = Math.floor(daysPassed / 30);
                     if (daysPassed % 30 === 0 && daysPassed !== 0) {
                       completedMonths -= 1;
                     }
                     const ALLOWED_TERMS = getAllowedTerms(rowData.loanTerms);
-                    const runningTenure = ALLOWED_TERMS.find((t) => completedMonths <= t) || rowData.loanTerms;
+                    const runningTenure =
+                      ALLOWED_TERMS.find((t) => completedMonths <= t) ||
+                      rowData.loanTerms;
                     return <span>{runningTenure}</span>;
                   },
                   headerStyle: { whiteSpace: "nowrap" },
@@ -376,7 +391,7 @@ import { getAllowedTerms } from "../../../utils/constants";
               ]}
               options={{
                 paging: true,
-                pageSize: 15,
+                pageSize: 10,
                 pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500],
                 sorting: true,
                 search: false,
@@ -385,6 +400,8 @@ import { getAllowedTerms } from "../../../utils/constants";
                 toolbar: false,
                 // paginationType: "stepped",
                 tableLayout: "auto",
+                maxBodyHeight: "calc(100vh - 305px)", // adjust
+                minBodyHeight: "calc(100vh - 305px)", // optional but helpful
                 headerStyle: {
                   fontWeight: 600,
                   backgroundColor: "#f9fafb",
@@ -423,10 +440,6 @@ import { getAllowedTerms } from "../../../utils/constants";
                   emptyDataSourceMessage: `${
                     search
                       ? `No results found for "${search}"`
-                      : issueDateFilterInput
-                      ? `No results found for "${moment(
-                          issueDateFilterInput
-                        ).format("MM-DD-YYYY")}"`
                       : "No loans available. Add a new loan to get started."
                   }`,
                 },
@@ -434,221 +447,47 @@ import { getAllowedTerms } from "../../../utils/constants";
             />
           </div>
         </div>
-        {selectedLoan && (
-          <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto">
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-xl border border-gray-200 w-full max-w-2xl mx-3 sm:mx-6 relative flex flex-col max-h-[90vh]">
-              <div className="flex justify-between items-center border-b px-6 py-3">
-                <h2 className="font-semibold text-xl text-green-700">
-                  Loan Details
-                </h2>
-
-                <button
-                  onClick={handleClose}
-                  className="text-gray-600 hover:text-red-500 transition"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800 text-sm mt-2">
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Customer
-                    </p>
-                    <p className="font-medium">
-                      {selectedLoan.client?.fullName ||
-                        clientStore.clients.find(
-                          (c) => c._id === selectedLoan.client?._id
-                        )?.fullName ||
-                        "-"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Company
-                    </p>
-                    <p className="font-medium">
-                      {selectedLoan.company?.companyName ||
-                        companyStore.companies.find(
-                          (c) => c._id === selectedLoan.company?._id
-                        )?.companyName ||
-                        "-"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Base Amount
-                    </p>
-                    <p className="font-semibold text-green-700">
-                      $
-                      {Number(selectedLoan.subTotal || 0).toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Total Loan
-                    </p>
-                    <p className="font-semibold text-green-700">
-                      $
-                      {total.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </p>
-                  </div>
-
-                  {/* Paid Amount */}
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Paid Amount
-                    </p>
-                    <p className="font-semibold text-blue-700">
-                      $
-                      {Number(selectedLoan.paidAmount || 0).toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Remaining Amount */}
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Remaining Amount
-                    </p>
-                    <p
-                      className={`font-semibold ${
-                        selectedLoan.status === "Merged"
-                          ? "text-green-700"
-                          : "text-red-700"
-                      }`}
-                    >
-                      $
-                      {(selectedLoan.status === "Merged"
-                        ? 0
-                        : remaining
-                      ).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </p>
-                  </div>
-
-                  {/* Progress */}
-                  <div className="sm:col-span-2 mt-2">
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Progress
-                    </p>
-                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-500 ${
-                          selectedLoan.status === "Merged"
-                            ? "bg-green-500"
-                            : "bg-green-600"
-                        }`}
-                        style={{
-                          width: `${
-                            selectedLoan.status === "Merged"
-                              ? 100
-                              : ((selectedLoan.paidAmount || 0) /
-                                  (total || 1)) *
-                                100
-                          }%`,
-                        }}
-                      />
-                    </div>
-                    {selectedLoan.status === "Merged" && (
-                      <p className="text-xs text-green-600 mt-1 font-medium">
-                        Merged loan — fully settled
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Interest Type */}
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Interest Type
-                    </p>
-                    <p className="font-medium capitalize">
-                      {selectedLoan.interestType
-                        ? selectedLoan.interestType.charAt(0).toUpperCase() +
-                          selectedLoan.interestType.slice(1)
-                        : "-"}
-                    </p>
-                  </div>
-
-                  {/* Monthly Rate */}
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Monthly Rate
-                    </p>
-                    <p className="font-medium">{selectedLoan.monthlyRate}%</p>
-                  </div>
-
-                  {/* Loan Term */}
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Loan Term
-                    </p>
-                    <p className="font-medium">{runningTenure} Months</p>
-                  </div>
-
-                  {/* Issue Date */}
-                  <div>
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Issue Date
-                    </p>
-                    <p className="font-medium">
-                      {moment(selectedLoan.issueDate).format("MMM DD, YYYY")}
-                    </p>
-                  </div>
-
-                  {/* Status */}
-                  <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
-                    <p className="text-gray-500 text-xs uppercase mb-1">
-                      Loan Status
-                    </p>
-                    <p
-                      className={`font-semibold ${
-                        selectedLoan.status === "Paid Off"
-                          ? "text-gray-500"
-                          : selectedLoan.status === "Merged"
-                          ? "text-green-600"
-                          : selectedLoan.status === "Active"
-                          ? "text-green-600"
-                          : "text-yellow-600"
-                      }`}
-                    >
-                      {selectedLoan.status}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="flex justify-end border-t px-6 py-3">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
+        <LoanView
+          selectedLoan={selectedLoan}
+          handleClose={handleClose}
+          total={total}
+          remaining={remaining}
+          runningTenure={runningTenure}
+        />
+        <FormModal
+          open={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setEditingClient(null);
+          }}
+          title={editingClient ? "Edit Customer" : "New Customer"}
+          fields={clientFields}
+          //@ts-ignore
+          customFields={customFields}
+          initialData={editingClient || {}}
+          submitButtonText={
+            editingClient ? (
+              "Update Customer"
+            ) : (
+              <>
+                <Save size={16} className="inline mr-1" /> Create Customer
+              </>
+            )
+          }
+          onSubmit={handleSave}
+        />
+        {viewModalOpen && viewClient && (
+          <ClientViewModal
+            open={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            client={viewClient}
+            //@ts-ignore
+            loans={viewClient?.loans || []}
+            onEditClient={(client) => {
+              setEditingClient(client);
+              setModalOpen(true);
+            }}
+          />
         )}
       </div>
     );

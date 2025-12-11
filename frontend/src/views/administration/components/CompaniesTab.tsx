@@ -86,6 +86,7 @@ export const CompaniesTab = observer(({ activeTab }: any) => {
         </h2>
         <Button
           variant="contained"
+          title="Add Company"
           onClick={() => handleCompanyOpen()}
           sx={{
             backgroundColor: "#15803d",

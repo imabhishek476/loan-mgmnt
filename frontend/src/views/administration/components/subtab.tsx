@@ -25,6 +25,7 @@ const SubTabs = ({ onTabChange }: SubTabsProps) => {
       {tabs.map((tab) => (
         <button
           key={tab.key}
+          title={tab.key}
           onClick={() => handleClick(tab.key)}
           className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-3 rounded-md text-sm transition-all 
             ${activeTab === tab.key

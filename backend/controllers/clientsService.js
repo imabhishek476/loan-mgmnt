@@ -92,7 +92,11 @@ exports.searchClients = async (req, res) => {
       phone,
       attorneyName,
       status,
+      loanStatus,
       issueDate,
+      dob,
+      accidentDate,
+      ssn,
       page = 0,
       limit = 10,
     } = req.query;
@@ -104,6 +108,15 @@ exports.searchClients = async (req, res) => {
     if (phone) matchStage.phone = new RegExp(phone, "i");
     if (attorneyName) matchStage.attorneyName = new RegExp(attorneyName, "i");
     if (status) matchStage.isActive = status === "Active";
+    if (ssn) matchStage.ssn = new RegExp(ssn, "i");
+    if (dob) {
+      matchStage.dob = moment(dob, "MM-DD-YYYY").format("MM-DD-YYYY");
+    }
+    if (accidentDate) {
+      matchStage.accidentDate = moment(accidentDate, "MM-DD-YYYY").format(
+        "MM-DD-YYYY"
+      );
+    }
     let pipeline = [
       { $match: matchStage },
       {
@@ -126,7 +139,7 @@ exports.searchClients = async (req, res) => {
                 },
               },
             },
-            { $sort: { issueDateParsed: -1 } },
+            { $sort: { issueDateParsed: -1, createdAt: -1 } },
           ],
           as: "allLoans",
         },
@@ -140,9 +153,16 @@ exports.searchClients = async (req, res) => {
     if (issueDate) {
       pipeline.push({
         $match: {
-          "latestLoan.issueDateParsed": {
-            $eq: new Date(issueDate),
-          },
+          "latestLoan.issueDate": moment(issueDate, "MM-DD-YYYY").format(
+            "MM-DD-YYYY"
+          ),
+        },
+      });
+    }
+    if (loanStatus) {
+      pipeline.push({
+        $match: {
+          "latestLoan.loanStatus": loanStatus,
         },
       });
     }
@@ -193,7 +213,7 @@ exports.searchClients = async (req, res) => {
       success: true,
       clients,
       total,
-      currentPage: page,
+      currentPage: Number(page),
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {

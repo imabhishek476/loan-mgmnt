@@ -37,6 +37,7 @@ const Confirm = ({
           <button
             onClick={handleConfirm}
             disabled={loading}
+            title={confirmText}
             className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Processing..." : confirmText}

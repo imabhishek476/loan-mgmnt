@@ -157,7 +157,7 @@ const LoanPaymentModal = observer(
               <LocalizationProvider dateAdapter={AdapterMoment}>
                 <DatePicker
                   value={payOffDate}
-                  minDate={minDate} 
+                  minDate={minDate}
                   onChange={(date: Moment | null) => setPayOffDate(date)}
                   slotProps={{ textField: { size: "small" } }}
                 />
@@ -238,6 +238,7 @@ const LoanPaymentModal = observer(
 
           <div className="flex justify-end gap-2 mt-6">
             <button
+              title="Cancel"
               onClick={onClose}
               disabled={loading}
               className="px-4 py-2 font-bold bg-[#dc2626] text-white rounded-lg hover:bg-red-700 transition"
@@ -247,6 +248,7 @@ const LoanPaymentModal = observer(
             <button
               onClick={handlePayment}
               disabled={loading}
+              title="Pay"
               className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition flex items-center gap-2"
             >
               {loading ? "Processing..." : "Pay"}

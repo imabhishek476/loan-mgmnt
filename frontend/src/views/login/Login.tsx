@@ -83,6 +83,7 @@ const Login = observer(() => {
 
           <button
             type="submit"
+            title={userStore.loading ? "Signing In..." : "Sign In"}
             disabled={userStore.loading}
             className={`bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 tracking-wide ${userStore.loading ? "opacity-50 cursor-not-allowed" : ""
               }`}

@@ -265,6 +265,7 @@ const AuditLogsTable: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-800">Log Details</h2>
               <button
                 onClick={() => setSelectedLog(null)}
+                title = "Close"
                 className="text-gray-600 hover:text-red-500 transition"
               >
                 <X className="w-5 h-5" />
@@ -307,6 +308,7 @@ const AuditLogsTable: React.FC = () => {
            
               <button
                 type="button"
+                title = "Close"
                 onClick={() => setSelectedLog(null)}
                 className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >
