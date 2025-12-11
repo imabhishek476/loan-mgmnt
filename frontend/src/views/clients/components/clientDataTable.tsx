@@ -37,6 +37,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     phone: "",
     attorneyName: "",
     status: "",
+    loanStatus:"",
     issueDate: null,
   });
   const handleReset = () => {
@@ -46,6 +47,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       phone: "",
       attorneyName: "",
       status: "",
+      loanStatus: "",
       issueDate: null,
     });
     tableRef.current?.onQueryChange();
@@ -63,6 +65,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
         phone: filters.phone,
         attorneyName: filters.attorneyName,
         status: filters.status,
+        loanStatus: filters.loanStatus,
         issueDate: filters.issueDate
           ? moment(filters.issueDate).format("MM-DD-YYYY")
           : null,
@@ -210,6 +213,28 @@ const handleToggleActive = async (id: string, isActive: boolean) => {
             onChange={(e) =>
               setFilters({ ...filters, attorneyName: e.target.value })
             }
+          />
+        </div>
+        <div>
+          <label className="font-semibold text-gray-600">Loan Status</label>
+          <Autocomplete
+            size="small"
+            options={["Active", "Deactivated"]}
+            value={filters.loanStatus || null}
+            onChange={(_, value) =>
+              setFilters({ ...filters, loanStatus: value || "" })
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Select Loan Status"
+                className="border rounded text-sm w-full h-10"
+                InputProps={{
+                  ...params.InputProps,
+                  className: "p-0 h-10 text-sm",
+                }}
+              />
+            )}
           />
         </div>
         <div>

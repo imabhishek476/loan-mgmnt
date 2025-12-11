@@ -92,6 +92,7 @@ exports.searchClients = async (req, res) => {
       phone,
       attorneyName,
       status,
+      loanStatus,
       issueDate,
       page = 0,
       limit = 10,
@@ -126,23 +127,28 @@ exports.searchClients = async (req, res) => {
                 },
               },
             },
-            { $sort: { issueDateParsed: -1, createdAt: -1 } },
+            { $sort: { issueDateParsed: -1, createdAt: -1 } }, // latest loan first
           ],
           as: "allLoans",
         },
       },
       {
         $addFields: {
-          latestLoan: { $arrayElemAt: ["$allLoans", 0] },
+          latestLoan: { $arrayElemAt: ["$allLoans", 0] }, // first loan is latest
         },
       },
     ];
     if (issueDate) {
       pipeline.push({
         $match: {
-          "latestLoan.issueDateParsed": {
-            $eq: new Date(issueDate),
-          },
+          "latestLoan.issueDateParsed": new Date(issueDate),
+        },
+      });
+    }
+    if (loanStatus) {
+      pipeline.push({
+        $match: {
+          "latestLoan.loanStatus": loanStatus,
         },
       });
     }
