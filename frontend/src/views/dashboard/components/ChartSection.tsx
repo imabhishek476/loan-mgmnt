@@ -75,7 +75,7 @@ const ChartSection = ({ chartData }: any) => {
 
           {/* Minimal Tooltip */}
           <Tooltip
-            cursor={false} 
+            cursor={false}
             content={({ payload, label }) => {
               if (!payload?.length) return null;
               const entry = chartData.find((d) => d.name === label);
@@ -132,8 +132,8 @@ const ChartSection = ({ chartData }: any) => {
                 const entry = chartData[index];
                 return (
                   <text
-                    x={x + width / 2}
-                    y={y - 5}
+                    x={Number(x) + Number(width) / 2}
+                    y={Number(y) - 5}
                     textAnchor="middle"
                     fill={entry.companyColor}
                     fontWeight="600"
@@ -159,8 +159,8 @@ const ChartSection = ({ chartData }: any) => {
               offset={8}
               content={({ x, y, width, value }) => (
                 <text
-                  x={x + width / 2}
-                  y={y - 5}
+                  x={Number(x) + Number(width) / 2}
+                  y={Number(y) - 5}
                   textAnchor="middle"
                   fill="#04af12"
                   fontWeight="600"

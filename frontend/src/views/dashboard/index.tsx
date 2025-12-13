@@ -2,13 +2,8 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { dashboardStore } from "../../store/DashboardStore";
 import { Users, Building2, CreditCard, DollarSign } from "lucide-react";
-import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
-import ClientViewModal from "../clients/components/ClientViewModal";
-import { toast } from "react-toastify";
-import FormModal from "../../components/FormModal";
 import CountUp from "react-countup";
 import PayoffDataTable from "./components/PayoffDataTable";
 import SearchFilters from "./components/SearchFilters";
@@ -53,21 +48,11 @@ const StatCard = ({
   </div>
 );
 const Dashboard = observer(() => {
-  const [fromDate, setFromDate] = useState(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  );
-  const [toDate, setToDate] = useState(new Date());
   const [filteredLoansByCompany, setFilteredLoansByCompany] = useState<any[]>(
     []
   );
   const [viewMode, setViewMode] = useState<"graph" | "upcoming">("upcoming");
-  const [loadingGraph, setLoadingGraph] = useState(false);
   const stats = dashboardStore.stats;
-
-  const [viewClientModalOpen, setViewClientModalOpen] = useState(false);
-  const [selectedClientForView, setSelectedClientForView] = useState<any>(null);
-  const [editClientModalOpen, setEditClientModalOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<any>(null);
 
   const [filters, setFilters] = useState({
     company: "",
@@ -103,7 +88,7 @@ const Dashboard = observer(() => {
     });
   };
   const handleSearch = async () => {
-    setLoadingGraph(true);
+    
     try {
       await dashboardStore.loadFilteredStats({
         ...filters,
@@ -120,9 +105,7 @@ const Dashboard = observer(() => {
       await dashboardStore.loadStats();
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoadingGraph(false);
-    }
+    } 
   };
   const handleReset = async () => {
     const defaultFrom = new Date(
@@ -137,7 +120,7 @@ const Dashboard = observer(() => {
       fromDate: defaultFrom,
       toDate: defaultTo,
     });
-    setLoadingGraph(true);
+   
     try {
       await Promise.all([companyStore.fetchCompany()]);
 
@@ -146,12 +129,12 @@ const Dashboard = observer(() => {
         normalizeCompanyData(dashboardStore.stats?.loansByCompany || [])
       );
       await dashboardStore.loadStats();
-    } finally {
-      setLoadingGraph(false);
+    } catch (error) {
+      console.error("Failed to reset", error);
     }
   };
   const loadDashboard = async () => {
-    setLoadingGraph(true);
+   
     try {
       await Promise.all([
         companyStore.fetchCompany(),
@@ -163,18 +146,14 @@ const Dashboard = observer(() => {
         normalizeCompanyData(dashboardStore.stats?.loansByCompany || [])
       );
       await dashboardStore.loadStats();
-    } finally {
-      setLoadingGraph(false);
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
     }
+    
   };
   useEffect(() => {
     loadDashboard();
   }, []);
-
-  const clientOptions = clientStore.clients.map((c) => ({
-    label: c.fullName,
-    value: c._id,
-  }));
 
   return (
     <div className="space-y-5 text-left relative">
