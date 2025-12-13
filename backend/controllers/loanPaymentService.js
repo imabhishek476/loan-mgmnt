@@ -43,11 +43,11 @@ exports.addPayment = async (req, res) => {
       return total + (Number(item.paidAmount) || 0);
     }, 0);
     const remainingAmount = to2(totalLoan - alreadyPaid);
-    if (Number(paidAmount) > remainingAmount) {
-      return res
-        .status(400)
-        .json({  message: `Paid amount exceeds outstanding balance ${remainingAmount} `, });
-    }
+    // if (Number(paidAmount) > remainingAmount) {
+    //   return res
+    //     .status(400)
+    //     .json({  message: `Paid amount exceeds outstanding balance ${remainingAmount} `, });
+    // }
     const payment = await LoanPayment.create({
       loanId,
       clientId,

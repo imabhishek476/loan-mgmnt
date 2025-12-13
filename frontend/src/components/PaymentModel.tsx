@@ -38,8 +38,38 @@ const LoanPaymentModal = observer(
     const formated_Outstanding = outstanding.toFixed(2);
     const [payOffDate, setPayOffDate] = useState(moment());
     const [currentTerm, setCurrentTerm] = useState(loan?.loanTerms || 0);
-
+    const [warnings, setWarnings] = useState<{
+      amount?: string;
+    }>({});
     const [minDate, setMinDate] = useState<Moment | null>(null);
+    const handleAmountChange = (e) => {
+      let value = e.target.value.replace(/,/g, "");
+      if (!/^\d*\.?\d*$/.test(value)) return;
+      const [intPart, decimalPart] = value.split(".");
+      const formattedInt = intPart
+        ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        : "";
+      const formattedValue =
+        decimalPart !== undefined
+          ? `${formattedInt}.${decimalPart}`
+          : formattedInt;
+      setAmount(formattedValue);
+      const num = Number(value);
+      setErrors((prev) => ({
+        ...prev,
+        amount:
+          !value || num <= 0
+            ? "Paid Amount is required and must be greater than 0"
+            : "",
+      }));
+      setWarnings((prev) => ({
+        ...prev,
+        amount:
+          num > Number(formated_Outstanding)
+            ? `Paid amount is greater than outstanding ($${formated_Outstanding}).`
+            : "",
+      }));
+    };
     useEffect(() => {
       if (!loan || !payOffDate) return;
       const fetchUpdatedAmount = async () => {
@@ -98,17 +128,14 @@ const LoanPaymentModal = observer(
 
     const validate = () => {
       const newErrors: typeof errors = {};
-      const numAmount = Number(amount);
+      const rawAmount = amount.replace(/,/g, "");
+      const numAmount = Number(rawAmount);
 
-      if (!amount || isNaN(numAmount) || numAmount <= 0) {
+      if (!rawAmount || isNaN(numAmount) || numAmount <= 0) {
         newErrors.amount = "Paid Amount is required and must be greater than 0";
-        //@ts-ignore
-      } else if (numAmount > formated_Outstanding) {
-        newErrors.amount = `Cannot pay more than outstanding: $${formated_Outstanding}`;
       }
 
       setErrors(newErrors);
-      Object.values(newErrors).forEach((msg) => toast.error(msg));
       return Object.keys(newErrors).length === 0;
     };
 
@@ -120,7 +147,7 @@ const LoanPaymentModal = observer(
         await paymentStore.addPayment({
           loanId: loan._id,
           clientId,
-          paidAmount: Number(amount),
+          paidAmount: Number(amount.replace(/,/g, "")),
           paidDate: payOffDate,
           checkNumber,
           payoffLetter,
@@ -168,32 +195,26 @@ const LoanPaymentModal = observer(
                 Paid Amount <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 value={amount}
-                min={0}
-                step="0.01"
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                  const num = Number(e.target.value);
-                  setErrors((prev) => ({
-                    ...prev,
-                    amount:
-                      !e.target.value || num <= 0
-                        ? "Paid Amount is required and must be greater than 0"
-                        : //@ts-ignore
-                        num > formated_Outstanding
-                        ? `Cannot pay more than outstanding: $${formated_Outstanding}`
-                        : "",
-                  }));
-                }}
+                inputMode="decimal"
+                placeholder="0.00"
+                onChange={handleAmountChange}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
                   errors.amount
                     ? "border-red-500 focus:ring-red-300"
+                    : warnings.amount
+                    ? "border-yellow-400 focus:ring-yellow-300"
                     : "border-gray-300 focus:ring-green-300"
                 }`}
               />
               {errors.amount && (
                 <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
+              )}
+              {warnings.amount && !errors.amount && (
+                <p className="text-yellow-600 text-sm mt-1">
+                  {warnings.amount}
+                </p>
               )}
               <p className="text-sm text-gray-500 mt-1">
                 Outstanding: ${Number(formated_Outstanding).toLocaleString()}
