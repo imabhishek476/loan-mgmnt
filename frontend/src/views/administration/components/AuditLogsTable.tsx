@@ -31,28 +31,28 @@ const AuditLogsTable: React.FC = () => {
     let type = "-";
 
     if (lower.includes("create")) {
-    bgColor = "bg-green-700 text-white";
+    bgColor = "bg-green-600 text-white";
       type = "Create";
     } else if (lower.includes("update")) {
     bgColor = "bg-blue-500 text-white";
      type = "Update";
   } else if (lower.includes("deactivate") || lower.includes("inactive")) {
-    bgColor = "bg-orange-400 text-white";
+    bgColor = "bg-red-500 text-white";
     type = "Deactivate";
     } else if (lower.includes("activate") || lower.includes("active")) {
-      bgColor = "bg-green-700 text-white";
+      bgColor = "bg-green-600 text-white";
       type = "Activate";
     } else if (lower.includes("delete")) {
-    bgColor = "bg-red-500 text-white";
+    bgColor = "bg-red-600 text-white";
       type = "Delete";
   } else if (lower.includes("recover")) {
- bgColor = "bg-green-700 text-white";
+ bgColor = "bg-green-600 text-white";
     type = "Recover";
     }
 
     return (
       <span
-        className={`px-2 py-1 rounded-lg font-semibold text-xs ${bgColor}`}
+        className={`px-2 py-1 rounded-md font-semibold text-xs ${bgColor}`}
       >
         {type}
       </span>

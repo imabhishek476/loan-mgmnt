@@ -144,7 +144,11 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   }
   return (
     <>
-      <CustomerSearch filters={filters} setFilters={setFilters} tableRef = {tableRef} />
+      <CustomerSearch
+        filters={filters}
+        setFilters={setFilters}
+        tableRef={tableRef}
+      />
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
         <MaterialTable
           isLoading={false}
@@ -250,7 +254,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                 const isDisabled =
                   !rowData.isActive || loan.status === "Merged";
 
-
                 return (
                   <select
                     className={`
@@ -290,11 +293,11 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               title: "Status",
               render: (rowData) =>
                 rowData.isActive ? (
-                  <span className="px-2 py-0.5 bg-green-700 text-white text-sm font-semibold rounded-lg">
+                  <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
                     Active
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-sm font-semibold rounded-lg">
+                  <span className="px-2 py-0.5 bg-red-600 text-white text-sm font-semibold rounded-md">
                     Inactive
                   </span>
                 ),

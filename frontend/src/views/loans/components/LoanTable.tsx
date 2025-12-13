@@ -328,23 +328,23 @@
                     let displayText = rowData.status;
                     switch (rowData.status) {
                       case "Paid Off":
-                        bgColor = "bg-green-700";
+                        bgColor = "bg-gray-500 text-white font-semibold";
                         break;
                       case "Merged":
-                        bgColor = "bg-green-700";
+                        bgColor = "bg-gray-500 text-white font-semibold";
                         displayText = "Paid Off (Merged)";
                         break;
                       case "Partial Payment":
-                        bgColor = "bg-yellow-600";
+                        bgColor = "bg-yellow-500 text-white font-semibold";
                         break;
                       case "Active":
                       default:
-                        bgColor = "bg-green-700";
+                        bgColor = "bg-green-600 text-white font-semibold";
                         break;
                     }
                     return (
                       <span
-                        className={`px-2 py-1 rounded-lg text-white text-sm ${bgColor}`}
+                        className={`px-2 py-1 rounded-md text-white text-sm ${bgColor}`}
                       >
                         {displayText}
                       </span>
@@ -357,9 +357,9 @@
                   cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
                   render: (rowData) => (
                     <span
-                      className={`px-2 py-1 rounded-lg text-white text-sm ${
+                      className={`px-2 py-1 rounded-md text-white text-sm font-semibold ${
                         rowData.loanStatus === "Active"
-                          ? "bg-green-700"
+                          ? "bg-green-600"
                           : "bg-red-500"
                       }`}
                     >
