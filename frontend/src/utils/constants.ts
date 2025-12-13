@@ -3,3 +3,14 @@ export const ALLOWED_TERMS = LOAN_TERMS;
 export const getAllowedTerms = (loanTerm: number) => {
     return LOAN_TERMS.filter(term => term <= loanTerm);
 };
+export const LOAN_STATUS_OPTIONS = [
+    "All",
+    "Active",
+    "Partial Payment",
+    "Paid Off",
+    "Fraud",
+    "Lost",
+    "Denied",
+    "Merged",
+    "Deactivated",
+];
