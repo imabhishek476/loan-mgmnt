@@ -248,28 +248,23 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               },
             },
             {
-              title: "Loan Status",
+              title: "Payment Status",
               headerStyle: { whiteSpace: "nowrap" },
               cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
               render: (rowData: any) => {
                 const loan = rowData.latestLoan;
                 if (!loan) return <span className="text-gray-400">—</span>;
-                const isDisabled =
-                  !rowData.isActive || loan.status === "Merged";
+                // const isDisabled = !rowData.isActive || loan.status === "Merged";
 
                 return (
                   <select
                     className={`
                                 px-3 py-1 rounded text-xs text-white font-semibold cursor-pointer
-                                focus:outline-none transition
-                                ${getStatusStyles(loan.status)}${
-                      isDisabled
-                        ? "opacity-60 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }
+                                focus:outline-none transition  disabled:opacity-100  
+                                ${getStatusStyles(loan.status)}
                               `}
                     value={loan.status}
-                    disabled={isDisabled}
+                    disabled={true}
                     title="Change Loan Status"
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) =>

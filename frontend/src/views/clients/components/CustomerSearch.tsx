@@ -74,7 +74,7 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
           />
         </div>
         <div>
-          <label className="font-semibold text-gray-800">Loan Status</label>
+          <label className="font-semibold text-gray-800">Payment  Status</label>
           <Autocomplete
             size="small"
             options={LOAN_STATUS_OPTIONS}
