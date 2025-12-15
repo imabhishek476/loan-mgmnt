@@ -24,7 +24,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
-import { getAllowedTerms } from "../../utils/constants";
+import { getAllowedTerms, isValidMMDDYYYY, todayMMDDYYYY } from "../../utils/constants";
 
 const Loans = observer(
   ({
@@ -257,6 +257,11 @@ const Loans = observer(
         setSaving(true);
         if (!data.client) {
           toast.error("Please select a client");
+          return;
+        }
+        const issueDate = data.issueDate?.trim() || todayMMDDYYYY();
+        if (!isValidMMDDYYYY(issueDate)) {
+          toast.error("Issue Date must be MM-DD-YYYY");
           return;
         }
         if (!data.company) {

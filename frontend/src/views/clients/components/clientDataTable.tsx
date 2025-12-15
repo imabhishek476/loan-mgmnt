@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import {Plus, Power, RefreshCcw, XCircle } from "lucide-react";
 import moment from "moment";
@@ -142,6 +142,9 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     }
     return { totalPaid, totalRemaining };
   }
+  useEffect(() => {
+    clientStore.setTableRef(tableRef);
+  }, []);
   return (
     <>
       <CustomerSearch

@@ -18,7 +18,7 @@ exports.LoansCreate = async (req, res) => {
     }
 
     const newLoan = await Loan.create({
-      issueDate: body.issueDate || new Date(),
+      issueDate: body.issueDate,
       client: body.client,
       company: body.company,
       loanTerms: Number(body.loanTerms ?? 12),
@@ -128,7 +128,8 @@ exports.updateLoan = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    const loan = await Loan.findByIdAndUpdate(id, updates, { new: true });
+    const loan = await Loan.findByIdAndUpdate(id, updates, { new: true,runValidators: true,
+  context: "query"});
     if (!loan) {
       return res.status(404).json({
         success: false,
@@ -296,7 +297,7 @@ exports.deactivateLoan = async (req, res) => {
     const loan = await Loan.findByIdAndUpdate(
       id,
       { loanStatus: "Deactivated" },
-      { new: true }
+      { new: true, runValidators: true, context: "query" }
     );
 
     if (!loan) {

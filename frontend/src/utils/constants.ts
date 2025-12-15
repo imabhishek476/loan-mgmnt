@@ -14,3 +14,12 @@ export const LOAN_STATUS_OPTIONS = [
     "Merged",
     "Deactivated",
 ];
+export const todayMMDDYYYY = () => {
+    const d = new Date();
+    return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+    ).padStart(2, "0")}-${d.getFullYear()}`;
+};
+
+export const isValidMMDDYYYY = (v: string) =>
+    /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/.test(v);
