@@ -23,7 +23,7 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
     tableRef.current?.onQueryChange();
   };
   return (
-    <div className="bg-gray-200 p-4 rounded-lg shadow-md mb-4">
+    <div className="bg-gray-200 p-2 rounded-lg shadow-md mb-4">
       <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 mb-2">
         <div>
           <label className="font-semibold text-gray-800">Name</label>
