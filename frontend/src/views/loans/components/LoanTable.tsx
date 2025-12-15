@@ -391,8 +391,8 @@
               ]}
               options={{
                 paging: true,
-                pageSize: 10,
-                pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500],
+                pageSize: 20,
+                pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500,1000],
                 sorting: true,
                 search: false,
                 actionsColumnIndex: -1,

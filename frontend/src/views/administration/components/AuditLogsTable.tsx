@@ -192,8 +192,8 @@ const AuditLogsTable: React.FC = () => {
           data={(query) =>
             new Promise(async (resolve, reject) => {
               try {
-                   setCurrentPage(query.page);
-                   setCurrentPageSize(query.pageSize);
+                setCurrentPage(query.page);
+                setCurrentPageSize(query.pageSize);
                 if (firstLoad.current) {
                   firstLoad.current = false;
                 }
@@ -222,7 +222,7 @@ const AuditLogsTable: React.FC = () => {
           options={{
             paging: true,
             pageSize: 10,
-            pageSizeOptions: [5, 10, 20],
+            pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500, 1000],
             sorting: true,
             search: false,
             actionsColumnIndex: -1,
@@ -273,11 +273,11 @@ const AuditLogsTable: React.FC = () => {
       {selectedLog && (
         <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto z-[9999]">
           <div className="bg-white rounded-lg w-full max-w-4xl shadow-lg relative mx-2 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
-                        <div className="flex justify-between items-center border-b px-6 py-3">
+            <div className="flex justify-between items-center border-b px-6 py-3">
               <h2 className="text-xl font-bold text-gray-800">Log Details</h2>
               <button
                 onClick={() => setSelectedLog(null)}
-                title = "Close"
+                title="Close"
                 className="text-gray-600 hover:text-red-500 transition"
               >
                 <X className="w-5 h-5" />
@@ -307,7 +307,6 @@ const AuditLogsTable: React.FC = () => {
                 </p>
               </div>
 
-
               <div className="bg-gray-100 p-4 text-left rounded-md overflow-x-auto max-h-[50vh]">
                 <strong>Data:</strong>
                 <pre className="text-xs mt-2 whitespace-pre-wrap break-words">
@@ -317,10 +316,9 @@ const AuditLogsTable: React.FC = () => {
             </div>
 
             <div className="flex justify-end border-t px-6 py-3">
-           
               <button
                 type="button"
-                title = "Close"
+                title="Close"
                 onClick={() => setSelectedLog(null)}
                 className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >

@@ -199,10 +199,10 @@ const Dashboard = observer(() => {
 
       {/* View Mode Toggle */}
       <div className="flex justify-start mt-2">
-        <div className="relative flex bg-gray-100 border border-gray-300 rounded-full p-1 shadow-sm">
+        <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm">
           {/* Sliding Highlight */}
           <div
-            className={`absolute top-1 bottom-1 rounded-full bg-[#166534]  transition-all duration-300 ease-in-out ${
+            className={`absolute top-1 bottom-1 rounded-md bg-[#166534]  transition-all duration-300 ease-in-out ${
               viewMode === "upcoming"
                 ? "left-1 w-[160px]"
                 : "left-[165px] w-[220px]"

@@ -22,7 +22,7 @@ const Administration = observer(() => {
   }, []);
   return (
     <div className="flex flex-col  transition-all duration-300">
-      <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="mb-1 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl text-gray-800 font-bold text-left">
             Administration
@@ -33,9 +33,9 @@ const Administration = observer(() => {
         </div>
       </div>
       <div className="flex justify-start mt-2 mb-6">
-        <div className="relative flex bg-gray-100 border border-gray-300 rounded-full p-1 shadow-sm w-full overflow-x-auto">
+        <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm w-full overflow-x-auto">
           <div
-            className="absolute top-1 bottom-1 rounded-full bg-[#166534] transition-all duration-300 ease-in-out"
+            className="absolute top-1 bottom-1 rounded-md bg-[#166534] transition-all duration-300 ease-in-out"
             style={{
               width: `calc(${100 / tabs.length}% - 0.5rem)`,
               left: `calc(${
