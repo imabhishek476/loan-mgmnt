@@ -146,6 +146,7 @@ const renderFee = (fee: any) => {
             paginationType: "stepped",
             tableLayout: "auto",
             headerStyle: {
+              position: "sticky",
               fontWeight: "600",
               backgroundColor: "#f9fafb",
               color: "#374151",
@@ -153,7 +154,12 @@ const renderFee = (fee: any) => {
               height: 36,
               padding: "6px 8px",
               borderBottom: "1px solid #e5e7eb",
+              whiteSpace: "nowrap",
+              right: 0,
+              zIndex: 30,
             },
+            maxBodyHeight: "calc(100vh - 450px)",
+            minBodyHeight: "calc(100vh - 450px)",
             rowStyle: {
               fontSize: "13px",
               height: 38,
