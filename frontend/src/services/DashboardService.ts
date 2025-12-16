@@ -16,3 +16,9 @@ export const fetchPayoffStats = async (type, page = 1, limit = 10) => {
   });
   return res.data;
 };
+export const fetchFilteredDashboardStats = async (filters: any) => {
+  const res = await api.get("/dashboard/stats/filtered", {
+    params: filters,
+  });
+  return res.data;
+};

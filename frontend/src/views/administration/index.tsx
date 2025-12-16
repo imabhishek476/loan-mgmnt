@@ -22,7 +22,7 @@ const Administration = observer(() => {
   }, []);
   return (
     <div className="flex flex-col  transition-all duration-300">
-      <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="mb-1 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl text-gray-800 font-bold text-left">
             Administration
@@ -32,23 +32,36 @@ const Administration = observer(() => {
           </p>
         </div>
       </div>
-      <div className="flex gap-1 bg-gray-300 rounded-lg p-1 w-full mx-auto mb-6 flex-wrap">
+      <div className="flex justify-start mt-2 mb-6">
+        <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm w-full overflow-x-auto">
+          <div
+            className="absolute top-1 bottom-1 rounded-md bg-[#166534] transition-all duration-300 ease-in-out"
+            style={{
+              width: `calc(${100 / tabs.length}% - 0.5rem)`,
+              left: `calc(${
+                (tabs.findIndex((t) => t.key === userStore.activeAdminTab) *
+                  100) /
+                tabs.length
+              }% + 0.25rem)`,
+            }}
+          />
         {tabs.map((tab) => (
           <button
             key={tab.key}
             title={tab.key}
             onClick={() => handleClick(tab.key)}
-            className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-3 rounded-md text-sm transition-all 
+            className={`relative z-10 flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition
             ${
               userStore.activeAdminTab === tab.key
-                ? "bg-white text-green-800 shadow-sm border border-gray-200"
-                : "text-gray-600 hover:text-green-700 hover:bg-white"
+                ? "text-white"
+              : "text-gray-700 hover:text-green-700"
             }`}
           >
-            <div className="flex-shrink-0">{tab.icon}</div>
-            <span className="text-[13px] sm:text-[14px]">{tab.label}</span>
+            {tab.icon}
+            <span className="text-sm whitespace-nowrap">{tab.label}</span>
           </button>
         ))}
+        </div>
       </div>
       {userStore.activeAdminTab === "companies" && (
         <CompaniesTab activeTab={userStore.activeAdminTab} />

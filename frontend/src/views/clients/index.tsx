@@ -97,7 +97,7 @@ const handleSave = async (data: any) => {
   return (
     <div className="text-left flex flex-col transition-all duration-300">
       {/* Header */}
-      <div className="mb-5 flex flex-col sm:flex-row justify-between items-left gap-4 ">
+      <div className="mb-2 flex flex-col sm:flex-row justify-between items-left gap-4 ">
         <div>
           <h1 className="text-2xl  text-gray-800 font-bold ">
             Customer Management

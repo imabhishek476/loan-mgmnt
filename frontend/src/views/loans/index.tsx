@@ -24,7 +24,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
-import { getAllowedTerms } from "../../utils/constants";
+import { getAllowedTerms, isValidMMDDYYYY, todayMMDDYYYY } from "../../utils/constants";
 
 const Loans = observer(
   ({
@@ -259,6 +259,11 @@ const Loans = observer(
           toast.error("Please select a client");
           return;
         }
+        const issueDate = data.issueDate?.trim() || todayMMDDYYYY();
+        if (!isValidMMDDYYYY(issueDate)) {
+          toast.error("Issue Date must be MM-DD-YYYY");
+          return;
+        }
         if (!data.company) {
           toast.error("Please select a company");
           return;
@@ -371,7 +376,7 @@ const Loans = observer(
         {/* Header & Table */}
         {!fromClientPage && showTable && (
           <>
-            <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="mb-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                   <Wallet size={20} /> Loans ({loanStore.total || 0})

@@ -108,11 +108,11 @@ const renderFee = (fee: any) => {
               title: "Status",
               render: (rowData) =>
                 rowData.activeCompany ? (
-                  <span className="px-2 py-0.5 bg-green-700 text-white text-sm font-semibold rounded-lg">
+                  <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
                     Active
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-sm font-semibold rounded-lg">
+                  <span className="px-2 py-0.5 bg-red-500 text-white text-sm font-semibold rounded-md">
                     Inactive
                   </span>
                 ),
@@ -146,6 +146,7 @@ const renderFee = (fee: any) => {
             paginationType: "stepped",
             tableLayout: "auto",
             headerStyle: {
+              position: "sticky",
               fontWeight: "600",
               backgroundColor: "#f9fafb",
               color: "#374151",
@@ -153,7 +154,12 @@ const renderFee = (fee: any) => {
               height: 36,
               padding: "6px 8px",
               borderBottom: "1px solid #e5e7eb",
+              whiteSpace: "nowrap",
+              right: 0,
+              zIndex: 30,
             },
+            maxBodyHeight: "calc(100vh - 450px)",
+            minBodyHeight: "calc(100vh - 450px)",
             rowStyle: {
               fontSize: "13px",
               height: 38,
