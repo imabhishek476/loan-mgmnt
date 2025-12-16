@@ -35,6 +35,40 @@ const EditPaymentModal = observer(
     const [errors, setErrors] = useState<{ amount?: string }>({});
     const [payOffDate, setPayOffDate] = useState<Moment>(moment());
     const [currentTerm, setCurrentTerm] = useState(loan?.loanTerms || 0);
+    const [warnings, setWarnings] = useState<{ amount?: string }>({});
+
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      let value = e.target.value.replace(/,/g, "");
+      if (!/^\d*\.?\d*$/.test(value)) return;
+
+      const [intPart, decimalPart] = value.split(".");
+      const formattedInt = intPart
+        ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        : "";
+      const formattedValue =
+        decimalPart !== undefined
+          ? `${formattedInt}.${decimalPart}`
+          : formattedInt;
+      setAmount(formattedValue);
+      const num = Number(value);
+      const originalAmount = payment?.paidAmount || 0;
+      setErrors({
+        amount:
+          !value || num <= 0
+            ? "Paid Amount is required and must be greater than 0"
+            : num < originalAmount
+            ? `Amount cannot be less than original payment: $${originalAmount.toFixed(
+                2
+              )}`
+            : "",
+      });
+      setWarnings({
+        amount:
+          num > Number(formattedOutstanding)
+            ? `Paid amount is greater than outstanding ($${formattedOutstanding}).`
+            : "",
+      });
+    };
 
     useEffect(() => {
       if (!loan || !payment) return;
@@ -43,7 +77,9 @@ const EditPaymentModal = observer(
       const adjustedOutstanding = remaining + payment?.paidAmount;
       console.log(adjustedOutstanding);
       setOutstanding(adjustedOutstanding);
-      setAmount(payment.paidAmount.toString());
+      setAmount(
+        payment.paidAmount ? payment.paidAmount.toLocaleString("en-US") : ""
+      );
       setCheckNumber(payment.checkNumber || "");
       setPayoffLetter(payment.payoffLetter || "");
       setPayOffDate(moment(payment.paidDate));
@@ -56,21 +92,19 @@ const EditPaymentModal = observer(
 
     const validate = () => {
       const newErrors: typeof errors = {};
-      const numAmount = Number(amount);
+      const rawAmount = amount.replace(/,/g, "");
+      const numAmount = Number(rawAmount);
       const originalAmount = payment?.paidAmount || 0;
 
-      if (!amount || isNaN(numAmount) || numAmount <= 0) {
+      if (!rawAmount || isNaN(numAmount) || numAmount <= 0) {
         newErrors.amount = "Paid Amount is required and must be greater than 0";
       } else if (numAmount < originalAmount) {
-        newErrors.amount = `Amount cannot be less than original payment: $${originalAmount.toFixed(2)}`;
-      } 
-      // else if (numAmount > Number(formattedOutstanding)) {
-      //   newErrors.amount = `Cannot pay more than outstanding: $${formattedOutstanding}`;
-      // }
+        newErrors.amount = `Amount cannot be less than original payment: $${originalAmount.toFixed(
+          2
+        )}`;
+      }
 
       setErrors(newErrors);
-      Object.values(newErrors).forEach((msg) => toast.error(msg));
-
       return Object.keys(newErrors).length === 0;
     };
 
@@ -106,7 +140,7 @@ const EditPaymentModal = observer(
         await paymentStore.editPayment(payment._id, {
           loanId: loan._id,
           clientId,
-          paidAmount: Number(amount),
+          paidAmount: Number(amount.replace(/,/g, "")),
           paidDate: payOffDate,
           checkNumber,
           payoffLetter,
@@ -151,18 +185,22 @@ const EditPaymentModal = observer(
                 Paid Amount <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 value={amount}
-                min={0}
-                step="0.01"
-                onChange={(e) => setAmount(e.target.value)}
-                onBlur={() => validate()}
+                inputMode="decimal"
+                placeholder="0.00"
+                onChange={handleAmountChange}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring ${
                   errors.amount
                     ? "border-red-500 focus:ring-red-300"
                     : "border-gray-300 focus:ring-green-300"
                 }`}
               />
+              {warnings.amount && !errors.amount && (
+                <p className="text-yellow-600 text-sm mt-1">
+                  {warnings.amount}
+                </p>
+              )}
               {errors.amount && (
                 <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
               )}

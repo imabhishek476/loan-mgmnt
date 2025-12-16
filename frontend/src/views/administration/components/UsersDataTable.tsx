@@ -116,6 +116,7 @@ const UsersDataTable = ({
             // paginationType: "stepped",
             tableLayout: "auto",
             headerStyle: {
+              position: "sticky",
               fontWeight: "600",
               backgroundColor: "#f9fafb",
               color: "#374151",
@@ -123,6 +124,17 @@ const UsersDataTable = ({
               height: 36,
               padding: "6px 8px",
               borderBottom: "1px solid #e5e7eb",
+              whiteSpace: "nowrap",
+              right: 0,
+              zIndex: 30,
+            },
+            maxBodyHeight: "calc(100vh - 450px)", 
+            minBodyHeight: "calc(100vh - 450px)",
+            actionsCellStyle: {
+              position: "sticky",
+              right: 0,
+              zIndex: 10,
+              background: "#fff",
             },
             rowStyle: {
               fontSize: "13px",

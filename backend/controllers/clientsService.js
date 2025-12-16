@@ -162,7 +162,10 @@ exports.searchClients = async (req, res) => {
     if (loanStatus) {
       pipeline.push({
         $match: {
-          "latestLoan.loanStatus": loanStatus,
+          "latestLoan.status": {
+            $regex: `^${loanStatus}$`,
+            $options: "i",
+          },
         },
       });
     }

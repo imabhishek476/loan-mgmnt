@@ -3,7 +3,7 @@ const { Loan } = require("../models/loan");
 const Company = require("../models/companies");
 const { LoanPayment } = require("../models/LoanPayment");
 const moment = require("moment");
-
+const { ObjectId } = require("mongodb");
 const calculateStats = async () => {
   const loansByCompany = await Loan.aggregate([
     {
@@ -111,17 +111,84 @@ const getLoansByCompanyByDate = async (req, res) => {
     res.status(500).json({ message: "Error fetching data" });
   }
 };
-const getDashboardStatsByDate = async (req, res) => {
+const getFilteredStats = async (req, res) => {
   try {
-    const { from, to } = req.query;
-    if (!from || !to) {
-      return res
-        .status(400)
-        .json({ message: "Please provide from and to dates" });
+    const { company, fromDate, toDate } = req.query;
+    const match = {};
+    if (company) match.company = new ObjectId(company);
+    let fromDateObj, toDateObj;
+    if (fromDate && toDate) {
+      const [fromMM, fromDD, fromYYYY] = fromDate.split("-").map(Number);
+      const [toMM, toDD, toYYYY] = toDate.split("-").map(Number);
+      fromDateObj = new Date(fromYYYY, fromMM - 1, fromDD);
+      toDateObj = new Date(toYYYY, toMM - 1, toDD, 23, 59, 59, 999);
     }
+    const loans = await Loan.aggregate([
+      {
+        $addFields: {
+          issueDateObj: {
+            $dateFromString: { dateString: "$issueDate", format: "%m-%d-%Y" },
+          },
+        },
+      },
+      {
+        $match: {
+          ...match,
+          ...(fromDateObj && toDateObj
+            ? { issueDateObj: { $gte: fromDateObj, $lte: toDateObj } }
+            : {}),
+        },
+      },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company",
+          foreignField: "_id",
+          as: "companyData",
+        },
+      },
+      { $unwind: "$companyData" },
+      {
+        $lookup: {
+          from: "loanpayments",
+          localField: "_id",
+          foreignField: "loanId",
+          as: "payments",
+        },
+      },
+      {
+        $group: {
+          _id: "$company",
+          companyName: { $first: "$companyData.companyName" },
+          companyColor: { $first: "$companyData.backgroundColor" }, // 🎯 MAIN POINT
 
-    const stats = await calculateStats();
-    res.json(stats);
+          totalLoanAmount: { $sum: { $ifNull: ["$subTotal", 0] } },
+          totalPaidOffAmount: { $sum: { $sum: "$payments.paidAmount" } },
+
+          totalInterestAmount: { $sum: { $ifNull: ["$interestAmount", 0] } },
+          totalPrincipleAmount: { $sum: { $ifNull: ["$baseAmount", 0] } },
+          loanCount: { $sum: 1 },
+        },
+      },
+    ]);
+    const stats = loans.reduce(
+      (acc, cur) => {
+        acc.totalLoanAmount += cur.totalLoanAmount;
+        acc.totalPaymentsAmount += cur.totalPaidOffAmount;
+        acc.totalInterestAmount += cur.totalInterestAmount;
+        acc.totalPrincipleAmount += cur.totalPrincipleAmount;
+        acc.totalLoans += cur.loanCount;
+        return acc;
+      },
+      {
+        totalLoanAmount: 0,
+        totalPaymentsAmount: 0,
+        totalInterestAmount: 0,
+        totalPrincipleAmount: 0,
+        totalLoans: 0,
+      }
+    );
+    return res.json({ loansByCompany: loans, stats });
   } catch (err) {
     console.error(err);
     res
@@ -254,7 +321,7 @@ const getPayoffStats = async (req, res) => {
 
 module.exports = {
   getLoansByCompanyByDate,
-  getDashboardStatsByDate,
+  getFilteredStats,
   getDashboardStats,
   getPayoffStats,
 };

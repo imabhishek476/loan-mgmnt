@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { fetchDashboardStats, fetchDashboardStatsByDate, fetchPayoffStats } from "../services/DashboardService";
+import { fetchDashboardStats, fetchDashboardStatsByDate, fetchFilteredDashboardStats, fetchPayoffStats } from "../services/DashboardService";
 
 class DashboardStore {
     stats = {
@@ -44,6 +44,19 @@ class DashboardStore {
         this.loading = true;
         try {
             const data = await fetchDashboardStatsByDate(from, to);
+            runInAction(() => {
+                this.stats = data;
+                this.loading = false;
+            });
+        } catch (err) {
+            console.error(err);
+            this.loading = false;
+        }
+    }
+    async loadFilteredStats(filters: any) {
+        this.loading = true;
+        try {
+            const data = await fetchFilteredDashboardStats(filters);
             runInAction(() => {
                 this.stats = data;
                 this.loading = false;

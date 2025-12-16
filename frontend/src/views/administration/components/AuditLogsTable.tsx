@@ -31,28 +31,28 @@ const AuditLogsTable: React.FC = () => {
     let type = "-";
 
     if (lower.includes("create")) {
-    bgColor = "bg-green-700 text-white";
+    bgColor = "bg-green-600 text-white";
       type = "Create";
     } else if (lower.includes("update")) {
     bgColor = "bg-blue-500 text-white";
      type = "Update";
   } else if (lower.includes("deactivate") || lower.includes("inactive")) {
-    bgColor = "bg-orange-400 text-white";
+    bgColor = "bg-red-500 text-white";
     type = "Deactivate";
     } else if (lower.includes("activate") || lower.includes("active")) {
-      bgColor = "bg-green-700 text-white";
+      bgColor = "bg-green-600 text-white";
       type = "Activate";
     } else if (lower.includes("delete")) {
-    bgColor = "bg-red-500 text-white";
+    bgColor = "bg-red-600 text-white";
       type = "Delete";
   } else if (lower.includes("recover")) {
- bgColor = "bg-green-700 text-white";
+ bgColor = "bg-green-600 text-white";
     type = "Recover";
     }
 
     return (
       <span
-        className={`px-2 py-1 rounded-lg font-semibold text-xs ${bgColor}`}
+        className={`px-2 py-1 rounded-md font-semibold text-xs ${bgColor}`}
       >
         {type}
       </span>
@@ -192,8 +192,8 @@ const AuditLogsTable: React.FC = () => {
           data={(query) =>
             new Promise(async (resolve, reject) => {
               try {
-                   setCurrentPage(query.page);
-                   setCurrentPageSize(query.pageSize);
+                setCurrentPage(query.page);
+                setCurrentPageSize(query.pageSize);
                 if (firstLoad.current) {
                   firstLoad.current = false;
                 }
@@ -222,18 +222,30 @@ const AuditLogsTable: React.FC = () => {
           options={{
             paging: true,
             pageSize: 10,
-            pageSizeOptions: [5, 10, 20],
+            pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500, 1000],
             sorting: true,
             search: false,
             actionsColumnIndex: -1,
             headerStyle: {
-              fontWeight: 600,
+              position: "sticky",
+              fontWeight: "600",
               backgroundColor: "#f9fafb",
               color: "#374151",
               fontSize: "13px",
               height: 36,
               padding: "6px 8px",
               borderBottom: "1px solid #e5e7eb",
+              whiteSpace: "nowrap",
+              right: 0,
+              zIndex: 30,
+            },
+            maxBodyHeight: "calc(100vh - 400px)",
+            minBodyHeight: "calc(100vh - 400px)",
+            actionsCellStyle: {
+              position: "sticky",
+              right: 0,
+              zIndex: 10,
+              background: "#fff",
             },
             rowStyle: {
               fontSize: "13px",
@@ -261,11 +273,11 @@ const AuditLogsTable: React.FC = () => {
       {selectedLog && (
         <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/70 overflow-auto z-[9999]">
           <div className="bg-white rounded-lg w-full max-w-4xl shadow-lg relative mx-2 sm:mx-6 max-h-[90vh] flex flex-col transition-transform duration-300">
-                        <div className="flex justify-between items-center border-b px-6 py-3">
+            <div className="flex justify-between items-center border-b px-6 py-3">
               <h2 className="text-xl font-bold text-gray-800">Log Details</h2>
               <button
                 onClick={() => setSelectedLog(null)}
-                title = "Close"
+                title="Close"
                 className="text-gray-600 hover:text-red-500 transition"
               >
                 <X className="w-5 h-5" />
@@ -295,7 +307,6 @@ const AuditLogsTable: React.FC = () => {
                 </p>
               </div>
 
-
               <div className="bg-gray-100 p-4 text-left rounded-md overflow-x-auto max-h-[50vh]">
                 <strong>Data:</strong>
                 <pre className="text-xs mt-2 whitespace-pre-wrap break-words">
@@ -305,10 +316,9 @@ const AuditLogsTable: React.FC = () => {
             </div>
 
             <div className="flex justify-end border-t px-6 py-3">
-           
               <button
                 type="button"
-                title = "Close"
+                title="Close"
                 onClick={() => setSelectedLog(null)}
                 className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >

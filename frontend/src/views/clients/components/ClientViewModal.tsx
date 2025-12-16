@@ -246,7 +246,7 @@ const handleStatusChange = async (loanId, newStatus) => {
         {" "}
         {/* Header */}
         <div className="flex justify-between items-center py-4  px-4 border-b sticky top-0 bg-white z-20 rounded-md">
-          <h2 className="font-bold text-gray-800">{client.fullName}</h2>
+          <h1 className="font-bold text-lg text-gray-800">{client.fullName}</h1>
           <button
             onClick={onClose}
             title="Close"
@@ -269,7 +269,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                   sidebarCollapsed ? "lg:hidden" : ""
                 }`}/> */}
               <h3
-                className={`text-lg font-bold text-gray-800  ${
+                className={` font-bold text-gray-800  ${
                   sidebarCollapsed ? "lg:hidden" : ""
                 }`}
               >
@@ -350,7 +350,7 @@ const handleStatusChange = async (loanId, newStatus) => {
             <div className="sticky top-0 bg-white z-10 px-3 py-2 border-b flex justify-between items-center">
               <div className="flex items-center gap-2">
                 {/* <DollarSign size={20} className="text-green-600" /> */}
-                <h3 className="text-lg font-bold text-gray-800">
+                <h3 className=" font-bold text-gray-800">
                   Loan History
                 </h3>
               </div>
