@@ -200,7 +200,7 @@ const EditLoanModal = observer(
     const handleSave = async () => {
       try {
         if (saving) return;
-        setSaving(true);
+        
         if (!formData.client) return toast.error("Please select a client");
         if (!formData.company) return toast.error("Please select a company");
         if (!formData.baseAmount || formData.baseAmount <= 0)
@@ -251,6 +251,7 @@ const EditLoanModal = observer(
         if (overlapMode && selectedLoanIds.length > 0) {
          payload.mergeLoanIds = selectedLoanIds;
          }
+        setSaving(true);
        await loanStore.updateLoan(loanId, payload);
         await loanStore.fetchActiveLoans(formData.client);
         await clientStore.refreshDataTable();
@@ -464,7 +465,9 @@ const EditLoanModal = observer(
           <div className="bg-white shadow-lg w-full max-w-6xl flex flex-col rounded-lg">
             {/* Header */}
             <div className="flex justify-between items-center p-3 border-b bg-white sticky top-0 z-10 rounded-md">
-              <h2 className="text-xl font-bold text-gray-800">Edit Loan </h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                {isViewMode ? "View Loan" : "Edit Loan"}{" "}
+              </h2>
               <button
                 className="text-gray-500 hover:text-gray-800"
                 onClick={onClose}
@@ -605,6 +608,7 @@ const EditLoanModal = observer(
                 {/* Overlap Mode */}
                 {overlapMode && activeLoans.length > 0 && (
                   <PreviousLoan
+                    isViewMode={isViewMode}
                     activeLoans={activeLoans}
                     formData={formData}
                     selectedLoanIds={selectedLoanIds}
@@ -615,7 +619,7 @@ const EditLoanModal = observer(
               </div>
 
               {/* Right: Calculation Panel */}
-              <div className="flex lg:max-w-3xl edit_calc">
+            <div className={`flex lg:max-w-3xl ${isViewMode ? "edit_calc" : ""}`}>
                 <div
                   className="rounded-xl shadow-sm px-0 min-w-0"
                   style={{

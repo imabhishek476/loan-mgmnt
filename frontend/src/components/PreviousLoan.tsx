@@ -11,8 +11,10 @@ export const PreviousLoan = ({
   selectedLoanIds,
   setSelectedLoanIds,
   handleView,
+  isViewMode,
 }) => {
   const [loanResults, setLoanResults] = useState<any>([]);
+  const isGloballyDisabled = isViewMode;
 
   useEffect(() => {
     const calculate = async () => {
@@ -67,7 +69,7 @@ export const PreviousLoan = ({
                   : "bg-white hover:bg-gray-50"
               } ${isDisabled ? "opacity-70 cursor-not-allowed" : ""}`}
               onClick={() => {
-                if (isDisabled) return;
+                if (isDisabled || isGloballyDisabled) return;
 
                 setSelectedLoanIds((prev) =>
                   prev.includes(loanIdStr)
@@ -109,6 +111,7 @@ export const PreviousLoan = ({
               <div className="flex items-center gap-1">
                 <IconButton
                   size="small"
+                  disabled={isDisabled || isGloballyDisabled}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleView(loan);
@@ -132,7 +135,7 @@ export const PreviousLoan = ({
                   className={`w-4 h-4 m-0 accent-green-600 ${
                     isDisabled ? "cursor-not-allowed" : "cursor-pointer"
                   }`}
-                  disabled={isDisabled}
+                  disabled={isDisabled || isGloballyDisabled}
                 />
               </div>
             </div>
