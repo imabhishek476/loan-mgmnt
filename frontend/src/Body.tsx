@@ -9,6 +9,7 @@ import ProtectedRoute from "./views/ProtectedRoute";
 import  Administration from "./views/administration/index";
 import  Loans from "./views/loans/index";
 import NotFound from "./views/components/404"; 
+import { ErrorMessage } from "./components/ErrorMessage";
 
 const appRouter = createBrowserRouter([
   {
@@ -22,6 +23,7 @@ const appRouter = createBrowserRouter([
         <Layout />
       </ProtectedRoute>
     ),
+    errorElement: <ErrorMessage />,
     children: [
     { path: "", element: <Navigate to="dashboard" replace /> },
       {

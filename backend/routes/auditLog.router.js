@@ -1,13 +1,10 @@
 const express = require("express");
-const router = express.Router();
-const { getLogs} = require("../controllers/auditService");
-const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 const auditRouter = express.Router();
+const { getLogs, logFrontendError } = require("../controllers/auditService");
+const { isAuthenticated } = require("../middleware/auth.middleware");
 
-auditRouter.route("/audit-logs").get(isAuthenticated, isAdmin, getLogs);
-auditRouter.get("/api/logs/test", (req, res) =>
-  res.send("Audit log route works!")
-);
+auditRouter.get("/audit-logs", isAuthenticated, getLogs);
+auditRouter.post("/frontend-error", isAuthenticated, logFrontendError);
 
 module.exports = auditRouter;
 

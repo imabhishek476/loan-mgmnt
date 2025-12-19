@@ -46,3 +46,15 @@ select option {
  color:#000;
  background-color:#fff;
 }
+.custm_color:disabled {
+  background-color: #f3f4f6 !important;
+  color: #38393a !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+.edit_calc input[type="text"],[type="number"]:disabled {
+  background-color: #f3f4f6 !important; 
+  color: #38393a !important;           
+  opacity: 1;                         
+  cursor: not-allowed;
+}

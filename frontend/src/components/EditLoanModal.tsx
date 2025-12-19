@@ -47,7 +47,8 @@ const buildTenures = (
 };
 
 const EditLoanModal = observer(
-  ({ loanId, onClose }: { loanId: string; onClose: () => void }) => {
+  ({ loanId, onClose, mode = "edit" }: { loanId: string; onClose: () => void; mode?: string }) => {
+    const isViewMode = mode === "view";
     const [formData, setFormData] = useState<any>(null);
     const [companyData, setCompanyData] = useState<any>(null);
     const [activeLoans, setActiveLoans] = useState<any[]>([]);
@@ -199,7 +200,7 @@ const EditLoanModal = observer(
     const handleSave = async () => {
       try {
         if (saving) return;
-        setSaving(true);
+        
         if (!formData.client) return toast.error("Please select a client");
         if (!formData.company) return toast.error("Please select a company");
         if (!formData.baseAmount || formData.baseAmount <= 0)
@@ -208,6 +209,18 @@ const EditLoanModal = observer(
           return toast.error("Please enter valid loan terms");
         const loan = await fetchLoanById(loanId);
         if (!loan) return toast.error("Loan not found");
+        if (!formData.issueDate) {
+          toast.error("Issue date is required");
+          setSaving(false);
+          return;
+        }
+        const issueMoment = moment(formData.issueDate, "MM-DD-YYYY", true);
+
+        if (!issueMoment.isValid()) {
+          toast.error("Please select a valid issue date");
+          setSaving(false);
+          return;
+        }
         const { totalWithInterest, subtotal } =
           await loanStore.calculateLoanAmounts({
             loan: formData,
@@ -226,6 +239,7 @@ const EditLoanModal = observer(
           ALLOWED_TERMS,
           "mm-dd-yyyy"
         );
+    
         const payload = {
           ...formData,
          tenures,
@@ -237,6 +251,7 @@ const EditLoanModal = observer(
         if (overlapMode && selectedLoanIds.length > 0) {
          payload.mergeLoanIds = selectedLoanIds;
          }
+        setSaving(true);
        await loanStore.updateLoan(loanId, payload);
         await loanStore.fetchActiveLoans(formData.client);
         await clientStore.refreshDataTable();
@@ -450,7 +465,9 @@ const EditLoanModal = observer(
           <div className="bg-white shadow-lg w-full max-w-6xl flex flex-col rounded-lg">
             {/* Header */}
             <div className="flex justify-between items-center p-3 border-b bg-white sticky top-0 z-10 rounded-md">
-              <h2 className="text-xl font-bold text-gray-800">Edit Loan </h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                {isViewMode ? "View Loan" : "Edit Loan"}{" "}
+              </h2>
               <button
                 className="text-gray-500 hover:text-gray-800"
                 onClick={onClose}
@@ -506,6 +523,7 @@ const EditLoanModal = observer(
                     Company
                   </label>
                   <Autocomplete
+                    disabled={isViewMode}
                     options={
                       companyStore.companies
                         ?.filter((c) => c.activeCompany)
@@ -543,6 +561,7 @@ const EditLoanModal = observer(
                   </label>
                   <LocalizationProvider dateAdapter={AdapterMoment}>
                     <DatePicker
+                      disabled={isViewMode}
                       value={moment(formData.issueDate, "MM-DD-YYYY")}
                       onChange={handleIssueDateChange}
                       slotProps={{ textField: { size: "small" } }}
@@ -557,6 +576,7 @@ const EditLoanModal = observer(
                   </label>
                   <input
                     type="text"
+                    disabled={isViewMode}
                     value={formData.checkNumber || ""}
                     onChange={(e) =>
                       setFormData((prev: any) => ({
@@ -576,7 +596,7 @@ const EditLoanModal = observer(
                     color="success"
                     size="small"
                     checked={overlapMode}
-                    disabled={disabledoverlapMode}
+                    disabled={disabledoverlapMode || isViewMode}
                     onChange={(e) => {
                       setOverlapMode(e.target.checked);
                       if (!e.target.checked) {
@@ -588,6 +608,7 @@ const EditLoanModal = observer(
                 {/* Overlap Mode */}
                 {overlapMode && activeLoans.length > 0 && (
                   <PreviousLoan
+                    isViewMode={isViewMode}
                     activeLoans={activeLoans}
                     formData={formData}
                     selectedLoanIds={selectedLoanIds}
@@ -598,7 +619,7 @@ const EditLoanModal = observer(
               </div>
 
               {/* Right: Calculation Panel */}
-              <div className="flex lg:max-w-3xl">
+            <div className={`flex lg:max-w-3xl ${isViewMode ? "edit_calc" : ""}`}>
                 <div
                   className="rounded-xl shadow-sm px-0 min-w-0"
                   style={{
@@ -634,6 +655,7 @@ const EditLoanModal = observer(
                               rawValue === "" ? "" : parseFloat(rawValue),
                           }));
                         }}
+                        disabled={isViewMode}
                         className="w-full px-2 h-8 py-2 border rounded-lg bg-white text-gray-800"
                       />
                     </div>
@@ -649,8 +671,15 @@ const EditLoanModal = observer(
                             interestType: e.target.value as "flat" | "compound",
                           }))
                         }
-                        className="w-full h-8 px-2 border rounded-lg bg-white text-gray-800"
-                      >
+                        disabled={isViewMode}
+                        className={`w-full h-8 px-2 border rounded-lg text-gray-800
+                            appearance-none custm_color
+                            ${
+                              isViewMode
+                                ? "bg-gray-100 text-black cursor-not-allowed"
+                                : "bg-white cursor-pointer"
+                            }
+                          `}                      >
                         <option value="flat">Flat Interest</option>
                         <option value="compound">Compound Interest</option>
                       </select>
@@ -664,6 +693,7 @@ const EditLoanModal = observer(
                         min="0"
                         step="0.01"
                         value={formData.monthlyRate}
+                        disabled={isViewMode}
                         onChange={(e) =>
                           setFormData((prev: any) => ({
                             ...prev,
@@ -701,6 +731,7 @@ const EditLoanModal = observer(
                             <input
                               type="text"
                               inputMode="decimal"
+                              disabled={isViewMode}
                               value={fee.value}
                               onChange={(e) => {
                                 const val = parseNumber(e.target.value);
@@ -722,6 +753,7 @@ const EditLoanModal = observer(
                               <input
                                 type="checkbox"
                                 checked={isPercentage}
+                                disabled={isViewMode}
                                 onChange={() => {
                                   setFormData((prev: any) => ({
                                     ...prev,
@@ -803,6 +835,7 @@ const EditLoanModal = observer(
                       type="range"
                       min={0}
                       max={ALLOWED_TERMS.length - 1}
+                      disabled={isViewMode}
                       value={ALLOWED_TERMS.indexOf(formData.loanTerms)}
                       onChange={(e) => {
                         const idx = parseInt(e.target.value, 10);
@@ -816,6 +849,7 @@ const EditLoanModal = observer(
                     />
                     <LoanTermsCard
                       formData={formData}
+                      disabled={isViewMode}
                       setFormData={setFormData}
                       overlapMode={overlapMode}
                       selectedPreviousLoanTotal={selectedPreviousLoanTotal}
@@ -834,6 +868,7 @@ const EditLoanModal = observer(
               >
                 Cancel
               </button>
+              {!isViewMode && (
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -849,6 +884,7 @@ const EditLoanModal = observer(
                   </>
                 )}
               </button>
+              )}
             </div>
           </div>
         </div>

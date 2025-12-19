@@ -1,4 +1,5 @@
 const AuditLog = require("../models/AuditLog");
+const createAuditLog = require("../utils/auditLog");
 
 exports.getLogs = async (req, res) => {
   try {
@@ -52,6 +53,27 @@ exports.getLogs = async (req, res) => {
   } catch (error) {
     console.error("Error in getLogs:", error);
     res.status(500).json({ success: false, error: error.message });
+  }
+};
+exports.logFrontendError = async (req, res) => {
+  console.log(req.user?._id);
+  try {
+    await createAuditLog(
+      req.user?._id || null,
+      req.user?.userRole || "Guest",
+      req.body.message || "Frontend error",
+      "FrontendError",
+      null,
+      {
+        stack: req.body.stack,
+        url: req.body.url,
+      }
+    );
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Frontend error log failed:", error);
+    res.status(500).json({ success: false });
   }
 };
 

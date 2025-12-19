@@ -357,8 +357,8 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               right: 0,
               zIndex: 30,
             },
-            maxBodyHeight: "calc(100vh - 400px)", // adjust
-            minBodyHeight: "calc(100vh - 400px)", // optional but helpful
+            maxBodyHeight: "calc(100vh - 375px)", // adjust
+            minBodyHeight: "calc(100vh - 375px)", // optional but helpful
             actionsCellStyle: {
               position: "sticky",
               right: 0,

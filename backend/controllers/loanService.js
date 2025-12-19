@@ -16,9 +16,23 @@ exports.LoansCreate = async (req, res) => {
         message: "Base amount must be greater than 0",
       });
     }
+      if (!body.issueDate) {
+        return res.status(400).json({
+          success: false,
+          message: "Issue date is required",
+        });
+      }
+    let issueDate = body.issueDate;
+
+    if (issueDate instanceof Date) {
+      const mm = String(issueDate.getMonth() + 1).padStart(2, "0");
+      const dd = String(issueDate.getDate()).padStart(2, "0");
+      const yyyy = issueDate.getFullYear();
+      issueDate = `${mm}-${dd}-${yyyy}`;
+    }
 
     const newLoan = await Loan.create({
-      issueDate: body.issueDate,
+      issueDate: issueDate,
       client: body.client,
       company: body.company,
       loanTerms: Number(body.loanTerms ?? 12),
