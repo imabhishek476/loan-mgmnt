@@ -471,7 +471,7 @@ const EditLoanModal = observer(
                     Client
                   </label>
                   <Autocomplete
-                    disabled={isViewMode}
+                    disabled
                     options={
                       clientStore.clients?.map((c) => ({
                         label: c.fullName,
