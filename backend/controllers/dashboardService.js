@@ -29,9 +29,19 @@ const calculateStats = async () => {
   ]);
   const totalPaymentsAmount = totalPaymentsAgg[0]?.total || 0;
 
-    const totalLoanAmountAgg = await Loan.aggregate([
-  { $group: { _id: null, total: { $sum: "$subTotal" } } },
-    ]);
+ const totalLoanAmountAgg = await Loan.aggregate([
+      {
+        $match: {
+          status: { $ne: "Merged" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$subTotal" },
+        },
+      },
+  ]);
     const totalLoanAmount = totalLoanAmountAgg[0]?.total || 0;
 
   const totalPaidOrMergedLoans = await Loan.countDocuments({
