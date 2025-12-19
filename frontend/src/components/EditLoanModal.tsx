@@ -602,7 +602,7 @@ const EditLoanModal = observer(
               </div>
 
               {/* Right: Calculation Panel */}
-              <div className="flex lg:max-w-3xl">
+              <div className="flex lg:max-w-3xl edit_calc">
                 <div
                   className="rounded-xl shadow-sm px-0 min-w-0"
                   style={{
