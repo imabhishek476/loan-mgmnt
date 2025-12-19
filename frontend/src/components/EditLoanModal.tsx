@@ -209,6 +209,18 @@ const EditLoanModal = observer(
           return toast.error("Please enter valid loan terms");
         const loan = await fetchLoanById(loanId);
         if (!loan) return toast.error("Loan not found");
+        if (!formData.issueDate) {
+          toast.error("Issue date is required");
+          setSaving(false);
+          return;
+        }
+        const issueMoment = moment(formData.issueDate, "MM-DD-YYYY", true);
+
+        if (!issueMoment.isValid()) {
+          toast.error("Please select a valid issue date");
+          setSaving(false);
+          return;
+        }
         const { totalWithInterest, subtotal } =
           await loanStore.calculateLoanAmounts({
             loan: formData,
@@ -227,6 +239,7 @@ const EditLoanModal = observer(
           ALLOWED_TERMS,
           "mm-dd-yyyy"
         );
+    
         const payload = {
           ...formData,
          tenures,
