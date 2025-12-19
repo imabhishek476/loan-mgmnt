@@ -29,14 +29,25 @@ const calculateStats = async () => {
   ]);
   const totalPaymentsAmount = totalPaymentsAgg[0]?.total || 0;
 
-    const totalLoanAmountAgg = await Loan.aggregate([
-  { $group: { _id: null, total: { $sum: "$subTotal" } } },
-    ]);
+ const totalLoanAmountAgg = await Loan.aggregate([
+      {
+        $match: {
+          status: { $ne: "Merged" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$subTotal" },
+        },
+      },
+  ]);
     const totalLoanAmount = totalLoanAmountAgg[0]?.total || 0;
 
   const totalPaidOrMergedLoans = await Loan.countDocuments({
- status: { $in: ["Paid Off", "Merged"] },
-});
+    status: { $in: ["Paid Off", "Merged"] },
+    });
+  const totalProfit = totalPaymentsAmount - totalLoanAmount;
   return {
     totalClients: await Client.countDocuments(),
     totalCompanies: await Company.countDocuments(),
@@ -46,6 +57,7 @@ const calculateStats = async () => {
     totalPaidOffLoans: totalPaidOrMergedLoans,
     loansByCompany,
     loanByClient: [],
+    totalProfit,
   };
 };
 
@@ -151,8 +163,22 @@ const getFilteredStats = async (req, res) => {
       {
         $lookup: {
           from: "loanpayments",
-          localField: "_id",
-          foreignField: "loanId",
+          let: { loanId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$loanId", "$$loanId"] },
+                ...(fromDateObj && toDateObj
+                  ? {
+                      paidDate: {
+                        $gte: fromDateObj,
+                        $lte: toDateObj,
+                      },
+                    }
+                  : {}),
+              },
+            },
+          ],
           as: "payments",
         },
       },
@@ -160,14 +186,23 @@ const getFilteredStats = async (req, res) => {
         $group: {
           _id: "$company",
           companyName: { $first: "$companyData.companyName" },
-          companyColor: { $first: "$companyData.backgroundColor" }, // 🎯 MAIN POINT
+          companyColor: { $first: "$companyData.backgroundColor" },
 
           totalLoanAmount: { $sum: { $ifNull: ["$subTotal", 0] } },
-          totalPaidOffAmount: { $sum: { $sum: "$payments.paidAmount" } },
+          totalPaidOffAmount: {
+            $sum: { $sum: "$payments.paidAmount" },
+          },
 
           totalInterestAmount: { $sum: { $ifNull: ["$interestAmount", 0] } },
           totalPrincipleAmount: { $sum: { $ifNull: ["$baseAmount", 0] } },
           loanCount: { $sum: 1 },
+        },
+      },
+      {
+        $addFields: {
+          totalProfit: {
+            $subtract: ["$totalPaidOffAmount", "$totalLoanAmount"],
+          },
         },
       },
     ]);
@@ -188,12 +223,13 @@ const getFilteredStats = async (req, res) => {
         totalLoans: 0,
       }
     );
+    stats.totalProfit = stats.totalPaymentsAmount - stats.totalLoanAmount;
     return res.json({ loansByCompany: loans, stats });
   } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ message: "Error fetching filtered dashboard stats" });
+    console.error("Filtered stats error:", err);
+    res.status(500).json({
+      message: "Error fetching filtered dashboard stats",
+    });
   }
 };
 

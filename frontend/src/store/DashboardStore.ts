@@ -1,19 +1,31 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { fetchDashboardStats, fetchDashboardStatsByDate, fetchFilteredDashboardStats, fetchPayoffStats } from "../services/DashboardService";
+import {
+    fetchDashboardStats,
+    fetchFilteredDashboardStats,
+    fetchPayoffStats,
+} from "../services/DashboardService";
 
 class DashboardStore {
-    stats = {
+    globalStats = {
         totalClients: 0,
         totalLoans: 0,
         totalCompanies: 0,
         totalLoanAmount: 0,
         totalPaymentsAmount: 0,
-        totalPayments: 0,
-        loansByCompany: [],
-        loanByClient: [],
         totalPaidOffLoans: 0,
+        totalProfit: 0,
     };
-  payoffStats = {
+
+    filteredStats = {
+        loansByCompany: [],
+        stats: {
+            totalLoanAmount: 0,
+            totalPaymentsAmount: 0,
+            totalProfit: 0,
+            totalLoans: 0,
+        },
+    };
+    payoffStats = {
         data: [],
         total: 0,
         page: 1,
@@ -31,21 +43,7 @@ class DashboardStore {
         try {
             const data = await fetchDashboardStats();
             runInAction(() => {
-                this.stats = data;
-                this.loading = false;
-            });
-        } catch (err) {
-            console.error(err);
-            this.loading = false;
-        }
-    }
-
-    async loadStatsByDate(from, to) {
-        this.loading = true;
-        try {
-            const data = await fetchDashboardStatsByDate(from, to);
-            runInAction(() => {
-                this.stats = data;
+                this.globalStats = data;
                 this.loading = false;
             });
         } catch (err) {
@@ -58,7 +56,7 @@ class DashboardStore {
         try {
             const data = await fetchFilteredDashboardStats(filters);
             runInAction(() => {
-                this.stats = data;
+                this.filteredStats = data;
                 this.loading = false;
             });
         } catch (err) {
@@ -76,7 +74,7 @@ class DashboardStore {
                     total: data.total || 0,
                     page: data.page || page,
                     limit: data.limit || limit,
-                    type: type,
+                    type,
                 };
                 this.loading = false;
             });

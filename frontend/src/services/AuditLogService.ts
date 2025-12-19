@@ -12,6 +12,11 @@ export interface AuditLog {
     data?: any;
     createdAt: string;
 }
+export interface FrontendErrorPayload {
+    message: string;
+    stack?: string;
+    url?: string;
+}
 
 
     export const fetchAuditLogs = async (page = 0, limit = 10, query = ""): Promise<{
@@ -29,3 +34,12 @@ export interface AuditLog {
         throw error;
     }
 };
+    export const logFrontendError = async (
+        payload: FrontendErrorPayload
+    ): Promise<void> => {
+        try {
+            await api.post("/logs/frontend-error", payload);
+        } catch (error) {
+            console.error("Failed to log frontend error:", error);
+        }
+    };

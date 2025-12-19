@@ -195,7 +195,7 @@ const LoanCalculation: React.FC<LoanCalculationProps> = ({
       subtotal: result.subtotal,
       totalLoan: result.totalWithInterest,
       previousLoanTotal: includePreviousLoans ? previousLoanTotal : 0,
-      startDate: start.toISOString(),
+      startDate: start?.toISOString(),
       endDate: mainEndDate,
       tenures,
     });
@@ -276,7 +276,7 @@ const formatDate = (date: Date) =>
     year: "numeric",  // 👈 gives "2026"
   });
 
-  const start = issueDate ? new Date(issueDate) : new Date();
+  const start = issueDate && moment(issueDate).isValid() ? new Date(issueDate) : new Date();
   const end = endDate ? new Date(endDate) : new Date(start);
   if (!endDate) end.setMonth(end.getMonth() + loanTerm);
   const usd = new Intl.NumberFormat("en-US", {

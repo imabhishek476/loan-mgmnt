@@ -52,11 +52,11 @@ const Dashboard = observer(() => {
     []
   );
   const [viewMode, setViewMode] = useState<"graph" | "upcoming">("upcoming");
-  const stats = dashboardStore.stats;
+const { globalStats } = dashboardStore;
 
   const [filters, setFilters] = useState({
     company: "",
-    fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    fromDate: new Date(new Date().getFullYear(), 0, 1),
     toDate: new Date(),
   });
 
@@ -67,21 +67,25 @@ const Dashboard = observer(() => {
     return `${mm}-${dd}-${yyyy}`;
   };
 
-  const recoveredPercentage =
-    stats.totalLoanAmount > 0
-      ? ((stats.totalPaymentsAmount / stats.totalLoanAmount) * 100).toFixed(1)
-      : "0";
+ const recoveredPercentage =
+   globalStats.totalLoanAmount > 0
+     ? (
+         (globalStats.totalPaymentsAmount / globalStats.totalLoanAmount) *
+         100
+       ).toFixed(1)
+     : "0";
 
   const normalizeCompanyData = (data: any[]) => {
     return data.map((item) => {
       const company = companyStore.companies.find(
         (c) => String(c._id) === String(item._id)
       );
-
+  const profit = Number(item.totalProfit || 0);
       return {
         name: company?.companyName || item.companyName || "Unknown",
         totalLoan: item.totalPrincipleAmount || 0,
         recovered: item.totalPaidOffAmount || 0,
+        profit,
         companyColor:
           company?.backgroundColor || item.backgroundColor || "#8884d8",
       };
@@ -100,19 +104,14 @@ const Dashboard = observer(() => {
       });
 
       setFilteredLoansByCompany(
-        normalizeCompanyData(dashboardStore.stats.loansByCompany || [])
+        normalizeCompanyData(dashboardStore.filteredStats.loansByCompany || [])
       );
-      await dashboardStore.loadStats();
     } catch (err) {
       console.error(err);
     } 
   };
   const handleReset = async () => {
-    const defaultFrom = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    );
+    const defaultFrom = new Date(new Date().getFullYear(), 0, 1);
     const defaultTo = new Date();
 
     setFilters({
@@ -120,15 +119,15 @@ const Dashboard = observer(() => {
       fromDate: defaultFrom,
       toDate: defaultTo,
     });
-   
     try {
       await Promise.all([companyStore.fetchCompany()]);
-
-      await dashboardStore.loadFilteredStats({});
+      await dashboardStore.loadFilteredStats({
+        fromDate: formatToMMDDYYYY(defaultFrom),
+        toDate: formatToMMDDYYYY(defaultTo),
+      });
       setFilteredLoansByCompany(
-        normalizeCompanyData(dashboardStore.stats?.loansByCompany || [])
+        normalizeCompanyData(dashboardStore.filteredStats?.loansByCompany || [])
       );
-      await dashboardStore.loadStats();
     } catch (error) {
       console.error("Failed to reset", error);
     }
@@ -141,9 +140,12 @@ const Dashboard = observer(() => {
         clientStore.fetchClients(),
       ]);
 
-      await dashboardStore.loadFilteredStats(null);
+      await dashboardStore.loadFilteredStats({
+        fromDate: formatToMMDDYYYY(new Date(new Date().getFullYear(), 0, 1)),
+        toDate: formatToMMDDYYYY(new Date()),
+      });
       setFilteredLoansByCompany(
-        normalizeCompanyData(dashboardStore.stats?.loansByCompany || [])
+        normalizeCompanyData(dashboardStore.filteredStats?.loansByCompany || [])
       );
       await dashboardStore.loadStats();
     } catch (error) {
@@ -163,37 +165,44 @@ const Dashboard = observer(() => {
       <div className="flex gap-2 flex-wrap">
         <StatCard
           title="Total Customers"
-          value={stats.totalClients}
+          value={globalStats.totalClients}
           icon={Users}
           color="bg-green-700"
         />
         <StatCard
           title="Total Companies"
-          value={stats.totalCompanies}
+          value={globalStats.totalCompanies}
           icon={Building2}
           color="bg-green-700"
         />
         <StatCard
           title="Total Loans"
-          value={stats.totalLoans}
-          subValue={`(${stats.totalPaidOffLoans} Paid Off)`}
+          value={globalStats.totalLoans}
+          subValue={`(${globalStats.totalPaidOffLoans} Paid Off)`}
           icon={CreditCard}
           color="bg-green-700"
         />
         <StatCard
           title="Total Loan Value"
-          value={stats.totalLoanAmount}
+          value={globalStats.totalLoanAmount}
           icon={DollarSign}
           color="bg-green-700"
           isCurrency
         />
         <StatCard
           title="Total Recovered Amount"
-          value={stats.totalPaymentsAmount}
+          value={globalStats.totalPaymentsAmount}
           subValue={`(${recoveredPercentage}%)`}
           icon={DollarSign}
           color="bg-green-500"
           isCurrency
+        />
+        <StatCard
+          title="Total Profit"
+          value={globalStats.totalProfit}
+          icon={DollarSign}
+          isCurrency
+          color="bg-green-700"
         />
       </div>
 
