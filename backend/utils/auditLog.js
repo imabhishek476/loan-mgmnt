@@ -27,7 +27,6 @@ const createAuditLog = async (
       userRole,
       action,
       entity,
-      entityId,
       data,
       message,
       expireAt: moment().add(30, "days").toDate(),

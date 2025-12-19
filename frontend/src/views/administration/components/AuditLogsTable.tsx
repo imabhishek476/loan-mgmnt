@@ -48,6 +48,13 @@ const AuditLogsTable: React.FC = () => {
   } else if (lower.includes("recover")) {
  bgColor = "bg-green-600 text-white";
     type = "Recover";
+    } else if (
+      lower.includes("error") ||
+      lower.includes("frontend") ||
+      lower.includes("exception")
+    ) {
+      bgColor = "bg-red-100 text-red-700 border border-red-300";
+      type = "Error";
     }
 
     return (
