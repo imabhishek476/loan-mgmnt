@@ -88,14 +88,22 @@ const ChartSection = ({ chartData }: any) => {
                   >
                     {label}
                   </p>
-                  {payload.map((p, i) => (
-                    <p key={i} className="text-sm text-gray-700">
-                      {p.dataKey === "totalLoan"
-                        ? "Principal Amount"
-                        : "Paid Off"}
-                      : <strong>${p.value.toLocaleString()}</strong>
-                    </p>
-                  ))}
+                  {payload.map((p, i) => {
+                    const labelMap: any = {
+                      totalLoan: "Loan Amount",
+                      recovered: "Recovered",
+                      profit: "Profit",
+                    };
+
+                    return (
+                      <p key={i} className="text-sm text-gray-700">
+                        {labelMap[p.dataKey] || p.dataKey}:{" "}
+                        <strong>
+                          ${Number(p.value || 0).toLocaleString()}
+                        </strong>
+                      </p>
+                    );
+                  })}
                 </div>
               );
             }}
@@ -113,7 +121,13 @@ const ChartSection = ({ chartData }: any) => {
               <stop offset="100%" stopColor="#04af12" stopOpacity="0.6" />
             </linearGradient>
           </defs>
-
+          {/* Profit Amount */}
+          <defs>
+            <linearGradient id="gradProfit" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.6" />
+            </linearGradient>
+          </defs>
           {/* Principle Amount */}
           <Bar
             dataKey="totalLoan"
@@ -169,6 +183,34 @@ const ChartSection = ({ chartData }: any) => {
                   ${value.toLocaleString()}
                 </text>
               )}
+            />
+          </Bar>
+          {/* Profit Amount */}
+          <Bar
+            dataKey="profit"
+            barSize={isSingle ? 50 : 38}
+            radius={[10, 10, 0, 0]}
+            fill="url(#gradProfit)"
+          >
+            <LabelList
+              dataKey="profit"
+              position="top"
+              content={({ x, y, width, value }) => {
+                if (typeof value !== "number") return null;
+
+                return (
+                  <text
+                    x={Number(x) + Number(width) / 2}
+                    y={Number(y) - 5}
+                    textAnchor="middle"
+                    fill={value >= 0 ? "#0ea5e9" : "#dc2626"}
+                    fontWeight="600"
+                    fontSize="12px"
+                  >
+                    ${value.toLocaleString()}
+                  </text>
+                );
+              }}
             />
           </Bar>
         </BarChart>
