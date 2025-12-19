@@ -91,7 +91,7 @@ const ChartSection = ({ chartData }: any) => {
                   {payload.map((p, i) => {
                     const labelMap: any = {
                       totalLoan: "Loan Amount",
-                      recovered: "Recovered",
+                      recovered: "Paid Off",
                       profit: "Profit",
                     };
 
