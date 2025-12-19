@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Trash2,
   RefreshCcw,
+  Eye,
 } from "lucide-react";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -48,7 +49,8 @@ const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModal
   const [showAllTermsMap, setShowAllTermsMap] = useState<
     Record<string, boolean>
   >({});
-  
+  const [loanModalMode, setLoanModalMode] = useState<"edit" | "view">("edit");
+
   const [selectedClientForLoan, setSelectedClientForLoan] = useState<any>(null);
   const companyLoanTerms = (loan: any) => {
     const company = companyStore.companies.find((c) => c._id === loan.company);
@@ -553,6 +555,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                     size={16}
                                     className="text-green-700 inline-block cursor-pointer hover:text-green-900"
                                     onClick={(e) => {
+                                        setLoanModalMode("edit");
                                       e.stopPropagation();
                                       setSelectedClientForLoan(client);
                                       setEditLoanModalOpen(true);
@@ -561,6 +564,20 @@ const handleStatusChange = async (loanId, newStatus) => {
                                   />
                                 </span>
                                 )}
+                              </span>
+                                <span title="View Loan">                              
+                                  <Eye
+                                      size={16}
+                                      className="text-blue-600 cursor-pointer hover:text-blue-800 ml-2"
+                                      
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLoanModalMode("view");
+                                        setSelectedClientForLoan(client);
+                                        setEditLoanModalOpen(true);
+                                        setEditingLoanId(loan._id);
+                                      }}
+                                    />
                               </span>
                             </div>
                           </div>
@@ -949,6 +966,7 @@ const handleStatusChange = async (loanId, newStatus) => {
       {loanEditModalOpen && editingLoanId && (
         <EditLoanModal
           loanId={editingLoanId}
+          mode={loanModalMode}
           onClose={() => {
             setEditLoanModalOpen(false);
             setEditingLoanId(null);

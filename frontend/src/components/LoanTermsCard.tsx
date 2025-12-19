@@ -4,7 +4,7 @@ import { ALLOWED_TERMS } from '../utils/constants';
 import { loanStore } from '../store/LoanStore';
 import { convertToUsd } from '../utils/helpers';
 
-export const LoanTermsCard = ({ formData,setFormData, overlapMode,selectedPreviousLoanTotal }) => {
+export const LoanTermsCard = ({ formData,setFormData, overlapMode,selectedPreviousLoanTotal, disabled = false}) => {
   const start = moment(formData.issueDate, "MM-DD-YYYY");
     const [loanResults, setLoanResults] = useState([]);
 
@@ -62,13 +62,19 @@ useEffect(() => {
             return (
               <div
                 key={term}
-                className={`flex-shrink-0 w-36 p-2 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer
+                className={`flex-shrink-0 w-36 p-2 rounded-xl shadow-sm border transition-all duration-300
+                      ${
+                        disabled
+                          ? "cursor-not-allowed opacity-90"
+                          : "cursor-pointer hover:scale-105"
+                      }
                       ${
                         isSelected
-                          ? "bg-red-700 border-red-800 text-white shadow-lg scale-105"
+                          ? "bg-red-700 border-red-800 text-white shadow-lg"
                           : "bg-white border-gray-200 text-gray-700"
                       }`}
                 onClick={() => {
+                  if (disabled) return;
                   const updatedTenures = buildTenure(
                     formData.issueDate,
                     ALLOWED_TERMS,
