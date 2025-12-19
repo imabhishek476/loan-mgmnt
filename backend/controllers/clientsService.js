@@ -135,6 +135,8 @@ exports.searchClients = async (req, res) => {
                   $dateFromString: {
                     dateString: "$issueDate",
                     format: "%m-%d-%Y",
+                    onError: null,
+                    onNull: null,
                   },
                 },
               },
