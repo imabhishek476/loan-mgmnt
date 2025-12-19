@@ -205,6 +205,9 @@ const getFilteredStats = async (req, res) => {
           },
         },
       },
+      {
+        $sort:{companyName: 1 },
+      }
     ]);
     const stats = loans.reduce(
       (acc, cur) => {

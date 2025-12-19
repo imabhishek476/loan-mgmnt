@@ -46,7 +46,7 @@ const ChartSection = ({ chartData }: any) => {
             tickLine={false}
             tick={({ x, y, payload }) => {
               const color = chartData.find(
-                (d) => d.name === payload.value
+                (d) => d.name === payload?.value
               )?.companyColor;
 
               return (
@@ -58,7 +58,7 @@ const ChartSection = ({ chartData }: any) => {
                   fontWeight="600"
                   style={{ fontSize: "13px" }}
                 >
-                  {payload.value}
+                  {payload?.value}
                 </text>
               );
             }}
@@ -78,7 +78,7 @@ const ChartSection = ({ chartData }: any) => {
             cursor={false}
             content={({ payload, label }) => {
               if (!payload?.length) return null;
-              const entry = chartData.find((d) => d.name === label);
+              const entry = chartData.find((d) => d?.name === label);
 
               return (
                 <div className="bg-white px-4 py-2 rounded-lg shadow border border-gray-200">
@@ -97,9 +97,9 @@ const ChartSection = ({ chartData }: any) => {
 
                     return (
                       <p key={i} className="text-sm text-gray-700">
-                        {labelMap[p.dataKey] || p.dataKey}:{" "}
+                        {labelMap[p?.dataKey] || p?.dataKey}:{" "}
                         <strong>
-                          ${Number(p.value || 0).toLocaleString()}
+                          ${Number(p?.value || 0).toLocaleString()}
                         </strong>
                       </p>
                     );
@@ -136,7 +136,7 @@ const ChartSection = ({ chartData }: any) => {
             fill="url(#gradPrinciple)"
           >
             {chartData.map((entry, index) => (
-              <Cell key={index} fill={entry.companyColor} />
+              <Cell key={index} fill={entry?.companyColor} />
             ))}
             <LabelList
               dataKey="totalLoan"
@@ -149,11 +149,11 @@ const ChartSection = ({ chartData }: any) => {
                     x={Number(x) + Number(width) / 2}
                     y={Number(y) - 5}
                     textAnchor="middle"
-                    fill={entry.companyColor}
+                    fill={entry?.companyColor}
                     fontWeight="600"
                     style={{ fontSize: "12px" }}
                   >
-                    ${value.toLocaleString()}
+                    ${value?.toLocaleString()}
                   </text>
                 );
               }}
@@ -180,7 +180,7 @@ const ChartSection = ({ chartData }: any) => {
                   fontWeight="600"
                   style={{ fontSize: "12px" }}
                 >
-                  ${value.toLocaleString()}
+                  ${value?.toLocaleString()}
                 </text>
               )}
             />
@@ -207,7 +207,7 @@ const ChartSection = ({ chartData }: any) => {
                     fontWeight="600"
                     fontSize="12px"
                   >
-                    ${value.toLocaleString()}
+                    ${value?.toLocaleString()}
                   </text>
                 );
               }}
