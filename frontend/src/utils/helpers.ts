@@ -12,3 +12,14 @@ export const isDateBefore = (d1: string, d2: string) => {
 };
 export const formatDate = (dateStr: string) =>
     moment(dateStr, "MM-DD-YYYY").format("MMM DD, YYYY");
+export const normalizeDateObject = (date: Date) => {
+    return new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        12, 
+        0,
+        0,
+        0
+    );
+};

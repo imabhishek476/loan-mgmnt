@@ -4,6 +4,7 @@ const Company = require("../models/companies");
 const { LoanPayment } = require("../models/LoanPayment");
 const moment = require("moment");
 const { ObjectId } = require("mongodb");
+const round2 = (num) => Math.round((Number(num) + Number.EPSILON) * 100) / 100;
 const calculateStats = async () => {
   const loansByCompany = await Loan.aggregate([
     {
@@ -47,7 +48,7 @@ const calculateStats = async () => {
   const totalPaidOrMergedLoans = await Loan.countDocuments({
     status: { $in: ["Paid Off", "Merged"] },
     });
-  const totalProfit = totalPaymentsAmount - totalLoanAmount;
+  const totalProfit = Math.max(0, totalPaymentsAmount - totalLoanAmount);
   return {
     totalClients: await Client.countDocuments(),
     totalCompanies: await Company.countDocuments(),
@@ -130,10 +131,10 @@ const getFilteredStats = async (req, res) => {
     if (company) match.company = new ObjectId(company);
     let fromDateObj, toDateObj;
     if (fromDate && toDate) {
-      const [fromMM, fromDD, fromYYYY] = fromDate.split("-").map(Number);
-      const [toMM, toDD, toYYYY] = toDate.split("-").map(Number);
-      fromDateObj = new Date(fromYYYY, fromMM - 1, fromDD);
-      toDateObj = new Date(toYYYY, toMM - 1, toDD, 23, 59, 59, 999);
+      fromDateObj = new Date(fromDate);
+      fromDateObj.setHours(0, 0, 0, 0);
+      toDateObj = new Date(toDate);
+      toDateObj.setHours(23, 59, 59, 999);
     }
     const loans = await Loan.aggregate([
       {
@@ -163,68 +164,53 @@ const getFilteredStats = async (req, res) => {
       {
         $lookup: {
           from: "loanpayments",
-          let: { loanId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$loanId", "$$loanId"] },
-                ...(fromDateObj && toDateObj
-                  ? {
-                      paidDate: {
-                        $gte: fromDateObj,
-                        $lte: toDateObj,
-                      },
-                    }
-                  : {}),
-              },
-            },
-          ],
+          localField: "_id",
+          foreignField: "loanId",
           as: "payments",
         },
       },
       {
-        $group: {
-          _id: "$company",
-          companyName: { $first: "$companyData.companyName" },
-          companyColor: { $first: "$companyData.backgroundColor" },
-
-          totalLoanAmount: { $sum: { $ifNull: ["$subTotal", 0] } },
-          totalPaidOffAmount: {
-            $sum: { $sum: "$payments.paidAmount" },
-          },
-
-          totalInterestAmount: { $sum: { $ifNull: ["$interestAmount", 0] } },
-          totalPrincipleAmount: { $sum: { $ifNull: ["$baseAmount", 0] } },
-          loanCount: { $sum: 1 },
-        },
-      },
-      {
-        $addFields: {
-          totalProfit: {
-            $subtract: ["$totalPaidOffAmount", "$totalLoanAmount"],
-          },
-        },
+        $sort: { "companyData.companyName": 1 },
       },
     ]);
-    const stats = loans.reduce(
-      (acc, cur) => {
-        acc.totalLoanAmount += cur.totalLoanAmount;
-        acc.totalPaymentsAmount += cur.totalPaidOffAmount;
-        acc.totalInterestAmount += cur.totalInterestAmount;
-        acc.totalPrincipleAmount += cur.totalPrincipleAmount;
-        acc.totalLoans += cur.loanCount;
-        return acc;
-      },
-      {
-        totalLoanAmount: 0,
-        totalPaymentsAmount: 0,
-        totalInterestAmount: 0,
-        totalPrincipleAmount: 0,
-        totalLoans: 0,
+    const loansByCompanyMap = {};
+    for (const loan of loans) {
+      if (loan.status === "Merged") continue;
+      const companyId = loan.company.toString();
+
+      if (!loansByCompanyMap[companyId]) {
+        loansByCompanyMap[companyId] = {
+          _id: loan.company,
+          companyName: loan.companyData.companyName,
+          companyColor: loan.companyData.backgroundColor,
+          totalLoanAmount: 0,
+          totalPaidOffAmount: 0,
+          loanCount: 0,
+        };
       }
-    );
-    stats.totalProfit = stats.totalPaymentsAmount - stats.totalLoanAmount;
-    return res.json({ loansByCompany: loans, stats });
+      const companyStats = loansByCompanyMap[companyId];
+      companyStats.totalLoanAmount += loan.subTotal || 0;
+
+
+      companyStats.loanCount += 1;
+      const paidAmount = loan.payments.reduce(
+        (sum, p) => sum + (p.paidAmount || 0),
+        0
+      );
+      companyStats.totalPaidOffAmount += paidAmount;
+    }
+    const loansByCompany = Object.values(loansByCompanyMap).map((c) => {
+      const totalLoanAmount = round2(c.totalLoanAmount);
+      const totalPaidOffAmount = round2(c.totalPaidOffAmount);
+      const profit = round2(totalPaidOffAmount - totalLoanAmount);
+      return {
+        ...c,
+        totalLoanAmount,
+        totalPaidOffAmount,
+        totalProfit: Math.max(0, profit),
+      };
+    });
+    return res.json({ loansByCompany });
   } catch (err) {
     console.error("Filtered stats error:", err);
     res.status(500).json({
