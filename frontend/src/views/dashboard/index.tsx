@@ -8,6 +8,7 @@ import CountUp from "react-countup";
 import PayoffDataTable from "./components/PayoffDataTable";
 import SearchFilters from "./components/SearchFilters";
 import ChartSection from "./components/ChartSection";
+import { normalizeDateObject } from "../../utils/helpers";
 
 const StatCard = ({
   title,
@@ -56,16 +57,9 @@ const { globalStats } = dashboardStore;
 
   const [filters, setFilters] = useState({
     company: "",
-    fromDate: new Date(new Date().getFullYear(), 0, 1),
-    toDate: new Date(),
+    fromDate: normalizeDateObject(new Date(new Date().getFullYear(), 0, 1)),
+    toDate: normalizeDateObject(new Date()),
   });
-
-  const formatToMMDDYYYY = (date: Date) => {
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    const yyyy = date.getFullYear();
-    return `${mm}-${dd}-${yyyy}`;
-  };
 
  const recoveredPercentage =
    globalStats.totalLoanAmount > 0
@@ -76,74 +70,64 @@ const { globalStats } = dashboardStore;
      : "0";
 
   const normalizeCompanyData = (data: any[]) => {
-    return data.map((item) => {
-      const company = companyStore.companies.find(
-        (c) => String(c._id) === String(item._id)
-      );
-  const profit = Number(item.totalProfit || 0);
+    return companyStore.companies.map((company) => {
+      const found = data.find((item) => String(item._id) === String(company._id));
       return {
-        name: company?.companyName || item.companyName || "Unknown",
-        totalLoan: item.totalPrincipleAmount || 0,
-        recovered: item.totalPaidOffAmount || 0,
-        profit,
-        companyColor:
-          company?.backgroundColor || item.backgroundColor || "#8884d8",
+        name: company.companyName,
+        totalLoan: found?.totalPrincipleAmount || 0,
+        recovered: found?.totalPaidOffAmount || 0,
+        profit: found?.totalProfit || 0,
+        companyColor: company?.backgroundColor || "#8884d8",
       };
     });
   };
   const handleSearch = async () => {
-    
     try {
       await dashboardStore.loadFilteredStats({
-        ...filters,
-        fromDate: filters.fromDate
-          ? formatToMMDDYYYY(filters.fromDate)
-          : undefined,
-        toDate: filters.toDate ? formatToMMDDYYYY(filters.toDate) : undefined,
         company: filters.company || undefined,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
       });
 
       setFilteredLoansByCompany(
-        normalizeCompanyData(dashboardStore.filteredStats.loansByCompany || [])
+        normalizeCompanyData(dashboardStore.filteredStats?.loansByCompany || [])
       );
     } catch (err) {
       console.error(err);
     } 
   };
   const handleReset = async () => {
-    const defaultFrom = new Date(new Date().getFullYear(), 0, 1);
-    const defaultTo = new Date();
+    const defaultFrom = normalizeDateObject(
+        new Date(new Date().getFullYear(), 0, 1)
+      );
+    const defaultTo = normalizeDateObject(new Date());
 
     setFilters({
       company: "",
       fromDate: defaultFrom,
       toDate: defaultTo,
     });
-    try {
-      await Promise.all([companyStore.fetchCompany()]);
       await dashboardStore.loadFilteredStats({
-        fromDate: formatToMMDDYYYY(defaultFrom),
-        toDate: formatToMMDDYYYY(defaultTo),
+        company: "",
+        fromDate: defaultFrom,
+        toDate: defaultTo,
       });
       setFilteredLoansByCompany(
         normalizeCompanyData(dashboardStore.filteredStats?.loansByCompany || [])
       );
-    } catch (error) {
-      console.error("Failed to reset", error);
-    }
   };
   const loadDashboard = async () => {
-   
     try {
+      const from = normalizeDateObject(
+        new Date(new Date().getFullYear(), 0, 1)
+      );
+      const to = normalizeDateObject(new Date());
       await Promise.all([
         companyStore.fetchCompany(),
         clientStore.fetchClients(),
       ]);
 
-      await dashboardStore.loadFilteredStats({
-        fromDate: formatToMMDDYYYY(new Date(new Date().getFullYear(), 0, 1)),
-        toDate: formatToMMDDYYYY(new Date()),
-      });
+      await dashboardStore.loadFilteredStats({ fromDate: from, toDate: to });
       setFilteredLoansByCompany(
         normalizeCompanyData(dashboardStore.filteredStats?.loansByCompany || [])
       );
