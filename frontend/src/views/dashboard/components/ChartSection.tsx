@@ -15,7 +15,7 @@ const ChartSection = ({ chartData }: any) => {
   const isSingle = chartData.length === 1;
 
   return (
-    <div className="relative w-full h-[330px] sm:h-[420px]">
+    <div className="relative w-full h-[calc(100vh-395px)] ">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}

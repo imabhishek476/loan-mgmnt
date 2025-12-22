@@ -79,7 +79,7 @@ const Layout = observer(() => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto min-w-0 p-4 bg-gray-50">
+        <main className="flex-1 h-[calc(100vh-53px)] overflow-auto min-w-0 p-4 bg-gray-50">
           <Outlet />
         </main>
       </div>
