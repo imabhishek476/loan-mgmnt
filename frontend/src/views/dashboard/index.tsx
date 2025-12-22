@@ -29,7 +29,7 @@ const StatCard = ({
               end={value}
               duration={1.5}
               separator=","
-              decimals={0}
+              decimals={isCurrency ? 2 : 0}
               decimal="."
             />
           ) : (
@@ -140,7 +140,7 @@ const { globalStats } = dashboardStore;
   useEffect(() => {
     loadDashboard();
   }, []);
-
+console.log(globalStats.totalLoanAmount, "totalLoanAmount");
   return (
     <div className=" text-left relative">
       <h1 className="text-2xl font-bold text-gray-800 mb-3">Dashboard</h1>
@@ -191,7 +191,7 @@ const { globalStats } = dashboardStore;
       </div>
 
       {/* View Mode Toggle */}
-      <div className="flex justify-start mt-2">
+      <div className="flex justify-start mt-2 mb-3">
         <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm">
           {/* Sliding Highlight */}
           <div
