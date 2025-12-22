@@ -175,6 +175,7 @@ const getFilteredStats = async (req, res) => {
     ]);
     const loansByCompanyMap = {};
     for (const loan of loans) {
+      if (loan.status === "Merged") continue;
       const companyId = loan.company.toString();
 
       if (!loansByCompanyMap[companyId]) {
