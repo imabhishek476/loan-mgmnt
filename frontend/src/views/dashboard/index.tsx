@@ -74,7 +74,7 @@ const { globalStats } = dashboardStore;
       const found = data.find((item) => String(item._id) === String(company._id));
       return {
         name: company.companyName,
-        totalLoan: found?.totalPrincipleAmount || 0,
+        totalLoan: found?.totalLoanAmount || 0,
         recovered: found?.totalPaidOffAmount || 0,
         profit: found?.totalProfit || 0,
         companyColor: company?.backgroundColor || "#8884d8",

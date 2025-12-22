@@ -184,16 +184,12 @@ const getFilteredStats = async (req, res) => {
           companyColor: loan.companyData.backgroundColor,
           totalLoanAmount: 0,
           totalPaidOffAmount: 0,
-          totalPrincipleAmount: 0,
           loanCount: 0,
         };
       }
       const companyStats = loansByCompanyMap[companyId];
-      const baseAmount = loan.baseAmount || 0;
-      const previousLoanAmount = loan.previousLoanAmount || 0;
       companyStats.totalLoanAmount += loan.subTotal || 0;
 
-      companyStats.totalPrincipleAmount += baseAmount + previousLoanAmount;
 
       companyStats.loanCount += 1;
       const paidAmount = loan.payments.reduce(
@@ -205,13 +201,11 @@ const getFilteredStats = async (req, res) => {
     const loansByCompany = Object.values(loansByCompanyMap).map((c) => {
       const totalLoanAmount = round2(c.totalLoanAmount);
       const totalPaidOffAmount = round2(c.totalPaidOffAmount);
-      const totalPrincipleAmount = round2(c.totalPrincipleAmount);
-      const profit = round2(totalPaidOffAmount - totalPrincipleAmount);
+      const profit = round2(totalPaidOffAmount - totalLoanAmount);
       return {
         ...c,
         totalLoanAmount,
         totalPaidOffAmount,
-        totalPrincipleAmount,
         totalProfit: Math.max(0, profit),
       };
     });
