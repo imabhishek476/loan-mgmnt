@@ -105,6 +105,7 @@
       Confirm({
         title: isMerged ? "⚠️ Delete Merged Loan" : "Confirm Delete",
         message: isMerged ? (
+              <div className="text-left">
               <div className="text-sm text-gray-700 leading-6">
                 <p className="mb-2">
                   This loan is <strong className="text-red-600">MERGED</strong>.
@@ -116,6 +117,7 @@
                   <li>All linked / merged loans</li>
                   <li>All payment history</li>
                 </ul>
+              </div>
 
                 <p className="text-red-600 font-semibold">
                   This action CANNOT be undone.
@@ -125,7 +127,7 @@
               "Are you sure you want to delete this loan?"
             ),
             confirmText: isMerged
-              ? "Yes, Delete All Linked Loans"
+              ? "Yes, Delete"
               : "Yes, Delete",
         onConfirm: async () => {
           await deleteLoan(loan._id);
