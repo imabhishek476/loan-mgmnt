@@ -358,13 +358,35 @@ exports.deleteLoan = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Loan not found" });
     }
-    await LoanPayment.deleteMany({ loanId: id });
-    await Loan.findByIdAndDelete(id);
+    const isMergedLoan = !!loan.parentLoanId; 
+    let rootLoan = loan;
+    while (rootLoan.parentLoanId) {
+      rootLoan = await Loan.findById(rootLoan.parentLoanId);
+      if (!rootLoan) break;
+    }
+    const chainLoanIds = [];
+    let currentId = rootLoan._id;
+    while (currentId) {
+      const currentLoan = await Loan.findById(currentId);
+      if (!currentLoan) break;
+
+      chainLoanIds.push(currentLoan._id);
+
+      const child = await Loan.findOne({
+        parentLoanId: currentId,
+      }).select("_id");
+      currentId = child ? child._id : null;
+    }
+    await LoanPayment.deleteMany({
+      loanId: { $in: chainLoanIds }, });
+    await Loan.deleteMany({
+      _id: { $in: chainLoanIds },
+    });
 
     res.status(200).json({
       success: true,
       message: "Loan and related payments deleted successfully",
-      data: loan,
+      deletedLoanIds: chainLoanIds,
     });
 
     Promise.all([
@@ -377,13 +399,20 @@ exports.deleteLoan = async (req, res) => {
         const companyName = company?.companyName || "";
         const deletedBy = user?.name || user?.email || "";
 
+        const logMessage = isMergedLoan
+          ? `Merged loan deleted. Entire loan chain removed for ${clientName} under ${companyName} by ${deletedBy}`
+          : `Loan and its payment history deleted for ${clientName} under ${companyName} by ${deletedBy}`;
         return createAuditLog(
           req.user?.id || null,
           req.user?.userRole || null,
-          `Loan and its payment history deleted for ${clientName} under ${companyName} by ${deletedBy}`,
+          logMessage,
           "Loan",
           loan._id,
-          { before: loan }
+          { before: loan },
+          {
+            deletedLoanIds: chainLoanIds,
+            deletedType: isMergedLoan ? "MERGED_LOAN" : "ACTIVE_LOAN",
+          }
         );
       })
       .catch((err) => console.error("Audit log failed:", err));

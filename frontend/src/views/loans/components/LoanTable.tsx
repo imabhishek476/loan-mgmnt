@@ -100,17 +100,45 @@
     useEffect(() => {
       if (clientId) clientStore.fetchClientLoans(clientId);
     }, [clientId]);
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (loan: any) => {
+          const isMerged = loan.status === "Merged";
       Confirm({
-        title: "Confirm Delete",
-        message: "Are you sure you want to delete this Loan?",
-        confirmText: "Yes, Delete",
+        title: isMerged ? "⚠️ Delete Merged Loan" : "Confirm Delete",
+        message: isMerged ? (
+              <div className="text-left">
+              <div className="text-sm text-gray-700 leading-6">
+                <p className="mb-2">
+                  This loan is <strong className="text-red-600">MERGED</strong>.
+                  Deleting it will permanently delete:
+                </p>
+
+                <ul className="list-disc list-inside mb-3 text-gray-800">
+                  <li>This loan</li>
+                  <li>All linked / merged loans</li>
+                  <li>All payment history</li>
+                </ul>
+              </div>
+
+                <p className="text-red-600 font-semibold">
+                  This action CANNOT be undone.
+                </p>
+              </div>
+            ) : (
+              "Are you sure you want to delete this loan?"
+            ),
+            confirmText: isMerged
+              ? "Yes, Delete"
+              : "Yes, Delete",
         onConfirm: async () => {
-          await deleteLoan(id);
+          await deleteLoan(loan._id);
         if (tableRef.current) tableRef.current.onQueryChange();
              await loanStore.fetchActiveLoans(clientId);
              await clientStore.refreshDataTable();
-          toast.success("Loan deleted successfully");
+              toast.success(
+                isMerged
+                  ? "Merged loan and all linked loans deleted"
+                  : "Loan deleted successfully"
+              );
     },
     });
     };
@@ -384,9 +412,11 @@
                 }),
                 (rowData: any) => ({
                   icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
-                  tooltip: "Delete Loan",
-                  hidden: rowData.status === "Merged",
-                  onClick: (_event, row) => handleDelete(row._id),
+                  tooltip:
+                    rowData.status === "Merged"
+                      ? "Delete Merged Loan (Deletes all linked loans)"
+                      : "Delete Loan",
+                  onClick: (_event, row) => handleDelete(row),
                 }),
               ]}
               options={{

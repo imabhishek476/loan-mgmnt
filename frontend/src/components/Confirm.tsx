@@ -4,7 +4,7 @@ import { useState } from "react";
 
 interface ConfirmOptions {
   title?: string;
-  message?: string;
+  message?: any;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void | Promise<void>;
