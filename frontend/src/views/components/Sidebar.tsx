@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Logo from "../../assets/img/logo/favicon.png";
 import Cookies from "js-cookie";
+import { getAppTitle } from "../../utils/helpers";
 
 
 interface SidebarProps {
@@ -43,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
   ];
 
   const currentPath = location.pathname.replace(/^\/+/, "") || "dashboard";
+  const title = getAppTitle();
 
   return (
     <aside
@@ -66,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
           </div>
           {open && (
             <span className="text-primary-green font-pt-sans text-2xl lg:text-[20px] font-bold">
-              Claim Advance
+              {title}
             </span>
           )}
         </div>
