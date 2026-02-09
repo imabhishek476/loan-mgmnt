@@ -25,9 +25,9 @@ export const normalizeDateObject = (date: Date) => {
 };
 export const ORIGIN = window.location.origin;
 export const appTitle =
-  ORIGIN === "https://app.claim-advance.com/"
+  ORIGIN === "https://app.claim-advance.com"
     ? "Claim Advance"
-    : ORIGIN === "https://claim-advance.vercel.app/"
+    : ORIGIN === "https://claim-advance.vercel.app"
     ? "ClaimAdvance UAT"
     : "Claim Advance";
 
