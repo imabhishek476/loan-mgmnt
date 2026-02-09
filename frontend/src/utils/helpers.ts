@@ -23,3 +23,12 @@ export const normalizeDateObject = (date: Date) => {
         0
     );
 };
+export const ORIGIN = window.location.origin;
+export const appTitle =
+  ORIGIN === "https://app.claim-advance.com/"
+    ? "Claim Advance"
+    : ORIGIN === "https://claim-advance.vercel.app/"
+    ? "ClaimAdvance UAT"
+    : "Claim Advance";
+
+export const getAppTitle = () => appTitle;
