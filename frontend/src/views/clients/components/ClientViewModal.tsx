@@ -318,12 +318,23 @@ const handleStatusChange = async (loanId, newStatus) => {
                   <Info label="Accident Date" value={client.accidentDate} />
                   <Info label="Attorney" value={client.attorneyName} />
                   <Info label="SSN" value={client.ssn} />
-                  <Info
-                    label="Custom Fields"
-                    value={client?.customFields
-                      ?.map((field) => `${field?.name}: ${field.value}`)
-                      .join(", ")}
-                  />
+               <div>
+                <p className="text-xs uppercase text-gray-500 font-medium">
+                  Custom Fields
+                </p>
+                {client?.customFields?.length ? (
+                  <ul className="mt-1 space-y-1 text-sm font-semibold text-gray-800">
+                    {client.customFields.map((field, index) => (
+                      <li key={index} className="break-words">
+                        <span className="text-gray-600">{field.name}:</span>{" "}
+                        {field.value}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="font-semibold text-sm">—</p>
+                )}
+              </div>
 
                   <div className="sm:col-span-2">
                     <p className="text-xs uppercase text-gray-500 font-medium">
