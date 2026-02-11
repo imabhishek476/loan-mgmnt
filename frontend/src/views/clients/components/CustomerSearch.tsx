@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Autocomplete, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { LOAN_STATUS_OPTIONS } from "../../../utils/constants";
@@ -5,7 +6,8 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import moment from "moment";
 
-export const CustomerSearch = ({ tableRef, filters, setFilters, open, setOpen }) => {
+export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
+  const [appliedFilters, setAppliedFilters] = useState({});
   const handleReset = () => {
     setFilters({
       name: "",
@@ -25,6 +27,7 @@ export const CustomerSearch = ({ tableRef, filters, setFilters, open, setOpen })
       indexNumber: "",
       uccFiled: "",
     });
+     setAppliedFilters({});  
     tableRef.current?.onQueryChange();
   };
   const FILTER_LABELS = {
@@ -46,12 +49,13 @@ export const CustomerSearch = ({ tableRef, filters, setFilters, open, setOpen })
   uccFiled: "UCC Filed",
 };
   const handleSearch = () => {
+    setAppliedFilters(filters);
     tableRef.current?.onQueryChange();
   };
-  const activeFilters = Object.entries(filters).filter(
-    ([_key, value]) =>
-      value !== "" && value !== null && value !== undefined
-  );
+ const activeFilters = Object.entries(appliedFilters).filter(
+  ([_, value]) =>
+    value !== "" && value !== null && value !== undefined
+);
   return (
     <div className="bg-gray-200  rounded-lg shadow-md mb-4">
       <div className="relative bg-gray-300 px-4 rounded-t-lg border-b-2 border-green-700">
