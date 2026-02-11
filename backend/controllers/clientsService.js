@@ -36,7 +36,7 @@ exports.Clientstore = async (req, res) => {
     const trimEmail = email?.trim().toLowerCase();
     let exist_record = null;
     if (trimEmail) {
-     exist_record = await Client.findOne({ email: trimEmail });
+      exist_record = await Client.findOne({ email: trimEmail });
       if (exist_record) {
         return res.status(400).json({
           success: false,
@@ -60,9 +60,9 @@ exports.Clientstore = async (req, res) => {
       underwriter: underwriter,
       uccFiled: uccBoolean,
       caseType: caseType,
-      medicalParalegal:medicalParalegal,
-      caseId:caseId,
-      indexNumber:indexNumber,
+      medicalParalegal: medicalParalegal,
+      caseId: caseId,
+      indexNumber: indexNumber,
       email: trimEmail,
       phone: phone?.trim(),
       ssn: ssn || "",
@@ -109,6 +109,12 @@ exports.searchClients = async (req, res) => {
       dob,
       accidentDate,
       ssn,
+      underwriter,
+      medicalParalegal,
+      caseId,
+      caseType,
+      indexNumber,
+      uccFiled,
       page = 0,
       limit = 10,
     } = req.query;
@@ -128,6 +134,27 @@ exports.searchClients = async (req, res) => {
       matchStage.accidentDate = moment(accidentDate, "MM-DD-YYYY").format(
         "MM-DD-YYYY"
       );
+    }
+    if (underwriter){
+        matchStage.underwriter = new RegExp(underwriter, "i");
+    }
+    if (medicalParalegal){
+       matchStage.medicalParalegal = new RegExp(medicalParalegal, "i");
+    }
+    if (caseId){
+      matchStage.caseId = new RegExp(caseId, "i");
+    }
+    if (caseType){
+      matchStage.caseType = new RegExp(caseType, "i");
+    }
+    if (indexNumber){
+      matchStage.indexNumber = new RegExp(indexNumber, "i");
+    }
+    if (uccFiled !== undefined && uccFiled !== "") {
+      matchStage.uccFiled =
+        uccFiled === "yes" ||
+        uccFiled === "Yes" ||
+        uccFiled === true;
     }
     let pipeline = [
       { $match: matchStage },
@@ -183,28 +210,28 @@ exports.searchClients = async (req, res) => {
         },
       });
     }
-      pipeline.push({
-        $addFields: {
-          loanSummary: {
-            $let: {
-              vars: {
-                validLoans: {
-                  $filter: {
-                    input: "$allLoans",
-                    as: "loan",
-                    cond: { $ne: ["$$loan.status", "Merged"] },
-                  },
+    pipeline.push({
+      $addFields: {
+        loanSummary: {
+          $let: {
+            vars: {
+              validLoans: {
+                $filter: {
+                  input: "$allLoans",
+                  as: "loan",
+                  cond: { $ne: ["$$loan.status", "Merged"] },
                 },
               },
-              in: {
-                totalSubTotal: { $sum: "$$validLoans.subTotal" },
-                totalPaid: { $sum: "$$validLoans.paidAmount" },
-                totalLoan: { $sum: "$$validLoans.totalLoan" },
-                totalPending: {
-                  $subtract: [
-                    { $sum: "$$validLoans.totalLoan" },
-                    { $sum: "$$validLoans.paidAmount" },
-                  ],
+            },
+            in: {
+              totalSubTotal: { $sum: "$$validLoans.subTotal" },
+              totalPaid: { $sum: "$$validLoans.paidAmount" },
+              totalLoan: { $sum: "$$validLoans.totalLoan" },
+              totalPending: {
+                $subtract: [
+                  { $sum: "$$validLoans.totalLoan" },
+                  { $sum: "$$validLoans.paidAmount" },
+                ],
               },
             },
           },
@@ -244,7 +271,7 @@ exports.updateClient = async (req, res) => {
     const { id } = req.params;
     const updates = { ...req.body };
 
-        // Format dates
+    // Format dates
     if (updates.dob) {
       updates.dob = moment(updates.dob).format("MM-DD-YYYY");
     }
@@ -331,25 +358,25 @@ exports.deleteClient = async (req, res) => {
     });
     (async () => {
       try {
-    const user = await User.findById(req.user?.id).select("name email");
-    const deletedBy = user?.name || user?.email || "-";
-  await createAuditLog(
-    req.user?.id || null,
-    req.user?.userRole || null,
+        const user = await User.findById(req.user?.id).select("name email");
+        const deletedBy = user?.name || user?.email || "-";
+        await createAuditLog(
+          req.user?.id || null,
+          req.user?.userRole || null,
     `Customer "${client.fullName || "-"}" and ${
       deletedLoans.deletedCount
-    } related loan(s) deleted by ${deletedBy}`,
-    "Customer",
-    client._id,
-    {
+          } related loan(s) deleted by ${deletedBy}`,
+          "Customer",
+          client._id,
+          {
       message: `Customer "${client.fullName || "-"}" and ${
         deletedLoans.deletedCount
-      } related loan(s) deleted`,
-      deletedClient: client,
-      deletedLoansCount: deletedLoans.deletedCount,
-    }
-  );
-    } catch (err) {
+              } related loan(s) deleted`,
+            deletedClient: client,
+            deletedLoansCount: deletedLoans.deletedCount,
+          }
+        );
+      } catch (err) {
         console.error("Audit log failed:", err);
       }
     })();
@@ -363,7 +390,7 @@ exports.getClietsLoan = async (req, res) => {
     const { id } = req.params
     const loans = await Loan.find({ client: id })
       .sort({ createdAt: -1 })
-      .populate("client") 
+      .populate("client")
       .populate("company", "companyName");
 
     res.status(200).json({ success: true, loans });
@@ -387,7 +414,7 @@ exports.toggleClientStatus = async (req, res) => {
       success: true,
       message: `Customer "${client.fullName}" ${
         client.isActive ? "activated" : "deactivated"
-      } successfully.`,
+        } successfully.`,
       newStatus: client.isActive,
     });
 
@@ -398,34 +425,34 @@ exports.toggleClientStatus = async (req, res) => {
       { loanStatus: newLoanStatus }
     ).exec();
 
-  (async () => {
-    try {
-    const [user, updatedLoans] = await Promise.all([
-      User.findById(req.user?.id).select("name email"),
-      updateLoansPromise,
-    ]);
-    const actionBy = user?.name || user?.email || "-";
+    (async () => {
+      try {
+        const [user, updatedLoans] = await Promise.all([
+          User.findById(req.user?.id).select("name email"),
+          updateLoansPromise,
+        ]);
+        const actionBy = user?.name || user?.email || "-";
 
-    await createAuditLog(
-      req.user?.id || null,
-      req.user?.userRole || null,
+        await createAuditLog(
+          req.user?.id || null,
+          req.user?.userRole || null,
       `Customer "${client.fullName}" marked as "${
         client.isActive ? "Active" : "Inactive"
-      }" by ${actionBy}`,
-      "Customer",
-      client._id,
-      {
+          }" by ${actionBy}`,
+          "Customer",
+          client._id,
+          {
         message: `Customer "${client.fullName}" was marked as "${
           client.isActive ? "Active" : "Inactive"
         }" and ${
           updatedLoans.modifiedCount
-        } related loan(s) were set to "${newLoanStatus}".`,
-        updatedClient: client,
-        updatedLoansCount: updatedLoans.modifiedCount,
-        performedBy: actionBy,
-      }
-    );
-  } catch (err) {
+              } related loan(s) were set to "${newLoanStatus}".`,
+            updatedClient: client,
+            updatedLoansCount: updatedLoans.modifiedCount,
+            performedBy: actionBy,
+          }
+        );
+      } catch (err) {
         console.error("Audit log failed:", err);
       }
     })();

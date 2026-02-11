@@ -37,6 +37,12 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     dob: null,
     accidentDate: null,
     ssn: "",
+    underwriter: "",
+    medicalParalegal: "",
+    caseId: "",
+    caseType: "",
+    indexNumber: "",
+    uccFiled: "",
   });
   const fetchClientsData = async (query) => {
       const params = {
@@ -48,7 +54,13 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
         attorneyName: filters.attorneyName,
         status: filters.status,
         loanStatus: filters.loanStatus,
+        underwriter: filters.underwriter,
+        medicalParalegal: filters.medicalParalegal,
+        caseId: filters.caseId,
+        indexNumber: filters.indexNumber,
+        uccFiled: filters.uccFiled,
         ssn: filters.ssn,
+        caseType: filters.caseType,
         issueDate: filters.issueDate
           ? moment(filters.issueDate).format("MM-DD-YYYY")
           : null,
@@ -357,8 +369,8 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               right: 0,
               zIndex: 30,
             },
-            maxBodyHeight: "calc(100vh - 375px)", // adjust
-            minBodyHeight: "calc(100vh - 375px)", // optional but helpful
+            maxBodyHeight: "calc(100vh - 408px)", // adjust
+            minBodyHeight: "calc(100vh - 408px)", // optional but helpful
             actionsCellStyle: {
               position: "sticky",
               right: 0,
