@@ -56,7 +56,7 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
         </div>
       )}
       <div className="relative bg-gray-300 px-4 py-2 rounded-t-lg border-b-2 border-green-700">
-        <span className="text-sm font-semibold text-gray-700 ">
+        <span className="text-sm font-semibold text-black ">
           Search Filters
         </span>
 
