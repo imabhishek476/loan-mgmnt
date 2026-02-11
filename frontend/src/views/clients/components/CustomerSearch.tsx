@@ -4,6 +4,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { LOAN_STATUS_OPTIONS } from "../../../utils/constants";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
+import moment from "moment";
 
 export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
   const [open, setOpen] = useState(true); 
@@ -28,6 +29,24 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
     });
     tableRef.current?.onQueryChange();
   };
+  const FILTER_LABELS = {
+  name: "Name",
+  email: "Email",
+  phone: "Phone",
+  attorneyName: "Attorney",
+  status: "Customer Status",
+  loanStatus: "Payment Status",
+  issueDate: "Issue Date",
+  dob: "Date Of Birth",
+  accidentDate: "Accident Date",
+  ssn: "SSN",
+  underwriter: "Underwriter",
+  medicalParalegal: "Medical Paralegal",
+  caseId: "Case ID",
+  caseType: "Case Type",
+  indexNumber: "Index #",
+  uccFiled: "UCC Filed",
+};
   const handleSearch = () => {
     tableRef.current?.onQueryChange();
   };
@@ -37,29 +56,38 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
   );
   return (
     <div className="bg-gray-200  rounded-lg shadow-md mb-4">
-      {activeFilters.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2">
-          <span className="text-sm text-gray-600 font-medium">
-            Active Filters:
-          </span>
-
-          {activeFilters.map(([key, value]) => (
-            <span
-              key={key}
-              className="
-          bg-green-100 text-green-700
-          px-2 py-1 rounded text-xs font-semibold
-        ">
-              {key} : {String(value)}
-            </span>
-          ))}
-        </div>
-      )}
       <div className="relative bg-gray-300 px-4 py-2 rounded-t-lg border-b-2 border-green-700">
-        <span className="text-sm font-semibold text-black ">
-          Search Filters
-        </span>
+        {activeFilters.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 px-3 py-0 ">
+            <span className="text-sm text-black font-medium">
+              Active Filters :
+            </span>
 
+            {activeFilters.map(([key, value]) => (
+              <span
+                key={key}
+                className="
+                bg-green-700 text-white
+                px-1.5 py-0.5
+                rounded
+                text-xs
+                font-semibold
+                leading-tight">
+                {FILTER_LABELS[key] || key} :{" "}
+
+                {key === "uccFiled"
+                  ? value === "yes"
+                    ? "Yes"
+                    : value === "no"
+                      ? "No"
+                      : value
+                  : ["issueDate", "dob", "accidentDate"].includes(key)
+                    ? moment(value).format("MM/DD/YYYY")
+                    : String(value)}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="absolute left-1/2 top-full -translate-x-1/2 translate-y-[-60%]">
           <button
             type="button"

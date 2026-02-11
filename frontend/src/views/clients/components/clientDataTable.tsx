@@ -175,6 +175,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
           columns={[
             {
               title: "Sr.no",
+              sorting: false,
               render: (rowData: any) => {
                 return rowData.tableData.id + 1 + currentPage * currentPageSize;
               },
@@ -197,9 +198,10 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                 </a>
               ),
             },
-            { title: "Phone", field: "phone" },
+            { title: "Phone", field: "phone", sorting: false },
             {
               title: "Total Loan Amount",
+              sorting: false, 
               render: (rowData: any) => (
                 <span className="font-semibold text-green-700">
                   ${rowData.loanSummary?.totalSubTotal?.toLocaleString() || "0"}
@@ -208,6 +210,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             },
             {
               title: "Paid",
+              sorting:false,  
               render: (rowData: any) => {
                 const clientLoans = rowData.allLoans.filter(
                   (loan) =>
@@ -242,6 +245,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
 
             {
               title: "Issue Date",
+              sorting: false, 
               render: (rowData: any) => {
                 if (!rowData.latestLoan || !rowData.latestLoan.issueDate) {
                   return <span className="text-gray-400 italic">-</span>;
@@ -262,6 +266,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             },
             {
               title: "Payment Status",
+              sorting: false, 
               headerStyle: { whiteSpace: "nowrap" },
               cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
               render: (rowData: any) => {
