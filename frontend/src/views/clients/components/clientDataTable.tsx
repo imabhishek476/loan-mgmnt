@@ -37,9 +37,17 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     dob: null,
     accidentDate: null,
     ssn: "",
+    underwriter: "",
+    medicalParalegal: "",
+    caseId: "",
+    caseType: "",
+    indexNumber: "",
+    uccFiled: "",
   });
   const fetchClientsData = async (query) => {
       const params = {
+        orderBy: query.orderBy?.field || null,
+        orderDirection: query.orderDirection || null,
         page: query.page,
         limit: query.pageSize,
         name: filters.name,
@@ -48,7 +56,13 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
         attorneyName: filters.attorneyName,
         status: filters.status,
         loanStatus: filters.loanStatus,
+        underwriter: filters.underwriter,
+        medicalParalegal: filters.medicalParalegal,
+        caseId: filters.caseId,
+        indexNumber: filters.indexNumber,
+        uccFiled: filters.uccFiled,
         ssn: filters.ssn,
+        caseType: filters.caseType,
         issueDate: filters.issueDate
           ? moment(filters.issueDate).format("MM-DD-YYYY")
           : null,
@@ -161,6 +175,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
           columns={[
             {
               title: "Sr.no",
+              sorting: false,
               render: (rowData: any) => {
                 return rowData.tableData.id + 1 + currentPage * currentPageSize;
               },
@@ -168,7 +183,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             {
               title: "Name",
               field: "fullName",
-
+              sorting: true,
               cellStyle: { fontWeight: 500 },
               render: (rowData) => (
                 <a
@@ -183,10 +198,10 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                 </a>
               ),
             },
-            { title: "Email", field: "email" },
-            { title: "Phone", field: "phone" },
+            { title: "Phone", field: "phone", sorting: false },
             {
               title: "Total Loan Amount",
+              sorting: false, 
               render: (rowData: any) => (
                 <span className="font-semibold text-green-700">
                   ${rowData.loanSummary?.totalSubTotal?.toLocaleString() || "0"}
@@ -195,6 +210,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             },
             {
               title: "Paid",
+              sorting:false,  
               render: (rowData: any) => {
                 const clientLoans = rowData.allLoans.filter(
                   (loan) =>
@@ -229,6 +245,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
 
             {
               title: "Issue Date",
+              sorting: false, 
               render: (rowData: any) => {
                 if (!rowData.latestLoan || !rowData.latestLoan.issueDate) {
                   return <span className="text-gray-400 italic">-</span>;
@@ -249,6 +266,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             },
             {
               title: "Payment Status",
+              sorting: false, 
               headerStyle: { whiteSpace: "nowrap" },
               cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
               render: (rowData: any) => {
@@ -287,29 +305,31 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                 );
               },
             },
-            {
-              title: "Status",
-              render: (rowData) =>
-                rowData.isActive ? (
-                  <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
-                    Active
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 bg-red-600 text-white text-sm font-semibold rounded-md">
-                    Inactive
-                  </span>
-                ),
-              cellStyle: { width: 100, textAlign: "left", padding: "6px" },
-            },
+            // {
+            //   title: "Status",
+            //   render: (rowData) =>
+            //     rowData.isActive ? (
+            //       <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
+            //         Active
+            //       </span>
+            //     ) : (
+            //       <span className="px-2 py-0.5 bg-red-600 text-white text-sm font-semibold rounded-md">
+            //         Inactive
+            //       </span>
+            //     ),
+            //   cellStyle: { width: 100, textAlign: "left", padding: "6px" },
+            // },
             {
               title: "DOB",
               field: "dob",
               type: "date",
+              sorting: true,
               cellStyle: { width: 140, minWidth: 140 },
             },
-            { title: "Accident Date", field: "accidentDate", type: "date" },
-            { title: "Attorney", field: "attorneyName" },
-            { title: "SSN", field: "ssn" },
+            { title: "Accident Date", field: "accidentDate", type: "date",sorting:true },
+            { title: "Attorney", field: "attorneyName", sorting:true},
+            { title: "SSN", field: "ssn",sorting:true  },
+            { title: "Email", field: "email", sorting: true},
           ]}
           actions={[
             (rowData: any) =>
@@ -335,7 +355,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               icon: () => <XCircle className="w-5 h-5 text-red-600" />,
               tooltip: "Delete Customer",
               onClick: (_event, rowData: any) => handleDelete(rowData._id),
-            },
+            },       
           ]}
           options={{
             paging: true,
@@ -357,21 +377,22 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               right: 0,
               zIndex: 30,
             },
-            maxBodyHeight: "calc(100vh - 375px)", // adjust
-            minBodyHeight: "calc(100vh - 375px)", // optional but helpful
+            maxBodyHeight: "calc(100vh - 408px)", // adjust
+            minBodyHeight: "calc(100vh - 408px)", // optional but helpful
             actionsCellStyle: {
               position: "sticky",
               right: 0,
               zIndex: 10,
               background: "#fff",
-            },
-            rowStyle: {
+            },  
+            rowStyle: (rowData: any) => ({
               fontSize: "13px",
               height: 38,
               width: 38,
               borderBottom: "1px solid #f1f1f1",
               transition: "background 0.2s",
-            },
+               backgroundColor: !rowData.isActive ? "#f3e2e2" : "#ffffff",
+            }),
             padding: "default",
             toolbar: false,
             // paginationType: "stepped",
