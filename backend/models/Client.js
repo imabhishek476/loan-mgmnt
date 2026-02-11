@@ -28,6 +28,12 @@ const ClientSchema = new mongoose.Schema(
     type: String,
     required: false,
   },
+  underwriter: String,
+  uccFiled: Boolean,
+  medicalParalegal: String,
+  caseId: String,
+  indexNumber: String,
+  caseType: String,
   ssn: String,
   dob: String,
   accidentDate: String,
@@ -47,6 +53,12 @@ ClientSchema.index({ ssn: 1 });
 ClientSchema.index({ accidentDate: 1 });
 ClientSchema.index({ address: 1 });
 ClientSchema.index({ attorneyName: 1 });
+ClientSchema.index({ underwriter: 1 });
+ClientSchema.index({ medicalParalegal: 1 });
+ClientSchema.index({ caseType: 1 });
+ClientSchema.index({ caseId: 1 });
+ClientSchema.index({ indexNumber: 1 });
+ClientSchema.index({ uccFiled: 1 });
 ClientSchema.index({ memo: 1 });
 ClientSchema.index({ isActive: 1 });
 module.exports.Client = mongoose.model("Client", ClientSchema);

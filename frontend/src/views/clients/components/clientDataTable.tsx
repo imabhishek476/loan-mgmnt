@@ -183,7 +183,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                 </a>
               ),
             },
-            { title: "Email", field: "email" },
             { title: "Phone", field: "phone" },
             {
               title: "Total Loan Amount",
@@ -287,20 +286,20 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
                 );
               },
             },
-            {
-              title: "Status",
-              render: (rowData) =>
-                rowData.isActive ? (
-                  <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
-                    Active
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 bg-red-600 text-white text-sm font-semibold rounded-md">
-                    Inactive
-                  </span>
-                ),
-              cellStyle: { width: 100, textAlign: "left", padding: "6px" },
-            },
+            // {
+            //   title: "Status",
+            //   render: (rowData) =>
+            //     rowData.isActive ? (
+            //       <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
+            //         Active
+            //       </span>
+            //     ) : (
+            //       <span className="px-2 py-0.5 bg-red-600 text-white text-sm font-semibold rounded-md">
+            //         Inactive
+            //       </span>
+            //     ),
+            //   cellStyle: { width: 100, textAlign: "left", padding: "6px" },
+            // },
             {
               title: "DOB",
               field: "dob",
@@ -310,6 +309,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             { title: "Accident Date", field: "accidentDate", type: "date" },
             { title: "Attorney", field: "attorneyName" },
             { title: "SSN", field: "ssn" },
+            { title: "Email", field: "email" },
           ]}
           actions={[
             (rowData: any) =>
@@ -335,7 +335,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               icon: () => <XCircle className="w-5 h-5 text-red-600" />,
               tooltip: "Delete Customer",
               onClick: (_event, rowData: any) => handleDelete(rowData._id),
-            },
+            },       
           ]}
           options={{
             paging: true,
@@ -364,14 +364,15 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               right: 0,
               zIndex: 10,
               background: "#fff",
-            },
-            rowStyle: {
+            },  
+            rowStyle: (rowData: any) => ({
               fontSize: "13px",
               height: 38,
               width: 38,
               borderBottom: "1px solid #f1f1f1",
               transition: "background 0.2s",
-            },
+               backgroundColor: !rowData.isActive ? "#f3e2e2" : "#ffffff",
+            }),
             padding: "default",
             toolbar: false,
             // paginationType: "stepped",

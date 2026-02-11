@@ -15,6 +15,12 @@ exports.Clientstore = async (req, res) => {
       accidentDate,
       address,
       attorneyName,
+      underwriter,
+      uccFiled,
+      medicalParalegal,
+      caseId,
+      caseType,
+      indexNumber,
       memo,
       customFields,
     } = req.body;
@@ -48,9 +54,15 @@ exports.Clientstore = async (req, res) => {
 
     const dobStr = dob ? moment(dob).format("MM-DD-YYYY") : "";
     const accidentDateStr = accidentDate ? moment(accidentDate).format("MM-DD-YYYY") : "";
-
+    const uccBoolean = uccFiled === true || uccFiled === "yes" || uccFiled === "Yes";
     const newClient = await Client.create({
       fullName: fullName.trim(),
+      underwriter: underwriter,
+      uccFiled: uccBoolean,
+      caseType: caseType,
+      medicalParalegal:medicalParalegal,
+      caseId:caseId,
+      indexNumber:indexNumber,
       email: trimEmail,
       phone: phone?.trim(),
       ssn: ssn || "",
@@ -230,9 +242,9 @@ exports.searchClients = async (req, res) => {
 exports.updateClient = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
 
-    // Format dates
+        // Format dates
     if (updates.dob) {
       updates.dob = moment(updates.dob).format("MM-DD-YYYY");
     }
@@ -240,7 +252,23 @@ exports.updateClient = async (req, res) => {
       updates.accidentDate = moment(updates.accidentDate).format("MM-DD-YYYY");
     }
 
-    // Normalize email
+    if (updates.uccFiled !== undefined) {
+      updates.uccFiled =
+        String(updates.uccFiled).toLowerCase() === "yes" ||
+        updates.uccFiled === true;
+    }
+    if (updates.fullName) updates.fullName = updates.fullName.trim();
+    if (updates.phone) updates.phone = updates.phone.trim();
+    if (updates.underwriter) updates.underwriter = updates.underwriter.trim();
+    if (updates.medicalParalegal)
+      updates.medicalParalegal = updates.medicalParalegal.trim();
+    if (updates.caseId) updates.caseId = updates.caseId.trim();
+    if (updates.indexNumber) updates.indexNumber = updates.indexNumber.trim();
+    if (updates.attorneyName)
+      updates.attorneyName = updates.attorneyName.trim();
+    if (updates.address) updates.address = updates.address.trim();
+    if (updates.memo) updates.memo = updates.memo.trim();
+    if (updates.caseType) updates.caseType = updates.caseType.trim();
     if (updates.email) {
       updates.email = updates.email.trim().toLowerCase();
 
