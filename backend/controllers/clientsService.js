@@ -125,9 +125,26 @@ exports.searchClients = async (req, res) => {
     let sortStage = { createdAt: -1 };
 
     if (orderBy) {
-      sortStage = {
-        [orderBy]: orderDirection === "asc" ? 1 : -1,
-      };
+      if (orderBy === "accidentDate" || orderBy === "dob") {
+        sortStage = [{
+          $addFields: {
+            accidentDateConverted: {
+              $dateFromString: {
+                dateString: `$${orderBy}`,
+                format: "%m-%d-%Y",
+                onError: null,   
+                onNull: null
+              }
+            }
+          }
+        },
+        { $sort: { accidentDateConverted: orderDirection === "asc" ? 1 : -1 } }]
+      }
+      else{
+         sortStage = {
+            [orderBy]: orderDirection === "asc" ? 1 : -1,
+          };
+      }
     }
 
     if (name) matchStage.fullName = new RegExp(name, "i");
@@ -247,7 +264,7 @@ exports.searchClients = async (req, res) => {
         },
       },
     });
-    pipeline.push({ $sort: sortStage });
+    pipeline.push(...sortStage instanceof Array ? sortStage : [{ $sort: sortStage }]);
     pipeline.push(
       { $skip: Number(page) * Number(limit) },
       { $limit: Number(limit) }

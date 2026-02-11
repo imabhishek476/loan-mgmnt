@@ -51,12 +51,12 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
     tableRef.current?.onQueryChange();
   };
   const activeFilters = Object.entries(filters).filter(
-    ([key, value]) =>
+    ([_key, value]) =>
       value !== "" && value !== null && value !== undefined
   );
   return (
     <div className="bg-gray-200  rounded-lg shadow-md mb-4">
-      <div className="relative bg-gray-300 px-4 py-2 rounded-t-lg border-b-2 border-green-700">
+      <div className="relative bg-gray-300 px-4 rounded-t-lg border-b-2 border-green-700">
         {activeFilters.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 px-3 py-0 ">
             <span className="text-sm text-black font-medium">
