@@ -115,11 +115,20 @@ exports.searchClients = async (req, res) => {
       caseType,
       indexNumber,
       uccFiled,
+      orderBy,
+      orderDirection,
       page = 0,
       limit = 10,
     } = req.query;
 
     const matchStage = {};
+    let sortStage = { createdAt: -1 };
+
+    if (orderBy) {
+      sortStage = {
+        [orderBy]: orderDirection === "asc" ? 1 : -1,
+      };
+    }
 
     if (name) matchStage.fullName = new RegExp(name, "i");
     if (email) matchStage.email = new RegExp(email, "i");
@@ -156,12 +165,12 @@ exports.searchClients = async (req, res) => {
         uccFiled === "Yes" ||
         uccFiled === true;
     }
-    let pipeline = [
-      { $match: matchStage },
-      {
-        $lookup: {
-          from: "loans",
-          let: { clientId: "$_id" },
+      let pipeline = [
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: "loans",
+            let: { clientId: "$_id" },
           pipeline: [
             {
               $match: {
@@ -238,7 +247,7 @@ exports.searchClients = async (req, res) => {
         },
       },
     });
-    pipeline.push({ $sort: { createdAt: -1 } });
+    pipeline.push({ $sort: sortStage });
     pipeline.push(
       { $skip: Number(page) * Number(limit) },
       { $limit: Number(limit) }

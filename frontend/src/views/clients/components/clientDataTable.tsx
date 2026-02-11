@@ -46,6 +46,8 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   });
   const fetchClientsData = async (query) => {
       const params = {
+        orderBy: query.orderBy?.field || null,
+        orderDirection: query.orderDirection || null,
         page: query.page,
         limit: query.pageSize,
         name: filters.name,
@@ -180,7 +182,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             {
               title: "Name",
               field: "fullName",
-
+              sorting: true,
               cellStyle: { fontWeight: 500 },
               render: (rowData) => (
                 <a
@@ -316,12 +318,13 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               title: "DOB",
               field: "dob",
               type: "date",
+              sorting: true,
               cellStyle: { width: 140, minWidth: 140 },
             },
-            { title: "Accident Date", field: "accidentDate", type: "date" },
-            { title: "Attorney", field: "attorneyName" },
-            { title: "SSN", field: "ssn" },
-            { title: "Email", field: "email" },
+            { title: "Accident Date", field: "accidentDate", type: "date",sorting:true },
+            { title: "Attorney", field: "attorneyName", sorting:true},
+            { title: "SSN", field: "ssn",sorting:true  },
+            { title: "Email", field: "email", sorting: true},
           ]}
           actions={[
             (rowData: any) =>
