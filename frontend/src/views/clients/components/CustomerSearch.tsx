@@ -6,7 +6,7 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import moment from "moment";
 
-export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
+export const CustomerSearch = ({ tableRef, filters, setFilters,open, setOpen }) => {
   const [appliedFilters, setAppliedFilters] = useState({});
   const handleReset = () => {
     setFilters({
