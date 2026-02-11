@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Autocomplete, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { LOAN_STATUS_OPTIONS } from "../../../utils/constants";
@@ -6,8 +5,7 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import moment from "moment";
 
-export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
-  const [open, setOpen] = useState(true); 
+export const CustomerSearch = ({ tableRef, filters, setFilters, open, setOpen }) => {
   const handleReset = () => {
     setFilters({
       name: "",
@@ -58,7 +56,7 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
     <div className="bg-gray-200  rounded-lg shadow-md mb-4">
       <div className="relative bg-gray-300 px-4 rounded-t-lg border-b-2 border-green-700">
         {activeFilters.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 px-3 py-0 ">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 ">
             <span className="text-sm text-black font-medium">
               Active Filters :
             </span>

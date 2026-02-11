@@ -26,6 +26,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   const tableRef = useRef<any>(null);
   const [currentPageSize, setCurrentPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const [filters, setFilters] = useState({
     name: "",
     email: "",
@@ -165,6 +166,8 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
         filters={filters}
         setFilters={setFilters}
         tableRef={tableRef}
+        open={filtersOpen}
+        setOpen={setFiltersOpen}
       />
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
         <MaterialTable
@@ -377,8 +380,12 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               right: 0,
               zIndex: 30,
             },
-            maxBodyHeight: "calc(100vh - 408px)", // adjust
-            minBodyHeight: "calc(100vh - 408px)", // optional but helpful
+            maxBodyHeight: filtersOpen
+              ? "calc(100vh - 367px)"
+              : "calc(100vh - 207px)",
+            minBodyHeight: filtersOpen
+              ? "calc(100vh - 367px)"
+              : "calc(100vh - 300px)",
             actionsCellStyle: {
               position: "sticky",
               right: 0,
