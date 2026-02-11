@@ -310,14 +310,35 @@ const handleStatusChange = async (loanId, newStatus) => {
 
             {!sidebarCollapsed && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700 px-2 pb-4">
+                <div className="max-h-[500px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700 px-2 pb-4">
                   <Info label="Full Name" value={client.fullName} />
                   <Info label="Email" value={client.email} />
                   <Info label="Phone" value={client.phone} />
                   <Info label="DOB" value={client.dob} />
                   <Info label="Accident Date" value={client.accidentDate} />
                   <Info label="Attorney" value={client.attorneyName} />
-                  <Info label="SSN" value={client.ssn} />
+                  <Info label="SSN" value={client.ssn} />                  
+                    {client.underwriter && (
+                      <Info label="Underwriter" value={client.underwriter} />
+                    )}
+                    {client.medicalParalegal && (
+                      <Info label="Medical Paralegal" value={client.medicalParalegal} />
+                    )}
+                    {client.caseId && (
+                      <Info label="Case ID" value={client.caseId} />
+                    )}
+                    {client.caseType && (
+                      <Info label="Case Type" value={client.caseType} />
+                    )}
+                    {client.indexNumber && (
+                      <Info label="Index #" value={client.indexNumber} />
+                    )}
+                    {client.uccFiled !== undefined && client.uccFiled !== "" && (
+                      <Info
+                        label="UCC Filed"
+                        value={client.uccFiled ? "Yes" : "No"}
+                      />
+                    )}
                <div>
                 <p className="text-xs uppercase text-gray-500 font-medium">
                   Custom Fields
@@ -353,7 +374,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                       {client.memo || "—"}
                     </div>
                   </div>
-                </div>
+                </div>                
               </>
             )}
           </div>
