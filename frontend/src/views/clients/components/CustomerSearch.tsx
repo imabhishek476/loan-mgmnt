@@ -6,8 +6,8 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import moment from "moment";
 
-export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
-  const [open, setOpen] = useState(true); 
+export const CustomerSearch = ({ tableRef, filters, setFilters,open, setOpen }) => {
+  const [appliedFilters, setAppliedFilters] = useState({});
   const handleReset = () => {
     setFilters({
       name: "",
@@ -27,6 +27,7 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
       indexNumber: "",
       uccFiled: "",
     });
+     setAppliedFilters({});  
     tableRef.current?.onQueryChange();
   };
   const FILTER_LABELS = {
@@ -48,17 +49,18 @@ export const CustomerSearch = ({ tableRef, filters, setFilters }) => {
   uccFiled: "UCC Filed",
 };
   const handleSearch = () => {
+    setAppliedFilters(filters);
     tableRef.current?.onQueryChange();
   };
-  const activeFilters = Object.entries(filters).filter(
-    ([_key, value]) =>
-      value !== "" && value !== null && value !== undefined
-  );
+ const activeFilters = Object.entries(appliedFilters).filter(
+  ([_, value]) =>
+    value !== "" && value !== null && value !== undefined
+);
   return (
     <div className="bg-gray-200  rounded-lg shadow-md mb-4">
       <div className="relative bg-gray-300 px-4 rounded-t-lg border-b-2 border-green-700">
         {activeFilters.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 px-3 py-0 ">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 ">
             <span className="text-sm text-black font-medium">
               Active Filters :
             </span>
