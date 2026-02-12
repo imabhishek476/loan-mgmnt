@@ -39,6 +39,7 @@ class ClientStore {
   customFields:[];
   toggleLoan = false;
   tableRef: any = null; //table Ref is for customers table screen
+  clientFilters: any = {};
   constructor() {
     makeAutoObservable(this);
   }
@@ -131,6 +132,9 @@ class ClientStore {
   }
   async toggleLoanModel() {
     runInAction(() => (this.toggleLoan = !this.toggleLoan));
+  }
+  setClientFilters(filters: any) {
+    runInAction(() => (this.clientFilters = filters || {}));
   }
 }
 

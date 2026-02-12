@@ -11,13 +11,14 @@ import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations"
 import { getAllowedTerms } from "../../../utils/constants";
 import {updateLoanStatus } from "../../../services/LoanService";
 import CustomerSearch from "./CustomerSearch";
+import { observer } from "mobx-react-lite";
 interface ClientsDataTableProps {
   // clients: any[];
   onAddLoan: (client: any) => void;
   onViewClient: (client: any) => void;
 }
 
-const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
+const ClientsDataTable: React.FC<ClientsDataTableProps> = observer(({
   onAddLoan,
   onViewClient,
 }) => {
@@ -26,50 +27,33 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   const tableRef = useRef<any>(null);
   const [currentPageSize, setCurrentPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(0);
-  const [filtersOpen, setFiltersOpen] = useState(true);
-  const [filters, setFilters] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    attorneyName: "",
-    status: "",
-    loanStatus: "",
-    issueDate: null,
-    dob: null,
-    accidentDate: null,
-    ssn: "",
-    underwriter: "",
-    medicalParalegal: "",
-    caseId: "",
-    caseType: "",
-    indexNumber: "",
-    uccFiled: "",
-  });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const { clientFilters } = clientStore;
   const fetchClientsData = async (query) => {
       const params = {
         orderBy: query.orderBy?.field || null,
         orderDirection: query.orderDirection || null,
         page: query.page,
         limit: query.pageSize,
-        name: filters.name,
-        email: filters.email,
-        phone: filters.phone,
-        attorneyName: filters.attorneyName,
-        status: filters.status,
-        loanStatus: filters.loanStatus,
-        underwriter: filters.underwriter,
-        medicalParalegal: filters.medicalParalegal,
-        caseId: filters.caseId,
-        indexNumber: filters.indexNumber,
-        uccFiled: filters.uccFiled,
-        ssn: filters.ssn,
-        caseType: filters.caseType,
-        issueDate: filters.issueDate
-          ? moment(filters.issueDate).format("MM-DD-YYYY")
+        name: clientFilters.name,
+        email: clientFilters.email,
+        phone: clientFilters.phone,
+        attorneyName: clientFilters.attorneyName,
+        status: clientFilters.status,
+        loanStatus: clientFilters.loanStatus,
+        underwriter: clientFilters.underwriter,
+        medicalParalegal: clientFilters.medicalParalegal,
+        caseId: clientFilters.caseId,
+        indexNumber: clientFilters.indexNumber,
+        uccFiled: clientFilters.uccFiled,
+        ssn: clientFilters.ssn,
+        caseType: clientFilters.caseType,
+        issueDate: clientFilters.issueDate
+          ? moment(clientFilters.issueDate).format("MM-DD-YYYY")
           : null,
-        dob: filters.dob ? moment(filters.dob).format("MM-DD-YYYY") : null,
-        accidentDate: filters.accidentDate
-          ? moment(filters.accidentDate).format("MM-DD-YYYY")
+        dob: clientFilters.dob ? moment(clientFilters.dob).format("MM-DD-YYYY") : null,
+        accidentDate: clientFilters.accidentDate
+          ? moment(clientFilters.accidentDate).format("MM-DD-YYYY")
           : null,
       };
       const data = await getClientsSearch(params);
@@ -163,8 +147,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
   return (
     <>
       <CustomerSearch
-        filters={filters}
-        setFilters={setFilters}
         tableRef={tableRef}
         open={filtersOpen}
         setOpen={setFiltersOpen}
@@ -421,6 +403,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       </div>
     </>
   );
-};
+});
 
 export default ClientsDataTable;
