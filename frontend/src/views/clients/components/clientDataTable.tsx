@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import MaterialTable from "@material-table/core";
 import {Plus, Power, RefreshCcw, XCircle } from "lucide-react";
 import moment from "moment";
@@ -11,65 +11,49 @@ import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations"
 import { getAllowedTerms } from "../../../utils/constants";
 import {updateLoanStatus } from "../../../services/LoanService";
 import CustomerSearch from "./CustomerSearch";
+import { observer } from "mobx-react-lite";
 interface ClientsDataTableProps {
   // clients: any[];
   onAddLoan: (client: any) => void;
   onViewClient: (client: any) => void;
 }
 
-const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
+const ClientsDataTable: React.FC<ClientsDataTableProps> = observer(({
   onAddLoan,
   onViewClient,
 }) => {
+  const { clientFilters,filtersOpen } = clientStore;
   const [searchInput,] = useState("");
   const [issueDateFilterInput] = useState<any>(null);
   const tableRef = useRef<any>(null);
   const [currentPageSize, setCurrentPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(0);
-  const [filtersOpen, setFiltersOpen] = useState(true);
-  const [filters, setFilters] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    attorneyName: "",
-    status: "",
-    loanStatus: "",
-    issueDate: null,
-    dob: null,
-    accidentDate: null,
-    ssn: "",
-    underwriter: "",
-    medicalParalegal: "",
-    caseId: "",
-    caseType: "",
-    indexNumber: "",
-    uccFiled: "",
-  });
-  const fetchClientsData = async (query) => {
+
+const fetchClientsData = useCallback(async (query) => {
       const params = {
         orderBy: query.orderBy?.field || null,
         orderDirection: query.orderDirection || null,
         page: query.page,
         limit: query.pageSize,
-        name: filters.name,
-        email: filters.email,
-        phone: filters.phone,
-        attorneyName: filters.attorneyName,
-        status: filters.status,
-        loanStatus: filters.loanStatus,
-        underwriter: filters.underwriter,
-        medicalParalegal: filters.medicalParalegal,
-        caseId: filters.caseId,
-        indexNumber: filters.indexNumber,
-        uccFiled: filters.uccFiled,
-        ssn: filters.ssn,
-        caseType: filters.caseType,
-        issueDate: filters.issueDate
-          ? moment(filters.issueDate).format("MM-DD-YYYY")
+        name: clientFilters.name,
+        email: clientFilters.email,
+        phone: clientFilters.phone,
+        attorneyName: clientFilters.attorneyName,
+        status: clientFilters.status,
+        loanStatus: clientFilters.loanStatus,
+        underwriter: clientFilters.underwriter,
+        medicalParalegal: clientFilters.medicalParalegal,
+        caseId: clientFilters.caseId,
+        indexNumber: clientFilters.indexNumber,
+        uccFiled: clientFilters.uccFiled,
+        ssn: clientFilters.ssn,
+        caseType: clientFilters.caseType,
+        issueDate: clientFilters.issueDate
+          ? moment(clientFilters.issueDate).format("MM-DD-YYYY")
           : null,
-        dob: filters.dob ? moment(filters.dob).format("MM-DD-YYYY") : null,
-        accidentDate: filters.accidentDate
-          ? moment(filters.accidentDate).format("MM-DD-YYYY")
+        dob: clientFilters.dob ? moment(clientFilters.dob).format("MM-DD-YYYY") : null,
+        accidentDate: clientFilters.accidentDate
+          ? moment(clientFilters.accidentDate).format("MM-DD-YYYY")
           : null,
       };
       const data = await getClientsSearch(params);
@@ -81,7 +65,7 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
         page: query.page,
         totalCount: data.total,
       };
-  };
+  }, [clientFilters]);
   const handleDelete = async (id: string) => {
     Confirm({
       title: "Confirm Delete",
@@ -157,183 +141,188 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
     }
     return { totalPaid, totalRemaining };
   }
-  useEffect(() => {
-    clientStore.setTableRef(tableRef);
-  }, []);
-  return (
-    <>
-      <CustomerSearch
-        filters={filters}
-        setFilters={setFilters}
-        tableRef={tableRef}
-        open={filtersOpen}
-        setOpen={setFiltersOpen}
-      />
-      <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
-        <MaterialTable
-          isLoading={false}
-          title={null}
-          tableRef={tableRef}
-          data={fetchClientsData}
-          columns={[
-            {
-              title: "Sr.no",
-              sorting: false,
-              render: (rowData: any) => {
-                return rowData.tableData.id + 1 + currentPage * currentPageSize;
-              },
-            },
-            {
-              title: "Name",
-              field: "fullName",
-              sorting: true,
-              cellStyle: { fontWeight: 500 },
-              render: (rowData) => (
-                <a
-                  href="#"
-                  className="text-green-600 cursor-pointer hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onViewClient?.(rowData);
-                  }}
-                >
-                  {rowData?.fullName}
-                </a>
-              ),
-            },
-            { title: "Phone", field: "phone", sorting: false },
-            {
-              title: "Total Loan Amount",
-              sorting: false, 
-              render: (rowData: any) => (
-                <span className="font-semibold text-green-700">
-                  ${rowData.loanSummary?.totalSubTotal?.toLocaleString() || "0"}
-                </span>
-              ),
-            },
-            {
-              title: "Paid",
-              sorting:false,  
-              render: (rowData: any) => {
-                const clientLoans = rowData.allLoans.filter(
-                  (loan) =>
-                    loan.client === rowData._id ||
-                    loan.client?._id === rowData._id
-                );
-                const { totalPaid, totalRemaining } =
-                  calculateLoanTotals(clientLoans);
-                const allPaidOff = clientLoans.every(
-                  (loan) =>
-                    loan.status === "Paid Off" || loan.status === "Merged"
-                );
-                return (
-                  <span className="font-semibold">
-                    <span
+  const tableHeight = filtersOpen
+  ? "calc(100vh - 359px)"
+  : "calc(100vh - 207px)";
+  const columns: any[] = useMemo(() => [
+    {
+      title: "Sr.no",
+      sorting: false,
+      render: (rowData: any) => {
+        return rowData.tableData.id + 1 + currentPage * currentPageSize;
+      },
+    },
+    {
+      title: "Name",
+      field: "fullName",
+      sorting: true,
+      cellStyle: { fontWeight: 500 },
+      render: (rowData) => (
+        <a
+          href="#"
+          className="text-green-600 cursor-pointer hover:underline"
+          onClick={(e) => {
+            e.preventDefault();
+            onViewClient?.(rowData);
+          }}
+        >
+          {rowData?.fullName}
+        </a>
+      ),
+    },
+    { title: "Phone", field: "phone", sorting: false },
+    {
+      title: "Total Loan Amount",
+      sorting: false,
+      render: (rowData: any) => (
+        <span className="font-semibold text-green-700">
+          ${rowData.loanSummary?.totalSubTotal?.toLocaleString() || "0"}
+        </span>
+      ),
+    },
+    {
+      title: "Paid",
+      sorting:false,
+      render: (rowData: any) => {
+        const clientLoans = rowData.allLoans.filter(
+          (loan) =>
+            loan.client === rowData._id ||
+            loan.client?._id === rowData._id
+        );
+        const { totalPaid, totalRemaining } =
+          calculateLoanTotals(clientLoans);
+        const allPaidOff = clientLoans.every(
+          (loan) =>
+            loan.status === "Paid Off" || loan.status === "Merged"
+        );
+        return (
+          <span className="font-semibold">
+            <span
                       className={`${
                         allPaidOff ? "text-green-600" : "text-blue-600"
-                      }`}
-                    >
-                      {formatUSD(totalPaid)}
-                    </span>
-                    <br />
-                    {totalRemaining > 0 && (
-                      <span className="text-red-600 text-xs font-medium">
-                        (Pending: {formatUSD(totalRemaining)})
-                      </span>
-                    )}
-                  </span>
-                );
-              },
-            },
+                }`}
+            >
+              {formatUSD(totalPaid)}
+            </span>
+            <br />
+            {totalRemaining > 0 && (
+              <span className="text-red-600 text-xs font-medium">
+                (Pending: {formatUSD(totalRemaining)})
+              </span>
+            )}
+          </span>
+        );
+      },
+    },
 
-            {
-              title: "Issue Date",
-              sorting: false, 
-              render: (rowData: any) => {
-                if (!rowData.latestLoan || !rowData.latestLoan.issueDate) {
-                  return <span className="text-gray-400 italic">-</span>;
-                }
-                return (
-                  <span className="text-gray-800 font-medium">
-                    {new Date(rowData.latestLoan.issueDate).toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      }
-                    )}
-                  </span>
-                );
-              },
-            },
-            {
-              title: "Payment Status",
-              sorting: false, 
-              headerStyle: { whiteSpace: "nowrap" },
-              cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
-              render: (rowData: any) => {
-                const loan = rowData.latestLoan;
-                if (!loan) return <span className="text-gray-400">—</span>;
-                // const isDisabled = !rowData.isActive || loan.status === "Merged";
+    {
+      title: "Issue Date",
+      sorting: false,
+      render: (rowData: any) => {
+        if (!rowData.latestLoan || !rowData.latestLoan.issueDate) {
+          return <span className="text-gray-400 italic">-</span>;
+        }
+        return (
+          <span className="text-gray-800 font-medium">
+            {new Date(rowData.latestLoan.issueDate).toLocaleDateString(
+              "en-US",
+              {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              }
+            )}
+          </span>
+        );
+      },
+    },
+    {
+      title: "Payment Status",
+      sorting: false,
+      headerStyle: { whiteSpace: "nowrap" },
+      cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
+      render: (rowData: any) => {
+        const loan = rowData.latestLoan;
+        if (!loan) return <span className="text-gray-400">—</span>;
+        // const isDisabled = !rowData.isActive || loan.status === "Merged";
 
-                return (
-                  <select
-                    className={`
+        return (
+          <select
+            className={`
                                 px-3 py-1 rounded text-xs text-white font-semibold cursor-pointer
                                 focus:outline-none transition  disabled:opacity-100  
                                 ${getStatusStyles(loan.status)}
                               `}
-                    value={loan.status}
-                    disabled={true}
-                    title="Change Loan Status"
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) =>
-                      handleLoanStatusChange(loan._id, e.target.value)
-                    }
-                  >
-                    {loan.status === "Merged" ? (
-                      <option value="Merged">Merged</option>
-                    ) : (
-                      <>
-                        <option value="Active">Active</option>
-                        <option value="Partial Payment">Partial Payment</option>
-                        <option value="Paid Off">Paid Off</option>
-                        <option value="Fraud">Fraud</option>
-                        <option value="Lost">Lost</option>
-                        <option value="Denied">Denied</option>
-                      </>
-                    )}
-                  </select>
-                );
-              },
-            },
-            // {
-            //   title: "Status",
-            //   render: (rowData) =>
-            //     rowData.isActive ? (
-            //       <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
-            //         Active
-            //       </span>
-            //     ) : (
-            //       <span className="px-2 py-0.5 bg-red-600 text-white text-sm font-semibold rounded-md">
-            //         Inactive
-            //       </span>
-            //     ),
-            //   cellStyle: { width: 100, textAlign: "left", padding: "6px" },
-            // },
-            {
-              title: "DOB",
-              field: "dob",
-              type: "date",
-              sorting: true,
-              cellStyle: { width: 140, minWidth: 140 },
-            },
-            { title: "Accident Date", field: "accidentDate", type: "date",sorting:true },
-            { title: "Attorney", field: "attorneyName", sorting:true},
-            { title: "SSN", field: "ssn",sorting:true  },
-            { title: "Email", field: "email", sorting: true},
-          ]}
+            value={loan.status}
+            disabled={true}
+            title="Change Loan Status"
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) =>
+              handleLoanStatusChange(loan._id, e.target.value)
+            }
+          >
+            {loan.status === "Merged" ? (
+              <option value="Merged">Merged</option>
+            ) : (
+              <>
+                <option value="Active">Active</option>
+                <option value="Partial Payment">Partial Payment</option>
+                <option value="Paid Off">Paid Off</option>
+                <option value="Fraud">Fraud</option>
+                <option value="Lost">Lost</option>
+                <option value="Denied">Denied</option>
+              </>
+            )}
+          </select>
+        );
+      },
+    },
+    // {
+    //   title: "Status",
+    //   render: (rowData) =>
+    //     rowData.isActive ? (
+    //       <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
+    //         Active
+    //       </span>
+    //     ) : (
+    //       <span className="px-2 py-0.5 bg-red-600 text-white text-sm font-semibold rounded-md">
+    //         Inactive
+    //       </span>
+    //     ),
+    //   cellStyle: { width: 100, textAlign: "left", padding: "6px" },
+    // },
+    {
+      title: "DOB",
+      field: "dob",
+      type: "date",
+      sorting: true,
+      cellStyle: { width: 140, minWidth: 140 },
+    },
+    { title: "Accident Date", field: "accidentDate", type: "date", sorting: true },
+    { title: "Attorney", field: "attorneyName", sorting: true },
+    { title: "SSN", field: "ssn", sorting: true },
+    { title: "Email", field: "email", sorting: true },
+  ], [currentPage, currentPageSize]);
+
+  return (
+    <>
+      <CustomerSearch
+        tableRef={tableRef}
+      />
+      <div
+        className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white"
+        style={{
+          height: filtersOpen
+            ? "calc(100vh - 359px)"
+            : "calc(100vh - 207px)",
+        }}
+      >   
+          <MaterialTable
+          isLoading={false}
+          title={null}
+          tableRef={tableRef}
+          data={fetchClientsData}
+          columns={columns}
           actions={[
             (rowData: any) =>
               rowData.isActive
@@ -380,12 +369,8 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
               right: 0,
               zIndex: 30,
             },
-            maxBodyHeight: filtersOpen
-              ? "calc(100vh - 367px)"
-              : "calc(100vh - 207px)",
-            minBodyHeight: filtersOpen
-              ? "calc(100vh - 367px)"
-              : "calc(100vh - 300px)",
+            maxBodyHeight: tableHeight,
+            minBodyHeight: tableHeight,
             actionsCellStyle: {
               position: "sticky",
               right: 0,
@@ -402,7 +387,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
             }),
             padding: "default",
             toolbar: false,
-            // paginationType: "stepped",
           }}
           localization={{
             body: {
@@ -421,6 +405,6 @@ const ClientsDataTable: React.FC<ClientsDataTableProps> = ({
       </div>
     </>
   );
-};
+});
 
 export default ClientsDataTable;
