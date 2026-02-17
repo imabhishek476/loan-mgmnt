@@ -79,15 +79,17 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
     }
   };
 
-  const refreshPayments = async (loanId: string) => {
-    try {
-      const payments = await fetchPaymentsByLoan(loanId);
-      setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch payment history");
-    }
-  };
+const refreshPayments = async (loanId: string) => {
+  try {
+    const payments = await fetchPaymentsByLoan(loanId);
+    setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
+      await loanStore.getLoanProfitByLoanId(client._id);
+    
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to fetch payment history");
+  }
+};
 
 const clientLoans = useMemo(() => {
   return Array.isArray(loanStore.loans)
@@ -106,10 +108,11 @@ const clientLoans = useMemo(() => {
     );
   };
 
-  useEffect(() => {
-    loadInitialData();
-  if (client?._id) loanStore.fetchActiveLoans(client?._id);
-  }, [client?._id]);
+useEffect(() => {
+  if (!client?._id) return;
+  loadInitialData();
+  loanStore.fetchActiveLoans(client._id);
+}, [client?._id]);
 useEffect(() => {
   const newMap: Record<string, number> = {};
   clientLoans.forEach((loan) => {
@@ -136,6 +139,7 @@ useEffect(() => {
       return;
     }
     setExpandedLoanId(loanId);
+  loanStore.getLoanProfitByLoanId(loanId); 
 
     try {
       const payments = await fetchPaymentsByLoan(loanId);
@@ -230,6 +234,7 @@ const handleStatusChange = async (loanId, newStatus) => {
   try {
     await updateLoanStatus(loanId, newStatus);
     toast.success("Loan status updated");
+  loanStore.getLoanProfitByLoanId(loanId); 
     await loanStore.fetchActiveLoans(client._id);
     await clientStore.refreshDataTable();
   } catch (err) {
@@ -471,6 +476,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                     "day"
                   );
                   const isDelayed = today.isAfter(endDate, "day");
+                  const profitData = loanStore.loanProfitMap[String(loan?._id)];
                   // const isPaidOff = paidAmount >= totalLoan;
 
                   // const isDelayed =
@@ -479,7 +485,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                     <div
                       key={loan._id}
                       style={{ borderLeft: `6px solid ${companyColor}` }}
-                      className="border rounded-lg shadow-sm hover:shadow-lg  transition-all overflow-hidden bg-gray-100 hover:bg-gray-50"
+                      className={`border rounded-lg shadow-sm hover:shadow-lg  transition-all overflow-hidden bg-gray-100 hover:bg-gray-50  ${loan.status === "Merged" ? "ml-6 sm:ml-6" : ""}`}
                     >
                         <table className="w-full">
                        <tbody>
@@ -719,7 +725,12 @@ const handleStatusChange = async (loanId, newStatus) => {
                                     No payments recorded yet.
                                   </p>
                                 )}
-                              </div>
+                                  {profitData?.totalProfit > 0 && (
+                                    <div className="text-sm font-semibold text-emerald-600">
+                                      Profit: {formatUSD(profitData.totalProfit)}
+                                    </div>
+                                  )}
+                              </div>                    
 
                               {/* Loan Details */}
                               <div className="flex-2 text-sm text-gray-700 space-y-1 pt-2">
@@ -851,7 +862,8 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                   selectedLoanData.total.toFixed(
                                                     2
                                                   )
-                                                )}
+                                                )}{" "}
+                                                 (Base Amount: {formatUSD(loan.baseAmount)})
                                               </td>
                                             </tr>
                                            )}

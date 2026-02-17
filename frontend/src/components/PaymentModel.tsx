@@ -157,6 +157,7 @@ const LoanPaymentModal = observer(
 
         await loanStore.fetchActiveLoans(clientId);
         await clientStore.refreshDataTable();
+        await loanStore.getLoanProfitByLoanId(loan._id);
         onPaymentSuccess?.();
         toast.success("Payment recorded successfully");
         onClose();

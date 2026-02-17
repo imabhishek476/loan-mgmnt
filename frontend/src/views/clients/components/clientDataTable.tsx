@@ -310,13 +310,7 @@ const fetchClientsData = useCallback(async (query) => {
         tableRef={tableRef}
       />
       <div
-        className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white"
-        style={{
-          height: filtersOpen
-            ? "calc(100vh - 359px)"
-            : "calc(100vh - 207px)",
-        }}
-      >   
+        className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">   
           <MaterialTable
           isLoading={false}
           title={null}

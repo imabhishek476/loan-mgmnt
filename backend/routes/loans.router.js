@@ -10,6 +10,7 @@ const {
   searchLoans,
   deleteLoan,
   updateLoanStatus,
+  getProfitByLoanId, 
 } = require("../controllers/loanService");
 const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
@@ -25,4 +26,5 @@ loanRouter.get("/edit/:id", isAuthenticated, isAdmin, getLoanById);
 loanRouter.put("/:id/recover", isAuthenticated, isAdmin, recoverLoan); 
 loanRouter.get("/activeLoans", isAuthenticated, isAdmin, activeLoans);
 loanRouter.put("/:id/status", isAuthenticated, isAdmin, updateLoanStatus);
+loanRouter.get("/:id/profit", isAuthenticated, isAdmin, getProfitByLoanId);
 module.exports = loanRouter;

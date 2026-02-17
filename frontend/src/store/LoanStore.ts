@@ -7,6 +7,7 @@ import {
   recoverLoan,
   activeLoans,
   type LoanPayload,
+  getLoanProfitByLoanId,
 } from "../services/LoanService";
 import { toast } from "react-toastify";
 import moment from "moment";
@@ -42,6 +43,7 @@ class LoanStore {
   limit: number = 10;
   tableRef: any = null; //table Ref is for loans table screen
   loanDetails: any = null;
+loanProfitMap: Record<string, any> = {};
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
@@ -155,6 +157,21 @@ class LoanStore {
       runInAction(() => (this.loading = false));
     }
   }
+async getLoanProfitByLoanId(id: string) {
+  this.loading = true;
+  try {
+    const data = await getLoanProfitByLoanId(id);
+    runInAction(() => {
+      this.loanProfitMap[id] = data;
+    });
+  } catch (err) {
+    console.error("Error fetching loan profit:", err);
+  } finally {
+    runInAction(() => {
+      this.loading = false;
+    });
+  }
+}
   getLoansByClient(clientId: string) {
     return this.loans.filter((l) => l.client === clientId);
   }
