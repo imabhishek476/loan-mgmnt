@@ -6,6 +6,7 @@ import {
   deleteClient,
   getClientLoans,
   toggleClientStatus,
+  getClientById,
 } from "../services/ClientServices";
 
 export interface Loan {
@@ -85,7 +86,20 @@ class ClientStore {
     } finally {
       runInAction(() => (this.loading = false));
     }
+  } 
+async fetchClientById(id: string) {
+  try {
+    const client = await getClientById(id);
+    runInAction(() => {
+      const exists = this.clients.some(c => c._id === id);
+      if (!exists && client) this.clients.push(client);
+    });
+    return client; 
+  } catch (error) {
+    console.error("Error fetching client by id:", error);
+    return null;
   }
+}
 
   async deleteClient(id: string) {
     this.loading = true;

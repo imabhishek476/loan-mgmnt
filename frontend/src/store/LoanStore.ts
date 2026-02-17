@@ -5,7 +5,7 @@ import {
   deactivateLoan,
   updateLoan,
   recoverLoan,
-  activeLoans,
+  activeLoansData,
   type LoanPayload,
   getLoanProfitByLoanId,
 } from "../services/LoanService";
@@ -97,7 +97,7 @@ loanProfitMap: Record<string, any> = {};
   async fetchActiveLoans(clientId: string) {
     this.loading = true;
     try {
-      const data = await activeLoans(clientId);
+      const data = await activeLoansData(clientId);
       runInAction(() => {
         this.loans = data;
       });
