@@ -18,7 +18,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker } from "@mui/x-date-pickers";
 import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
-import { fetchLoanById } from "../services/LoanService";
+import { fetchLoanById, updateLoan , activeLoansData} from "../services/LoanService";
 import { convertToUsd, isDateBefore } from "../utils/helpers";
 import { LoanTermsCard } from "./LoanTermsCard";
 import { ALLOWED_TERMS } from "../utils/constants";
@@ -255,8 +255,9 @@ const EditLoanModal = observer(
          payload.mergeLoanIds = selectedLoanIds;
          }
         setSaving(true);
-       await loanStore.updateLoan(loanId, payload);
-        await loanStore.fetchActiveLoans(formData.client);
+        await updateLoan(loanId, payload);
+        const refreshedLoans = await activeLoansData(formData.client);
+              loanStore.loans = refreshedLoans; 
         await clientStore.refreshDataTable();
 
         toast.success("Loan updated successfully");
