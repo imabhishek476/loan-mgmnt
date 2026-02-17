@@ -149,6 +149,7 @@ const EditPaymentModal = observer(
 
         await loanStore.fetchActiveLoans(clientId);
         await clientStore.refreshDataTable();
+        await loanStore.getLoanProfitByLoanId(loan._id);
         onPaymentSuccess?.();
         toast.success("Payment updated successfully");
        onClose();

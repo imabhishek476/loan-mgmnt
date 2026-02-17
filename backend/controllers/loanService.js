@@ -6,7 +6,7 @@ const createAuditLog = require("../utils/auditLog");
 const mongoose = require("mongoose");
 const moment = require("moment"); 
 const { LoanPayment } = require("../models/LoanPayment");
-exports.LoansCreate = async (req, res) => { 
+exports.LoansCreate = async (req, res) => {
   try {
     const body = req.body;
 
@@ -583,7 +583,7 @@ exports.getProfitByLoanId = async (req, res) => {
 
     const loan = await Loan.findOne({
       _id: loanId,
-      $or: [{ status: "Paid Off" }, { loanStatus: "Paid Off" }],
+      $or: [{ status: "Paid Off" }],
     });
 
     if (!loan) {
