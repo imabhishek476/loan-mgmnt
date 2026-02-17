@@ -25,6 +25,7 @@ import {
 } from "@mui/material";
 import { fetchPaymentsByLoan } from "../../services/LoanPaymentServices";
 import { getAllowedTerms, isValidMMDDYYYY, todayMMDDYYYY } from "../../utils/constants";
+import { createLoan } from "../../services/LoanService";
 
 const Loans = observer(
   ({
@@ -297,9 +298,9 @@ const Loans = observer(
           mergeLoanIds: selectedIds,
         };
         if (!editingLoan) {
-          const createdLoan = await loanStore.createLoan(payload);
+          const createdLoan = await createLoan(payload);
         if (fromClientPage) {
-          await loanStore.fetchActiveLoans(createdLoan.clientId);
+          await loanStore.fetchActiveLoans(createdLoan.client);
         } await loanStore.refreshDataTable();
           await clientStore.refreshDataTable();
           toast.success("Loan created successfully");

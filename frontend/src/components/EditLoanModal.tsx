@@ -18,7 +18,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker } from "@mui/x-date-pickers";
 import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
-import { fetchLoanById } from "../services/LoanService";
+import { fetchLoanById, updateLoan , activeLoansData} from "../services/LoanService";
 import { convertToUsd, isDateBefore } from "../utils/helpers";
 import { LoanTermsCard } from "./LoanTermsCard";
 import { ALLOWED_TERMS } from "../utils/constants";
@@ -81,7 +81,7 @@ const EditLoanModal = observer(
             onClose();
             return;
           }
-          const promises = [];
+          const promises = []; 
           if (companyStore.companies.length == 0) {
             promises.push(companyStore.fetchCompany());
           }
@@ -95,13 +95,15 @@ const EditLoanModal = observer(
           const company = companyStore.companies.find(
             (c) => c._id === loan.company
           );
-          const client = clientStore.clients.find((c) => c._id === loan.client);
+          let client = clientStore.clients.find((c) => c._id === loan.client);
+           if (!client) {
+              client = await clientStore.fetchClientById(loan.client);
+            }
           if (!company || !client) {
             toast.error("Client or company missing");
             onClose();
             return;
           }
-
           const mapFee = (fee: any) => ({
             value: fee?.value || 0,
             type: fee?.type === "percentage" ? "percentage" : "flat",
@@ -116,7 +118,7 @@ const EditLoanModal = observer(
           };
           setFormData({
             ...loan,
-            client: loan.client,
+            client: client._id,
             company: loan.company,
             baseAmount: loan.baseAmount || 0,
             checkNumber: loan.checkNumber || "",
@@ -252,8 +254,9 @@ const EditLoanModal = observer(
          payload.mergeLoanIds = selectedLoanIds;
          }
         setSaving(true);
-       await loanStore.updateLoan(loanId, payload);
-        await loanStore.fetchActiveLoans(formData.client);
+        await updateLoan(loanId, payload);
+        const refreshedLoans = await activeLoansData(formData.client);
+              loanStore.loans = refreshedLoans; 
         await clientStore.refreshDataTable();
 
         toast.success("Loan updated successfully");

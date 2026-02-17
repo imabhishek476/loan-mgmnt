@@ -35,7 +35,7 @@ export const getLoansSearch = async (params: any) => {
   const response = await api.get("/loans/search", { params });
   return response.data;
 };
-export const activeLoans = async (clientId?: string) => {
+export const activeLoansData = async (clientId?: string) => {
   const { data } = await api.get("/loans/activeLoans", {
     params: { clientId },
   });

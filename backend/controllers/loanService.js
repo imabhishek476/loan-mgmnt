@@ -99,9 +99,15 @@ exports.AllLoans = async (req, res) => {
     });
   }
 };
-exports.activeLoans = async (req, res) => {
+exports.activeLoansData = async (req, res) => {
   try {
-    const { clientId, page = 1, limit = 10 } = req.query;
+    const { clientId, page , limit } = req.query;
+    if(!clientId &&  !page && !limit ){
+      return res.status(400).json({
+        success: false,
+        message: "Missing parameters to get Loans"
+      });
+    }
     const query = { loanStatus: { $in: ["Active", "Deactivated"] } };
     if (clientId) {
       query.client = new mongoose.Types.ObjectId(clientId);
@@ -111,13 +117,13 @@ exports.activeLoans = async (req, res) => {
       loans = await Loan.find(query).sort({ createdAt: -1 });
       total = loans.length;
     } else {
-      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const skip = (parseInt(page || 1 ) - 1) * parseInt(limit || 10 );
       [loans, total] = await Promise.all([
         Loan.find(query)
           .populate("client")
           .sort({ createdAt: -1 })
           .skip(skip)
-          .limit(parseInt(limit)),
+          .limit(parseInt(limit || 10)),
         Loan.countDocuments(query),
       ]);
     }

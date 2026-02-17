@@ -11,7 +11,7 @@ export interface ClientPayload {
   attorneyName?: string;
   memo?: string;
   customFields?: Record<string, unknown>[];
-}
+} 
 
 export const createClient = async (data: ClientPayload) => {
   const { data: response } = await api.post("/client/store", data);
@@ -44,5 +44,5 @@ export const toggleClientStatus = async (id: string) => {
 
 export const getClientById = async (id: string) => {
   const { data } = await api.get(`/client/${id}`);
-  return data;
+  return data.client
 };

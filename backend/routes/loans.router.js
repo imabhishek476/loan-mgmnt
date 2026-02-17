@@ -5,7 +5,7 @@ const {
   updateLoan,
   deactivateLoan,
   recoverLoan,
-  activeLoans,
+  activeLoansData,
   getLoanById,
   searchLoans,
   deleteLoan,
@@ -24,7 +24,7 @@ loanRouter.delete("/:id", isAuthenticated, isAdmin, deactivateLoan);
 loanRouter.get("/search", isAuthenticated, isAdmin, searchLoans);
 loanRouter.get("/edit/:id", isAuthenticated, isAdmin, getLoanById);
 loanRouter.put("/:id/recover", isAuthenticated, isAdmin, recoverLoan); 
-loanRouter.get("/activeLoans", isAuthenticated, isAdmin, activeLoans);
+loanRouter.get("/activeLoans", isAuthenticated, isAdmin, activeLoansData);
 loanRouter.put("/:id/status", isAuthenticated, isAdmin, updateLoanStatus);
 loanRouter.get("/:id/profit", isAuthenticated, isAdmin, getProfitByLoanId);
 module.exports = loanRouter;
