@@ -98,7 +98,6 @@ const EditLoanModal = observer(
           let client = clientStore.clients.find((c) => c._id === loan.client);
            if (!client) {
               client = await clientStore.fetchClientById(loan.client);
-            console.log("Fetched client by ID:", client);
             }
           if (!company || !client) {
             toast.error("Client or company missing");
