@@ -577,4 +577,100 @@ exports.updateLoanStatus = async (req, res) => {
     });
   }
 };
+exports.getProfitByLoanId = async (req, res) => {
+  try {
+    const { id: loanId } = req.params;
+
+    const loan = await Loan.findOne({
+      _id: loanId,
+      $or: [{ status: "Paid Off" }],
+    });
+
+    if (!loan) {
+      return res.json({
+        success: true,
+        data: {
+          loanId,
+          totalBaseAmount: 0,
+          totalPaid: 0,
+          totalProfit: 0,
+        },
+      });
+    }
+
+    const rootLoanId = loan.parentLoanId || loan._id;
+
+    // AGGREGATION 
+    const [result] = await Loan.aggregate([
+      {
+        $match: { _id: rootLoanId },
+      },
+      {
+        $graphLookup: {
+          from: "loans",
+          startWith: "$_id",
+          connectFromField: "_id",
+          connectToField: "parentLoanId",
+          as: "mergedLoans",
+        },
+      },
+      {
+        $project: {
+          allLoans: {
+            $concatArrays: [
+              ["$$ROOT"],
+              "$mergedLoans",
+            ],
+          },
+        },
+      },
+      {
+        $unwind: "$allLoans",
+      },
+      {
+        $group: {
+          _id: null,
+          loanIds: { $addToSet: "$allLoans._id" },
+          totalBaseAmount: {
+            $sum: { $ifNull: ["$allLoans.baseAmount", 0] },
+          },
+        },
+      },
+    ]);
+
+    const loanIds = result?.loanIds || [];
+    const totalBaseAmount = result?.totalBaseAmount || 0;
+
+    const payments = await LoanPayment.aggregate([
+      { $match: { loanId: { $in: loanIds } } },
+      {
+        $group: {
+          _id: null,
+          totalPaid: { $sum: "$paidAmount" },
+        },
+      },
+    ]);
+
+    const totalPaid = payments[0]?.totalPaid || 0;
+    const totalProfit = Math.max(0, totalPaid - totalBaseAmount);
+
+    return res.json({
+      success: true,
+      data: {
+        loanId,
+        rootLoanId,
+        totalBaseAmount, 
+        totalPaid,       
+        totalProfit,    
+      },
+    });
+
+  } catch (err) {
+    console.error("Loan profit error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
 
