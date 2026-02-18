@@ -9,6 +9,9 @@ import {
   Autocomplete,
   Slider,
   Typography,
+  TextField,
+  IconButton,
+  Button,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
@@ -61,7 +64,7 @@ interface FormModalProps {
     _id: number;
     name: string;
     value: string | number | boolean;
-    type: "string" | "number";
+    // type: "string" | "number";
   }[];
   submitButtonText?: any;
   children?: React.ReactNode;
@@ -94,14 +97,14 @@ const FormModal = ({
     if (initialData?.customFields && initialData.customFields.length > 0) {
       setCustomFields(initialData.customFields);
     } else if (open) {
-    setCustomFields([{ _id: 1, name: "", value: "", type: "string" }]);
+    setCustomFields([{ _id: 1, name: "", value: "" }]);
     }
   }, [initialData, open]);
 
   const addCustomField = () => {
     setCustomFields([
       ...customFields,
-      { _id: Math.random(), name: "", value: "", type: "string" },
+      { _id: Math.random(), name: "", value: "" },
     ]);
   
   };
@@ -161,6 +164,20 @@ const FormModal = ({
       setLoading(false);
     }
   };
+  const muiCompactSx = {
+    "& .MuiOutlinedInput-root": {
+      height: 38,
+      fontSize: "0.85rem",
+      backgroundColor: "#fff",
+
+      "& input": {
+        padding: "6px",
+      },
+    },
+    "& .MuiInputLabel-root": {
+      fontSize: "0.85rem",
+    },
+};
 
   if (!open) return null;
 
@@ -746,78 +763,60 @@ const FormModal = ({
               </div>
             </div>
 
-            {initialCustomFields && (
-              <div className="sm:col-span-2 flex flex-col gap-3">
-                <h3 className="font-semibold text-gray-800">Custom Fields</h3>
-                {customFields?.map((field) => (
-                  <div
-                    key={field?._id}
-                    className="flex flex-col sm:flex-row gap-2 items-start sm:items-center"
-                  >
-                    <input
-                      type="text"
-                      placeholder="Field Name"
-                      value={field.name}
-                      onChange={(e) =>
-                        handleCustomFieldChange(
-                          field._id,
-                          "name",
-                          e.target.value
-                        )
-                      }
-                      className="border border-gray-300 rounded-lg px-2 py-1 flex-1 focus:ring-2 focus:ring-green-500 transition"
-                    />
+          {initialCustomFields && (
+  <div className="sm:col-span-2 flex flex-col gap-3">
+    <h3 className="font-semibold text-gray-800">Custom Fields</h3>
+    {customFields?.map((field) => (
+      <div
+        key={field.id}
+        className="flex flex-col sm:flex-row gap-2 items-start sm:items-center"
+      >
+        <TextField
+          size="small"
+          label="Field Name"
+          value={field.name}
+          onChange={(e) =>
+            handleCustomFieldChange(field.id, "name", e.target.value)
+          }
+          fullWidth
+          sx={muiCompactSx}
+        />
+        <TextField
+          size="small"
+          label="Value"
+          type={field.type === "number" ? "number" : "text"}
+          value={field.value}
+          onChange={(e) =>
+            handleCustomFieldChange(field.id, "value", e.target.value)
+          }
+          fullWidth
+          sx={muiCompactSx}
+        />
+        <IconButton
+          onClick={() => removeCustomField(field._id)}
+          color="error"
+        >
+          <Trash className="w-5 h-5" />
+        </IconButton>
+      </div>
+    ))}
 
-                    <input
-                      type={field.type === "number" ? "number" : "text"}
-                      placeholder="Value"
-                      value={field.value as string | number}
-                      onChange={(e) =>
-                        handleCustomFieldChange(
-                          field._id,
-                          "value",
-                          e.target.value
-                        )
-                      }
-                      className="border border-gray-300 rounded-lg px-2 py-1 flex-1 focus:ring-2 focus:ring-green-500 transition"
-                    />
-
-                    <select
-                      value={field.type}
-                      onChange={(e) =>
-                        handleCustomFieldChange(
-                          field._id,
-                          "type",
-                          e.target.value
-                        )
-                      }
-                      className="border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-green-500 transition"
-                    >
-                      <option value="string">Text</option>
-                      <option value="number">Number</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      title="Remove"
-                      onClick={() => removeCustomField(field._id)}
-                      className="text-red-600 hover:text-red-800 transition"
-                    >
-                      <Trash className="w-5 h-5" />
-                    </button>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={addCustomField}
-                  title = {"Add Custom Field"}
-                  className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-1 w-fit"
-                >
-                  <Plus className="w-4 h-4" /> Add Custom Field
-                </button>
-              </div>
-            )}
+    <Button
+      variant="contained"
+      sx={{
+    width: "fit-content",
+    backgroundColor: "#16a34a",
+    "&:hover": {
+      backgroundColor: "#15803d",
+    },
+  }}
+      onClick={addCustomField}
+      startIcon={<Plus className="w-4 h-4" />}
+    >
+      Add Custom Field
+    </Button>
+  </div>
+)}
           </form>
 
           <div className="flex justify-end gap-3 p-4 border-t sticky bottom-0 bg-white z-10">

@@ -241,7 +241,7 @@
           handleSearch={handleSearch}
           handleReset={handleReset}
         />
-        <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
+        <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white mt-2">
           <div className="w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
             <MaterialTable
               title={null}
@@ -254,12 +254,14 @@
                       rowData.tableData.id + 1 + currentPage * currentPageSize
                     );
                   },
+                  sorting: false,
                   width: 70,
                   headerStyle: { whiteSpace: "nowrap" },
                   cellStyle: { whiteSpace: "nowrap" },
                 },
                 {
                   title: "Customer",
+                  sorting: false,
                   render: (rowData: any) => (
                     <a
                       href="#"
@@ -277,6 +279,7 @@
 
                 {
                   title: "Company",
+                  sorting: false,
                   cellStyle: { minWidth: 140, whiteSpace: "nowrap" },
                   headerStyle: { whiteSpace: "nowrap" },
                   render: (rowData) => {
@@ -307,6 +310,7 @@
 
                 {
                   title: "Total Loan ($)",
+                  sorting: false,
                   render: (rowData) =>
                     `$${Number(rowData.subTotal || 0).toLocaleString()}`,
                   headerStyle: { whiteSpace: "nowrap" },
@@ -319,6 +323,7 @@
                 // },
                 {
                   title: "Term (months)",
+                  sorting: false,
                   render: (rowData) => {
                     const today = moment().startOf("day");
                     const issueDate = moment(
@@ -341,6 +346,7 @@
                 },
                 {
                   title: "Issue Date",
+                  sorting: false,
                   render: (rowData) =>
                     moment(rowData.issueDate).format("MMM DD, YYYY"),
 
@@ -349,6 +355,7 @@
                 },
                 {
                   title: "Payment Status",
+                  sorting: false,
                   headerStyle: { whiteSpace: "nowrap" },
                   cellStyle: { whiteSpace: "nowrap", minWidth: 150 },
                   render: (rowData) => {
@@ -382,6 +389,7 @@
                 {
                   title: "Active Status",
                   headerStyle: { whiteSpace: "nowrap" },
+                  sorting: false,
                   cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
                   render: (rowData) => (
                     <span
@@ -422,15 +430,14 @@
               options={{
                 paging: true,
                 pageSize: 20,
-                pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500,1000],
-                sorting: true,
+                pageSizeOptions: [5, 10, 15, 20, 50, 100, 200, 500,1000],               
                 search: false,
                 actionsColumnIndex: -1,
                 padding: "dense",
                 toolbar: false,
                 // paginationType: "stepped",
                 tableLayout: "auto",
-                maxBodyHeight: "calc(100vh - 305px)", // adjust
+                maxBodyHeight: "calc(100vh - 205px)", // adjust
                 minBodyHeight: "calc(100vh - 305px)", // optional but helpful
                 headerStyle: {
                   fontWeight: 600,
