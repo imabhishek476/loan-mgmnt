@@ -52,6 +52,8 @@ export const PreviousLoan = ({
             remaining,
             issueDate,
             company,
+            // daysDiff,
+            // date,
             // monthsPassed,
           } = loan;
           const loanIdStr = loan._id?.toString?.();
@@ -81,7 +83,7 @@ export const PreviousLoan = ({
               <div className="flex items-center gap-2">
                 <div className="flex flex-col text-xs">
                   <span className="font-semibold text-white px-1 py-0 rounded-md bg-green-600 w-fit">
-                    Issue Date: {formatDate(issueDate)}
+                    Issue Date: {formatDate(issueDate)} 
                   </span>
                   <span className="font-semibold mt-1">
                     Company Name:{" "}

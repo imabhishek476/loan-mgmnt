@@ -11,9 +11,8 @@ import {
 } from "../services/LoanService";
 import { toast } from "react-toastify";
 import moment from "moment";
-import { ALLOWED_TERMS } from "../utils/constants";
+import { ALLOWED_TERMS, getAllowedTerms } from "../utils/constants";
 import { convertToNumber } from "../utils/helpers";
-
 export interface Loan {
   paidAmount: number;
   subTotal: any;
@@ -170,8 +169,8 @@ async getLoanProfitByLoanId(id: string) {
     runInAction(() => {
       this.loading = false;
     });
+    }
   }
-}
   getLoansByClient(clientId: string) {
     return this.loans.filter((l) => l.client === clientId);
   }
@@ -195,14 +194,17 @@ async getLoanProfitByLoanId(id: string) {
     let subtotal = loan?.subTotal || 0;
     let total = subtotal;
     let today = moment();
+    let daysDiff = 0;
     if (date) {
       today = date ? moment(date, "MM-DD-YYYY") : moment();
     }
     let originalTerm = loan?.loanTerms || 0;
     let monthsPassed =  0;
-    monthsPassed = Math.floor(today.diff(issueDate, "days") / 30) || 1;
+    monthsPassed = Math.ceil(today.diff(issueDate, "days") / 30);
     if (calcType == "prevLoans") {
-       monthsPassed = today.diff(issueDate, "months") + 1;
+      daysDiff = today.diff(issueDate, "days") || 1;
+      monthsPassed = Math.ceil(today.diff(issueDate, "days") / 30);
+      //  monthsPassed = today.diff(issueDate, "months") + 1;
     } 
     const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
     if (selectedTerm) {
@@ -229,7 +231,7 @@ async getLoanProfitByLoanId(id: string) {
       return { subtotal: 0, interestAmount: 0, totalWithInterest: 0 };
 
     const rateNum = convertToNumber(rate);
-    const termNum = Math.max(0, Math.floor(convertToNumber(originalTerm)));
+    const termNum = Math.max(0, Math.ceil(convertToNumber(originalTerm)));
     const feeKeys = [
       "administrativeFee",
       "applicationFee",
@@ -298,9 +300,104 @@ async getLoanProfitByLoanId(id: string) {
       monthlyRate,
       issueDate,
       prevLoan,
+      daysDiff,
+      date,
     }
     return obj;
   }
+  calculateLoans= (loan: any, allLoans = null, calcType: string = null) => {
+      if (!loan) return null;
+  
+      const interestType = loan.interestType || "flat";
+      const monthlyRate = loan.monthlyRate || 0;
+      // const originalTerm = loan.loanTerms || 0;
+      let issueDate = moment(loan.issueDate, "MM-DD-YYYY");
+      const paidAmount = loan.paidAmount || 0;
+      const subtotal = loan.subTotal || 0;
+      let today = moment();
+      let daysDiff = 0;
+      let mergedDate = null;
+      const originalTerm = loan.loanTerms || 0;
+        if (calcType === "mergedDate" && allLoans?.length && loan.parentLoanId) {
+
+          const mergedLoan = allLoans.find(
+            (l) => l._id === loan.parentLoanId
+          );
+      
+          if (mergedLoan?.issueDate) {
+            today = moment(mergedLoan.issueDate, "MM-DD-YYYY");
+            mergedDate = today.clone();
+          } else {
+            console.warn("Parent loan not found:", loan.parentLoanId);
+          }
+        }
+      const rawDaysDiff = today.diff(issueDate, "days");
+      daysDiff = Math.max(1, rawDaysDiff);
+
+      const monthsPassed = Math.ceil(today.diff(issueDate, "days") / 30) || 1;
+
+
+      const ALLOWED_TERMS = getAllowedTerms(originalTerm);
+    
+
+     const dynamicTerm = ALLOWED_TERMS.find((t) => t >= monthsPassed && t <= originalTerm) || originalTerm;
+// const dynamicTerm =  ALLOWED_TERMS.find( (t) => t >= monthsPassed && t <= originalTerm) ?? originalTerm;
+      let total = subtotal;
+      let interestAmount = 0;
+      const rate = monthlyRate / 100;
+  
+      if (interestType === "flat") {
+          for (let i = 6; i <= dynamicTerm; i += 6) {
+              const stepInterest = (total * rate) * 6; 
+              total += stepInterest;
+              if (i === 18 || i === 30) total += 200;
+          }
+          interestAmount = total - subtotal;
+      } else if (interestType === "compound") {
+          for (let i = 1; i <= dynamicTerm; i++) {
+              total *= 1 + rate; 
+              if (i === 18 || i === 30) total += 200;
+          }
+          interestAmount = total - subtotal;
+      }
+  
+      const remaining = Math.max(0, total - paidAmount);
+      const obj = {
+          issueDate,
+          today,
+          subtotal,
+          interestAmount,
+          total,
+          paidAmount,
+          remaining,
+          monthsPassed,
+          currentTerm: dynamicTerm,
+          dynamicTerm,
+          daysDiff,
+          mergedDate,
+      } 
+
+      return obj;
+  };
+   getLoanRunningDetails = (loan: any, issueDate) => {
+        const { monthsPassed } = this.calculateLoans(
+          loan,
+          issueDate
+        );
+        const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
+        const runningTenure =
+          ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
+        const loanCalc :any = this.calculateLoanAmounts({
+          ...loan,
+          loanTerms: runningTenure,
+        });
+        return {
+          monthsPassed,
+          runningTenure,
+          total: loanCalc?.total || 0,
+          remaining: loanCalc?.remaining || 0,
+        };
+      };
 }
 
 export const loanStore = new LoanStore();

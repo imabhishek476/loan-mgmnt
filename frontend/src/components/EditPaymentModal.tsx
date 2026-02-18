@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
-import { calculateLoanAmounts } from "../utils/loanCalculations";
 import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
@@ -72,10 +71,9 @@ const EditPaymentModal = observer(
 
     useEffect(() => {
       if (!loan || !payment) return;
-      const loanData = calculateLoanAmounts(loan);
-      const remaining = loanData?.remaining || 0;
+      loanStore.calculateLoanAmounts(loan).then((data:any) => { 
+      const remaining = data?.remaining || 0;
       const adjustedOutstanding = remaining + payment?.paidAmount;
-      console.log(adjustedOutstanding);
       setOutstanding(adjustedOutstanding);
       setAmount(
         payment.paidAmount ? payment.paidAmount.toLocaleString("en-US") : ""
@@ -84,6 +82,7 @@ const EditPaymentModal = observer(
       setPayoffLetter(payment.payoffLetter || "");
       setPayOffDate(moment(payment.paidDate));
       setErrors({});
+      });
     }, [loan, payment]);
 
     if (!open || !loan || !payment) return null;
@@ -132,20 +131,20 @@ const EditPaymentModal = observer(
 
         fetchUpdatedAmount();
       }, [payOffDate]);
-    const handleEditPayment = async () => {
-      if (!validate()) return;
+const handleEditPayment = async () => {
+  if (!validate()) return;
 
-      setLoading(true);
-      try {
-        await paymentStore.editPayment(payment._id, {
-          loanId: loan._id,
-          clientId,
-          paidAmount: Number(amount.replace(/,/g, "")),
-          paidDate: payOffDate,
-          checkNumber,
-          payoffLetter,
-          currentTerm,
-        });
+  setLoading(true);
+  try {
+    await paymentStore.editPayment(payment._id, {
+      loanId: loan._id,
+      clientId,
+      paidAmount: Number(amount.replace(/,/g, "")),
+      paidDate: payOffDate,
+      checkNumber,
+      payoffLetter,
+      currentTerm,
+    });
 
         await loanStore.fetchActiveLoans(clientId);
         await clientStore.refreshDataTable();

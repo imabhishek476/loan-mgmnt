@@ -258,6 +258,7 @@ const EditLoanModal = observer(
         const refreshedLoans = await activeLoansData(formData.client);
               loanStore.loans = refreshedLoans; 
         await clientStore.refreshDataTable();
+        await loanStore.getLoansByClient(formData.client);
 
         toast.success("Loan updated successfully");
         onClose();
