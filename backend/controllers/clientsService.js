@@ -4,6 +4,7 @@ const { Loan } = require("../models/loan");
 const moment = require("moment");
 const createAuditLog = require("../utils/auditLog");
 const User = require("../models/User");
+const { LoanPayment } = require("../models/LoanPayment");
 exports.Clientstore = async (req, res) => {
   try {
     const {
@@ -369,9 +370,11 @@ exports.deleteClient = async (req, res) => {
     const { id } = req.params;
     const clientPromise = Client.findByIdAndDelete(id);
     const loansPromise = Loan.deleteMany({ client: id });
-    const [client, deletedLoans] = await Promise.all([
+    const paymentsPromise = LoanPayment.deleteMany({ clientId: id });
+    const [client, deletedLoans, deletedPayments] = await Promise.all([
       clientPromise,
       loansPromise,
+      paymentsPromise,
     ]);
     if (!client) {
       return res
@@ -380,7 +383,7 @@ exports.deleteClient = async (req, res) => {
     }
     res.status(200).json({
       success: true,
-      message: `Customer deleted successfully along with ${deletedLoans.deletedCount} related loan(s)`,
+      message: `Customer deleted with ${deletedLoans.deletedCount} loan(s) and ${deletedPayments.deletedCount} payment(s)`,
     });
     (async () => {
       try {
@@ -395,11 +398,9 @@ exports.deleteClient = async (req, res) => {
           "Customer",
           client._id,
           {
-      message: `Customer "${client.fullName || "-"}" and ${
-        deletedLoans.deletedCount
-              } related loan(s) deleted`,
             deletedClient: client,
             deletedLoansCount: deletedLoans.deletedCount,
+            deletedPaymentsCount: deletedPayments.deletedCount,
           }
         );
       } catch (err) {
