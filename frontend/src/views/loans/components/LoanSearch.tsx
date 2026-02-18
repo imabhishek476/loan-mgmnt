@@ -71,7 +71,7 @@ export const LoanSearch = observer(
     value={
       companyStore.companies.find((c) => c._id === filters.company) || null
     }
-    onChange={(event, value) =>
+    onChange={(_event, value) =>
       setFilters({ ...filters, company: value?._id || "" })
     }
     renderInput={(params) => (
@@ -96,7 +96,7 @@ export const LoanSearch = observer(
       "Denied",
     ]}
     value={filters.paymentStatus || null}
-    onChange={(e, val) =>
+    onChange={(_e, val) =>
       setFilters({ ...filters, paymentStatus: val || "" })
     }
     renderInput={(params) => (
@@ -115,7 +115,7 @@ export const LoanSearch = observer(
   <Autocomplete
     options={["Active", "Deactivated"]}
     value={filters.loanStatus || null}
-    onChange={(e, val) =>
+    onChange={(_e, val) =>
       setFilters({ ...filters, loanStatus: val || "" })
     }
     renderInput={(params) => (
