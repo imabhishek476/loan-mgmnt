@@ -25,18 +25,18 @@ export const LoanSearch = observer(
     };
     const compactFieldSx = {
       "& .MuiInputBase-root": {
-        height: 40,
-      backgroundColor: "#fff!important", 
+        height: 40, 
+        backgroundColor: "#fff!important", 
       },
       "& .MuiInputBase-input": {
-        padding: "4px 6px",
-        fontSize: 14,
+        padding: "4px 6px", 
+        fontSize: 12.5,
       },
       "& .MuiInputLabel-root": {
-        fontSize: 14,
+        fontSize: 13,   
       },
       "& .MuiInputAdornment-root": {
-        margin: 0,
+        margin: 0, 
       },
       "& .MuiSvgIcon-root": {
         fontSize: 16,
@@ -44,9 +44,12 @@ export const LoanSearch = observer(
       "& .MuiIconButton-root": {
         padding: 1,
       },
+      "& .MuiPickersInputBase-root":{
+        backgroundColor: "#fff!important",
+      }
     };
     return (
-      <div className="  bg-gray-200  py-1 px-1 rounded-lg ">
+      <div className="  bg-gray-200  py-2 px-2 rounded-lg ">
        <div className="mb-0 grid  grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
         <TextField
           size="small"
@@ -137,7 +140,7 @@ export const LoanSearch = observer(
         size:"small",
         color:"success",
           fullWidth: true,
-           sx : {compactFieldSx},
+           sx :compactFieldSx,
         slotProps:{ inputLabel: smallLabel }
         },
       }}

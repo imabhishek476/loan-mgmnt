@@ -89,6 +89,9 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
     "& .MuiIconButton-root": {
       padding: 1,
     },
+    "& .MuiPickersInputBase-root":{
+      backgroundColor: "#fff!important",
+    }
   };
   return (
     <div className=" bg-gray-200 rounded-lg mb-3">
@@ -283,20 +286,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       textField: {
         size: "small",
         fullWidth: true,
-        sx: {
-          "& .MuiOutlinedInput-root": {
-            height: 38,
-            fontSize: "0.85rem",
-            backgroundColor: "#fff",
-
-            "& input": {
-              padding: "6px",
-            },
-          },
-          "& .MuiInputLabel-root": {
-            fontSize: "0.85rem",
-          },
-        },
+        sx: compactFieldSx,
       },
     }}
 />

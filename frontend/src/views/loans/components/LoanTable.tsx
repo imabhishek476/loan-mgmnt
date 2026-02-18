@@ -437,7 +437,7 @@
                 toolbar: false,
                 // paginationType: "stepped",
                 tableLayout: "auto",
-                maxBodyHeight: "calc(100vh - 205px)", // adjust
+                maxBodyHeight: "calc(100vh - 213px)", // adjust
                 minBodyHeight: "calc(100vh - 305px)", // optional but helpful
                 headerStyle: {
                   fontWeight: 600,
