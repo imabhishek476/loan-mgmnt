@@ -776,19 +776,21 @@ const FormModal = ({
           label="Field Name"
           value={field.name}
           onChange={(e) =>
-            handleCustomFieldChange(field.id, "name", e.target.value)
+            handleCustomFieldChange(field._id, "name", e.target.value)
           }
+
           fullWidth
           sx={muiCompactSx}
         />
         <TextField
           size="small"
           label="Value"
-          type={field.type === "number" ? "number" : "text"}
+          type= "text"
           value={field.value}
           onChange={(e) =>
-            handleCustomFieldChange(field.id, "value", e.target.value)
+            handleCustomFieldChange(field._id, "value", e.target.value)
           }
+
           fullWidth
           sx={muiCompactSx}
         />
