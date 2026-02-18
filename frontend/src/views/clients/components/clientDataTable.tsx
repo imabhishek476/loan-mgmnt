@@ -142,8 +142,8 @@ const fetchClientsData = useCallback(async (query) => {
     return { totalPaid, totalRemaining };
   }
   const tableHeight = filtersOpen
-  ? "calc(100vh - 359px)"
-  : "calc(100vh - 207px)";
+  ? "calc(100vh - 253px)"
+  : "calc(100vh - 149px)";
   const columns: any[] = useMemo(() => [
     {
       title: "Sr.no",
@@ -155,6 +155,7 @@ const fetchClientsData = useCallback(async (query) => {
     {
       title: "Name",
       field: "fullName",
+      width: "100%",
       sorting: true,
       cellStyle: { fontWeight: 500 },
       render: (rowData) => (
@@ -394,7 +395,7 @@ const fetchClientsData = useCallback(async (query) => {
                   : "No clients available. Add a new client to get started."
               }`,
             },
-          }}
+          }}     
         />
       </div>
     </>

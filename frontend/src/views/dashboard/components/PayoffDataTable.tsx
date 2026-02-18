@@ -213,7 +213,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
             right: 0,
             zIndex: 30,
           },
-          maxBodyHeight: "calc(100vh - 490px)", 
+          maxBodyHeight: "calc(100vh - 375px)", 
           minBodyHeight: "calc(100vh - 450px)",
           rowStyle: (rowData) => ({
             fontSize: "13px",

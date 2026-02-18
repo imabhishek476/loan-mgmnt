@@ -54,10 +54,10 @@ const clientFields: FieldConfig[] = [
   { label: "Case ID", key: "caseId", type: "text" },
   { label: "Index #", key: "indexNumber", type: "text" },
   { label: "Case Type", key: "caseType", type: "text" },
+  { label: "Address", key: "address", type: "text" },
   { label: "Date of Birth", key: "dob", type: "date" },
   { label: "Accident Date", key: "accidentDate", type: "date" },
   { label: "Memo", key: "memo", type: "textarea", required: false },
-  { label: "Address", key: "address", type: "textarea" },
 ];
 
   const customFields: { id: number; name: string; value: string | number | boolean; type: "string" | "number"; }[] =

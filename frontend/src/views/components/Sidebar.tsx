@@ -122,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
             </div>
             <button
               onClick={handleLogout}
-              className="p-1.5 rounded-full text-gray-500 hover:bg-red-500 hover:text-white transition-colors"
+              className="p-1.5 rounded-md text-white bg-red-600 hover:bg-red-700 hover:text-white transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
