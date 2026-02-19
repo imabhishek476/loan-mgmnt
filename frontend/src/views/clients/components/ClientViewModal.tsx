@@ -22,7 +22,7 @@ import LoanPaymentModal from "../../../components/PaymentModel";
 import { deletePayment, fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
 import { Button } from "@mui/material";
 import Loans from "../../loans";
-import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
+import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
@@ -79,19 +79,19 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
     }
   };
 
-const refreshPayments = async (loanId: string) => {
-  try {
-    const payments = await fetchPaymentsByLoan(loanId);
-    setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
+  const refreshPayments = async (loanId: string) => {
+    try {
+      const payments = await fetchPaymentsByLoan(loanId);
+      setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
       await loanStore.getLoanProfitByLoanId(client._id);
     
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to fetch payment history");
-  }
-};
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch payment history");
+    }
+  };
 
-const clientLoans = useMemo(() => {
+  const clientLoans = useMemo(() => {
   return Array.isArray(loanStore.loans)
     ? loanStore.loans.filter(
         (loan) => loan.client?.['_id'] === client._id || loan.client === client._id
@@ -99,38 +99,74 @@ const clientLoans = useMemo(() => {
     : [];
 }, [loanStore.loans, client?._id]);
 
-  const getDefaultLoanTerm = (loan: any) => {
-    const LOAN_TERMS = getAllowedTerms(loan.loanTerms);
-   const loanData = calculateLoanAmounts(loan,mergedLoans,"mergedDate");
-    return (
-      LOAN_TERMS.find((t) => t > loanData.monthsPassed) ||
-      LOAN_TERMS[LOAN_TERMS.length - 1]
+ const getClientLoansData = useMemo(() => {
+  return clientLoans.map((loan) => {
+    const companyId =
+      typeof loan.company === "string"
+        ? loan.company
+        : loan.company?._id;
+    const company =
+      companyStore.companies.find((c) => c._id === companyId) ||
+      loan.company;
+    const companyName = company?.companyName || "Unknown";
+    const companyColor = company?.backgroundColor || "#555555";
+    const selectedDynamicTerm = currentTermMap[loan._id];
+
+    
+    const selectedLoanData = loanStore.calculateLoans(
+      {
+        ...loan,
+        // loanTerms: selectedDynamicTerm,
+      },
+      clientLoans,       
+      "mergedDate"       
     );
+    const today = moment();
+    const endDate = moment(loan.issueDate).add(
+      loan.loanTerms,
+      "months"
+    );
+    const end = Number(selectedDynamicTerm) * 30;
+    const currentEndDate = moment(loan.issueDate).add(end, "day");
+    const isDelayed = today.isAfter(endDate, "day");
+    const profitData = loanStore.loanProfitMap[String(loan?._id)];
+
+    return {
+      loan,
+      companyName,
+      isDelayed,
+      selectedLoanData,
+      companyColor,
+      currentEndDate,
+      selectedDynamicTerm,
+      endDate,
+      profitData,
+    };
+  });
+}, [clientLoans, companyStore.companies, currentTermMap]);
+
+  const getDefaultLoanTerm = (loan: any) => {
+    const LOAN_TERMS = getAllowedTerms(loan.loanTerms) || [];
+    if (!LOAN_TERMS.length) return loan.loanTerms;
+    const loanData = loanStore.calculateLoans(loan, loanStore.loans, "mergedDate");
+    if (!loanData) return LOAN_TERMS[0];
+    const monthsPassed = Math.ceil(loanData.monthsPassed || 0);
+    const nextTerm = LOAN_TERMS.find((t) => t > monthsPassed);
+    return nextTerm ?? LOAN_TERMS[LOAN_TERMS.length - 1];
   };
 
-useEffect(() => {
-  if (!client?._id) return;
-  loadInitialData();
-  loanStore.fetchActiveLoans(client._id);
-}, [client?._id]);
-useEffect(() => {
-  const newMap: Record<string, number> = {};
-  clientLoans.forEach((loan) => {
-    newMap[loan._id] = getDefaultLoanTerm(loan);
-  });
-  setCurrentTermMap(newMap);
-}, [clientLoans]);
-  const mergedLoans = useMemo(() => {
-    return loanStore.loans
-      .filter((loan) => loan.status !== "Merged")
-      .map((loan) => ({
-        _id: loan._id,
-        issueDate: loan.issueDate,
-        parentLoanId: loan.parentLoanId,
-        status: loan.status,
-        loanTerms: loan.loanTerms,
-      }));
-  }, [loanStore.loans]);
+
+  useEffect(() => {
+    loadInitialData();
+  if (client?._id) loanStore.fetchActiveLoans(client?._id);
+  }, [client?._id]);
+  useEffect(() => {
+    const newMap: Record<string, number> = {};
+    clientLoans.forEach((loan) => {
+      newMap[loan._id] = getDefaultLoanTerm(loan);
+    });
+    setCurrentTermMap(newMap);
+  }, [clientLoans]);
   if (!open) return null;
 
   const handleToggleLoan = async (loanId: string) => {
@@ -234,7 +270,7 @@ const handleStatusChange = async (loanId, newStatus) => {
   try {
     await updateLoanStatus(loanId, newStatus);
     toast.success("Loan status updated");
-  loanStore.getLoanProfitByLoanId(loanId); 
+    await loanStore.getLoanProfitByLoanId(loanId);
     await loanStore.fetchActiveLoans(client._id);
     await clientStore.refreshDataTable();
   } catch (err) {
@@ -424,63 +460,9 @@ const handleStatusChange = async (loanId, newStatus) => {
               {/* </Tooltip> */}
             </div>
             <div className="p-2 space-y-4 min-h-[400px] ">
-              {clientLoans.length > 0 ? (
-                clientLoans.map((loan: any) => {
-                  const companyId =
-                    typeof loan.company === "string"
-                      ? loan.company
-                      : loan.company?._id;
-
-                  const company =
-                    companyStore.companies.find((c) => c._id === companyId) ||
-                    loan.company; // fallback if object is directly in loan
-
-                  const companyName = company?.companyName || "Unknown";
-                  const companyColor = company?.backgroundColor || "#555555";
-                  // const isPaidOff =
-                  //   (loan.paidAmount || 0) >= (loan.totalLoan || 0);
-                  const loanData = calculateLoanAmounts(loan);
-                  if (!loanData) return null;
-
-                  // const { paidAmount } = loanData;
-                  const selectedDynamicTerm = currentTermMap[loan._id];
-                  // console.log(selectedDynamicTerm,'selectedDynamicTerm');
-                  const selectedLoanData = calculateLoanAmounts({
-                    ...loan,
-                    loanTerms: selectedDynamicTerm,
-                  })!;
-                  const selectedDynamicLoanData = calculateLoanAmounts({
-                    ...loan,
-                    loanTerms: selectedDynamicTerm,
-                  })!;
-                  const today = moment();
-                  // const totalLoan =
-                  //   loan.interestType === "flat"
-                  //     ? loanData.subtotal +
-                  //       loanData.subtotal *
-                  //         (loan.monthlyRate / 100) *
-                  //         // @ts-ignore
-                  //         selectedDynamicLoanData
-                  //     : loanData.subtotal *
-                  //       Math.pow(
-                  //         1 + loan.monthlyRate / 100,
-                  //         // @ts-ignore
-                  //         selectedDynamicLoanData
-                  //       );
-                  const endDate = moment(loan.issueDate).add(
-                    loan.loanTerms,
-                    "months"
-                  );
-                  const end = Number(selectedDynamicTerm) * 30;
-                  const currentEndDate = moment(loan.issueDate).add(end,
-                    "day"
-                  );
-                  const isDelayed = today.isAfter(endDate, "day");
-                  const profitData = loanStore.loanProfitMap[String(loan?._id)];
-                  // const isPaidOff = paidAmount >= totalLoan;
-
-                  // const isDelayed =
-                  //   selectedLoanData.monthsPassed != loan.loanTerms;
+              {getClientLoansData.length > 0 ? (
+                getClientLoansData.map((loanData: any) => {
+                  const { loan, companyName, companyColor, selectedLoanData, isDelayed, currentEndDate, profitData } = loanData;
                   return (
                     <div
                       key={loan._id}
@@ -507,17 +489,6 @@ const handleStatusChange = async (loanId, newStatus) => {
                                   {formatUSD(loan.subTotal.toFixed(2))}
                                 </span>
                               </span>
-
-                              {/* Month */}
-                              {/* <span
-                                className={`px-2 py-1 rounded text-xs ${
-                                  isDelayed
-                                    ? "bg-red-500 text-white shadow-md"
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                Month: {selectedDynamicTerm}
-                              </span> */}
                               <span>
                                 Paid:{" "}
                                 <span className="text-green-700 font-bold">
@@ -531,7 +502,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                       : selectedLoanData.remaining
                                   )}
                                 </span>
-
+                                  
                               </span>
                               {!["Paid Off", "Merged"].includes(
                                 loan.status
@@ -729,8 +700,8 @@ const handleStatusChange = async (loanId, newStatus) => {
                                     <div className="text-sm font-semibold text-emerald-600">
                                       Profit: {formatUSD(profitData.totalProfit)}
                                     </div>
-                                  )}
-                              </div>                    
+                                )}
+                              </div>
 
                               {/* Loan Details */}
                               <div className="flex-2 text-sm text-gray-700 space-y-1 pt-2">
@@ -794,7 +765,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                 Current Tenure:
                                               </td>
                                               <td className="py-0">
-                                                {selectedDynamicTerm} month {""}
+                                                {selectedLoanData.dynamicTerm} month {""}
                                                 <span
                                                   className={`${
                                                     isDelayed
@@ -829,7 +800,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                   }`}
                                                 >
                                                   $
-                                                  {selectedDynamicLoanData.interestAmount.toFixed(
+                                                  {selectedLoanData.interestAmount.toFixed(
                                                     2
                                                   )}
                                                 </span>{" "}
@@ -940,9 +911,8 @@ const handleStatusChange = async (loanId, newStatus) => {
                                            ? allTerms.filter((t) => t <= loan.loanTerms)
                                           : [currentTermMap[loan._id]];
                                           }
-
                                           return termsToShow.map((term) => {
-                                            const loanTermData = calculateLoanAmounts({
+                                            const loanTermData = loanStore.calculateLoans({
                                               ...loan,
                                               loanTerms: term,
                                             })!;

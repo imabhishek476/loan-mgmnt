@@ -76,7 +76,7 @@ const calculateLoan = (
     if (!fee) return sum;
     const value = num(fee.value);
     return fee.type === "percentage"
-      ? sum + (baseNum * value) / 100
+      ? sum + (totalBase * value) / 100
       : sum + value;
   }, 0);
 
@@ -378,10 +378,11 @@ const formatDate = (date: Date) =>
           const fee = fees[item.key];
           if (!fee) return null;
           const isPercentage = fee.type === "percentage";
+          const totalBase = currentBase + previousLoanTotal;
           const displayValue =
             fee.value === null || fee.value === undefined ? "" : fee.value;
           const contribution = isPercentage
-            ? (currentBase * fee.value) / 100
+            ? (totalBase * fee.value) / 100
             : fee.value;
 
           return (
