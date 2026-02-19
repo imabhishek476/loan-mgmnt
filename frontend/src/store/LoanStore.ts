@@ -245,7 +245,7 @@ async getLoanProfitByLoanId(id: string) {
       if (!fee) return sum;
       const value = convertToNumber(fee.value);
       return fee.type === "percentage"
-        ? sum + (baseNum * value) / 100
+        ? sum + (totalBase * value) / 100
         : sum + value;
     }, 0);
 

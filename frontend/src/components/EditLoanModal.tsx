@@ -339,8 +339,9 @@ const EditLoanModal = observer(
     }, [formData?.issueDate, selectedLoanIds, loanStore.loans]);
 
     useEffect(() => {
-      let selectedPreviousTotal = 0;
+      if (!formData) return;
       async function filterTotalRems() {
+        let selectedPreviousTotal = 0;
         for (const loan of activeLoans) {
           if (selectedLoanIds.includes(loan._id)) {
             const result: any = await loanStore.calculateLoanAmounts({
@@ -349,27 +350,22 @@ const EditLoanModal = observer(
               calculate: true,
               calcType: "prevLoans",
             });
-            const remaining = result?.remaining || 0;
-            selectedPreviousTotal += remaining;
+            selectedPreviousTotal += result?.remaining || 0;
           }
         }
         setSelectedPreviousLoanTotal(selectedPreviousTotal);
-      }
-      async function getCurrentLoan() {
-        const result = await loanStore.calculateLoanAmounts({
+        const result:any = await loanStore.calculateLoanAmounts({
           loan: formData,
           prevLoanTotal: selectedPreviousTotal,
           calculate: true,
           calcType: "singleLoan",
         });
-        const { subtotal, total, remaining }: any = result;
-        setSubTotal(subtotal);
-        setModalTotal(total);
-        setModalRemaining(remaining);
+        setSubTotal(result.subtotal);
+        setModalTotal(result.total);
+        setModalRemaining(result.remaining);
       }
       filterTotalRems();
-      getCurrentLoan();
-    }, [formData]);
+   }, [formData, selectedLoanIds]);
 
     if (loading) {
       return (
@@ -714,8 +710,9 @@ const EditLoanModal = observer(
                       const fee = formData.fees[item.key];
                       if (!fee) return null;
                       const isPercentage = fee.type === "percentage";
+                      const botalBase = formData.baseAmount + selectedPreviousLoanTotal;
                       const contribution = isPercentage
-                        ? (formData.baseAmount * fee.value) / 100
+                        ? (botalBase * fee.value) / 100
                         : fee.value;
                       return (
                         <div
@@ -809,7 +806,7 @@ const EditLoanModal = observer(
                       </span>
                       <span className="text-md text-green-700 px-2 rounded-md bg-white">
                         {convertToUsd.format(
-                          subTotal + selectedPreviousLoanTotal
+                          subTotal 
                         )}
                       </span>
                     </div>
