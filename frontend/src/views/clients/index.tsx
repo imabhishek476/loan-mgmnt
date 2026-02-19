@@ -90,11 +90,11 @@ const handleSave = async (data: any) => {
       setModalOpen(false);
     } else {
       await clientStore.createClient(data);
-
+       
       toast.success("New Customer added successfully");
 
       try {
-        await clientStore.refreshDataTable();
+       await clientStore.refreshDataTable();
       } catch (refreshError) {
         console.error("Refresh error:", refreshError);
       }

@@ -74,8 +74,7 @@ export const formatUSD = (amount: number | string = 0) => {
 export const calculateDynamicTermAndPayment = (loan: any, selectedIssueDate = null) => {
     const start = moment(loan.issueDate, "MM-DD-YYYY");
     const today = selectedIssueDate ? moment(selectedIssueDate) : moment();
-    const monthsPassed = today.diff(start, "months") + 1;
-
+    const monthsPassed = Math.ceil(today.diff(start, "days") / 30);
     const originalTerm = loan.loanTerms || 0;
     const allowedTerms = [6, 12, 18, 24, 30, 36, 48];
     let dynamicTerm = originalTerm;

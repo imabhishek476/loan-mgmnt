@@ -121,6 +121,7 @@ exports.activeLoansData = async (req, res) => {
       [loans, total] = await Promise.all([
         Loan.find(query)
           .populate("client")
+          .populate("parentLoanId")
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(parseInt(limit || 10)),
@@ -253,6 +254,17 @@ exports.searchLoans = async (req, res) => {
       },
       { $unwind: { path: "$companyInfo", preserveNullAndEmptyArrays: true } }
     );
+     pipeline.push(
+      {
+        $lookup: {
+          from: "loans",
+          localField: "parentLoanId",
+          foreignField: "_id",
+          as: "parentLoanInfo",
+        },
+      },
+      { $unwind: { path: "$parentLoanInfo", preserveNullAndEmptyArrays: true } }
+    );
     if (customer && customer.trim() !== "") {
       pipeline.push({
         $match: {
@@ -292,6 +304,12 @@ exports.searchLoans = async (req, res) => {
             _id: "$companyInfo._id",
             companyName: "$companyInfo.companyName",
             backgroundColor: "$companyInfo.backgroundColor",
+          },
+           parentLoan: {
+            
+            _id: "$parentLoanInfo._id",
+            issueDate: "$parentLoanInfo.issueDate",
+
           },
         },
       });
@@ -677,6 +695,6 @@ exports.getProfitByLoanId = async (req, res) => {
       success: false,
       message: "Server error",
     });
-  }
-};
+  };
+};  
 

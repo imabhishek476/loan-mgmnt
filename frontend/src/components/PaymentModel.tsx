@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
-// import { calculateLoanAmounts } from "../utils/loanCalculations"; 
 import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
@@ -157,7 +156,7 @@ const LoanPaymentModal = observer(
 
         await loanStore.fetchActiveLoans(clientId);
         await clientStore.refreshDataTable();
-        await loanStore.getLoanProfitByLoanId(loan._id);
+        await loanStore.getLoanProfitByLoanId(loan._id);        
         onPaymentSuccess?.();
         toast.success("Payment recorded successfully");
         onClose();

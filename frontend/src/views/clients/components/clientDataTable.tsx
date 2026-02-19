@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useRef, useMemo, useCallback } from "react";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import {Plus, Power, RefreshCcw, XCircle } from "lucide-react";
 import moment from "moment";
@@ -304,6 +304,9 @@ const fetchClientsData = useCallback(async (query) => {
     { title: "SSN", field: "ssn", sorting: true },
     { title: "Email", field: "email", sorting: true },
   ], [currentPage, currentPageSize]);
+    useEffect(() => {
+      clientStore.tableRef = tableRef;
+    }, []);
 
   return (
     <>
@@ -395,7 +398,7 @@ const fetchClientsData = useCallback(async (query) => {
                   : "No clients available. Add a new client to get started."
               }`,
             },
-          }}     
+          }}
         />
       </div>
     </>
