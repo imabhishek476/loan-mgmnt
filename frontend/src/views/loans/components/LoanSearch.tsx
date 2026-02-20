@@ -49,7 +49,7 @@ export const LoanSearch = observer(
       }
     };
     return (
-      <div className="  bg-gray-200  py-2 px-2 rounded-lg ">
+      <div className="bg-gray-300  py-2 px-2 rounded-lg ">
        <div className="mb-0 grid  grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
         <TextField
           size="small"

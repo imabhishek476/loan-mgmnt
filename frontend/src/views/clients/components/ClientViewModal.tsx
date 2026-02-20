@@ -4,13 +4,13 @@ import {
   Plus,
   Pencil,
   AlertCircle,
-  ChevronRight,
-  ChevronUp,
-  ChevronLeft,
-  ChevronDown,
   Trash2,
   RefreshCcw,
   Eye,
+  FileText,
+  StickyNote,
+  User,
+  Building2,
 } from "lucide-react";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -20,7 +20,7 @@ import moment from "moment";
 import { observer } from "mobx-react-lite";
 import LoanPaymentModal from "../../../components/PaymentModel";
 import { deletePayment, fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
-import { Button } from "@mui/material";
+import { Button, CircularProgress, Skeleton } from "@mui/material";
 import Loans from "../../loans";
 import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
@@ -59,10 +59,15 @@ const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({})
 const [editingLoanId, setEditingLoanId] = useState<any>(null);
 const [editingPayment, setEditingPayment] = useState<any>(null);
 const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
-const [activeTab, setActiveTab] = useState<"customer" | "loans">("customer");
+const [loadingClient, setLoadingClient] = useState(true);
+const [loadingLoans, setLoadingLoans] = useState(true);
+const [loadingPaymentsMap, setLoadingPaymentsMap] = useState<Record<string, boolean>>({});
+const [activeTab, setActiveTab] = useState<"customer" | "loans" | "notes" | "templates">("customer");
   const loadInitialData = async () => {
     try {
       const promises = [];
+       setLoadingClient(true);
+       setLoadingLoans(true);
       if (companyStore.companies.length == 0 ) {
         promises.push(companyStore.fetchCompany());
       }
@@ -76,7 +81,10 @@ const [activeTab, setActiveTab] = useState<"customer" | "loans">("customer");
     } catch (error) {
       console.error(error);
       toast.error("Failed to load data");
-    }
+     } finally {
+      setLoadingClient(false);
+      setLoadingLoans(false);
+  }
   };
 
   const refreshPayments = async (loanId: string) => {
@@ -156,10 +164,12 @@ const [activeTab, setActiveTab] = useState<"customer" | "loans">("customer");
   };
 
 useEffect(() => {
-  if (clientLoans.length > 0 && expandedLoanIds.length === 0) {
+  if (!client?._id) return;
+  setExpandedLoanIds([]);
+  if (clientLoans.length > 0) {
     setExpandedLoanIds(clientLoans.map((loan) => loan._id));
   }
-}, [clientLoans]);
+}, [client?._id, clientLoans]);
 
   useEffect(() => {
     loadInitialData();
@@ -177,17 +187,19 @@ useEffect(() => {
 const handleToggleLoan = async (loanId: string) => {
   setExpandedLoanIds((prev) =>
     prev.includes(loanId)
-      ? prev.filter((id) => id !== loanId) // collapse
-      : [...prev, loanId] // expand
+      ? prev.filter((id) => id !== loanId)
+      : [...prev, loanId]
   );
 
   try {
+    setLoadingPaymentsMap(prev => ({ ...prev, [loanId]: true }));
     const payments = await fetchPaymentsByLoan(loanId);
     setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
     loanStore.getLoanProfitByLoanId(loanId);
   } catch (err) {
-    console.error(err);
     toast.error("Failed to fetch payment history");
+  } finally {
+    setLoadingPaymentsMap(prev => ({ ...prev, [loanId]: false }));
   }
 };
 const handleDeletePayment = async (payment: any) => {
@@ -283,64 +295,54 @@ const handleStatusChange = async (loanId, newStatus) => {
     toast.error("Failed to update status");
   }
 };
-
+const tabs = [
+  { key: "customer", label: "Client Info", icon: <User size={16} /> },
+  { key: "loans", label: "Loan History", icon: <Building2 size={16} /> },
+  { key: "notes", label: "Notes", icon: <StickyNote size={16} /> },
+  { key: "templates", label: "Templates", icon: <FileText size={16} /> },
+];
 return (
   <div className="flex-col">
     <div className=" sticky top-0 z-20">
       {/* Header */}
-      <div className="border-b  py-1 sticky top-0 z-20  flex justify-between items-left">
+      <div className="border-b  py-1 my-2 sticky top-0 z-20  flex justify-between items-left">
         <h1 className="font-bold text-xl text-gray-800">
           {client.fullName}
         </h1>
       </div>
-      <div className="sticky top-[48px]  z-20 border-b px-3">
+      <div className="sticky top-[48px] z-20 px-3">
 
-        <div className="flex justify-between items-center">
-
-          {/* LEFT → Tabs */}
-          <div className="flex gap-6">
-            <button
-              onClick={() => setActiveTab("customer")}
-              className={`py-3 text-sm font-semibold border-b-2 transition ${activeTab === "customer"
-                  ? "border-green-600 text-green-700"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
-            >
-              Customer Info
-            </button>
-
-            <button
-              onClick={() => setActiveTab("loans")}
-              className={`py-3 text-sm font-semibold border-b-2 transition ${activeTab === "loans"
-                  ? "border-green-600 text-green-700"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
-            >
-              Loan History
-            </button>
+<div className="flex items-center gap-3 w-ful my-2l">
+  <div className="flex-1">
+    <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm w-full">
+      <div
+        className="absolute top-1 bottom-1 rounded-md bg-[#166534] transition-all duration-300 ease-in-out"
+        style={{
+          width: `calc(${100 / tabs.length}% - 0.5rem)`,
+          left: `calc(${
+            (tabs.findIndex((t) => t.key === activeTab) * 100) /
+            tabs.length
+          }% + 0.25rem)`,
+        }}
+      />
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          onClick={() => setActiveTab(tab.key as any)}
+          className={`relative z-10 flex-1 py-2 text-sm font-semibold rounded-md transition ${
+            activeTab === tab.key
+              ? "text-white"
+              : "text-gray-700 hover:text-green-700"
+          }`}
+        >
+          <div className="flex items-center justify-center gap-1">
+            {tab.icon}
+            <span>{tab.label}</span>
           </div>
-
-          {/* RIGHT → Button */}
-          {activeTab === "loans" && (
-            <Button
-              variant="contained"
-              startIcon={<Plus />}
-              sx={{
-                backgroundColor: "#15803d",
-                "&:hover": { backgroundColor: "#166534" },
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: "6px",
-                boxShadow: "none",
-              }}
-              onClick={() => {
-                setSelectedClientForLoan(client);
-                setLoanModalOpen(true);
-              }}
-            >
-              New Loan
-            </Button>
-          )}
+        </button>
+      ))}
+    </div>
+  </div>
 
         </div>
       </div>
@@ -354,7 +356,7 @@ return (
         <div className="h-full overflow-y-auto p-3">
           <div className="flex items-center mb-4 gap-3">
             <h3 className="font-bold text-gray-800">
-              Customer Information
+              Client Information
             </h3>
 
             <Pencil
@@ -364,6 +366,13 @@ return (
             />
           </div>
 
+          {loadingClient ? (
+            <div className="p-3 space-y-3">
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" height={80} />
+              <Skeleton variant="rectangular" height={80} />
+            </div>
+          ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700">
                   <Info label="Full Name" value={client.fullName} />
                   <Info label="Email" value={client.email} />
@@ -372,29 +381,16 @@ return (
                   <Info label="Accident Date" value={client.accidentDate} />
                   <Info label="Attorney" value={client.attorneyName} />
                   <Info label="SSN" value={client.ssn} />
-                    {client.underwriter && (
-                      <Info label="Underwriter" value={client.underwriter} />
-                    )}
-                    {client.medicalParalegal && (
-                      <Info label="Medical Paralegal" value={client.medicalParalegal} />
-                    )}
-                    {client.caseId && (
-                      <Info label="Case ID" value={client.caseId} />
-                    )}
-                    {client.caseType && (
-                      <Info label="Case Type" value={client.caseType} />
-                    )}
-                    {client.indexNumber && (
-                      <Info label="Index #" value={client.indexNumber} />
-                    )}
-                    {client.uccFiled !== undefined && (
-                      <Info label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} />
-                    )}
-            <div className="sm:col-span-2">
+              <Info label="Underwriter" value={client.underwriter} />
+              <Info label="Medical Paralegal" value={client.medicalParalegal} />
+              <Info label="Case ID" value={client.caseId} />
+              <Info label="Case Type" value={client.caseType} />
+              <Info label="Index #" value={client.indexNumber} />
+              <Info label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} />
               <Info label="Address" value={client.address} />
-            </div>
 
-            {/* Memo */}
+
+              {/* Memo */}
                   <div className="sm:col-span-2">
                     <p className="text-xs uppercase text-gray-500 font-medium">
                       Memo
@@ -404,14 +400,42 @@ return (
                     </div>
                   </div>
                 </div>
+          )}
         </div>
       )}
       {/* ✅ LOANS TAB */}
       {activeTab === "loans" && (
         <div className="h-[calc(90vh-53px)] overflow-y-auto p-2 space-y-4">
+           <div className="flex justify-end">
+              <Button
+                variant="contained"
+                startIcon={<Plus />}
+                sx={{
+                  backgroundColor: "#15803d",
+                  "&:hover": { backgroundColor: "#166534" },
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  boxShadow: "none",
+                }}
+                onClick={() => {
+                  setSelectedClientForLoan(client);
+                  setLoanModalOpen(true);
+                }}
+              >
+                New Loan
+              </Button>
+            </div>
           {/* Loans List */}
-          <div className="overflow-y-auto p-2 space-y-4">
-              {getClientLoansData.length > 0 ? (
+          <div className="overflow-y-auto p-2 pt-0 space-y-4">
+            {loadingLoans ? (
+                <div className="space-y-3 p-2">
+                  <Skeleton variant="rectangular" height={80} />
+                  <Skeleton variant="rectangular" height={80} />
+                  <Skeleton variant="rectangular" height={80} />
+                </div>
+              ) :
+              getClientLoansData.length > 0 ? (
                 getClientLoansData.map((loanData: any) => {
                   const { loan, companyName, companyColor, selectedLoanData, isDelayed, currentEndDate, profitData } = loanData;
                   return (
@@ -579,8 +603,11 @@ return (
                                   </button>
                                 )}
                                 </h4>
-
-                                {loanPayments[loan._id]?.length > 0 ? (
+                                {loadingPaymentsMap[loan._id] ? (
+                                  <div className="flex justify-center py-4">
+                                    <CircularProgress size={24} />
+                                  </div>
+                                ) : loanPayments[loan._id]?.length > 0 ? (
                                   <div className="mt-2 max-h-48 overflow-y-auto rounded-md">
                                     {loanPayments[loan._id].map((p) => (
                                       <div
@@ -640,11 +667,11 @@ return (
                                       </div>
                                     ))}
                                   </div>
-                                ) : (
-                                  <p className="text-gray-500 text-sm italic">
-                                    No payments recorded yet.
-                                  </p>
-                                )}
+                               ) : (
+                                <p className="text-gray-500 text-sm italic">
+                                  No payments recorded yet.
+                                </p>
+                              )}
                                   {profitData?.totalProfit > 0 && (
                                     <div className="text-sm font-semibold text-emerald-600">
                                       Profit: {formatUSD(profitData.totalProfit)}
@@ -911,6 +938,24 @@ return (
                 </p>
               )}
             </div>
+          </div>
+        )}
+       {activeTab === "notes" && (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+          <StickyNote size={28} className="mb-2 text-gray-400" />
+          <p className="text-sm font-semibold">No Notes Found</p>
+          <p className="text-xs mt-1">
+            This client doesn’t have any notes yet.
+          </p>
+        </div>
+      )}
+            {activeTab === "templates" && (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+          <FileText size={28} className="mb-2 text-gray-400" />
+          <p className="text-sm font-semibold">No Templates Available</p>
+          <p className="text-xs mt-1">
+            You haven’t created any templates yet.
+          </p>
           </div>
         )}
       </div>

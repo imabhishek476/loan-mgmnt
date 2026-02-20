@@ -10,7 +10,7 @@ import { observer } from "mobx-react-lite";
 
 export const CustomerSearch = observer(({ tableRef }:any) => {
 
-    const { clientFilters, filtersOpen } = clientStore;
+    const { clientFilters } = clientStore;
     const [localFilters, setLocalFilters] = useState(clientFilters);
     const [filterActive, setFilterActive] = useState(false);
   const handleReset = () => {
@@ -35,7 +35,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
     };
     setLocalFilters(emptyFilters);
     clientStore.setClientFilters(emptyFilters);
-     clientStore.setFiltersOpen(true);
+   
     tableRef.current?.onQueryChange();
   };
   const onChange = (e: any) => {
@@ -94,8 +94,8 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
     }
   };
   return (
-    <div className=" bg-gray-200 rounded-lg mb-3">
-      <div className="relative  px-2 rounded-t-lg border-b-2 border-green-700">
+    <div className=" bg-gray-300 rounded-lg mb-3">
+      <div className="relative  px-2 rounded-t-lg ">
         <div
           className={`
     transition-all duration-300 ease-in-out
@@ -135,27 +135,8 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
               ))}
           </div>
         </div>
-        <div className="absolute left-1/2 top-full -translate-x-1/2 translate-y-[-60%]">
-          <button
-            type="button"
-            onClick={() => clientStore.toggleFiltersOpen()}
-            className="
-                      w-6 h-6 rounded-full
-                      bg-green-700 border shadow
-                      flex items-center justify-center
-                      hover:bg-green-500 transition
-                    "
-          >
-            {filtersOpen ? (
-              <ChevronsUp size={16} className="text-white" />
-            ) : (
-              <ChevronsDown size={16} className="text-white" />
-            )}
-          </button>
-        </div>
-
       </div>
-      <div className={` px-2  rounded-b-lg ${filtersOpen ? "h-50 opacity-100" : "h-0 opacity-0"}`}>
+      <div className={` px-2  rounded-b-lg`}>
         <form
           onSubmit={(e) => {
             e.preventDefault();

@@ -260,7 +260,7 @@
                   cellStyle: { whiteSpace: "nowrap" },
                 },
                 {
-                  title: "Customer",
+                  title: "Client",
                   sorting: false,
                   render: (rowData: any) => (
                     <a

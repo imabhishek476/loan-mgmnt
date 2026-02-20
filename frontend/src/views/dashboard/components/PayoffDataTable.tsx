@@ -90,7 +90,7 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
             title: "Sr.no",
             render: (rowData: any) => rowData.tableData.id + 1,
           },
-          { title: "Customer", field: "clientName" },
+          { title: "Client", field: "clientName" },
           { title: "Company", field: "companyName" },
           {
             title: "Total Loan",
