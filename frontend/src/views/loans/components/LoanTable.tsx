@@ -23,6 +23,7 @@
   import LoanSearch from "./LoanSearch";
   import ClientViewModal from "../../clients/components/ClientViewModal";
   import FormModal, { type FieldConfig } from "../../../components/FormModal";
+import { useNavigate } from "react-router-dom";
 
   interface LoanTableProps {
     clientId?: string;
@@ -168,9 +169,11 @@
       remaining = details.remaining;
       total = details.total;
     }
+    const navigate = useNavigate();
     const handleViewClient = async (client) => {
-    setViewClient({ ...client, loans: [] });
-    setViewModalOpen(true);
+    // setViewClient({ ...client, loans: [] });
+    navigate(`/client/${client._id}`);
+    // setViewModalOpen(true);
     };
     const customFields: {
       id: number;

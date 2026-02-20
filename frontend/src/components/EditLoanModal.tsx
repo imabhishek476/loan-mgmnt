@@ -209,8 +209,6 @@ const EditLoanModal = observer(
           return toast.error("Base amount must be greater than 0");
         if (!formData.loanTerms || formData.loanTerms <= 0)
           return toast.error("Please enter valid loan terms");
-        const loan = await fetchLoanById(loanId);
-        if (!loan) return toast.error("Loan not found");
         if (!formData.issueDate) {
           toast.error("Issue date is required");
           setSaving(false);
@@ -255,8 +253,8 @@ const EditLoanModal = observer(
          }
         setSaving(true);
         await updateLoan(loanId, payload);
-        const refreshedLoans = await activeLoansData(formData.client);
-              loanStore.loans = refreshedLoans; 
+        // const refreshedLoans = await activeLoansData(formData.client);
+        //       loanStore.loans = refreshedLoans; 
         await clientStore.refreshDataTable();
         await loanStore.getLoansByClient(formData.client);
 

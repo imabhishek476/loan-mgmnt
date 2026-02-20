@@ -62,7 +62,7 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
 const [loadingClient, setLoadingClient] = useState(true);
 const [loadingLoans, setLoadingLoans] = useState(true);
 const [loadingPaymentsMap, setLoadingPaymentsMap] = useState<Record<string, boolean>>({});
-const [activeTab, setActiveTab] = useState<"customer" | "loans" | "notes" | "templates">("customer");
+const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templates">("client");
   const loadInitialData = async () => {
     try {
       const promises = [];
@@ -75,7 +75,7 @@ const [activeTab, setActiveTab] = useState<"customer" | "loans" | "notes" | "tem
          promises.push(clientStore.fetchClients());
        }
         if (loanStore.loans.length == 0) {
-          promises.push(loanStore.fetchActiveLoans(client._id));
+          // promises.push(loanStore.fetchActiveLoans(client._id));
         }
       await Promise.all(promises);
     } catch (error) {
@@ -171,10 +171,20 @@ useEffect(() => {
   }
 }, [client?._id, clientLoans]);
 
+  // useEffect(() => {
+  //   loadInitialData();
+  // if (client?._id) loanStore.fetchActiveLoans(client?._id);
+  // }, [client?._id]);
   useEffect(() => {
-    loadInitialData();
-  if (client?._id) loanStore.fetchActiveLoans(client?._id);
-  }, [client?._id]);
+  if (!client?._id) return;
+  if (activeTab === "client") {
+   loadInitialData();
+   clientStore.fetchClients(client._id)
+  }
+  else if (activeTab === "loans") {
+    loanStore.fetchActiveLoans(client._id);
+  }
+}, [activeTab, client?._id]);
   useEffect(() => {
     const newMap: Record<string, number> = {};
     clientLoans.forEach((loan) => {
@@ -296,11 +306,23 @@ const handleStatusChange = async (loanId, newStatus) => {
   }
 };
 const tabs = [
-  { key: "customer", label: "Client Info", icon: <User size={16} /> },
+  { key: "client", label: "Client Info", icon: <User size={16} /> },
   { key: "loans", label: "Loan History", icon: <Building2 size={16} /> },
   { key: "notes", label: "Notes", icon: <StickyNote size={16} /> },
   { key: "templates", label: "Templates", icon: <FileText size={16} /> },
 ];
+client.notes = [
+  {
+    _id: "1",
+    date: "2026-02-18",
+    text: "Second funding round approved. Client requested expedited processing."
+  },
+  {
+    _id: "2",
+    date: "2026-01-22",
+    text: "Attorney confirmed settlement negotiations are in progress."
+  }
+]
 return (
   <div className="flex-col">
     <div className=" sticky top-0 z-20">
@@ -352,7 +374,7 @@ return (
     <div className="flex-1  overflow-hidden ">
 
       {/* ✅ CUSTOMER TAB */}
-      {activeTab === "customer" && (
+      {activeTab === "client" && (
         <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
           <div className="flex items-center mb-4 gap-3">
             <h3 className="font-bold text-gray-800">
@@ -940,13 +962,65 @@ return (
             </div>
           </div>
         )}
-       {activeTab === "notes" && (
+{activeTab === "notes" && (
+  <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
+
+    {/* Header */}
+    <div className="flex justify-end mb-3">
+      <Button
+        variant="contained"
+        startIcon={<StickyNote size={16} />}
+        sx={{
+          backgroundColor: "#15803d",
+          "&:hover": { backgroundColor: "#166534" },
+          textTransform: "none",
+          fontWeight: 600,
+          borderRadius: "6px",
+          boxShadow: "none",
+        }}
+      >
+        Add Note
+      </Button>
+    </div>
+
+    {/* If notes exist */}
+    {client.notes?.length > 0 ? (
+      <div className="relative border-l-2 border-green-600 ml-3 space-y-6">
+
+        {client.notes.map((note: any) => (
+          <div key={note._id} className="ml-4 relative justify-between">
+
+            {/* Dot */}
+            <span className="absolute -left-[22px] top-1.5 w-3 h-3 bg-green-600 rounded-full border-2 border-white shadow" />
+
+            {/* Date */}
+            <p className="text-xs font-semibold text-green-700">
+              {moment(note.date).format("MMM DD, YYYY")}
+            </p>
+
+            {/* Content */}
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {note.text}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <Pencil size={14} className="text-blue-600 cursor-pointer" />
+              <Trash2 size={14} className="text-red-600 cursor-pointer" />
+            </div>
+          </div>
+          
+        ))}
+
+      </div>
+    ) : (
+      /* Empty state */
         <div className="flex flex-col items-center justify-center py-12 text-gray-500">
           <StickyNote size={28} className="mb-2 text-gray-400" />
           <p className="text-sm font-semibold">No Notes Found</p>
           <p className="text-xs mt-1">
             This client doesn’t have any notes yet.
           </p>
+      </div>
+    )}
         </div>
       )}
             {activeTab === "templates" && (
