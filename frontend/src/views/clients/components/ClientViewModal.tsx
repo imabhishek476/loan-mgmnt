@@ -702,6 +702,9 @@ return (
                                   {profitData?.totalProfit > 0 && (
                                     <div className="text-sm font-semibold text-emerald-600">
                                       Profit: {formatUSD(profitData.totalProfit)}
+                                    <span className="text-sm font-semibold text-gray-600">
+                                        {" "} ( Total Base: {formatUSD(profitData.totalBaseAmount)} | Total Paid: {formatUSD(profitData.totalPaid)} )
+                                    </span>
                                     </div>
                                 )}
                               </div>

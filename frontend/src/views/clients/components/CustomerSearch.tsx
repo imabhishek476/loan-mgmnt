@@ -216,7 +216,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       size="small"
       color="success"
       options={LOAN_STATUS_OPTIONS}
-      value={localFilters.allLoanStatus || "All"}
+      value={localFilters.allLoanStatus || ""}
       onChange={(_, value) =>
         setLocalFilters({
           ...localFilters,
