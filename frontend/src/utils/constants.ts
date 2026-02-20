@@ -12,7 +12,6 @@ export const LOAN_STATUS_OPTIONS = [
     "Lost",
     "Denied",
     "Merged",
-    "Deactivated",
 ];
 export const todayMMDDYYYY = () => {
     const d = new Date();

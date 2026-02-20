@@ -335,9 +335,9 @@ return (
               : "text-gray-700 hover:text-green-700"
           }`}
         >
-          <div className="flex items-center justify-center gap-1">
-            {tab.icon}
-            <span>{tab.label}</span>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2">
+                    <span className="text-lg">{tab.icon}</span>
+            <span className="text-xs md:text-sm">{tab.label}</span>
           </div>
         </button>
       ))}
@@ -353,7 +353,7 @@ return (
 
       {/* ✅ CUSTOMER TAB */}
       {activeTab === "customer" && (
-        <div className="h-full overflow-y-auto p-3">
+        <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
           <div className="flex items-center mb-4 gap-3">
             <h3 className="font-bold text-gray-800">
               Client Information
@@ -405,7 +405,7 @@ return (
       )}
       {/* ✅ LOANS TAB */}
       {activeTab === "loans" && (
-        <div className="h-[calc(90vh-53px)] overflow-y-auto p-2 space-y-4">
+        <div className="h-[calc(80vh-53px)] overflow-y-auto p-2 space-y-4">
            <div className="flex justify-end">
               <Button
                 variant="contained"
