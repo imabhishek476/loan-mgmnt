@@ -380,7 +380,7 @@ const renderLoanStatus = (loan: any) => {
               width: 38,
               borderBottom: "1px solid #f1f1f1",
               transition: "background 0.2s",
-               backgroundColor: !rowData.isActive ? "#edcfcf" : "#ffffff",
+               backgroundColor: !rowData.isActive ? "#d5d5d5" : "#ffffff",
             }),
             padding: "default",
             toolbar: false,

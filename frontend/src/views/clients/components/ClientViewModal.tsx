@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-  X,
   Plus,
   Pencil,
   AlertCircle,
@@ -28,6 +27,7 @@ import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
 import {deactivateLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { getAllowedTerms } from "../../../utils/constants";
+import ClientNotes from "./ClientNotes";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -700,11 +700,11 @@ return (
                                 </p>
                               )}
                                   {profitData?.totalProfit > 0 && (
-                                    <div className="text-sm font-semibold text-emerald-600">
-                                      Profit: {formatUSD(profitData.totalProfit)}
+                                    <div className="text-sm font-semibold text-emerald-600">                                   
                                     <span className="text-sm font-semibold text-gray-600">
                                         {" "} ( Total Base: {formatUSD(profitData.totalBaseAmount)} | Total Paid: {formatUSD(profitData.totalPaid)} )
-                                    </span>
+                                    </span> {" "}
+                                       Profit: {formatUSD(profitData.totalProfit)}
                                     </div>
                                 )}
                               </div>
@@ -986,66 +986,12 @@ return (
           </div>
         )}
 {activeTab === "notes" && (
-  <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
-
-    {/* Header */}
-    <div className="flex justify-end mb-3">
-      <Button
-        variant="contained"
-        startIcon={<StickyNote size={16} />}
-        sx={{
-          backgroundColor: "#15803d",
-          "&:hover": { backgroundColor: "#166534" },
-          textTransform: "none",
-          fontWeight: 600,
-          borderRadius: "6px",
-          boxShadow: "none",
-        }}
-      >
-        Add Note
-      </Button>
-    </div>
-
-    {/* If notes exist */}
-    {client.notes?.length > 0 ? (
-      <div className="relative border-l-2 border-green-600 ml-3 space-y-6">
-
-        {client.notes.map((note: any) => (
-          <div key={note._id} className="ml-4 relative justify-between">
-
-            {/* Dot */}
-            <span className="absolute -left-[22px] top-1.5 w-3 h-3 bg-green-600 rounded-full border-2 border-white shadow" />
-
-            {/* Date */}
-            <p className="text-xs font-semibold text-green-700">
-              {moment(note.date).format("MMM DD, YYYY")}
-            </p>
-
-            {/* Content */}
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {note.text}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-              <Pencil size={14} className="text-blue-600 cursor-pointer" />
-              <Trash2 size={14} className="text-red-600 cursor-pointer" />
-            </div>
-          </div>
-          
-        ))}
-
-      </div>
-    ) : (
-      /* Empty state */
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-          <StickyNote size={28} className="mb-2 text-gray-400" />
-          <p className="text-sm font-semibold">No Notes Found</p>
-          <p className="text-xs mt-1">
-            This client doesn’t have any notes yet.
-          </p>
-      </div>
-    )}
-        </div>
-      )}
+      <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
+<ClientNotes
+  clientId={client._id}
+  clientName={client.fullName}
+/>    </div>
+        )}
             {activeTab === "templates" && (
         <div className="flex flex-col items-center justify-center py-12 text-gray-500">
           <FileText size={28} className="mb-2 text-gray-400" />

@@ -303,7 +303,6 @@ exports.searchClients = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 exports.updateClient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -374,8 +373,6 @@ exports.updateClient = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
-
 exports.deleteClient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -499,7 +496,6 @@ exports.toggleClientStatus = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
 exports.getClientById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -512,5 +508,3 @@ exports.getClientById = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
-

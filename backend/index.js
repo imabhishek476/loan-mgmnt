@@ -9,6 +9,7 @@ const loanRouter = require("./routes/loans.router");
 const loanPaymentRouter = require("./routes/loanPayment.router");
 const dashboardRoutes = require("./routes/dashbaord.router")
 const auditRouter = require("./routes/auditLog.router");
+const clientNotesRouter = require("./routes/clientNotes.router")
 const userRouter = require("./routes/users.router");
 const app = express();
 
@@ -38,6 +39,7 @@ connectDB();
 // Routes
 app.use("/api/auth", require("./routes/auth.router"));
 app.use("/api/client", clientRouter);
+app.use("/api/client-notes", clientNotesRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/loans", loanRouter);
 app.use("/api/payments", loanPaymentRouter);
