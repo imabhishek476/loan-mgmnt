@@ -12,6 +12,7 @@ import { getAllowedTerms } from "../../../utils/constants";
 import {updateLoanStatus } from "../../../services/LoanService";
 import CustomerSearch from "./CustomerSearch";
 import { observer } from "mobx-react-lite";
+import { Link } from "react-router-dom";
 interface ClientsDataTableProps {
   // clients: any[];
   onAddLoan: (client: any) => void;
@@ -159,16 +160,12 @@ const fetchClientsData = useCallback(async (query) => {
       sorting: true,
       cellStyle: { fontWeight: 500 },
       render: (rowData) => (
-        <a
-          href="#"
+        <Link
+          to={`/client/${rowData._id}`}
           className="text-green-600 cursor-pointer hover:underline"
-          onClick={(e) => {
-            e.preventDefault();
-            onViewClient?.(rowData);
-          }}
         >
           {rowData?.fullName}
-        </a>
+        </Link>
       ),
     },
     { title: "Phone", field: "phone", sorting: false },

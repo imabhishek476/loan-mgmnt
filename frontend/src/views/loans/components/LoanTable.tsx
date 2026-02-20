@@ -326,19 +326,28 @@
                   sorting: false,
                   render: (rowData) => {
                     const today = moment().startOf("day");
-                    const issueDate = moment(
-                      rowData.issueDate,
-                      "MM-DD-YYYY"
-                    ).startOf("day");
-                    const daysPassed = today.diff(issueDate, "days");
-                    let completedMonths = Math.floor(daysPassed / 30);
+                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY");
+                    const parentIssueDate = rowData.parentLoan?.issueDate
+                      ? moment(rowData.parentLoan.issueDate, "MM-DD-YYYY")
+                      : null;
+                    let daysPassed = 0;
+                    if (parentIssueDate) {
+                      const referenceDate = parentIssueDate;
+                      daysPassed = referenceDate.diff(issueDate, "days");
+                    } else {
+                      const referenceDate = today; // normal behaviour
+                      daysPassed = referenceDate.diff(issueDate, "days");
+                    }
+                    let completedMonths = Math.ceil(daysPassed / 30);
                     if (daysPassed % 30 === 0 && daysPassed !== 0) {
                       completedMonths -= 1;
                     }
+                    completedMonths = Math.max(0, completedMonths);
                     const ALLOWED_TERMS = getAllowedTerms(rowData.loanTerms);
                     const runningTenure =
-                      ALLOWED_TERMS.find((t) => completedMonths <= t) ||
-                      rowData.loanTerms;
+                      ALLOWED_TERMS.find(
+                        (t) => t >= completedMonths && t <= rowData.loanTerms
+                      ) || rowData.loanTerms;
                     return <span>{runningTenure}</span>;
                   },
                   headerStyle: { whiteSpace: "nowrap" },

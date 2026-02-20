@@ -41,8 +41,7 @@ interface ClientViewModalProps {
 const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModalProps) => {
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [editPaymentLoan, setEditPaymentLoan] = useState<any>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
+  const [expandedLoanIds, setExpandedLoanIds] = useState<string[]>([]);
   const [loanPayments, setLoanPayments] = useState<Record<string, any[]>>({});
   const [loanModalOpen, setLoanModalOpen] = useState(false);
   const [loanEditModalOpen, setEditLoanModalOpen] = useState(false);
@@ -60,6 +59,7 @@ const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({})
 const [editingLoanId, setEditingLoanId] = useState<any>(null);
 const [editingPayment, setEditingPayment] = useState<any>(null);
 const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
+const [activeTab, setActiveTab] = useState<"customer" | "loans">("customer");
   const loadInitialData = async () => {
     try {
       const promises = [];
@@ -155,6 +155,11 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
     return nextTerm ?? LOAN_TERMS[LOAN_TERMS.length - 1];
   };
 
+useEffect(() => {
+  if (clientLoans.length > 0 && expandedLoanIds.length === 0) {
+    setExpandedLoanIds(clientLoans.map((loan) => loan._id));
+  }
+}, [clientLoans]);
 
   useEffect(() => {
     loadInitialData();
@@ -169,22 +174,22 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
   }, [clientLoans]);
   if (!open) return null;
 
-  const handleToggleLoan = async (loanId: string) => {
-    if (expandedLoanId === loanId) {
-      setExpandedLoanId(null);
-      return;
-    }
-    setExpandedLoanId(loanId);
-  loanStore.getLoanProfitByLoanId(loanId); 
+const handleToggleLoan = async (loanId: string) => {
+  setExpandedLoanIds((prev) =>
+    prev.includes(loanId)
+      ? prev.filter((id) => id !== loanId) // collapse
+      : [...prev, loanId] // expand
+  );
 
-    try {
-      const payments = await fetchPaymentsByLoan(loanId);
-      setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch payment history");
-    }
-  };
+  try {
+    const payments = await fetchPaymentsByLoan(loanId);
+    setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
+    loanStore.getLoanProfitByLoanId(loanId);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to fetch payment history");
+  }
+};
 const handleDeletePayment = async (payment: any) => {
   Confirm({
     title: "Confirm Delete",
@@ -279,86 +284,94 @@ const handleStatusChange = async (loanId, newStatus) => {
   }
 };
 
+return (
+  <div className="flex-col">
+    <div className=" sticky top-0 z-20">
+      {/* Header */}
+      <div className="border-b  py-1 sticky top-0 z-20  flex justify-between items-left">
+        <h1 className="font-bold text-xl text-gray-800">
+          {client.fullName}
+        </h1>
+      </div>
+      <div className="sticky top-[48px]  z-20 border-b px-3">
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50  rounded-md">
-      <div
-        className="bg-white rounded-lg w-full max-w-7xl shadow-lg relative mx-4 sm:mx-6 flex flex-col overflow-y-auto"
-        style={{ height: "650px" }}
-      >
-        {" "}
-        {/* Header */}
-        <div className="flex justify-between items-center py-4  px-4 border-b sticky top-0 bg-white z-20 rounded-md">
-          <h1 className="font-bold text-lg text-gray-800">{client.fullName}</h1>
-          <button
-            onClick={onClose}
-            title="Close"
-            className="text-gray-500 hover:text-gray-800"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        <div className="flex justify-between items-center">
+
+          {/* LEFT → Tabs */}
+          <div className="flex gap-6">
+            <button
+              onClick={() => setActiveTab("customer")}
+              className={`py-3 text-sm font-semibold border-b-2 transition ${activeTab === "customer"
+                  ? "border-green-600 text-green-700"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              Customer Info
+            </button>
+
+            <button
+              onClick={() => setActiveTab("loans")}
+              className={`py-3 text-sm font-semibold border-b-2 transition ${activeTab === "loans"
+                  ? "border-green-600 text-green-700"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              Loan History
+            </button>
+          </div>
+
+          {/* RIGHT → Button */}
+          {activeTab === "loans" && (
+            <Button
+              variant="contained"
+              startIcon={<Plus />}
+              sx={{
+                backgroundColor: "#15803d",
+                "&:hover": { backgroundColor: "#166534" },
+                textTransform: "none",
+                fontWeight: 600,
+                borderRadius: "6px",
+                boxShadow: "none",
+              }}
+              onClick={() => {
+                setSelectedClientForLoan(client);
+                setLoanModalOpen(true);
+              }}
+            >
+              New Loan
+            </Button>
+          )}
+
         </div>
-        <div className="flex flex-col lg:flex-row h-full  ">
-          {/* Sidebar */}
-          <div
-            className={`relative transition-all duration-300 ease-in-out bg-gray-50 border-l ${
-              sidebarCollapsed
-                ? "lg:w-12 h-12 lg:h-full"
-                : "w-full lg:w-1/3  h-full"
-            } p-2`}
-          >
-            <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-200  border-b">
-              {/* <FileText size={20} className={`text-green-700 ${
-                  sidebarCollapsed ? "lg:hidden" : ""
-                }`}/> */}
-              <h3
-                className={` font-bold text-gray-800  ${
-                  sidebarCollapsed ? "lg:hidden" : ""
-                }`}
-              >
-                Customer Information
-              </h3>
-              <span title="Edit Customer">
-              <Pencil
-                size={18}
-                className={`text-green-700 cursor-pointer hover:text-green-900 transition md:w-5 md:h-5 ${
-                  sidebarCollapsed ? "lg:hidden" : ""
-                }`}
-                onClick={() => onEditClient(client)}
-              />
-              </span>
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="absolute top-2 right-2 items-center justify-center w-8 h-8 bg-green-700 text-white rounded-full shadow-lg hover:bg-green-800 transition-transform transform hover:scale-105"
-                title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              >
-                <span className="hidden lg:flex flex-col items-center">
-                  {sidebarCollapsed ? (
-                    <ChevronRight size={20} />
-                  ) : (
-                    <ChevronLeft size={20} />
-                  )}
-                </span>
-                <span className="flex lg:hidden flex-col items-center">
-                  {sidebarCollapsed ? (
-                    <ChevronDown size={20} />
-                  ) : (
-                    <ChevronUp size={20} />
-                  )}
-                </span>
-              </button>
-            </div>
+      </div>
+    </div>
 
-            {!sidebarCollapsed && (
-              <>
-                <div className="max-h-[500px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700 px-2 pb-4">
+    {/* Content */}
+    <div className="flex-1  overflow-hidden ">
+
+      {/* ✅ CUSTOMER TAB */}
+      {activeTab === "customer" && (
+        <div className="h-full overflow-y-auto p-3">
+          <div className="flex items-center mb-4 gap-3">
+            <h3 className="font-bold text-gray-800">
+              Customer Information
+            </h3>
+
+            <Pencil
+              size={18}
+              className="text-green-700 cursor-pointer hover:text-green-900"
+              onClick={() => onEditClient(client)}
+            />
+          </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700">
                   <Info label="Full Name" value={client.fullName} />
                   <Info label="Email" value={client.email} />
                   <Info label="Phone" value={client.phone} />
                   <Info label="DOB" value={client.dob} />
                   <Info label="Accident Date" value={client.accidentDate} />
                   <Info label="Attorney" value={client.attorneyName} />
-                  <Info label="SSN" value={client.ssn} />                  
+                  <Info label="SSN" value={client.ssn} />
                     {client.underwriter && (
                       <Info label="Underwriter" value={client.underwriter} />
                     )}
@@ -374,92 +387,30 @@ const handleStatusChange = async (loanId, newStatus) => {
                     {client.indexNumber && (
                       <Info label="Index #" value={client.indexNumber} />
                     )}
-                    {client.uccFiled !== undefined && client.uccFiled !== "" && (
-                      <Info
-                        label="UCC Filed"
-                        value={client.uccFiled ? "Yes" : "No"}
-                      />
+                    {client.uccFiled !== undefined && (
+                      <Info label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} />
                     )}
-               <div>
-                <p className="text-xs uppercase text-gray-500 font-medium">
-                  Custom Fields
-                </p>
-                {client?.customFields?.length ? (
-                  <ul className="mt-1 space-y-1 text-sm font-semibold text-gray-800">
-                    {client.customFields.map((field, index) => (
-                      <li key={index} className="break-words">
-                        <span className="text-gray-600">{field.name}:</span>{" "}
-                        {field.value}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="font-semibold text-sm">—</p>
-                )}
-              </div>
+            <div className="sm:col-span-2">
+              <Info label="Address" value={client.address} />
+            </div>
 
+            {/* Memo */}
                   <div className="sm:col-span-2">
                     <p className="text-xs uppercase text-gray-500 font-medium">
-                      Address
-                    </p>
-                    <p className="font-semibold text-sm break-words">
-                      {client.address || "—"}
-                    </p>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <p className="text-xs uppercase text-gray-500 font-medium mb-1">
                       Memo
                     </p>
-                    <div className="bg-yellow-100 border-l-4 border-yellow-600 p-5 rounded shadow-sm text-sm text-gray-800">
+                    <div className="bg-yellow-100 border-l-4 border-yellow-600 p-3 rounded text-sm">
                       {client.memo || "—"}
                     </div>
                   </div>
-                </div>                
-              </>
-            )}
-          </div>
-
-          {/* Loans */}
-          <div className="flex-1 border-r relative">
-            <div className="sticky top-0 bg-white z-10 px-3 py-2 border-b flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                {/* <DollarSign size={20} className="text-green-600" /> */}
-                <h3 className=" font-bold text-gray-800">
-                  Loan History
-                </h3>
-              </div>
-
-              {/* <Tooltip title="Add New Loan" arrow> */}
-                <Button
-                  variant="contained"
-                  startIcon={<Plus />}
-                  title="New Loan"
-                  sx={{
-                    backgroundColor: "#15803d",
-                    "&:hover": { backgroundColor: "#166534" },
-                    textTransform: "none",
-                    fontWeight: 600,
-                    borderRadius: 1,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!client?._id) {
-                      toast.error("Client data not available");
-                      return;
-                    }
-                    setLoanModalOpen(false);
-                    setTimeout(() => {
-                      setSelectedClientForLoan(client);
-                      setLoanModalOpen(true);
-                    }, 10);
-                  }}
-                >
-                  New Loan
-                </Button>
-              {/* </Tooltip> */}
-            </div>
-            <div className="p-2 space-y-4 min-h-[400px] ">
+                </div>
+        </div>
+      )}
+      {/* ✅ LOANS TAB */}
+      {activeTab === "loans" && (
+        <div className="h-[calc(90vh-53px)] overflow-y-auto p-2 space-y-4">
+          {/* Loans List */}
+          <div className="overflow-y-auto p-2 space-y-4">
               {getClientLoansData.length > 0 ? (
                 getClientLoansData.map((loanData: any) => {
                   const { loan, companyName, companyColor, selectedLoanData, isDelayed, currentEndDate, profitData } = loanData;
@@ -495,14 +446,13 @@ const handleStatusChange = async (loanId, newStatus) => {
                                   {formatUSD(selectedLoanData.paidAmount)}
                                 </span>{" "}
                                 /{" "}
-                              <span className="text-red-700 font-bold">
+                             <span className="text-red-700 font-bold">
                                  {formatUSD(
                                     loan.status === "Paid Off"
                                       ? 0
                                       : selectedLoanData.remaining
                                   )}
                                 </span>
-                                  
                               </span>
                               {!["Paid Off", "Merged"].includes(
                                 loan.status
@@ -530,13 +480,13 @@ const handleStatusChange = async (loanId, newStatus) => {
                                   `}
                                   value={loan.status}
                                   title="Status"
-                                  disabled={loan.status === "Merged"} 
+                                  disabled={loan.status === "Merged"}
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={(e) => handleStatusChange(loan._id, e.target.value)}
                                 >
                                    {loan.status === "Merged" ? (
                                     <option value="Merged">Merged</option>
-                                   ):(
+                                   ) : (
                                   <>
                                   <option value="Active">Active</option>
                                   <option value="Partial Payment">Partial Payment</option>
@@ -556,29 +506,28 @@ const handleStatusChange = async (loanId, newStatus) => {
                           className="text-red-600"
                         />
                       )}
-                              <span>
-                                {loan.status !== "Merged" && 
-                               loan.loanStatus !== "Deactivated" && (
-                                <span title="Edit Loan">
-                                  <Pencil
-                                    size={16}
-                                    className="text-green-700 inline-block cursor-pointer hover:text-green-900"
-                                    onClick={(e) => {
-                                        setLoanModalMode("edit");
-                                      e.stopPropagation();
-                                      setSelectedClientForLoan(client);
-                                      setEditLoanModalOpen(true);
-                                      setEditingLoanId(loan._id);
-                                    }}
-                                  />
+                                <span>
+                                  {loan.status !== "Merged" &&
+                                    loan.loanStatus !== "Deactivated" && (
+                                      <span title="Edit Loan">
+                                        <Pencil
+                                          size={16}
+                                          className="text-green-700 inline-block cursor-pointer hover:text-green-900"
+                                          onClick={(e) => {
+                                            setLoanModalMode("edit");
+                                            e.stopPropagation();
+                                            setSelectedClientForLoan(client);
+                                            setEditLoanModalOpen(true);
+                                            setEditingLoanId(loan._id);
+                                          }}
+                                        />
+                                      </span>
+                                    )}
                                 </span>
-                                )}
-                              </span>
-                                <span title="View Loan">                              
+                                <span title="View Loan">
                                   <Eye
-                                      size={16}
-                                      className="text-blue-600 cursor-pointer hover:text-blue-800 ml-2"
-                                      
+                                    size={16}
+                                    className="text-blue-600 cursor-pointer hover:text-blue-800 ml-2"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setLoanModalMode("view");
@@ -595,7 +544,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                     </tbody>
                     </table>
                       {/* Content */}
-                      {expandedLoanId === loan._id && (
+                      {expandedLoanIds.includes(loan._id) && (
                         <div className="px-4 pb-1  bg-gray-50 flex  flex-col sm:flex-row gap-1 overflow-y-auto max-h-[50vh] md:max-h-none">
                           {loan.loanStatus === "Deactivated" ? (
                             <>
@@ -671,7 +620,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               setEditPaymentLoan(loan);
                                               setEditPaymentModalOpen(true);
                                             }}
-                                            title = "Edit Payment"
+                                            title="Edit Payment"
                                             className="text-green-700 cursor-pointer hover:text-green-900   transition md:w-5 md:h-5"
                                           >
                                             <Pencil size={16} />
@@ -685,7 +634,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                           >
                                             <X size={14} />
                                           </button>
-                                           </>
+                                            </>
                                           )}
                                         </div>
                                       </div>
@@ -767,8 +716,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               <td className="py-0">
                                                 {selectedLoanData.dynamicTerm} month {""}
                                                 <span
-                                                  className={`${
-                                                    isDelayed
+                                                  className={`${isDelayed
                                                       ? "text-red-400 font-bold animate-pulse"
                                                       : ""
                                                   }`}
@@ -793,8 +741,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               </td>
                                               <td className="py-0">
                                                 <span
-                                                  className={`${
-                                                    isDelayed
+                                                  className={`${isDelayed
                                                       ? "text-red-600 font-bold animate-pulse"
                                                       : ""
                                                   }`}
@@ -879,7 +826,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                   <button
                                                     onClick={() => toggleShowAllTerms(loan._id)}
                                                     className="text-xs text-blue-600 hover:underline"
-                                                    title= {showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
+                                                    title={showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
                                                   >
                                                     {showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
                                                   </button>
@@ -891,8 +838,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                       );
                                     })()}
                                     <div
-                                      className={`mt-0 overflow-y-auto transition-all duration-300 ${
-                                        showAllTermsMap[loan._id] ? "max-h-[140px]" : "max-h-[70px]"
+                                      className={`mt-0 overflow-y-auto transition-all duration-300 ${showAllTermsMap[loan._id] ? "max-h-[140px]" : "max-h-[70px]"
                                       }`}
                                     >
                                       <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
@@ -907,7 +853,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                           if (loan.status === "Paid Off") {
                                             termsToShow = showAllTermsMap[loan._id] ? allTerms : [];
                                           } else {
-                                            termsToShow = showAllTermsMap[loan._id]
+                                             termsToShow = showAllTermsMap[loan._id]
                                            ? allTerms.filter((t) => t <= loan.loanTerms)
                                           : [currentTermMap[loan._id]];
                                           }
@@ -916,7 +862,6 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               ...loan,
                                               loanTerms: term,
                                             })!;
-                                            
                                           // const isSelected =
                                           //   term ===
                                           //   currentTermMap[loan._id];
@@ -967,9 +912,10 @@ const handleStatusChange = async (loanId, newStatus) => {
               )}
             </div>
           </div>
-        </div>
+        )}
       </div>
 
+      {/* Modals */}
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
@@ -977,6 +923,7 @@ const handleStatusChange = async (loanId, newStatus) => {
           fromClientPage={true}
         />
       )}
+
       {loanEditModalOpen && editingLoanId && (
         <EditLoanModal
           loanId={editingLoanId}
@@ -988,24 +935,24 @@ const handleStatusChange = async (loanId, newStatus) => {
           }}
         />
       )}
+
       {paymentLoan && (
         <LoanPaymentModal
           open={!!paymentLoan}
           onClose={() => setPaymentLoan(null)}
           loan={{
             ...paymentLoan,
-            loanTerms: currentTermMap[paymentLoan._id], // selected term
+            loanTerms: currentTermMap[paymentLoan._id],
           }}
           clientId={client._id}
           onPaymentSuccess={() => refreshPayments(paymentLoan._id)}
         />
       )}
+
       {editPaymentModalOpen && (
         <EditPaymentModal
           open={editPaymentModalOpen}
-          onClose={() => {
-            setEditPaymentModalOpen(false);
-          }}
+          onClose={() => setEditPaymentModalOpen(false)}
           loan={{
             ...editPaymentLoan,
             loanTerms: currentTermMap[editPaymentLoan?._id],
@@ -1017,6 +964,7 @@ const handleStatusChange = async (loanId, newStatus) => {
       )}
     </div>
   );
+
 };
 
 const Info = ({ label, value }: { label: string; value: string }) => (

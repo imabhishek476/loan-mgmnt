@@ -8,6 +8,7 @@ import { type FieldConfig } from "../../components/FormModal";
 import { clientStore, type Client } from "../../store/ClientStore";
 // import { activeLoans } from "../../services/LoanService";
 import Loans from "../loans/index";
+import { useNavigate } from "react-router-dom";
 // import { loanStore } from "../../store/LoanStore";
 const ClientViewModal = React.lazy(() => import("../../views/clients/components/ClientViewModal"));
 const FormModal = React.lazy(()=> import("../../components/FormModal"))
@@ -17,16 +18,9 @@ const Clients = observer(() => {
   const [selectedClientForLoan, setSelectedClientForLoan] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewClient, setViewClient] = useState(null);
-
-  const handleViewClient = async (client: Client) => {
-    setViewClient({ ...client, loans: [] });
-    setViewModalOpen(true);
-    // try {
-    //   const loans = await activeLoans(client._id!);
-    //   setViewClient((prev) => ({ ...prev!, loans }));
-    // } catch (error) {
-    //   console.error("Failed to fetch Customer loans", error);
-    // }
+  const navigate = useNavigate();
+  const handleViewClient = (client: Client) => {
+    navigate(`/client/${client._id}`);
   };
   const handleAddLoan = (client: any) => {
     // loanStore.fetchActiveLoans(client._id); //active loan
@@ -114,7 +108,7 @@ const handleSave = async (data: any) => {
       <div className="mb-2 flex flex-col sm:flex-row justify-between items-left gap-4 ">
         <div>
           <h1 className="text-2xl  text-gray-800 font-bold ">
-            Customer Management
+            Client Management
           </h1>
           {/* <p className="text-gray-600 text-base">
             Manage customer records and personal information
@@ -171,7 +165,7 @@ const handleSave = async (data: any) => {
           showTable={false}
           fromClientPage={true}
         />   
-      {viewModalOpen && viewClient && (
+      {/* {viewModalOpen && viewClient && (
         <ClientViewModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
@@ -183,7 +177,7 @@ const handleSave = async (data: any) => {
             setModalOpen(true);
           }}
         />
-      )}
+      )} */}
       {/* Data Table */}
       <ClientsDataTable
         onAddLoan={handleAddLoan}
