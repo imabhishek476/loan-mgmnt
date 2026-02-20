@@ -427,7 +427,7 @@ return (
       )}
       {/* ✅ LOANS TAB */}
       {activeTab === "loans" && (
-        <div className="h-[calc(80vh-53px)] overflow-y-auto p-2 space-y-4">
+        <div className="h-[calc(88vh-30px)] overflow-y-auto p-2 space-y-4">
            <div className="flex justify-end">
               <Button
                 variant="contained"
