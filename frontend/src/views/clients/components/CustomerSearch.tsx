@@ -439,12 +439,12 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       )}
     />
   </div>
-  <div className="gap-4 mt-0 flex sm:col-span-2">
+  <div className="gap-2 mt-0 flex sm:col-span-1">
     <button
       onClick={handleSearch}
       type="submit"
       title="Submit"
-      className="bg-green-700 hover:bg-green-800 transition-all duration-200 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
+      className="bg-green-700 hover:bg-green-800 transition-all duration-200 text-white px-2 py-2 rounded text-sm font-semibold h-10 w-full"
     >
       Submit
     </button>
@@ -453,7 +453,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       type="button"
       title="Reset"
       onClick={handleReset}
-      className="bg-gray-500 hover:bg-gray-600 transition-all duration-200 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
+      className="bg-gray-500 hover:bg-gray-600 transition-all duration-200 text-white px-1 py-2 rounded text-sm font-semibold h-10 w-full"
     >
       Reset
     </button>

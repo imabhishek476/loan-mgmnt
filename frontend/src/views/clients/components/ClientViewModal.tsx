@@ -20,7 +20,7 @@ import moment from "moment";
 import { observer } from "mobx-react-lite";
 import LoanPaymentModal from "../../../components/PaymentModel";
 import { deletePayment, fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
-import { Button, CircularProgress, Skeleton } from "@mui/material";
+import { Button, Skeleton } from "@mui/material";
 import Loans from "../../loans";
 import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
@@ -38,7 +38,7 @@ interface ClientViewModalProps {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModalProps) => {
+const ClientViewModal = ({ open, client ,onEditClient}: ClientViewModalProps) => {
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [editPaymentLoan, setEditPaymentLoan] = useState<any>(null);
   const [expandedLoanIds, setExpandedLoanIds] = useState<string[]>([]);
@@ -626,8 +626,10 @@ return (
                                 )}
                                 </h4>
                                 {loadingPaymentsMap[loan._id] ? (
-                                  <div className="flex justify-center py-4">
-                                    <CircularProgress size={24} />
+                                 <div className="space-y-3 p-2">
+                                    <Skeleton variant="rectangular" height={15} />
+                                    <Skeleton variant="rectangular" height={15} />
+                                    <Skeleton variant="rectangular" height={15} />
                                   </div>
                                 ) : loanPayments[loan._id]?.length > 0 ? (
                                   <div className="mt-2 max-h-48 overflow-y-auto rounded-md">

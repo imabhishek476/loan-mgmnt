@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import MaterialTable from "@material-table/core";
-import {Plus, Power, RefreshCcw, XCircle } from "lucide-react";
+import {Plus, Power, RefreshCcw, Trash2, } from "lucide-react";
 import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { toast } from "react-toastify";
@@ -21,7 +21,6 @@ interface ClientsDataTableProps {
 
 const ClientsDataTable: React.FC<ClientsDataTableProps> = observer(({
   onAddLoan,
-  onViewClient,
 }) => {
   const { clientFilters,filtersOpen } = clientStore;
   const [searchInput,] = useState("");
@@ -174,7 +173,7 @@ const renderLoanStatus = (loan: any) => {
   }
   const tableHeight = filtersOpen
   ? "calc(100vh - 253px)"
-  : "calc(100vh - 149px)";
+  : "calc(100vh - 255px)";
   const columns: any[] = useMemo(() => [
     {
       title: "Sr.no",
@@ -264,13 +263,13 @@ const renderLoanStatus = (loan: any) => {
         );
       },
     },
-    {
-      title: "All Payment Status",
-      sorting: false,
-      headerStyle: { whiteSpace: "nowrap" },
-      cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
-      render: (rowData: any) => renderLoanStatus(rowData.status),
-    },
+    // {
+    //   title: "All Payment Status",
+    //   sorting: false,
+    //   headerStyle: { whiteSpace: "nowrap" },
+    //   cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
+    //   render: (rowData: any) => renderLoanStatus(rowData.status),
+    // },
       {
       title: "Latest Payment Status",
       sorting: false,
@@ -333,8 +332,8 @@ const renderLoanStatus = (loan: any) => {
 
             (rowData: any) => ({
               icon: rowData.isActive
-                ? () => <Power className="w-5 h-5 text-green-600" />
-                : () => <RefreshCcw className="w-5 h-5 text-red-600" />,
+                ? () => <Power className="w-5 h-5 text-red-600" />
+                : () => <RefreshCcw className="w-5 h-5 text-green-600" />,
               tooltip: rowData.isActive
                 ? "Deactivate Client"
                 : "Recover Client",
@@ -342,7 +341,7 @@ const renderLoanStatus = (loan: any) => {
                 handleToggleActive(data._id, data.isActive),
             }),
             {
-              icon: () => <XCircle className="w-5 h-5 text-red-600" />,
+              icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
               tooltip: "Delete Customer",
               onClick: (_event, rowData: any) => handleDelete(rowData._id),
             },       
@@ -381,7 +380,7 @@ const renderLoanStatus = (loan: any) => {
               width: 38,
               borderBottom: "1px solid #f1f1f1",
               transition: "background 0.2s",
-               backgroundColor: !rowData.isActive ? "#f3e2e2" : "#ffffff",
+               backgroundColor: !rowData.isActive ? "#edcfcf" : "#ffffff",
             }),
             padding: "default",
             toolbar: false,
