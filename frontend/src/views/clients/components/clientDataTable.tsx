@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import { getClientsSearch, toggleClientStatus } from "../../../services/ClientServices";
 import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
-import { getAllowedTerms } from "../../../utils/constants";
+import { getAllowedTerms, LOAN_STATUS_OPTIONS } from "../../../utils/constants";
 import {updateLoanStatus } from "../../../services/LoanService";
 import CustomerSearch from "./CustomerSearch";
 import { observer } from "mobx-react-lite";
@@ -41,7 +41,8 @@ const fetchClientsData = useCallback(async (query) => {
         phone: clientFilters.phone,
         attorneyName: clientFilters.attorneyName,
         status: clientFilters.status,
-        loanStatus: clientFilters.loanStatus,
+        allLoanStatus: clientFilters.allLoanStatus,
+        latestLoanStatus: clientFilters.latestLoanStatus,
         underwriter: clientFilters.underwriter,
         medicalParalegal: clientFilters.medicalParalegal,
         caseId: clientFilters.caseId,
@@ -100,6 +101,35 @@ const fetchClientsData = useCallback(async (query) => {
           },
         });
   };
+const renderLoanStatus = (loan: any) => {
+  if (!loan)
+    return <span className="text-gray-400">—</span>;
+
+  const isMerged = loan.status === "Merged";
+
+  return (
+    <select
+      className={`
+        px-3 py-1 rounded text-xs text-white font-semibold cursor-default
+        focus:outline-none disabled:opacity-100
+        ${getStatusStyles(loan.status)}
+      `}
+      value={loan.status}
+      disabled
+      onClick={(e) => e.stopPropagation()}
+    >
+      {isMerged ? (
+        <option value="Merged">Merged</option>
+      ) : (
+        LOAN_STATUS_OPTIONS.map((status) => (
+          <option key={status} value={status}>
+            {status}
+          </option>
+        ))
+      )}
+    </select>
+  );
+};
   const getStatusStyles = (status: string) => {
     const lower = status?.toLowerCase() || "";
 
@@ -235,45 +265,18 @@ const fetchClientsData = useCallback(async (query) => {
       },
     },
     {
-      title: "Payment Status",
+      title: "All Payment Status",
       sorting: false,
       headerStyle: { whiteSpace: "nowrap" },
       cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
-      render: (rowData: any) => {
-        const loan = rowData.latestLoan;
-        if (!loan) return <span className="text-gray-400">—</span>;
-        // const isDisabled = !rowData.isActive || loan.status === "Merged";
-
-        return (
-          <select
-            className={`
-                                px-3 py-1 rounded text-xs text-white font-semibold cursor-pointer
-                                focus:outline-none transition  disabled:opacity-100  
-                                ${getStatusStyles(loan.status)}
-                              `}
-            value={loan.status}
-            disabled={true}
-            title="Change Loan Status"
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) =>
-              handleLoanStatusChange(loan._id, e.target.value)
-            }
-          >
-            {loan.status === "Merged" ? (
-              <option value="Merged">Merged</option>
-            ) : (
-              <>
-                <option value="Active">Active</option>
-                <option value="Partial Payment">Partial Payment</option>
-                <option value="Paid Off">Paid Off</option>
-                <option value="Fraud">Fraud</option>
-                <option value="Lost">Lost</option>
-                <option value="Denied">Denied</option>
-              </>
-            )}
-          </select>
-        );
-      },
+      render: (rowData: any) => renderLoanStatus(rowData.status),
+    },
+      {
+      title: "Latest Payment Status",
+      sorting: false,
+      headerStyle: { whiteSpace: "nowrap" },
+      cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
+      render: (rowData: any) => renderLoanStatus(rowData.latestLoan),
     },
     // {
     //   title: "Status",

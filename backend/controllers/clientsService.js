@@ -105,7 +105,8 @@ exports.searchClients = async (req, res) => {
       phone,
       attorneyName,
       status,
-      loanStatus,
+      allLoanStatus,
+      latestLoanStatus,
       issueDate,
       dob,
       accidentDate,
@@ -227,11 +228,21 @@ exports.searchClients = async (req, res) => {
         },
       });
     }
-    if (loanStatus) {
+    if (latestLoanStatus) {
       pipeline.push({
         $match: {
           "latestLoan.status": {
-            $regex: `^${loanStatus}$`,
+            $regex: `^${latestLoanStatus}$`,
+            $options: "i",
+          },
+        },
+      });
+    }
+  if (allLoanStatus) {
+    pipeline.push({
+      $match: {
+        "allLoans.status": {
+          $regex: `^${allLoanStatus}$`,
             $options: "i",
           },
         },

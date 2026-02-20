@@ -10,13 +10,11 @@ import { clientStore, type Client } from "../../store/ClientStore";
 import Loans from "../loans/index";
 import { useNavigate } from "react-router-dom";
 // import { loanStore } from "../../store/LoanStore";
-const ClientViewModal = React.lazy(() => import("../../views/clients/components/ClientViewModal"));
 const FormModal = React.lazy(()=> import("../../components/FormModal"))
 const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [selectedClientForLoan, setSelectedClientForLoan] = useState(null);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewClient, setViewClient] = useState(null);
   const navigate = useNavigate();
   const handleViewClient = (client: Client) => {

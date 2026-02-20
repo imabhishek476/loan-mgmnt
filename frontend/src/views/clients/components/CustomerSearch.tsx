@@ -3,7 +3,6 @@ import { Autocomplete, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { LOAN_STATUS_OPTIONS } from "../../../utils/constants";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { ChevronsDown, ChevronsUp } from "lucide-react";
 import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { observer } from "mobx-react-lite";
@@ -21,7 +20,8 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       phone: "",
       attorneyName: "",
       status: "",
-      loanStatus: "",
+      latestLoanStatus: "",
+      allLoanStatus: "",
       issueDate: null,
       dob: null,
       accidentDate: null,
@@ -48,7 +48,8 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
   phone: "Phone",
   attorneyName: "Attorney",
   status: "Customer Status",
-  loanStatus: "Payment Status",
+  allLoanStatus: "All Payment Status",
+  latestLoanStatus: "Latest Payment Status",
   issueDate: "Issue Date",
   dob: "Date Of Birth",
   accidentDate: "Accident Date",
@@ -143,7 +144,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
             handleSearch();
           }}
         >
-         <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 mb-1 pt-2">
+         <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 mb-1 pt-2">
   <div>
     <TextField
       size="small"
@@ -215,18 +216,42 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       size="small"
       color="success"
       options={LOAN_STATUS_OPTIONS}
-      value={localFilters.loanStatus || ""}
+      value={localFilters.allLoanStatus || "All"}
       onChange={(_, value) =>
         setLocalFilters({
           ...localFilters,
-          loanStatus: value === "All" ? "" : value || "",
+          allLoanStatus: value === "All" ? "" : value || "",
         })
       }
       renderInput={(params) => (
         <TextField
           {...params}
           size="small"
-          label="Payment Status"
+          label="All Payment Status"
+          sx={compactFieldSx}
+          slotProps={{ inputLabel: smallLabel }}
+          fullWidth
+        />
+      )}
+    />
+  </div>
+   <div>
+    <Autocomplete
+      size="small"
+      color="success"
+      options={LOAN_STATUS_OPTIONS}
+      value={localFilters.loanStatus || ""}
+       onChange={(_, value) =>
+        setLocalFilters({
+          ...localFilters,
+          latestLoanStatus: value === "All" ? "" : value || "",
+        })
+      }
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          size="small"
+          label="Latest Payment Status"
           sx={compactFieldSx}
           slotProps={{ inputLabel: smallLabel }}
           fullWidth

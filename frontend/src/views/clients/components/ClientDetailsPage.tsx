@@ -1,6 +1,5 @@
 import { observer } from "mobx-react-lite";
 import { clientStore } from "../../../store/ClientStore";
-import { loanStore } from "../../../store/LoanStore";
 import { useParams } from "react-router-dom";
 import ClientViewModal from "./ClientViewModal";
 import { useEffect } from "react";
@@ -11,7 +10,6 @@ const ClientDetailsPage = observer(() => {
   useEffect(() => {
     if (id) {
       clientStore.fetchClientById(id);
-      loanStore.fetchActiveLoans(id);
     }
   }, [id]);
 
