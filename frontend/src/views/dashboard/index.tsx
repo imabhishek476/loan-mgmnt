@@ -20,7 +20,7 @@ const StatCard = ({
 }: any) => (
   <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
     <div>
-      <p className="text-sm text-gray-500 whitespace-nowrap">{title}</p>
+      <p className="text-sm text-gray-500 ">{title}</p>
       <div className="flex items-baseline gap-2">
         <h2 className="text-md font-bold text-gray-800 flex items-baseline">
           {isCurrency && <span className="mr-1">$</span>}
@@ -37,14 +37,14 @@ const StatCard = ({
           )}
         </h2>
         {subValue && (
-          <span className="text-xs text-gray-500 font-medium">{subValue}</span>
+          <span className="text-xs text-gray-600 font-medium">{subValue}</span>
         )}
       </div>
     </div>
     <div
       className={`p-2 rounded-full ${color} bg-opacity-20 flex items-center justify-center`}
     >
-      <Icon className={`${color.replace("bg-", "text-")} w-6 h-6`} />
+      <Icon className={`${color.replace("bg-", "text-")} w-5 h-5`} />
     </div>
   </div>
 );
@@ -148,7 +148,7 @@ console.log(globalStats.totalLoanAmount, "totalLoanAmount");
       {/* Stats Cards */}
       <div className="flex gap-2 flex-wrap">
         <StatCard
-          title="Total Customers"
+          title="Total Clients"
           value={globalStats.totalClients}
           icon={Users}
           color="bg-green-700"

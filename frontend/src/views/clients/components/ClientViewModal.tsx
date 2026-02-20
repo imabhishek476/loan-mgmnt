@@ -460,6 +460,9 @@ return (
               getClientLoansData.length > 0 ? (
                 getClientLoansData.map((loanData: any) => {
                   const { loan, companyName, companyColor, selectedLoanData, isDelayed, currentEndDate, profitData } = loanData;
+                  const totalAmount = loan.baseAmount + loan.previousLoanAmount;
+                  const brokerValue = loan?.fees?.brokerFee?.value;
+                  const brokerAmount =  loan?.fees?.brokerFee?.type === "percentage" ? (totalAmount * brokerValue ) / 100 : loan?.fees?.brokerFee.value;
                   return (
                     <div
                       key={loan._id}
@@ -481,9 +484,9 @@ return (
                             </div>
                             <div className="flex flex-wrap items-center justify-end gap-4 ml-auto text-right w-full sm:w-auto">
                               <span>
-                                Principal Amount:{" "}
+                                Base Amount:{" "}
                                 <span className="text-blue-700 font-bold">
-                                  {formatUSD(loan.subTotal.toFixed(2))}
+                                  {formatUSD(loan.baseAmount.toFixed(2))}
                                 </span>
                               </span>
                               <span>
@@ -611,7 +614,7 @@ return (
                           ) : (
                             <>
                               {/* Payment History */}
-                              <div className="flex-1  pr-4 space-y-3 pt-2 border-r-2">
+                              <div className="sm:w-1/2 md:w-1/2 pr-4 space-y-3 pt-2 border-r-2">
                                 <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                                   PayOff History
                                   {(loan.status === "Active" ||
@@ -683,7 +686,7 @@ return (
                                             className="p-1 rounded-full  hover:bg-red-200 text-red-600 transition"
                                             title="Delete Payment"
                                           >
-                                            <X size={14} />
+                                            <Trash2 size={14} />
                                           </button>
                                             </>
                                           )}
@@ -757,6 +760,21 @@ return (
                                                 {loan.checkNumber}
                                               </td>
                                             </tr>
+                                            {brokerValue > 0 && (
+                                                <tr>
+                                                <td className="font-semibold py-0 whitespace-nowrap">
+                                                  Broker Fee (  {loan?.fees?.brokerFee?.type === "percentage"
+                                                    ? `${brokerValue}%`
+                                                    : `${brokerValue}$`}) :
+                                                </td>
+                                              <td className="py-0">
+                                                  {(brokerAmount ?? 0).toLocaleString("en-US", {
+                                                    style: "currency",
+                                                    currency: "USD",
+                                                  })}
+                                                </td>
+                                              </tr>
+                                            )}
                                             {loan.status !== "Paid Off" &&
                                               loan.status !== "Merged" && (
                                                 <>
@@ -821,7 +839,7 @@ return (
                                                 {formatUSD(loan.subTotal)}
                                               </td>
                                             </tr> */}
-                                            {loan.status !== "Paid Off" && (
+                                            {/* {loan.status !== "Paid Off" && ( */}
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
                                                 Total Loan Amount:
@@ -832,10 +850,10 @@ return (
                                                     2
                                                   )
                                                 )}{" "}
-                                                 (Base Amount: {formatUSD(loan.baseAmount)})
+                                                 ({" "} Principal : {formatUSD(loan.subTotal)} {" "})
                                               </td>
                                             </tr>
-                                           )}
+                                           {/* )} */}
                                             <tr>
                                               <td>
                                               {/* <td className="font-semibold py-0">
