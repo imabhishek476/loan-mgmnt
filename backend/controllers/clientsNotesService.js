@@ -1,6 +1,7 @@
 
 const createAuditLog = require("../utils/auditLog");
 const { ClientNote } = require("../models/ClientNote");
+const { default: mongoose } = require("mongoose");
 
 exports.addClientNote = async (req, res) => {
   try {
@@ -50,9 +51,15 @@ exports.getClientNotes = async (req, res) => {
   try {
     const { clientId } = req.params;
 
-    const notes = await ClientNote.find({ clientId })
-      .sort({ date: -1, createdAt: -1 })   // ✅ KEY FIX
-      .populate("createdBy", "fullName");
+    const notes = await ClientNote.aggregate([
+      { $match: { clientId: new mongoose.Types.ObjectId(clientId) } },
+      {
+        $addFields: {
+          effectiveDate: { $ifNull: ["$date", "$createdAt"] }
+        }
+      },
+      { $sort: { effectiveDate: -1 } } // ✅ TRUE latest first
+    ]);
 
     res.json({
       success: true,

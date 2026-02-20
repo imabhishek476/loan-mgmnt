@@ -55,6 +55,7 @@ const ClientNotes = ({
 
       setNotes((prev) => [newNote, ...prev]);
       setText("");
+      loadNotes();
       toast.success("Note added");
       setOpenModal(false);
     } catch (err: any) {
