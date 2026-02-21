@@ -1009,6 +1009,11 @@ return (
           defaultClient={selectedClientForLoan}
           showTable={false}
           fromClientPage={true}
+          onClose={() => {
+          setLoanModalOpen(false);
+          setSelectedClientForLoan(null);
+          loanStore.fetchActiveLoans(client._id);
+        }}
         />
       )}
 

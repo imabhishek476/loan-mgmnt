@@ -32,10 +32,12 @@ const Loans = observer(
     defaultClient,
     showTable = true,
     fromClientPage = false,
+    onClose,
   }: {
     defaultClient?: any;
     showTable?: boolean;
     fromClientPage?: boolean;
+    onClose?: () => void;
   }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingLoan, setEditingLoan] = useState<any | null>(null);
@@ -87,8 +89,9 @@ const Loans = observer(
       }
     };
 
-    const handleClose = () => setSelectedLoan(null);
-
+    const handleClose = () => {
+      setSelectedLoan(null);
+    };
     const loadInitialData = async () => {
       try {
         const promises = [];
@@ -307,6 +310,7 @@ const Loans = observer(
         }
         setModalOpen(false);
         resetForm();
+        if (onClose) onClose(); 
       } catch (error: any) {
         const message =
           error?.response?.data?.message ||
@@ -450,6 +454,7 @@ const Loans = observer(
                     title="Close"
                     onClick={() => {
                       setModalOpen(false);
+                      if (onClose) onClose();
                     }}
                   >
                     <X />
@@ -744,6 +749,7 @@ const Loans = observer(
                     title="Cancel"
                     onClick={() => {
                       setModalOpen(false);
+                      if (onClose) onClose();
                     }}
                     className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >
