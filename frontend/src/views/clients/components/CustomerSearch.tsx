@@ -47,7 +47,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
   email: "Email",
   phone: "Phone",
   attorneyName: "Attorney",
-  status: "Customer Status",
+  status: "Client Status",
   allLoanStatus: "All Payment Status",
   latestLoanStatus: "Latest Payment Status",
   issueDate: "Issue Date",
@@ -272,7 +272,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
         <TextField
           {...params}
           size="small"
-          label="Customer Status"
+          label="Client Status"
           sx={compactFieldSx}
           slotProps={{ inputLabel: smallLabel }}
           fullWidth

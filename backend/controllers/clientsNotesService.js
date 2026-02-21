@@ -107,4 +107,58 @@ exports.deleteClientNote = async (req, res) => {
     });
   }
 };
+exports.updateClientNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text, date } = req.body;
+
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        message: "Text is required",
+      });
+    }
+
+    let note = await ClientNote.findById(id);
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    note.text = text;
+    if (date) note.date = date;
+
+    await note.save();
+
+    note = await ClientNote.findById(id).populate(
+      "createdBy",
+      "fullName"
+    );
+
+    await createAuditLog(
+      req.user?.id,
+      req.user?.userRole,
+      "Updated client note",
+      "ClientNote",
+      id,
+      { after: note }
+    );
+
+    res.json({
+      success: true,
+      message: "Note updated successfully",
+      note,
+    });
+  } catch (error) {
+    console.error("updateClientNote error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 

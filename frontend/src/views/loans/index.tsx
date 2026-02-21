@@ -792,7 +792,7 @@ const Loans = observer(
                 <div className="grid grid-cols-1 mt-2 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
-                      Customer
+                      Client
                     </p>
                     <p className="font-medium">
                       {clientStore.clients.find(

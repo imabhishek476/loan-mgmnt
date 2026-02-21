@@ -70,12 +70,12 @@ const fetchClientsData = useCallback(async (query) => {
   const handleDelete = async (id: string) => {
     Confirm({
       title: "Confirm Delete",
-      message: "Are you sure you want to delete this customer & their Loans?",
+      message: "Are you sure you want to delete this Client & their Loans?",
       confirmText: "Yes, Delete",
       onConfirm: async () => {
         await clientStore.deleteClient(id);
         tableRef.current?.onQueryChange();
-        toast.success("Customer deleted successfully");
+        toast.success("Client deleted successfully");
       },
     });
   };
@@ -342,7 +342,7 @@ const renderLoanStatus = (loan: any) => {
             }),
             {
               icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
-              tooltip: "Delete Customer",
+              tooltip: "Delete Client",
               onClick: (_event, rowData: any) => handleDelete(rowData._id),
             },       
           ]}

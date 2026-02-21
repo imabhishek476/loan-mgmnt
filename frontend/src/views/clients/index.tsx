@@ -65,7 +65,7 @@ const handleSave = async (data: any) => {
     if (editingClient) {
       await clientStore.updateClient(editingClient?._id, data);
 
-      toast.success("Customer updated successfully");
+      toast.success("Client updated successfully");
 
       // refresh data safely
       try {
@@ -83,7 +83,7 @@ const handleSave = async (data: any) => {
     } else {
       await clientStore.createClient(data);
        
-      toast.success("New Customer added successfully");
+      toast.success("New Client added successfully");
 
       try {
        await clientStore.refreshDataTable();
@@ -95,7 +95,7 @@ const handleSave = async (data: any) => {
     }
   } catch (error: any) {
     console.error("Save error:", error);
-    toast.error(error.response?.data?.error || "Failed to save Customer");
+    toast.error(error.response?.data?.error || "Failed to save Client");
   }
 };
 
@@ -109,7 +109,7 @@ const handleSave = async (data: any) => {
             Client Management
           </h1>
           {/* <p className="text-gray-600 text-base">
-            Manage customer records and personal information
+            Manage Client records and personal information
           </p> */}
         </div>
 
@@ -124,14 +124,14 @@ const handleSave = async (data: any) => {
             px: 3,
             py: 1,
           }}
-          title="New Customer"
+          title="New Client"
           startIcon={<Plus />}
           onClick={() => {
             setEditingClient(null);
             setModalOpen(true);
           }}
         >
-          New Customer
+          New Client
         </Button>
       </div>
 
@@ -142,17 +142,17 @@ const handleSave = async (data: any) => {
           setModalOpen(false);
           setEditingClient(null);
         }}
-        title={editingClient ? "Edit Customer" : "New Customer"}
+        title={editingClient ? "Edit Client" : "New Client"}
         fields={clientFields}
         //@ts-ignore
         customFields={customFields}
         initialData={editingClient || {}}
         submitButtonText={
           editingClient ? (
-            "Update Customer"
+            "Update Client"
           ) : (
             <>
-              <Save size={16} className="inline mr-1" /> Create Customer
+              <Save size={16} className="inline mr-1" /> Create Client
             </>
           )
         }

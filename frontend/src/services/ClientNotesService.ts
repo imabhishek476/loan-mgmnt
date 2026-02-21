@@ -14,6 +14,16 @@ export const addClientNote = async (payload: {
   const { data } = await api.post(`/client-notes/store`, payload);
   return data.note;
 };
+export const updateClientNote = async (
+  id: string,
+  payload: {
+    text: string;
+    date: Date;
+  }
+) => {
+  const { data } = await api.put(`/client-notes/${id}`, payload);
+  return data.note;
+};
 
 export const deleteClientNote = async (id: string) => {
   await api.delete(`/client-notes/${id}`);

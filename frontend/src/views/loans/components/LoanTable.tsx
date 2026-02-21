@@ -197,7 +197,7 @@ import { useNavigate } from "react-router-dom";
       try {
         if (editingClient) {
           await clientStore.updateClient(editingClient?._id, data);  
-          toast.success("Customer updated successfully");
+          toast.success("Client updated successfully");
           try {
             await clientStore.refreshDataTable();
             const refreshedClient = clientStore.clients.find(
@@ -211,7 +211,7 @@ import { useNavigate } from "react-router-dom";
           setModalOpen(false);
         } else {
           await clientStore.createClient(data);  
-          toast.success("New Customer added successfully");  
+          toast.success("New Client added successfully");  
           try {
             await clientStore.refreshDataTable();
           } catch (refreshError) {
@@ -221,7 +221,7 @@ import { useNavigate } from "react-router-dom";
         }
       } catch (error: any) {
         console.error("Save error:", error);
-        toast.error(error.response?.data?.error || "Failed to save Customer");
+        toast.error(error.response?.data?.error || "Failed to save Client");
       }
     };
     const clientFields: FieldConfig[] = [
@@ -509,17 +509,17 @@ import { useNavigate } from "react-router-dom";
             setModalOpen(false);
             setEditingClient(null);
           }}
-          title={editingClient ? "Edit Customer" : "New Customer"}
+          title={editingClient ? "Edit Client" : "New Client"}
           fields={clientFields}
           //@ts-ignore
           customFields={customFields}
           initialData={editingClient || {}}
           submitButtonText={
             editingClient ? (
-              "Update Customer"
+              "Update Client"
             ) : (
               <>
-                <Save size={16} className="inline mr-1" /> Create Customer
+                <Save size={16} className="inline mr-1" /> Create Client
               </>
             )
           }

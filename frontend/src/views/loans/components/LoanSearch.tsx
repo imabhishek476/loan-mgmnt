@@ -53,7 +53,7 @@ export const LoanSearch = observer(
        <div className="mb-0 grid  grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
         <TextField
           size="small"
-          label="Customer"
+          label="Client"
           name="customer"
           color="success"
           value={filters.customer}

@@ -373,7 +373,7 @@ return (
     {/* Content */}
     <div className="flex-1  overflow-hidden ">
 
-      {/* ✅ CUSTOMER TAB */}
+      {/* ✅ Client TAB */}
       {activeTab === "client" && (
         <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
           <div className="flex items-center mb-4 gap-3">
@@ -457,10 +457,10 @@ return (
                   <Skeleton variant="rectangular" height={80} />
                 </div>
               ) :
-              getClientLoansData.length > 0 ? (
-                getClientLoansData.map((loanData: any) => {
+              getClientLoansData?.length > 0 ? (
+                getClientLoansData?.map((loanData: any) => {
                   const { loan, companyName, companyColor, selectedLoanData, isDelayed, currentEndDate, profitData } = loanData;
-                  const totalAmount = loan.baseAmount + loan.previousLoanAmount;
+                  const totalAmount = loan?.baseAmount + loan?.previousLoanAmount;
                   const brokerValue = loan?.fees?.brokerFee?.value;
                   const brokerAmount =  loan?.fees?.brokerFee?.type === "percentage" ? (totalAmount * brokerValue ) / 100 : loan?.fees?.brokerFee.value;
                   return (
@@ -486,7 +486,7 @@ return (
                               <span>
                                 Base Amount:{" "}
                                 <span className="text-blue-700 font-bold">
-                                  {formatUSD(loan.baseAmount.toFixed(2))}
+                                  {formatUSD(loan?.baseAmount)}
                                 </span>
                               </span>
                               <span>
