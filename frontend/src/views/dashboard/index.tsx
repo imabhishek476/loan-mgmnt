@@ -227,7 +227,7 @@ console.log(globalStats.totalLoanAmount, "totalLoanAmount");
           loanBreakdown={{
           merged: globalStats.totalMergedLoans,
           paidOff: globalStats.totalPaidOffLoans,
-          unmerged: globalStats.totalUnmergedLoans,
+          unmerged: globalStats.totalActiveLoans,
         }}
           color="bg-green-700"
         />

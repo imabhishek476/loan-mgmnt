@@ -38,7 +38,7 @@ interface ClientViewModalProps {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-const ClientViewModal = ({ open, client ,onEditClient}: ClientViewModalProps) => {
+const ClientViewModal = ({ open, client ,onEditClient}: ClientViewModalProps)=> {
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [editPaymentLoan, setEditPaymentLoan] = useState<any>(null);
   const [expandedLoanIds, setExpandedLoanIds] = useState<string[]>([]);
@@ -63,6 +63,7 @@ const [loadingClient, setLoadingClient] = useState(true);
 const [loadingLoans, setLoadingLoans] = useState(true);
 const [loadingPaymentsMap, setLoadingPaymentsMap] = useState<Record<string, boolean>>({});
 const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templates">("client");
+const [loading, setLoading] = useState(true)
   const loadInitialData = async () => {
     try {
       const promises = [];
@@ -91,8 +92,7 @@ const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templ
     try {
       const payments = await fetchPaymentsByLoan(loanId);
       setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
-      await loanStore.getLoanProfitByLoanId(client._id);
-    
+        await loanStore.getLoanProfitByLoanId(loanId);    
     } catch (err) {
       console.error(err);
       toast.error("Failed to fetch payment history");
@@ -171,18 +171,75 @@ useEffect(() => {
   }
 }, [client?._id, clientLoans]);
 
-  // useEffect(() => {
-  //   loadInitialData();
-  // if (client?._id) loanStore.fetchActiveLoans(client?._id);
-  // }, [client?._id]);
+    useEffect(() => {
+  if (!client?._id) return;
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      if (activeTab === "client") {
+        await loadInitialData();
+        await loanStore.fetchActiveLoans(client._id);
+        await loanStore.getClientLoansProfit(client._id);
+      }
+
+      if (activeTab === "loans") {
+        await loanStore.fetchActiveLoans(client._id);
+        await loanStore.getClientLoansProfit(client._id);
+        await loadPaymentsForLoans();
+      }
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadData();
+}, [activeTab, client?._id]);
+
+ const loadPaymentsForLoans = async () => {
+      for (const loan of clientLoans) {
+        try {
+          setLoadingPaymentsMap(prev => ({
+            ...prev,
+            [loan._id]: true,
+          }));
+
+          const payments = await fetchPaymentsByLoan(loan._id);
+
+          setLoanPayments(prev => ({
+            ...prev,
+            [loan._id]: payments,
+          }));
+
+          await loanStore.getLoanProfitByLoanId(loan._id);
+
+        } catch (err) {
+          console.error("Failed payments:", loan._id);
+        } finally {
+          setLoadingPaymentsMap(prev => ({
+            ...prev,
+            [loan._id]: false,
+          }));
+        }
+      }
+    };
+
   useEffect(() => {
   if (!client?._id) return;
   if (activeTab === "client") {
    loadInitialData();
-   clientStore.fetchClients(client._id)
+    loanStore.fetchActiveLoans(client._id); 
+    loanStore.getClientLoansProfit(client?._id);
   }
   else if (activeTab === "loans") {
     loanStore.fetchActiveLoans(client._id);
+    loanStore.getClientLoansProfit(client?._id);
+    loadPaymentsForLoans();
+
   }
 }, [activeTab, client?._id]);
   useEffect(() => {
@@ -222,6 +279,7 @@ const handleDeletePayment = async (payment: any) => {
       refreshPayments(payment.loanId);
        await loanStore.fetchActiveLoans(payment.clientId);
       await clientStore.refreshDataTable();
+      await  loanStore.getClientLoansProfit(client?._id);
       toast.success("Payment deleted successfully");
     },
   });
@@ -311,22 +369,169 @@ const tabs = [
   { key: "notes", label: "Notes", icon: <StickyNote size={16} /> },
   { key: "templates", label: "Templates", icon: <FileText size={16} /> },
 ];
-client.notes = [
-  {
-    _id: "1",
-    date: "2026-02-18",
-    text: "Second funding round approved. Client requested expedited processing."
-  },
-  {
-    _id: "2",
-    date: "2026-01-22",
-    text: "Attorney confirmed settlement negotiations are in progress."
+
+const loansWithTs = useMemo(() => {
+  return clientLoans.map((loan) => ({
+    ...loan,
+    issueTs: moment(loan.issueDate, "MM-DD-YYYY").valueOf(),
+  }));
+}, [clientLoans]);
+
+const mergeMap = useMemo(() => {
+  const map: Record<string, any[]> = {};
+
+  loansWithTs.forEach((loan) => {
+    if (!loan.parentLoanId) return;
+
+    if (!map[loan.parentLoanId]) {
+      map[loan.parentLoanId] = [];
+    }
+
+    map[loan.parentLoanId].push(loan);
+  });
+
+  return map;
+}, [loansWithTs]);
+
+const buildMergeChain = (loanId: string): any[] => {
+  const chain: any[] = [];
+  const stack = [...(mergeMap[loanId] || [])];
+
+  while (stack.length) {
+    const loan = stack.pop();
+    chain.push(loan);
+
+    if (mergeMap[loan._id]) {
+      stack.push(...mergeMap[loan._id]);
+    }
   }
-]
+
+  return chain;
+};
+
+const allLoanSummary = useMemo(() => {
+  if (!loansWithTs.length) return [];
+
+  const parentLoans = loansWithTs.filter(
+    (loan) => !loan.parentLoanId
+  );
+
+  return parentLoans.map((parent) => {
+    const mergedLoans = buildMergeChain(parent._id);
+    const allLoans = [parent, ...mergedLoans];
+
+    const totals = allLoans.reduce(
+      (acc, loan) => {
+        const profit =
+          loanStore.loanProfitMap[String(loan._id)];
+
+        const paid = Number(
+          profit?.totalPaid ?? loan.paidAmount ?? 0
+        );
+
+        const profitValue = Number(
+          profit?.totalProfit ?? 0
+        );
+
+        acc.base += Number(loan.baseAmount || 0);
+        acc.paid += paid;
+        acc.profit += profitValue;
+
+        return acc;
+      },
+      { base: 0, paid: 0, profit: 0 }
+    );
+
+    const company =
+      companyStore.companies.find(
+        (c) => c._id === parent.company
+      );
+
+    return {
+      parent,
+      loans: allLoans.sort(
+        (a, b) => a.issueTs - b.issueTs
+      ), // ⚡ FAST
+      totals,
+      companyName: company?.companyName || "—",
+    };
+  });
+}, [loansWithTs, mergeMap, loanStore.loanProfitMap]);
+
+const latestActiveLoanId = useMemo(() => {
+  if (!loansWithTs.length) return null;
+
+  // const activeLoans = loansWithTs.filter(
+  //   (loan) =>
+  //     ["Active", "Partial Payment"].includes(
+  //       loan.status
+  //     ) && loan.loanStatus !== "Deactivated"
+  // );
+  const activeLoans = loansWithTs;
+
+  if (!activeLoans.length) return null;
+
+  return activeLoans.sort(
+    (a, b) => b.issueTs - a.issueTs
+  )[0]._id;
+}, [loansWithTs]);
+
+const StatBox = ({
+  label,
+  value,
+  valueClass = "text-gray-900",
+}: {
+  label: string;
+  value: any;
+  valueClass?: string;
+}) => (
+  <div className="bg-white border rounded-lg px-3 py-2 shadow-sm">
+    <p className="text-xs text-gray-500">{label}</p>
+    <p className={`font-bold ${valueClass}`}>
+      {value}
+    </p>
+  </div>
+);
+const LoanSummarySkeleton = () => {
+  return (
+    <div className="space-y-4">
+      {[1, 2].map((i) => (
+        <div
+          key={i}
+          className="rounded-xl border bg-white shadow-sm overflow-hidden"
+        >
+          {/* Header */}
+          <div className="px-4 py-2">
+            <Skeleton width="40%" height={20} />
+          </div>
+
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left */}
+            <div className="space-y-2">
+              <Skeleton width="30%" height={16} />
+              {[1, 2, 3].map((j) => (
+                <Skeleton key={j} height={50} className="rounded-lg" />
+              ))}
+            </div>
+
+            {/* Right */}
+            <div className="space-y-2">
+              <Skeleton width="30%" height={16} />
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map((k) => (
+                  <Skeleton key={k} height={40} className="rounded-lg" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 return (
   <div className="flex-col">
     <div className=" sticky top-0 z-20">
-      {/* Header */}
       <div className="border-b  py-1 my-2 sticky top-0 z-20  flex justify-between items-left">
         <h1 className="font-bold text-xl text-gray-800">
           {client.fullName}
@@ -384,7 +589,7 @@ return (
             <Pencil
               size={18}
               className="text-green-700 cursor-pointer hover:text-green-900"
-              onClick={() => onEditClient(client)}
+             onClick={() => onEditClient({ ...client })}
             />
           </div>
 
@@ -421,6 +626,124 @@ return (
                       {client.memo || "—"}
                     </div>
                   </div>
+           <div className="sm:col-span-2 mt-6">
+  <h3 className="font-bold text-gray-800 mb-3">
+    Loan Summary
+  </h3>
+
+  {loading ? (
+    <LoanSummarySkeleton />
+  ) : allLoanSummary.length === 0 ? (
+    <p className="text-gray-500 italic text-sm">
+      No loans found for this client.
+    </p>
+  ) : (
+    <div className="space-y-4">
+      {allLoanSummary.map((group) => {
+        const isLatestGroup = group.loans.some(
+          (l) => l._id === latestActiveLoanId
+        );
+
+        return (
+          <div
+            key={group.parent._id}
+            className={`rounded-xl border shadow-sm overflow-hidden
+              ${
+                isLatestGroup
+                  ? "border-green-500 bg-green-50"
+                  : "bg-white"
+              }`}
+          >
+            {/* Header */}
+            <div className="px-4 py-2 font-semibold text-sm flex justify-between bg-gray-300 text-black">
+              <span>{group.companyName}</span>
+              <span>
+                {group.loans.length} Loan
+                {group.loans.length > 1 ? "s" : ""}
+              </span>
+            </div>
+
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* LEFT */}
+              <div>
+                <p className="text-xs uppercase text-gray-500 mb-2 font-semibold">
+                  Loan Chain
+                </p>
+
+                <div className="space-y-2">
+                  {group.loans.map((loan) => (
+                    <div
+                      key={loan._id}
+                      className={`border text-xs rounded-lg p-2 shadow-sm
+                        ${
+                          loan.loanStatus === "Deactivated"
+                            ? "bg-red-100 border-red-400"
+                            : "bg-gray-100 hover:bg-gray-50"
+                        }
+                        ${loan.status === "Merged" ? "ml-6 sm:ml-6" : ""}
+                      `}
+                    >
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {moment(loan.issueDate).format("MMM DD, YYYY")}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Loan Status : {loan.loanStatus}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Payment Status : {loan.status}
+                        </p>
+                      </div>
+
+                      <div className="font-semibold text-blue-700">
+                        {formatUSD(loan.baseAmount)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* RIGHT */}
+              <div>
+                <p className="text-xs uppercase text-gray-500 mb-2 font-semibold">
+                  Totals
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <StatBox
+                    label="Total Base"
+                    value={formatUSD(group.totals.base)}
+                  />
+
+                  <StatBox
+                    label="Total Paid"
+                    value={formatUSD(group.totals.paid)}
+                    valueClass="text-blue-600"
+                  />
+
+                  {group.totals.profit > 0 && (
+                    <StatBox
+                      label="Profit"
+                      value={formatUSD(group.totals.profit)}
+                      valueClass="text-green-600"
+                    />
+                  )}
+
+                  <StatBox
+                    label="Payment Status"
+                    value={group.parent.status}
+                  />
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
+</div>
                 </div>
           )}
         </div>
@@ -699,7 +1022,7 @@ return (
                                   No payments recorded yet.
                                 </p>
                               )}
-                                  {profitData?.totalProfit > 0 && (
+                                  {Number(profitData?.totalProfit) > 0 && (
                                     <div className="text-sm font-semibold text-emerald-600">                                   
                                     <span className="text-sm font-semibold text-gray-600">
                                         {" "} ( Total Base: {formatUSD(profitData.totalBaseAmount)} | Total Paid: {formatUSD(profitData.totalPaid)} )
@@ -985,14 +1308,14 @@ return (
             </div>
           </div>
         )}
-{activeTab === "notes" && (
-      <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
-<ClientNotes
-  clientId={client._id}
-  clientName={client.fullName}
-/>    </div>
-        )}
-            {activeTab === "templates" && (
+      {activeTab === "notes" && (
+            <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
+      <ClientNotes
+        clientId={client._id}
+        clientName={client.fullName}
+      />    </div>
+              )}
+      {activeTab === "templates" && (
         <div className="flex flex-col items-center justify-center py-12 text-gray-500">
           <FileText size={28} className="mb-2 text-gray-400" />
           <p className="text-sm font-semibold">No Templates Available</p>
@@ -1012,7 +1335,6 @@ return (
           onClose={() => {
           setLoanModalOpen(false);
           setSelectedClientForLoan(null);
-          loanStore.fetchActiveLoans(client._id);
         }}
         />
       )}

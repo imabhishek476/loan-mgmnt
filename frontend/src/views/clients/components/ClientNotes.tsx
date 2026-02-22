@@ -204,19 +204,16 @@ const ClientNotes = ({
   </div>
 
 ) : (
-  <div className="flex flex-col items-center justify-center py-16 text-gray-500">
-    <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-3">
-      <StickyNote size={26} className="text-green-600" />
-    </div>
-
-    <p className="text-sm font-semibold">
-      No Notes Yet
-    </p>
-
-    <p className="text-xs text-gray-400 mt-1">
+  <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <StickyNote size={28} className="mb-2 text-gray-400" />
+            <p className="text-sm font-semibold">No Notes Available</p>
+            <p className="text-xs mt-1">
+              You haven’t created any Notes yet.
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
       Click "Add Note" to create one
     </p>
-  </div>
+            </div>
 )}
 
       {openModal && (

@@ -8,6 +8,7 @@ import {
   activeLoansData,
   type LoanPayload,
   getLoanProfitByLoanId,
+  getClientLoansProfits
 } from "../services/LoanService";
 import { toast } from "react-toastify";
 import moment from "moment";
@@ -38,11 +39,14 @@ class LoanStore {
   loans: any[] = [];
   total: number = 0;
   loading: boolean = false;
+  loadingProfit: boolean = false;
   currentPage: number = 0;
   limit: number = 10;
   tableRef: any = null; //table Ref is for loans table screen
   loanDetails: any = null;
 loanProfitMap: Record<string, any> = {};
+clientLoanProfitMap:{};
+
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
@@ -159,9 +163,9 @@ loanProfitMap: Record<string, any> = {};
 async getLoanProfitByLoanId(id: string) {
   this.loading = true;
   try {
-    const data = await getLoanProfitByLoanId(id);
+    const res = await getLoanProfitByLoanId(id);
     runInAction(() => {
-      this.loanProfitMap[id] = data;
+       this.loanProfitMap[id] = res.data;
     });
   } catch (err) {
     console.error("Error fetching loan profit:", err);
@@ -171,6 +175,25 @@ async getLoanProfitByLoanId(id: string) {
     });
     }
   }
+  async getClientLoansProfit(clientId: string) {
+  this.loadingProfit = true;
+  try {
+    const res = await getClientLoansProfits(clientId);
+    runInAction(() => {
+      const map: Record<string, any> = {};
+
+      res.data.forEach((item: any) => {
+        map[String(item.loanId)] = item;
+      });
+
+      this.loanProfitMap = map;   // ✅ CORRECT (map)
+    });
+  } finally {
+    runInAction(() => {
+      this.loadingProfit = false;
+    });
+  }
+}
   getLoansByClient(clientId: string) {
     return this.loans.filter((l) => l.client === clientId);
   }

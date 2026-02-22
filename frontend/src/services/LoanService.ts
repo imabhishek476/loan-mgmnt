@@ -76,3 +76,7 @@ export const getLoanProfitByLoanId = async (id: string) => {
   const { data } = await api.get(`/loans/${id}/profit`);
   return data.data || {};
 };
+export const getClientLoansProfits = async (clientId: string) => {
+  const { data } = await api.get(`/loans/${clientId}/profits`);
+  return data;
+};

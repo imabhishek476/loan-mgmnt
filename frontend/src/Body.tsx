@@ -26,25 +26,25 @@ const appRouter = createBrowserRouter([
     ),
     errorElement: <ErrorMessage />,
     children: [
-    { path: "", element: <Navigate to="dashboard" replace /> },
+    { path: "", element: <Navigate to="/dashboard" replace /> },
       {
-        path: "dashboard",
+        path: "/dashboard",
         element: <Dashboard />,
       },
       {
-        path: "client/",
+        path: "/clients",
         element: <Clients />,
       },
       {
-        path: "loans",
+        path: "/loans",
         element: <Loans />,
       },
      {
-        path: "administration",
+        path: "/administration",
         element: <Administration />,
       },
       {
-        path: "client/:id",
+        path: "/client/:id",
         element: <ClientDetailsPage />,
       },
     ],
