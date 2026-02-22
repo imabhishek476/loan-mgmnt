@@ -30,5 +30,13 @@ export const appTitle =
     : ORIGIN === "https://claim-advance.vercel.app"
     ? "ClaimAdvance UAT"
     : "Claim Advance";
-
+export const formatCompact = (num: number) => {
+  if (num >= 1_000_000_000)
+    return (num / 1_000_000_000).toFixed(1) + "B";
+  if (num >= 1_000_000)
+    return (num / 1_000_000).toFixed(1) + "M";
+  if (num >= 1_000)
+    return (num / 1_000).toFixed(1) + "K";
+  return num.toString();
+};
 export const getAppTitle = () => appTitle;

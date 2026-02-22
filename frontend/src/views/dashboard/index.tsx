@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { dashboardStore } from "../../store/DashboardStore";
-import { Users, Building2, CreditCard, DollarSign } from "lucide-react";
+import { Users, Building2, CreditCard, DollarSign, EyeOff, Eye } from "lucide-react";
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
 import CountUp from "react-countup";
 import PayoffDataTable from "./components/PayoffDataTable";
 import SearchFilters from "./components/SearchFilters";
 import ChartSection from "./components/ChartSection";
-import { normalizeDateObject } from "../../utils/helpers";
+import { formatCompact, normalizeDateObject } from "../../utils/helpers";
 
 const StatCard = ({
   title,
@@ -17,37 +17,96 @@ const StatCard = ({
   icon: Icon,
   color,
   isCurrency,
-}: any) => (
-  <div className="bg-white rounded-xl shadow p-5 flex justify-between items-center flex-1 min-w-[200px]">
-    <div>
-      <p className="text-sm text-gray-500 whitespace-nowrap">{title}</p>
-      <div className="flex items-baseline gap-2">
-        <h2 className="text-md font-bold text-gray-800 flex items-baseline">
-          {isCurrency && <span className="mr-1">$</span>}
-          {typeof value === "number" ? (
-            <CountUp
-              end={value}
-              duration={1.5}
-              separator=","
-              decimals={isCurrency ? 2 : 0}
-              decimal="."
-            />
-          ) : (
-            value
+  enableToggle,
+  loanBreakdown,
+  profitBreakdown
+}: any) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const isNumber = typeof value === "number";
+
+  return (
+    <div className="bg-white rounded-xl shadow p-3 flex justify-between items-start flex-1 min-w-[250px]">
+      <div className="w-full">
+        {/* Title */}
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">{title}</p> {" "}
+
+          {enableToggle && (
+            
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className=" w-6 h-6 rounded-full ml-2 flex items-center justify-center bg-gray-100 hover:bg-green-50 text-gray-500 hover:text-green-700 transition-all duration-200"
+            >
+              {expanded ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
           )}
-        </h2>
-        {subValue && (
-          <span className="text-xs text-gray-500 font-medium">{subValue}</span>
+        </div>
+
+        {/* ✅ Value */}
+        <h2 className="text-md font-bold text-gray-800 mt-1">
+          {isCurrency && <span className="mr-1">$</span>}
+
+  {isNumber ? (
+    isCurrency ? (
+      expanded ? (
+        <CountUp
+          end={value}
+          duration={1.2}
+          separator=","
+          decimals={2}
+        />
+      ) : (
+        formatCompact(value)
+      )
+    ) : (
+      value.toLocaleString() 
+    )
+  ) : (
+    value
+  )}
+           {" "}   {!expanded && subValue && (
+          <span className="text-xs text-gray-600 font-medium">
+            {subValue}
+          </span>
         )}
-      </div>
-    </div>
-    <div
-      className={`p-2 rounded-full ${color} bg-opacity-20 flex items-center justify-center`}
-    >
-      <Icon className={`${color.replace("bg-", "text-")} w-6 h-6`} />
-    </div>
+        </h2>
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            expanded ? "max-h-20 opacity-100 mt-2" : "max-h-0 opacity-0"
+          }`}
+        >
+          {loanBreakdown && (
+            <div className="text-xs text-black border-t pt-2 flex gap-1">
+              <span className="font-semibold">Merged: <b>{loanBreakdown.merged}</b></span>
+              <span>|</span>
+              <span className="font-semibold">Paid Off: <b>{loanBreakdown.paidOff}</b></span>
+              <span>|</span>
+              <span className="font-semibold">Active: <b>{loanBreakdown.unmerged}</b></span>
+            </div>
+          )}
+        </div>
+         {isCurrency && title === "Total Profit" && value !== 0 && profitBreakdown && (
+  <div className="text-xs text-gray-700 mt-1 border-t pt-1">
+    <span className="font-medium">
+      Total Base : {profitBreakdown.base.toLocaleString()}
+    </span>
+    <span className="mx-1">|</span>
+    <span className="font-medium">
+      Total Recovered : {profitBreakdown.recovered.toLocaleString()}
+    </span>
   </div>
-);
+)}
+      </div>
+
+      {/* Icon */}
+      <div className={`p-2 rounded-full ${color} bg-opacity-20 flex items-center justify-center`}>
+        <Icon className={`${color.replace("bg-", "text-")} w-4 h-4`} />
+      </div>
+     
+    </div>
+  );
+};
 const Dashboard = observer(() => {
   const [filteredLoansByCompany, setFilteredLoansByCompany] = useState<any[]>(
     []
@@ -140,7 +199,6 @@ const { globalStats } = dashboardStore;
   useEffect(() => {
     loadDashboard();
   }, []);
-console.log(globalStats.totalLoanAmount, "totalLoanAmount");
   return (
     <div className=" text-left relative">
       <h1 className="text-2xl font-bold text-gray-800 mb-3">Dashboard</h1>
@@ -148,7 +206,7 @@ console.log(globalStats.totalLoanAmount, "totalLoanAmount");
       {/* Stats Cards */}
       <div className="flex gap-2 flex-wrap">
         <StatCard
-          title="Total Customers"
+          title="Total Clients"
           value={globalStats.totalClients}
           icon={Users}
           color="bg-green-700"
@@ -162,14 +220,21 @@ console.log(globalStats.totalLoanAmount, "totalLoanAmount");
         <StatCard
           title="Total Loans"
           value={globalStats.totalLoans}
-          subValue={`(${globalStats.totalPaidOffLoans} Paid Off)`}
+          subValue={`(${globalStats.totalPaidOrMergedLoans} Paid Off)`}
           icon={CreditCard}
+          enableToggle
+          loanBreakdown={{
+          merged: globalStats.totalMergedLoans,
+          paidOff: globalStats.totalPaidOffLoans,
+          unmerged: globalStats.totalActiveLoans,
+        }}
           color="bg-green-700"
         />
         <StatCard
           title="Total Loan Value"
           value={globalStats.totalLoanAmount}
           icon={DollarSign}
+          enableToggle
           color="bg-green-700"
           isCurrency
         />
@@ -178,6 +243,7 @@ console.log(globalStats.totalLoanAmount, "totalLoanAmount");
           value={globalStats.totalPaymentsAmount}
           subValue={`(${recoveredPercentage}%)`}
           icon={DollarSign}
+          enableToggle
           color="bg-green-500"
           isCurrency
         />
@@ -185,7 +251,12 @@ console.log(globalStats.totalLoanAmount, "totalLoanAmount");
           title="Total Profit"
           value={globalStats.totalProfit}
           icon={DollarSign}
+          enableToggle
           isCurrency
+          profitBreakdown={{
+            base: globalStats.totalBaseAmount,
+            recovered: globalStats.totalPaymentsAmount,
+          }}
           color="bg-green-700"
         />
       </div>

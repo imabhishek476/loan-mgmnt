@@ -31,7 +31,7 @@ const LoanView = observer(
                   {/* Customer */}
                   <div>
                     <p className="text-gray-500 text-xs uppercase mb-1">
-                      Customer
+                      Client
                     </p>
                     <p className="font-medium">
                       {selectedLoan.client?.fullName ||

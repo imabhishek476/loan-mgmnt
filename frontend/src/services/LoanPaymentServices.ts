@@ -7,6 +7,11 @@ export interface PaymentPayload {
   paidAmount: number;
   paidDate: string | Date;
   checkNumber?: string;
+  payments: Payment[];
+  rootLoanId: string;
+  totalBaseAmount: number;
+  totalPaid: number;
+  totalProfit: number;
 }
 
 // Payment type returned from API
@@ -15,11 +20,16 @@ export interface Payment extends PaymentPayload {
 }
 
 // Fetch all payments for a specific loan
-export const fetchPaymentsByLoan = async (loanId: string): Promise<Payment[]> => {
-  const { data } = await api.get(`/payments/${loanId}`); // singular 'payment'
-  return data.payments || []; // match backend JSON { success, payments }
-};
+export const fetchPaymentsByLoan = async (
+  loanId: string
+): Promise<{ payments: Payment[]; profit: any }> => {
+  const { data } = await api.get(`/payments/${loanId}`);
 
+  return {
+    payments: data.payments || [],
+    profit: data.profit || null,
+  };
+};
 // Add a new payment
 export const addPayment = async (payload: PaymentPayload): Promise<Payment> => {
   const { data } = await api.post("/payments/store", payload);

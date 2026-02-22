@@ -10,6 +10,7 @@ import  Administration from "./views/administration/index";
 import  Loans from "./views/loans/index";
 import NotFound from "./views/components/404"; 
 import { ErrorMessage } from "./components/ErrorMessage";
+import ClientDetailsPage from "./views/clients/components/ClientDetailsPage";
 
 const appRouter = createBrowserRouter([
   {
@@ -25,22 +26,26 @@ const appRouter = createBrowserRouter([
     ),
     errorElement: <ErrorMessage />,
     children: [
-    { path: "", element: <Navigate to="dashboard" replace /> },
+    { path: "", element: <Navigate to="/dashboard" replace /> },
       {
-        path: "dashboard",
+        path: "/dashboard",
         element: <Dashboard />,
       },
       {
-        path: "customer",
+        path: "/clients",
         element: <Clients />,
       },
       {
-        path: "loans",
+        path: "/loans",
         element: <Loans />,
       },
      {
-        path: "administration",
+        path: "/administration",
         element: <Administration />,
+      },
+      {
+        path: "/client/:id",
+        element: <ClientDetailsPage />,
       },
     ],
   },

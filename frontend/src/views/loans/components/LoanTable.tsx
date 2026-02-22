@@ -23,6 +23,7 @@
   import LoanSearch from "./LoanSearch";
   import ClientViewModal from "../../clients/components/ClientViewModal";
   import FormModal, { type FieldConfig } from "../../../components/FormModal";
+import { useNavigate } from "react-router-dom";
 
   interface LoanTableProps {
     clientId?: string;
@@ -168,9 +169,11 @@
       remaining = details.remaining;
       total = details.total;
     }
+    const navigate = useNavigate();
     const handleViewClient = async (client) => {
-    setViewClient({ ...client, loans: [] });
-    setViewModalOpen(true);
+    // setViewClient({ ...client, loans: [] });
+    navigate(`/client/${client._id}`);
+    // setViewModalOpen(true);
     };
     const customFields: {
       id: number;
@@ -194,7 +197,7 @@
       try {
         if (editingClient) {
           await clientStore.updateClient(editingClient?._id, data);  
-          toast.success("Customer updated successfully");
+          toast.success("Client updated successfully");
           try {
             await clientStore.refreshDataTable();
             const refreshedClient = clientStore.clients.find(
@@ -208,7 +211,7 @@
           setModalOpen(false);
         } else {
           await clientStore.createClient(data);  
-          toast.success("New Customer added successfully");  
+          toast.success("New Client added successfully");  
           try {
             await clientStore.refreshDataTable();
           } catch (refreshError) {
@@ -218,7 +221,7 @@
         }
       } catch (error: any) {
         console.error("Save error:", error);
-        toast.error(error.response?.data?.error || "Failed to save Customer");
+        toast.error(error.response?.data?.error || "Failed to save Client");
       }
     };
     const clientFields: FieldConfig[] = [
@@ -260,7 +263,7 @@
                   cellStyle: { whiteSpace: "nowrap" },
                 },
                 {
-                  title: "Customer",
+                  title: "Client",
                   sorting: false,
                   render: (rowData: any) => (
                     <a
@@ -326,19 +329,28 @@
                   sorting: false,
                   render: (rowData) => {
                     const today = moment().startOf("day");
-                    const issueDate = moment(
-                      rowData.issueDate,
-                      "MM-DD-YYYY"
-                    ).startOf("day");
-                    const daysPassed = today.diff(issueDate, "days");
-                    let completedMonths = Math.floor(daysPassed / 30);
+                    const issueDate = moment(rowData.issueDate, "MM-DD-YYYY");
+                    const parentIssueDate = rowData.parentLoan?.issueDate
+                      ? moment(rowData.parentLoan.issueDate, "MM-DD-YYYY")
+                      : null;
+                    let daysPassed = 0;
+                    if (parentIssueDate) {
+                      const referenceDate = parentIssueDate;
+                      daysPassed = referenceDate.diff(issueDate, "days");
+                    } else {
+                      const referenceDate = today; // normal behaviour
+                      daysPassed = referenceDate.diff(issueDate, "days");
+                    }
+                    let completedMonths = Math.ceil(daysPassed / 30);
                     if (daysPassed % 30 === 0 && daysPassed !== 0) {
                       completedMonths -= 1;
                     }
+                    completedMonths = Math.max(0, completedMonths);
                     const ALLOWED_TERMS = getAllowedTerms(rowData.loanTerms);
                     const runningTenure =
-                      ALLOWED_TERMS.find((t) => completedMonths <= t) ||
-                      rowData.loanTerms;
+                      ALLOWED_TERMS.find(
+                        (t) => t >= completedMonths && t <= rowData.loanTerms
+                      ) || rowData.loanTerms;
                     return <span>{runningTenure}</span>;
                   },
                   headerStyle: { whiteSpace: "nowrap" },
@@ -497,17 +509,17 @@
             setModalOpen(false);
             setEditingClient(null);
           }}
-          title={editingClient ? "Edit Customer" : "New Customer"}
+          title={editingClient ? "Edit Client" : "New Client"}
           fields={clientFields}
           //@ts-ignore
           customFields={customFields}
           initialData={editingClient || {}}
           submitButtonText={
             editingClient ? (
-              "Update Customer"
+              "Update Client"
             ) : (
               <>
-                <Save size={16} className="inline mr-1" /> Create Customer
+                <Save size={16} className="inline mr-1" /> Create Client
               </>
             )
           }

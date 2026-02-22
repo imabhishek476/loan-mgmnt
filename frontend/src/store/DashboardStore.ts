@@ -14,6 +14,11 @@ class DashboardStore {
         totalPaymentsAmount: 0,
         totalPaidOffLoans: 0,
         totalProfit: 0,
+        totalPaidOrMergedLoans:0,
+        totalMergedLoans:0,
+        totalUnmergedLoans:0,
+        totalBaseAmount:0,
+        totalActiveLoans:0,
     };
 
     filteredStats = {

@@ -3,14 +3,13 @@ import { Autocomplete, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { LOAN_STATUS_OPTIONS } from "../../../utils/constants";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { ChevronsDown, ChevronsUp } from "lucide-react";
 import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { observer } from "mobx-react-lite";
 
 export const CustomerSearch = observer(({ tableRef }:any) => {
 
-    const { clientFilters, filtersOpen } = clientStore;
+    const { clientFilters } = clientStore;
     const [localFilters, setLocalFilters] = useState(clientFilters);
     const [filterActive, setFilterActive] = useState(false);
   const handleReset = () => {
@@ -21,7 +20,8 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       phone: "",
       attorneyName: "",
       status: "",
-      loanStatus: "",
+      latestLoanStatus: "",
+      allLoanStatus: "",
       issueDate: null,
       dob: null,
       accidentDate: null,
@@ -35,7 +35,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
     };
     setLocalFilters(emptyFilters);
     clientStore.setClientFilters(emptyFilters);
-     clientStore.setFiltersOpen(true);
+   
     tableRef.current?.onQueryChange();
   };
   const onChange = (e: any) => {
@@ -47,8 +47,9 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
   email: "Email",
   phone: "Phone",
   attorneyName: "Attorney",
-  status: "Customer Status",
-  loanStatus: "Payment Status",
+  status: "Client Status",
+  allLoanStatus: "All Payment Status",
+  latestLoanStatus: "Latest Payment Status",
   issueDate: "Issue Date",
   dob: "Date Of Birth",
   accidentDate: "Accident Date",
@@ -94,8 +95,8 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
     }
   };
   return (
-    <div className=" bg-gray-200 rounded-lg mb-3">
-      <div className="relative  px-2 rounded-t-lg border-b-2 border-green-700">
+    <div className=" bg-gray-300 rounded-lg mb-3">
+      <div className="relative  px-2 rounded-t-lg ">
         <div
           className={`
     transition-all duration-300 ease-in-out
@@ -135,34 +136,15 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
               ))}
           </div>
         </div>
-        <div className="absolute left-1/2 top-full -translate-x-1/2 translate-y-[-60%]">
-          <button
-            type="button"
-            onClick={() => clientStore.toggleFiltersOpen()}
-            className="
-                      w-6 h-6 rounded-full
-                      bg-green-700 border shadow
-                      flex items-center justify-center
-                      hover:bg-green-500 transition
-                    "
-          >
-            {filtersOpen ? (
-              <ChevronsUp size={16} className="text-white" />
-            ) : (
-              <ChevronsDown size={16} className="text-white" />
-            )}
-          </button>
-        </div>
-
       </div>
-      <div className={` px-2  rounded-b-lg ${filtersOpen ? "h-50 opacity-100" : "h-0 opacity-0"}`}>
+      <div className={` px-2  rounded-b-lg`}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSearch();
           }}
         >
-         <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 mb-1 pt-2">
+         <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 mb-1 pt-2">
   <div>
     <TextField
       size="small"
@@ -234,18 +216,42 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       size="small"
       color="success"
       options={LOAN_STATUS_OPTIONS}
-      value={localFilters.loanStatus || ""}
+      value={localFilters.allLoanStatus || ""}
       onChange={(_, value) =>
         setLocalFilters({
           ...localFilters,
-          loanStatus: value === "All" ? "" : value || "",
+          allLoanStatus: value === "All" ? "" : value || "",
         })
       }
       renderInput={(params) => (
         <TextField
           {...params}
           size="small"
-          label="Payment Status"
+          label="All Payment Status"
+          sx={compactFieldSx}
+          slotProps={{ inputLabel: smallLabel }}
+          fullWidth
+        />
+      )}
+    />
+  </div>
+   <div>
+    <Autocomplete
+      size="small"
+      color="success"
+      options={LOAN_STATUS_OPTIONS}
+      value={localFilters.loanStatus || ""}
+       onChange={(_, value) =>
+        setLocalFilters({
+          ...localFilters,
+          latestLoanStatus: value === "All" ? "" : value || "",
+        })
+      }
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          size="small"
+          label="Latest Payment Status"
           sx={compactFieldSx}
           slotProps={{ inputLabel: smallLabel }}
           fullWidth
@@ -266,7 +272,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
         <TextField
           {...params}
           size="small"
-          label="Customer Status"
+          label="Client Status"
           sx={compactFieldSx}
           slotProps={{ inputLabel: smallLabel }}
           fullWidth
@@ -433,12 +439,12 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       )}
     />
   </div>
-  <div className="gap-4 mt-0 flex sm:col-span-2">
+  <div className="gap-2 mt-0 flex sm:col-span-1">
     <button
       onClick={handleSearch}
       type="submit"
       title="Submit"
-      className="bg-green-700 hover:bg-green-800 transition-all duration-200 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
+      className="bg-green-700 hover:bg-green-800 transition-all duration-200 text-white px-2 py-2 rounded text-sm font-semibold h-10 w-full"
     >
       Submit
     </button>
@@ -447,7 +453,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       type="button"
       title="Reset"
       onClick={handleReset}
-      className="bg-gray-500 hover:bg-gray-600 transition-all duration-200 text-white px-3 py-2 rounded text-sm font-semibold h-10 w-full"
+      className="bg-gray-500 hover:bg-gray-600 transition-all duration-200 text-white px-1 py-2 rounded text-sm font-semibold h-10 w-full"
     >
       Reset
     </button>

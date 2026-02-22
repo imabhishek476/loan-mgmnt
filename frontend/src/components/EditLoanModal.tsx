@@ -18,7 +18,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker } from "@mui/x-date-pickers";
 import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
-import { fetchLoanById, updateLoan , activeLoansData} from "../services/LoanService";
+import { fetchLoanById, updateLoan} from "../services/LoanService";
 import { convertToUsd, isDateBefore } from "../utils/helpers";
 import { LoanTermsCard } from "./LoanTermsCard";
 import { ALLOWED_TERMS } from "../utils/constants";
@@ -209,8 +209,6 @@ const EditLoanModal = observer(
           return toast.error("Base amount must be greater than 0");
         if (!formData.loanTerms || formData.loanTerms <= 0)
           return toast.error("Please enter valid loan terms");
-        const loan = await fetchLoanById(loanId);
-        if (!loan) return toast.error("Loan not found");
         if (!formData.issueDate) {
           toast.error("Issue date is required");
           setSaving(false);
@@ -255,8 +253,8 @@ const EditLoanModal = observer(
          }
         setSaving(true);
         await updateLoan(loanId, payload);
-        const refreshedLoans = await activeLoansData(formData.client);
-              loanStore.loans = refreshedLoans; 
+        // const refreshedLoans = await activeLoansData(formData.client);
+        //       loanStore.loans = refreshedLoans; 
         await clientStore.refreshDataTable();
         await loanStore.getLoansByClient(formData.client);
 

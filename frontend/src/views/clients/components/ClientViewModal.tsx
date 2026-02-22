@@ -1,16 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-  X,
   Plus,
   Pencil,
   AlertCircle,
-  ChevronRight,
-  ChevronUp,
-  ChevronLeft,
-  ChevronDown,
   Trash2,
   RefreshCcw,
   Eye,
+  FileText,
+  StickyNote,
+  User,
+  Building2,
 } from "lucide-react";
 import { loanStore } from "../../../store/LoanStore";
 import { clientStore } from "../../../store/ClientStore";
@@ -20,7 +19,7 @@ import moment from "moment";
 import { observer } from "mobx-react-lite";
 import LoanPaymentModal from "../../../components/PaymentModel";
 import { deletePayment, fetchPaymentsByLoan } from "../../../services/LoanPaymentServices";
-import { Button } from "@mui/material";
+import { Button, Skeleton } from "@mui/material";
 import Loans from "../../loans";
 import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
@@ -28,6 +27,7 @@ import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
 import {deactivateLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { getAllowedTerms } from "../../../utils/constants";
+import ClientNotes from "./ClientNotes";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -38,11 +38,10 @@ interface ClientViewModalProps {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-const ClientViewModal = ({ open, onClose, client ,onEditClient}: ClientViewModalProps) => {
+const ClientViewModal = ({ open, client ,onEditClient}: ClientViewModalProps)=> {
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [editPaymentLoan, setEditPaymentLoan] = useState<any>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
+  const [expandedLoanIds, setExpandedLoanIds] = useState<string[]>([]);
   const [loanPayments, setLoanPayments] = useState<Record<string, any[]>>({});
   const [loanModalOpen, setLoanModalOpen] = useState(false);
   const [loanEditModalOpen, setEditLoanModalOpen] = useState(false);
@@ -60,9 +59,17 @@ const [currentTermMap, setCurrentTermMap] = useState<Record<string, number>>({})
 const [editingLoanId, setEditingLoanId] = useState<any>(null);
 const [editingPayment, setEditingPayment] = useState<any>(null);
 const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
+const [loadingClient, setLoadingClient] = useState(true);
+const [loadingLoans, setLoadingLoans] = useState(true);
+const [loadingPaymentsMap, setLoadingPaymentsMap] = useState<Record<string, boolean>>({});
+const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templates">("client");
+const [loading, setLoading] = useState(true)
+const [loanProfitMap, setLoanProfitMap] = useState<Record<string, any>>({});
   const loadInitialData = async () => {
     try {
       const promises = [];
+       setLoadingClient(true);
+       setLoadingLoans(true);
       if (companyStore.companies.length == 0 ) {
         promises.push(companyStore.fetchCompany());
       }
@@ -70,21 +77,29 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
          promises.push(clientStore.fetchClients());
        }
         if (loanStore.loans.length == 0) {
-          promises.push(loanStore.fetchActiveLoans(client._id));
+          // promises.push(loanStore.fetchActiveLoans(client._id));
         }
       await Promise.all(promises);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load data");
-    }
+     } finally {
+      setLoadingClient(false);
+      setLoadingLoans(false);
+  }
   };
 
   const refreshPayments = async (loanId: string) => {
     try {
-      const payments = await fetchPaymentsByLoan(loanId);
-      setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
-      await loanStore.getLoanProfitByLoanId(client._id);
-    
+      const { payments, profit } = await fetchPaymentsByLoan(loanId);
+      setLoanPayments(prev => ({
+        ...prev,
+        [loanId]: payments,
+      }));
+      setLoanProfitMap(prev => ({
+        ...prev,
+        [loanId]: profit, 
+      }));
     } catch (err) {
       console.error(err);
       toast.error("Failed to fetch payment history");
@@ -129,8 +144,7 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
     const end = Number(selectedDynamicTerm) * 30;
     const currentEndDate = moment(loan.issueDate).add(end, "day");
     const isDelayed = today.isAfter(endDate, "day");
-    const profitData = loanStore.loanProfitMap[String(loan?._id)];
-
+    const profitData = loanProfitMap[loan?._id];
     return {
       loan,
       companyName,
@@ -155,11 +169,85 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
     return nextTerm ?? LOAN_TERMS[LOAN_TERMS.length - 1];
   };
 
+useEffect(() => {
+  if (!client?._id) return;
+  setExpandedLoanIds([]);
+  if (clientLoans.length > 0) {
+    setExpandedLoanIds(clientLoans.map((loan) => loan._id));
+  }
+}, [client?._id, clientLoans]);
+
+ const loadPaymentsForLoans = async () => {
+      for (const loan of clientLoans) {
+        try {
+          setLoadingPaymentsMap(prev => ({
+            ...prev,
+            [loan._id]: true,
+          }));
+          const { payments, profit } = await fetchPaymentsByLoan(loan._id);
+           setLoanPayments(prev => ({
+            ...prev,
+            [loan._id]: payments,
+          }));
+          setLoanProfitMap(prev => ({
+                  ...prev,
+                  [loan._id]: profit,   // ✅ PROFIT HERE
+                }));
+        } catch (err) {
+          console.error("Failed payments:", loan._id);
+        } finally {
+          setLoadingPaymentsMap(prev => ({
+            ...prev,
+            [loan._id]: false,
+          }));
+        }
+      }
+    };
+
+    useEffect(() => {
+  if (!client?._id) return;
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      if (activeTab === "client") {
+        await loadInitialData();
+        await loanStore.fetchActiveLoans(client._id);
+        await loanStore.getClientLoansProfit(client._id);
+      }
+
+      if (activeTab === "loans") {
+        await loanStore.fetchActiveLoans(client._id);
+        await loanStore.getClientLoansProfit(client._id);
+        await loadPaymentsForLoans();
+      }
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadData();
+}, [activeTab, client?._id]);
+
 
   useEffect(() => {
-    loadInitialData();
-  if (client?._id) loanStore.fetchActiveLoans(client?._id);
-  }, [client?._id]);
+  if (!client?._id) return;
+  if (activeTab === "client") {
+   loadInitialData();
+    loanStore.fetchActiveLoans(client._id); 
+    loanStore.getClientLoansProfit(client?._id);
+  }
+  else if (activeTab === "loans") {
+    loanStore.fetchActiveLoans(client._id);
+    loanStore.getClientLoansProfit(client?._id);
+    loadPaymentsForLoans();
+
+  }
+}, [activeTab, client?._id]);
   useEffect(() => {
     const newMap: Record<string, number> = {};
     clientLoans.forEach((loan) => {
@@ -169,22 +257,39 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
   }, [clientLoans]);
   if (!open) return null;
 
-  const handleToggleLoan = async (loanId: string) => {
-    if (expandedLoanId === loanId) {
-      setExpandedLoanId(null);
-      return;
-    }
-    setExpandedLoanId(loanId);
-  loanStore.getLoanProfitByLoanId(loanId); 
+const handleToggleLoan = async (loanId: string) => {
+  setExpandedLoanIds((prev) =>
+    prev.includes(loanId)
+      ? prev.filter((id) => id !== loanId)
+      : [...prev, loanId]
+  );
 
-    try {
-      const payments = await fetchPaymentsByLoan(loanId);
-      setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch payment history");
-    }
-  };
+  try {
+    setLoadingPaymentsMap(prev => ({
+      ...prev,
+      [loanId]: true,
+    }));
+
+    const { payments, profit } = await fetchPaymentsByLoan(loanId);
+    setLoanPayments(prev => ({
+      ...prev,
+      [loanId]: payments,
+    }));
+    setLoanProfitMap(prev => ({
+      ...prev,
+      [loanId]: profit,
+    }));
+
+  } catch (err) {
+    toast.error("Failed to fetch payment history");
+  } finally {
+    // Stop loader
+    setLoadingPaymentsMap(prev => ({
+      ...prev,
+      [loanId]: false,
+    }));
+  }
+};
 const handleDeletePayment = async (payment: any) => {
   Confirm({
     title: "Confirm Delete",
@@ -195,6 +300,7 @@ const handleDeletePayment = async (payment: any) => {
       refreshPayments(payment.loanId);
        await loanStore.fetchActiveLoans(payment.clientId);
       await clientStore.refreshDataTable();
+      await  loanStore.getClientLoansProfit(client?._id);
       toast.success("Payment deleted successfully");
     },
   });
@@ -270,7 +376,6 @@ const handleStatusChange = async (loanId, newStatus) => {
   try {
     await updateLoanStatus(loanId, newStatus);
     toast.success("Loan status updated");
-    await loanStore.getLoanProfitByLoanId(loanId);
     await loanStore.fetchActiveLoans(client._id);
     await clientStore.refreshDataTable();
   } catch (err) {
@@ -278,191 +383,429 @@ const handleStatusChange = async (loanId, newStatus) => {
     toast.error("Failed to update status");
   }
 };
+const tabs = [
+  { key: "client", label: "Client Info", icon: <User size={16} /> },
+  { key: "loans", label: "Loan History", icon: <Building2 size={16} /> },
+  { key: "notes", label: "Notes", icon: <StickyNote size={16} /> },
+  { key: "templates", label: "Templates", icon: <FileText size={16} /> },
+];
 
+const loansWithTs = useMemo(() => {
+  return clientLoans.map((loan) => ({
+    ...loan,
+    issueTs: moment(loan.issueDate, "MM-DD-YYYY").valueOf(),
+  }));
+}, [clientLoans]);
 
+const mergeMap = useMemo(() => {
+  const map: Record<string, any[]> = {};
+
+  loansWithTs.forEach((loan) => {
+    if (!loan.parentLoanId) return;
+
+    if (!map[loan.parentLoanId]) {
+      map[loan.parentLoanId] = [];
+    }
+
+    map[loan.parentLoanId].push(loan);
+  });
+
+  return map;
+}, [loansWithTs]);
+
+const buildMergeChain = (loanId: string): any[] => {
+  const chain: any[] = [];
+  const stack = [...(mergeMap[loanId] || [])];
+
+  while (stack.length) {
+    const loan = stack.pop();
+    chain.push(loan);
+
+    if (mergeMap[loan._id]) {
+      stack.push(...mergeMap[loan._id]);
+    }
+  }
+
+  return chain;
+};
+
+const allLoanSummary = useMemo(() => {
+  if (!loansWithTs.length) return [];
+
+  const parentLoans = loansWithTs.filter(
+    (loan) => !loan.parentLoanId
+  );
+
+  return parentLoans.map((parent) => {
+    const mergedLoans = buildMergeChain(parent._id);
+    const allLoans = [parent, ...mergedLoans];
+
+    const totals = allLoans.reduce(
+      (acc, loan) => {
+        const profit =
+          loanStore.loanProfitMap[String(loan._id)];
+
+        const paid = Number(
+          profit?.totalPaid ?? loan.paidAmount ?? 0
+        );
+
+        const profitValue = Number(
+          profit?.totalProfit ?? 0
+        );
+
+        acc.base += Number(loan.baseAmount || 0);
+        acc.paid += paid;
+        acc.profit += profitValue;
+
+        return acc;
+      },
+      { base: 0, paid: 0, profit: 0 }
+    );
+
+    const company =
+      companyStore.companies.find(
+        (c) => c._id === parent.company
+      );
+
+    return {
+      parent,
+      loans: allLoans.sort(
+        (a, b) => a.issueTs - b.issueTs
+      ), // ⚡ FAST
+      totals,
+      companyName: company?.companyName || "—",
+    };
+  });
+}, [loansWithTs, mergeMap, loanStore.loanProfitMap]);
+
+const latestActiveLoanId = useMemo(() => {
+  if (!loansWithTs.length) return null;
+
+  // const activeLoans = loansWithTs.filter(
+  //   (loan) =>
+  //     ["Active", "Partial Payment"].includes(
+  //       loan.status
+  //     ) && loan.loanStatus !== "Deactivated"
+  // );
+  const activeLoans = loansWithTs;
+
+  if (!activeLoans.length) return null;
+
+  return activeLoans.sort(
+    (a, b) => b.issueTs - a.issueTs
+  )[0]._id;
+}, [loansWithTs]);
+
+const StatBox = ({
+  label,
+  value,
+  valueClass = "text-gray-900",
+}: {
+  label: string;
+  value: any;
+  valueClass?: string;
+}) => (
+  <div className="bg-white border rounded-lg px-3 py-2 shadow-sm">
+    <p className="text-xs text-gray-500">{label}</p>
+    <p className={`font-bold ${valueClass}`}>
+      {value}
+    </p>
+  </div>
+);
+const LoanSummarySkeleton = () => {
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-start pt-10 bg-black/50  rounded-md">
-      <div
-        className="bg-white rounded-lg w-full max-w-7xl shadow-lg relative mx-4 sm:mx-6 flex flex-col overflow-y-auto"
-        style={{ height: "650px" }}
-      >
-        {" "}
-        {/* Header */}
-        <div className="flex justify-between items-center py-4  px-4 border-b sticky top-0 bg-white z-20 rounded-md">
-          <h1 className="font-bold text-lg text-gray-800">{client.fullName}</h1>
-          <button
-            onClick={onClose}
-            title="Close"
-            className="text-gray-500 hover:text-gray-800"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="flex flex-col lg:flex-row h-full  ">
-          {/* Sidebar */}
-          <div
-            className={`relative transition-all duration-300 ease-in-out bg-gray-50 border-l ${
-              sidebarCollapsed
-                ? "lg:w-12 h-12 lg:h-full"
-                : "w-full lg:w-1/3  h-full"
-            } p-2`}
-          >
-            <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-200  border-b">
-              {/* <FileText size={20} className={`text-green-700 ${
-                  sidebarCollapsed ? "lg:hidden" : ""
-                }`}/> */}
-              <h3
-                className={` font-bold text-gray-800  ${
-                  sidebarCollapsed ? "lg:hidden" : ""
-                }`}
-              >
-                Customer Information
-              </h3>
-              <span title="Edit Customer">
-              <Pencil
-                size={18}
-                className={`text-green-700 cursor-pointer hover:text-green-900 transition md:w-5 md:h-5 ${
-                  sidebarCollapsed ? "lg:hidden" : ""
-                }`}
-                onClick={() => onEditClient(client)}
-              />
-              </span>
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="absolute top-2 right-2 items-center justify-center w-8 h-8 bg-green-700 text-white rounded-full shadow-lg hover:bg-green-800 transition-transform transform hover:scale-105"
-                title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              >
-                <span className="hidden lg:flex flex-col items-center">
-                  {sidebarCollapsed ? (
-                    <ChevronRight size={20} />
-                  ) : (
-                    <ChevronLeft size={20} />
-                  )}
-                </span>
-                <span className="flex lg:hidden flex-col items-center">
-                  {sidebarCollapsed ? (
-                    <ChevronDown size={20} />
-                  ) : (
-                    <ChevronUp size={20} />
-                  )}
-                </span>
-              </button>
+    <div className="space-y-4">
+      {[1, 2].map((i) => (
+        <div
+          key={i}
+          className="rounded-xl border bg-white shadow-sm overflow-hidden"
+        >
+          {/* Header */}
+          <div className="px-4 py-2">
+            <Skeleton width="40%" height={20} />
+          </div>
+
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left */}
+            <div className="space-y-2">
+              <Skeleton width="30%" height={16} />
+              {[1, 2, 3].map((j) => (
+                <Skeleton key={j} height={50} className="rounded-lg" />
+              ))}
             </div>
 
-            {!sidebarCollapsed && (
-              <>
-                <div className="max-h-[500px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700 px-2 pb-4">
+            {/* Right */}
+            <div className="space-y-2">
+              <Skeleton width="30%" height={16} />
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map((k) => (
+                  <Skeleton key={k} height={40} className="rounded-lg" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+return (
+  <div className="flex-col">
+    <div className=" sticky top-0 z-20">
+      <div className="border-b  py-1 my-2 sticky top-0 z-20  flex justify-between items-left">
+        <h1 className="font-bold text-xl text-gray-800">
+          {client.fullName}
+        </h1>
+      </div>
+      <div className="sticky top-[48px] z-20 px-3">
+
+<div className="flex items-center gap-3 w-ful my-2l">
+  <div className="flex-1">
+    <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm w-full">
+      <div
+        className="absolute top-1 bottom-1 rounded-md bg-[#166534] transition-all duration-300 ease-in-out"
+        style={{
+          width: `calc(${100 / tabs.length}% - 0.5rem)`,
+          left: `calc(${
+            (tabs.findIndex((t) => t.key === activeTab) * 100) /
+            tabs.length
+          }% + 0.25rem)`,
+        }}
+      />
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          onClick={() => setActiveTab(tab.key as any)}
+          className={`relative z-10 flex-1 py-2 text-sm font-semibold rounded-md transition ${
+            activeTab === tab.key
+              ? "text-white"
+              : "text-gray-700 hover:text-green-700"
+          }`}
+        >
+          <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2">
+                    <span className="text-lg">{tab.icon}</span>
+            <span className="text-xs md:text-sm">{tab.label}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    {/* Content */}
+    <div className="flex-1  overflow-hidden ">
+
+      {/* ✅ Client TAB */}
+      {activeTab === "client" && (
+        <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
+          <div className="flex items-center mb-4 gap-3">
+            <h3 className="font-bold text-gray-800">
+              Client Information
+            </h3>
+
+            <Pencil
+              size={18}
+              className="text-green-700 cursor-pointer hover:text-green-900"
+             onClick={() => onEditClient({ ...client })}
+            />
+          </div>
+
+          {loadingClient ? (
+            <div className="p-3 space-y-3">
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" height={80} />
+              <Skeleton variant="rectangular" height={80} />
+            </div>
+          ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700">
                   <Info label="Full Name" value={client.fullName} />
                   <Info label="Email" value={client.email} />
                   <Info label="Phone" value={client.phone} />
                   <Info label="DOB" value={client.dob} />
                   <Info label="Accident Date" value={client.accidentDate} />
                   <Info label="Attorney" value={client.attorneyName} />
-                  <Info label="SSN" value={client.ssn} />                  
-                    {client.underwriter && (
-                      <Info label="Underwriter" value={client.underwriter} />
-                    )}
-                    {client.medicalParalegal && (
-                      <Info label="Medical Paralegal" value={client.medicalParalegal} />
-                    )}
-                    {client.caseId && (
-                      <Info label="Case ID" value={client.caseId} />
-                    )}
-                    {client.caseType && (
-                      <Info label="Case Type" value={client.caseType} />
-                    )}
-                    {client.indexNumber && (
-                      <Info label="Index #" value={client.indexNumber} />
-                    )}
-                    {client.uccFiled !== undefined && client.uccFiled !== "" && (
-                      <Info
-                        label="UCC Filed"
-                        value={client.uccFiled ? "Yes" : "No"}
-                      />
-                    )}
-               <div>
-                <p className="text-xs uppercase text-gray-500 font-medium">
-                  Custom Fields
-                </p>
-                {client?.customFields?.length ? (
-                  <ul className="mt-1 space-y-1 text-sm font-semibold text-gray-800">
-                    {client.customFields.map((field, index) => (
-                      <li key={index} className="break-words">
-                        <span className="text-gray-600">{field.name}:</span>{" "}
-                        {field.value}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="font-semibold text-sm">—</p>
-                )}
-              </div>
+                  <Info label="SSN" value={client.ssn} />
+              <Info label="Underwriter" value={client.underwriter} />
+              <Info label="Medical Paralegal" value={client.medicalParalegal} />
+              <Info label="Case ID" value={client.caseId} />
+              <Info label="Case Type" value={client.caseType} />
+              <Info label="Index #" value={client.indexNumber} />
+              <Info label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} />
+              <Info label="Address" value={client.address} />
 
+
+              {/* Memo */}
                   <div className="sm:col-span-2">
                     <p className="text-xs uppercase text-gray-500 font-medium">
-                      Address
-                    </p>
-                    <p className="font-semibold text-sm break-words">
-                      {client.address || "—"}
-                    </p>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <p className="text-xs uppercase text-gray-500 font-medium mb-1">
                       Memo
                     </p>
-                    <div className="bg-yellow-100 border-l-4 border-yellow-600 p-5 rounded shadow-sm text-sm text-gray-800">
+                    <div className="bg-yellow-100 border-l-4 border-yellow-600 p-3 rounded text-sm">
                       {client.memo || "—"}
                     </div>
                   </div>
-                </div>                
-              </>
-            )}
-          </div>
+           <div className="sm:col-span-2 mt-6">
+  <h3 className="font-bold text-gray-800 mb-3">
+    Loan Summary
+  </h3>
 
-          {/* Loans */}
-          <div className="flex-1 border-r relative">
-            <div className="sticky top-0 bg-white z-10 px-3 py-2 border-b flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                {/* <DollarSign size={20} className="text-green-600" /> */}
-                <h3 className=" font-bold text-gray-800">
-                  Loan History
-                </h3>
+  {loading ? (
+    <LoanSummarySkeleton />
+  ) : allLoanSummary.length === 0 ? (
+    <p className="text-gray-500 italic text-sm">
+      No loans found for this client.
+    </p>
+  ) : (
+    <div className="space-y-4">
+      {allLoanSummary.map((group) => {
+        const isLatestGroup = group.loans.some(
+          (l) => l._id === latestActiveLoanId
+        );
+
+        return (
+          <div
+            key={group.parent._id}
+            className={`rounded-xl border shadow-sm overflow-hidden
+              ${
+                isLatestGroup
+                  ? "border-green-500 bg-green-50"
+                  : "bg-white"
+              }`}
+          >
+            {/* Header */}
+            <div className="px-4 py-2 font-semibold text-sm flex justify-between bg-gray-300 text-black">
+              <span>{group.companyName}</span>
+              <span>
+                {group.loans.length} Loan
+                {group.loans.length > 1 ? "s" : ""}
+              </span>
+            </div>
+
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* LEFT */}
+              <div>
+                <p className="text-xs uppercase text-gray-500 mb-2 font-semibold">
+                  Loan Chain
+                </p>
+
+                <div className="space-y-2">
+                  {group.loans.map((loan) => (
+                    <div
+                      key={loan._id}
+                      className={`border text-xs rounded-lg p-2 shadow-sm
+                        ${
+                          loan.loanStatus === "Deactivated"
+                            ? "bg-red-100 border-red-400"
+                            : "bg-gray-100 hover:bg-gray-50"
+                        }
+                        ${loan.status === "Merged" ? "ml-6 sm:ml-6" : ""}
+                      `}
+                    >
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {moment(loan.issueDate).format("MMM DD, YYYY")}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Loan Status : {loan.loanStatus}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Payment Status : {loan.status}
+                        </p>
+                      </div>
+
+                      <div className="font-semibold text-blue-700">
+                        {formatUSD(loan.baseAmount)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* <Tooltip title="Add New Loan" arrow> */}
-                <Button
-                  variant="contained"
-                  startIcon={<Plus />}
-                  title="New Loan"
-                  sx={{
-                    backgroundColor: "#15803d",
-                    "&:hover": { backgroundColor: "#166534" },
-                    textTransform: "none",
-                    fontWeight: 600,
-                    borderRadius: 1,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!client?._id) {
-                      toast.error("Client data not available");
-                      return;
-                    }
-                    setLoanModalOpen(false);
-                    setTimeout(() => {
-                      setSelectedClientForLoan(client);
-                      setLoanModalOpen(true);
-                    }, 10);
-                  }}
-                >
-                  New Loan
-                </Button>
-              {/* </Tooltip> */}
+              {/* RIGHT */}
+              <div>
+                <p className="text-xs uppercase text-gray-500 mb-2 font-semibold">
+                  Totals
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <StatBox
+                    label="Total Base"
+                    value={formatUSD(group.totals.base)}
+                  />
+
+                  <StatBox
+                    label="Total Paid"
+                    value={formatUSD(group.totals.paid)}
+                    valueClass="text-blue-600"
+                  />
+
+                  {group.totals.profit > 0 && (
+                    <StatBox
+                      label="Profit"
+                      value={formatUSD(group.totals.profit)}
+                      valueClass="text-green-600"
+                    />
+                  )}
+
+                  <StatBox
+                    label="Payment Status"
+                    value={group.parent.status}
+                  />
+                </div>
+              </div>
+
             </div>
-            <div className="p-2 space-y-4 min-h-[400px] ">
-              {getClientLoansData.length > 0 ? (
-                getClientLoansData.map((loanData: any) => {
+          </div>
+        );
+      })}
+    </div>
+  )}
+</div>
+                </div>
+          )}
+        </div>
+      )}
+      {/* ✅ LOANS TAB */}
+      {activeTab === "loans" && (
+        <div className="h-[calc(88vh-30px)] overflow-y-auto p-2 space-y-4">
+           <div className="flex justify-end">
+              <Button
+                variant="contained"
+                startIcon={<Plus />}
+                sx={{
+                  backgroundColor: "#15803d",
+                  "&:hover": { backgroundColor: "#166534" },
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  boxShadow: "none",
+                }}
+                onClick={() => {
+                  setSelectedClientForLoan(client);
+                  setLoanModalOpen(true);
+                }}
+              >
+                New Loan
+              </Button>
+            </div>
+          {/* Loans List */}
+          <div className="overflow-y-auto p-2 pt-0 space-y-4">
+            {loadingLoans ? (
+                <div className="space-y-3 p-2">
+                  <Skeleton variant="rectangular" height={80} />
+                  <Skeleton variant="rectangular" height={80} />
+                  <Skeleton variant="rectangular" height={80} />
+                </div>
+              ) :
+              getClientLoansData?.length > 0 ? (
+                getClientLoansData?.map((loanData: any) => {
                   const { loan, companyName, companyColor, selectedLoanData, isDelayed, currentEndDate, profitData } = loanData;
+                  const totalAmount = loan?.baseAmount + loan?.previousLoanAmount;
+                  const brokerValue = loan?.fees?.brokerFee?.value;
+                  const brokerAmount =  loan?.fees?.brokerFee?.type === "percentage" ? (totalAmount * brokerValue ) / 100 : loan?.fees?.brokerFee.value;
                   return (
                     <div
                       key={loan._id}
@@ -484,9 +827,9 @@ const handleStatusChange = async (loanId, newStatus) => {
                             </div>
                             <div className="flex flex-wrap items-center justify-end gap-4 ml-auto text-right w-full sm:w-auto">
                               <span>
-                                Principal Amount:{" "}
+                                Base Amount:{" "}
                                 <span className="text-blue-700 font-bold">
-                                  {formatUSD(loan.subTotal.toFixed(2))}
+                                  {formatUSD(loan?.baseAmount)}
                                 </span>
                               </span>
                               <span>
@@ -495,14 +838,13 @@ const handleStatusChange = async (loanId, newStatus) => {
                                   {formatUSD(selectedLoanData.paidAmount)}
                                 </span>{" "}
                                 /{" "}
-                              <span className="text-red-700 font-bold">
+                             <span className="text-red-700 font-bold">
                                  {formatUSD(
                                     loan.status === "Paid Off"
                                       ? 0
                                       : selectedLoanData.remaining
                                   )}
                                 </span>
-                                  
                               </span>
                               {!["Paid Off", "Merged"].includes(
                                 loan.status
@@ -530,13 +872,13 @@ const handleStatusChange = async (loanId, newStatus) => {
                                   `}
                                   value={loan.status}
                                   title="Status"
-                                  disabled={loan.status === "Merged"} 
+                                  disabled={loan.status === "Merged"}
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={(e) => handleStatusChange(loan._id, e.target.value)}
                                 >
                                    {loan.status === "Merged" ? (
                                     <option value="Merged">Merged</option>
-                                   ):(
+                                   ) : (
                                   <>
                                   <option value="Active">Active</option>
                                   <option value="Partial Payment">Partial Payment</option>
@@ -556,29 +898,28 @@ const handleStatusChange = async (loanId, newStatus) => {
                           className="text-red-600"
                         />
                       )}
-                              <span>
-                                {loan.status !== "Merged" && 
-                               loan.loanStatus !== "Deactivated" && (
-                                <span title="Edit Loan">
-                                  <Pencil
-                                    size={16}
-                                    className="text-green-700 inline-block cursor-pointer hover:text-green-900"
-                                    onClick={(e) => {
-                                        setLoanModalMode("edit");
-                                      e.stopPropagation();
-                                      setSelectedClientForLoan(client);
-                                      setEditLoanModalOpen(true);
-                                      setEditingLoanId(loan._id);
-                                    }}
-                                  />
+                                <span>
+                                  {loan.status !== "Merged" &&
+                                    loan.loanStatus !== "Deactivated" && (
+                                      <span title="Edit Loan">
+                                        <Pencil
+                                          size={16}
+                                          className="text-green-700 inline-block cursor-pointer hover:text-green-900"
+                                          onClick={(e) => {
+                                            setLoanModalMode("edit");
+                                            e.stopPropagation();
+                                            setSelectedClientForLoan(client);
+                                            setEditLoanModalOpen(true);
+                                            setEditingLoanId(loan._id);
+                                          }}
+                                        />
+                                      </span>
+                                    )}
                                 </span>
-                                )}
-                              </span>
-                                <span title="View Loan">                              
+                                <span title="View Loan">
                                   <Eye
-                                      size={16}
-                                      className="text-blue-600 cursor-pointer hover:text-blue-800 ml-2"
-                                      
+                                    size={16}
+                                    className="text-blue-600 cursor-pointer hover:text-blue-800 ml-2"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setLoanModalMode("view");
@@ -595,7 +936,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                     </tbody>
                     </table>
                       {/* Content */}
-                      {expandedLoanId === loan._id && (
+                      {expandedLoanIds.includes(loan._id) && (
                         <div className="px-4 pb-1  bg-gray-50 flex  flex-col sm:flex-row gap-1 overflow-y-auto max-h-[50vh] md:max-h-none">
                           {loan.loanStatus === "Deactivated" ? (
                             <>
@@ -616,7 +957,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                           ) : (
                             <>
                               {/* Payment History */}
-                              <div className="flex-1  pr-4 space-y-3 pt-2 border-r-2">
+                              <div className="sm:w-1/2 md:w-1/2 pr-4 space-y-3 pt-2 border-r-2">
                                 <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                                   PayOff History
                                   {(loan.status === "Active" ||
@@ -630,8 +971,13 @@ const handleStatusChange = async (loanId, newStatus) => {
                                   </button>
                                 )}
                                 </h4>
-
-                                {loanPayments[loan._id]?.length > 0 ? (
+                                {loadingPaymentsMap[loan._id] ? (
+                                 <div className="space-y-3 p-2">
+                                    <Skeleton variant="rectangular" height={15} />
+                                    <Skeleton variant="rectangular" height={15} />
+                                    <Skeleton variant="rectangular" height={15} />
+                                  </div>
+                                ) : loanPayments[loan._id]?.length > 0 ? (
                                   <div className="mt-2 max-h-48 overflow-y-auto rounded-md">
                                     {loanPayments[loan._id].map((p) => (
                                       <div
@@ -671,7 +1017,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               setEditPaymentLoan(loan);
                                               setEditPaymentModalOpen(true);
                                             }}
-                                            title = "Edit Payment"
+                                            title="Edit Payment"
                                             className="text-green-700 cursor-pointer hover:text-green-900   transition md:w-5 md:h-5"
                                           >
                                             <Pencil size={16} />
@@ -683,24 +1029,28 @@ const handleStatusChange = async (loanId, newStatus) => {
                                             className="p-1 rounded-full  hover:bg-red-200 text-red-600 transition"
                                             title="Delete Payment"
                                           >
-                                            <X size={14} />
+                                            <Trash2 size={14} />
                                           </button>
-                                           </>
+                                            </>
                                           )}
                                         </div>
                                       </div>
                                     ))}
                                   </div>
-                                ) : (
-                                  <p className="text-gray-500 text-sm italic">
-                                    No payments recorded yet.
-                                  </p>
-                                )}
-                                  {profitData?.totalProfit > 0 && (
-                                    <div className="text-sm font-semibold text-emerald-600">
-                                      Profit: {formatUSD(profitData.totalProfit)}
-                                    </div>
-                                )}
+                               ) : (
+                                <p className="text-gray-500 text-sm italic">
+                                  No payments recorded yet.
+                                </p>
+                              )}
+                            {profitData?.totalProfit > 0 && (
+                              <div className="text-sm font-semibold mt-2 text-emerald-600">
+                                <span className="text-gray-600">
+                                  ( Total Base: {formatUSD(profitData.totalBaseAmount)} |
+                                    Total Paid: {formatUSD(profitData.totalPaid)} )
+                                </span>
+                                {" "}Profit: {formatUSD(profitData.totalProfit)}
+                              </div>
+                            )}
                               </div>
 
                               {/* Loan Details */}
@@ -757,6 +1107,21 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                 {loan.checkNumber}
                                               </td>
                                             </tr>
+                                            {brokerValue > 0 && (
+                                                <tr>
+                                                <td className="font-semibold py-0 whitespace-nowrap">
+                                                  Broker Fee (  {loan?.fees?.brokerFee?.type === "percentage"
+                                                    ? `${brokerValue}%`
+                                                    : `${brokerValue}$`}) :
+                                                </td>
+                                              <td className="py-0">
+                                                  {(brokerAmount ?? 0).toLocaleString("en-US", {
+                                                    style: "currency",
+                                                    currency: "USD",
+                                                  })}
+                                                </td>
+                                              </tr>
+                                            )}
                                             {loan.status !== "Paid Off" &&
                                               loan.status !== "Merged" && (
                                                 <>
@@ -767,8 +1132,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               <td className="py-0">
                                                 {selectedLoanData.dynamicTerm} month {""}
                                                 <span
-                                                  className={`${
-                                                    isDelayed
+                                                  className={`${isDelayed
                                                       ? "text-red-400 font-bold animate-pulse"
                                                       : ""
                                                   }`}
@@ -793,8 +1157,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               </td>
                                               <td className="py-0">
                                                 <span
-                                                  className={`${
-                                                    isDelayed
+                                                  className={`${isDelayed
                                                       ? "text-red-600 font-bold animate-pulse"
                                                       : ""
                                                   }`}
@@ -823,7 +1186,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                 {formatUSD(loan.subTotal)}
                                               </td>
                                             </tr> */}
-                                            {loan.status !== "Paid Off" && (
+                                            {/* {loan.status !== "Paid Off" && ( */}
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
                                                 Total Loan Amount:
@@ -834,10 +1197,10 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                     2
                                                   )
                                                 )}{" "}
-                                                 (Base Amount: {formatUSD(loan.baseAmount)})
+                                                 ({" "} Principal : {formatUSD(loan.subTotal)} {" "})
                                               </td>
                                             </tr>
-                                           )}
+                                           {/* )} */}
                                             <tr>
                                               <td>
                                               {/* <td className="font-semibold py-0">
@@ -879,7 +1242,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                                   <button
                                                     onClick={() => toggleShowAllTerms(loan._id)}
                                                     className="text-xs text-blue-600 hover:underline"
-                                                    title= {showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
+                                                    title={showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
                                                   >
                                                     {showAllTermsMap[loan._id] ? "Less Details..." : "More Details..."}
                                                   </button>
@@ -891,8 +1254,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                       );
                                     })()}
                                     <div
-                                      className={`mt-0 overflow-y-auto transition-all duration-300 ${
-                                        showAllTermsMap[loan._id] ? "max-h-[140px]" : "max-h-[70px]"
+                                      className={`mt-0 overflow-y-auto transition-all duration-300 ${showAllTermsMap[loan._id] ? "max-h-[140px]" : "max-h-[70px]"
                                       }`}
                                     >
                                       <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
@@ -907,7 +1269,7 @@ const handleStatusChange = async (loanId, newStatus) => {
                                           if (loan.status === "Paid Off") {
                                             termsToShow = showAllTermsMap[loan._id] ? allTerms : [];
                                           } else {
-                                            termsToShow = showAllTermsMap[loan._id]
+                                             termsToShow = showAllTermsMap[loan._id]
                                            ? allTerms.filter((t) => t <= loan.loanTerms)
                                           : [currentTermMap[loan._id]];
                                           }
@@ -916,7 +1278,6 @@ const handleStatusChange = async (loanId, newStatus) => {
                                               ...loan,
                                               loanTerms: term,
                                             })!;
-                                            
                                           // const isSelected =
                                           //   term ===
                                           //   currentTermMap[loan._id];
@@ -967,16 +1328,38 @@ const handleStatusChange = async (loanId, newStatus) => {
               )}
             </div>
           </div>
-        </div>
+        )}
+      {activeTab === "notes" && (
+            <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
+      <ClientNotes
+        clientId={client._id}
+        clientName={client.fullName}
+      />    </div>
+              )}
+      {activeTab === "templates" && (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+          <FileText size={28} className="mb-2 text-gray-400" />
+          <p className="text-sm font-semibold">No Templates Available</p>
+          <p className="text-xs mt-1">
+            You haven’t created any templates yet.
+          </p>
+          </div>
+        )}
       </div>
 
+      {/* Modals */}
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
           showTable={false}
           fromClientPage={true}
+          onClose={() => {
+          setLoanModalOpen(false);
+          setSelectedClientForLoan(null);
+        }}
         />
       )}
+
       {loanEditModalOpen && editingLoanId && (
         <EditLoanModal
           loanId={editingLoanId}
@@ -988,24 +1371,24 @@ const handleStatusChange = async (loanId, newStatus) => {
           }}
         />
       )}
+
       {paymentLoan && (
         <LoanPaymentModal
           open={!!paymentLoan}
           onClose={() => setPaymentLoan(null)}
           loan={{
             ...paymentLoan,
-            loanTerms: currentTermMap[paymentLoan._id], // selected term
+            loanTerms: currentTermMap[paymentLoan._id],
           }}
           clientId={client._id}
           onPaymentSuccess={() => refreshPayments(paymentLoan._id)}
         />
       )}
+
       {editPaymentModalOpen && (
         <EditPaymentModal
           open={editPaymentModalOpen}
-          onClose={() => {
-            setEditPaymentModalOpen(false);
-          }}
+          onClose={() => setEditPaymentModalOpen(false)}
           loan={{
             ...editPaymentLoan,
             loanTerms: currentTermMap[editPaymentLoan?._id],
@@ -1017,6 +1400,7 @@ const handleStatusChange = async (loanId, newStatus) => {
       )}
     </div>
   );
+
 };
 
 const Info = ({ label, value }: { label: string; value: string }) => (

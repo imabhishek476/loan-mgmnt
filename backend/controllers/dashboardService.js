@@ -6,6 +6,7 @@ const moment = require("moment");
 const { ObjectId } = require("mongodb");
 const round2 = (num) => Math.round((Number(num) + Number.EPSILON) * 100) / 100;
 const calculateStats = async () => {
+
   const loansByCompany = await Loan.aggregate([
     {
       $lookup: {
@@ -17,6 +18,11 @@ const calculateStats = async () => {
     },
     { $unwind: "$companyData" },
     {
+      $match: {
+        status: { $ne: "Merged" }, // ❗Avoid merged duplication
+      },
+    },
+    {
       $group: {
         _id: "$companyData.companyName",
         totalAmount: { $sum: "$subTotal" },
@@ -25,43 +31,129 @@ const calculateStats = async () => {
     },
   ]);
 
-  const totalPaymentsAgg = await LoanPayment.aggregate([
-    { $group: { _id: null, total: { $sum: "$paidAmount" } } },
+  /* =======================
+     ✅ Total Recovered Amount
+  ======================== */
+  const totalRecoveredAgg = await LoanPayment.aggregate([
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$paidAmount" },
+      },
+    },
   ]);
-  const totalPaymentsAmount = totalPaymentsAgg[0]?.total || 0;
 
- const totalLoanAmountAgg = await Loan.aggregate([
-      {
-        $match: {
-          status: { $ne: "Merged" },
-        },
+  const totalRecoveredAmount = totalRecoveredAgg[0]?.total || 0;
+
+  /* =======================
+     ✅ Total Loan Amount
+     (Excluding Merged)
+  ======================== */
+  const totalLoanAmountAgg = await Loan.aggregate([
+    {
+      $match: {
+        status: { $ne: "Merged" },
       },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$subTotal" },
-        },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$subTotal" },
       },
+    },
   ]);
-    const totalLoanAmount = totalLoanAmountAgg[0]?.total || 0;
+
+  const totalLoanAmount = totalLoanAmountAgg[0]?.total || 0;
+
+  /* =======================
+     ✅ Total Base Amount
+     (Principal Only)
+  ======================== */
+ const totalBaseAgg = await Loan.aggregate([
+  {
+    $match: {
+      parentLoanId: null, // ✅ Only root loans
+    },
+  },
+  {
+    $graphLookup: {
+      from: "loans",
+      startWith: "$_id",
+      connectFromField: "_id",
+      connectToField: "parentLoanId",
+      as: "mergedLoans",
+    },
+  },
+  {
+    $project: {
+      allLoans: {
+        $concatArrays: [
+          ["$$ROOT"],
+          "$mergedLoans",
+        ],
+      },
+    },
+  },
+  { $unwind: "$allLoans" },
+  {
+    $group: {
+      _id: null,
+      totalBaseAmount: {
+        $sum: { $ifNull: ["$allLoans.baseAmount", 0] },
+      },
+    },
+  },
+]);
+
+const totalBaseAmount = totalBaseAgg[0]?.totalBaseAmount || 0;
+
+  /* =======================
+     ✅ Loan Counts
+  ======================== */
+  const totalLoans = await Loan.countDocuments();
+
+  const totalMergedLoans = await Loan.countDocuments({
+    status: "Merged",
+  });
+
+  const totalPaidOffLoans = await Loan.countDocuments({
+    status: "Paid Off",
+  });
+
+  const totalActiveLoans = await Loan.countDocuments({
+    status: { $nin: ["Merged", "Paid Off"] },
+  });
 
   const totalPaidOrMergedLoans = await Loan.countDocuments({
     status: { $in: ["Paid Off", "Merged"] },
-    });
-  const totalProfit = Math.max(0, totalPaymentsAmount - totalLoanAmount);
+  });
+
+  /* =======================
+     ✅ Profit Calculation
+  ======================== */
+  const totalProfit = Math.max(
+    0,
+    totalRecoveredAmount - totalBaseAmount
+  );
+
   return {
     totalClients: await Client.countDocuments(),
     totalCompanies: await Company.countDocuments(),
-    totalLoans: await Loan.countDocuments(),
-    totalLoanAmount,
-    totalPaymentsAmount,
-    totalPaidOffLoans: totalPaidOrMergedLoans,
+
+    totalLoans,
+    totalMergedLoans,
+    totalPaidOffLoans,
+    totalActiveLoans,
+    totalPaidOrMergedLoans,
+    totalBaseAmount,   
+    totalLoanAmount,      // subTotal sum
+    totalPaymentsAmount: totalRecoveredAmount,
+    totalProfit,
+
     loansByCompany,
     loanByClient: [],
-    totalProfit,
   };
 };
-
 const getLoansByCompanyByDate = async (req, res) => {
   try {
     const { from, to } = req.query;
