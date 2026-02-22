@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import MaterialTable from "@material-table/core";
-import {Plus, Power, RefreshCcw, XCircle } from "lucide-react";
+import {Plus, Power, RefreshCcw, Trash2, } from "lucide-react";
 import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { toast } from "react-toastify";
 import { getClientsSearch, toggleClientStatus } from "../../../services/ClientServices";
 import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
-import { getAllowedTerms } from "../../../utils/constants";
-import {updateLoanStatus } from "../../../services/LoanService";
+import { getAllowedTerms, LOAN_STATUS_OPTIONS } from "../../../utils/constants";
+// import {updateLoanStatus } from "../../../services/LoanService";
 import CustomerSearch from "./CustomerSearch";
 import { observer } from "mobx-react-lite";
+import { Link } from "react-router-dom";
 interface ClientsDataTableProps {
   // clients: any[];
   onAddLoan: (client: any) => void;
@@ -20,7 +21,6 @@ interface ClientsDataTableProps {
 
 const ClientsDataTable: React.FC<ClientsDataTableProps> = observer(({
   onAddLoan,
-  onViewClient,
 }) => {
   const { clientFilters,filtersOpen } = clientStore;
   const [searchInput,] = useState("");
@@ -40,7 +40,8 @@ const fetchClientsData = useCallback(async (query) => {
         phone: clientFilters.phone,
         attorneyName: clientFilters.attorneyName,
         status: clientFilters.status,
-        loanStatus: clientFilters.loanStatus,
+        allLoanStatus: clientFilters.allLoanStatus,
+        latestLoanStatus: clientFilters.latestLoanStatus,
         underwriter: clientFilters.underwriter,
         medicalParalegal: clientFilters.medicalParalegal,
         caseId: clientFilters.caseId,
@@ -69,12 +70,12 @@ const fetchClientsData = useCallback(async (query) => {
   const handleDelete = async (id: string) => {
     Confirm({
       title: "Confirm Delete",
-      message: "Are you sure you want to delete this customer & their Loans?",
+      message: "Are you sure you want to delete this Client & their Loans?",
       confirmText: "Yes, Delete",
       onConfirm: async () => {
         await clientStore.deleteClient(id);
         tableRef.current?.onQueryChange();
-        toast.success("Customer deleted successfully");
+        toast.success("Client deleted successfully");
       },
     });
   };
@@ -99,6 +100,35 @@ const fetchClientsData = useCallback(async (query) => {
           },
         });
   };
+const renderLoanStatus = (loan: any) => {
+  if (!loan)
+    return <span className="text-gray-400">—</span>;
+
+  const isMerged = loan.status === "Merged";
+
+  return (
+    <select
+      className={`
+        px-3 py-1 rounded text-xs text-white font-semibold cursor-default
+        focus:outline-none disabled:opacity-100
+        ${getStatusStyles(loan.status)}
+      `}
+      value={loan.status}
+      disabled
+      onClick={(e) => e.stopPropagation()}
+    >
+      {isMerged ? (
+        <option value="Merged">Merged</option>
+      ) : (
+        LOAN_STATUS_OPTIONS.map((status) => (
+          <option key={status} value={status}>
+            {status}
+          </option>
+        ))
+      )}
+    </select>
+  );
+};
   const getStatusStyles = (status: string) => {
     const lower = status?.toLowerCase() || "";
 
@@ -111,16 +141,16 @@ const fetchClientsData = useCallback(async (query) => {
 
     return "bg-gray-400 text-white";
   };
-  const handleLoanStatusChange = async (loanId: string, newStatus: string) => {
-    try {
-      await updateLoanStatus(loanId, newStatus);
-      toast.success("Loan status updated");
-      tableRef.current?.onQueryChange();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update loan status");
-    }
-  };
+  // const handleLoanStatusChange = async (loanId: string, newStatus: string) => {
+  //   try {
+  //     await updateLoanStatus(loanId, newStatus);
+  //     toast.success("Loan status updated");
+  //     tableRef.current?.onQueryChange();
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to update loan status");
+  //   }
+  // };
 
   function calculateLoanTotals(clientLoans) {
     let totalPaid = 0;
@@ -143,7 +173,7 @@ const fetchClientsData = useCallback(async (query) => {
   }
   const tableHeight = filtersOpen
   ? "calc(100vh - 253px)"
-  : "calc(100vh - 149px)";
+  : "calc(100vh - 255px)";
   const columns: any[] = useMemo(() => [
     {
       title: "Sr.no",
@@ -159,16 +189,12 @@ const fetchClientsData = useCallback(async (query) => {
       sorting: true,
       cellStyle: { fontWeight: 500 },
       render: (rowData) => (
-        <a
-          href="#"
+        <Link
+          to={`/client/${rowData._id}`}
           className="text-green-600 cursor-pointer hover:underline"
-          onClick={(e) => {
-            e.preventDefault();
-            onViewClient?.(rowData);
-          }}
         >
           {rowData?.fullName}
-        </a>
+        </Link>
       ),
     },
     { title: "Phone", field: "phone", sorting: false },
@@ -237,46 +263,19 @@ const fetchClientsData = useCallback(async (query) => {
         );
       },
     },
-    {
-      title: "Payment Status",
+    // {
+    //   title: "All Payment Status",
+    //   sorting: false,
+    //   headerStyle: { whiteSpace: "nowrap" },
+    //   cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
+    //   render: (rowData: any) => renderLoanStatus(rowData.status),
+    // },
+      {
+      title: "Latest Payment Status",
       sorting: false,
       headerStyle: { whiteSpace: "nowrap" },
       cellStyle: { whiteSpace: "nowrap", minWidth: 160 },
-      render: (rowData: any) => {
-        const loan = rowData.latestLoan;
-        if (!loan) return <span className="text-gray-400">—</span>;
-        // const isDisabled = !rowData.isActive || loan.status === "Merged";
-
-        return (
-          <select
-            className={`
-                                px-3 py-1 rounded text-xs text-white font-semibold cursor-pointer
-                                focus:outline-none transition  disabled:opacity-100  
-                                ${getStatusStyles(loan.status)}
-                              `}
-            value={loan.status}
-            disabled={true}
-            title="Change Loan Status"
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) =>
-              handleLoanStatusChange(loan._id, e.target.value)
-            }
-          >
-            {loan.status === "Merged" ? (
-              <option value="Merged">Merged</option>
-            ) : (
-              <>
-                <option value="Active">Active</option>
-                <option value="Partial Payment">Partial Payment</option>
-                <option value="Paid Off">Paid Off</option>
-                <option value="Fraud">Fraud</option>
-                <option value="Lost">Lost</option>
-                <option value="Denied">Denied</option>
-              </>
-            )}
-          </select>
-        );
-      },
+      render: (rowData: any) => renderLoanStatus(rowData.latestLoan),
     },
     // {
     //   title: "Status",
@@ -333,8 +332,8 @@ const fetchClientsData = useCallback(async (query) => {
 
             (rowData: any) => ({
               icon: rowData.isActive
-                ? () => <Power className="w-5 h-5 text-green-600" />
-                : () => <RefreshCcw className="w-5 h-5 text-red-600" />,
+                ? () => <Power className="w-5 h-5 text-red-600" />
+                : () => <RefreshCcw className="w-5 h-5 text-green-600" />,
               tooltip: rowData.isActive
                 ? "Deactivate Client"
                 : "Recover Client",
@@ -342,8 +341,8 @@ const fetchClientsData = useCallback(async (query) => {
                 handleToggleActive(data._id, data.isActive),
             }),
             {
-              icon: () => <XCircle className="w-5 h-5 text-red-600" />,
-              tooltip: "Delete Customer",
+              icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
+              tooltip: "Delete Client",
               onClick: (_event, rowData: any) => handleDelete(rowData._id),
             },       
           ]}
@@ -381,7 +380,7 @@ const fetchClientsData = useCallback(async (query) => {
               width: 38,
               borderBottom: "1px solid #f1f1f1",
               transition: "background 0.2s",
-               backgroundColor: !rowData.isActive ? "#f3e2e2" : "#ffffff",
+               backgroundColor: !rowData.isActive ? "#d5d5d5" : "#ffffff",
             }),
             padding: "default",
             toolbar: false,

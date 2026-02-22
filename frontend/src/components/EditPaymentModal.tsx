@@ -7,6 +7,7 @@ import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { fetchPaymentsByLoan } from "../services/LoanPaymentServices";
 
 interface EditPaymentModalProps {
   open: boolean;
@@ -14,7 +15,7 @@ interface EditPaymentModalProps {
   loan: any;
   clientId: string;
   payment?: any;
-  onPaymentSuccess?: () => void;
+  onPaymentSuccess?: (payments: any[], profit: any) => void;
 }
 
 const EditPaymentModal = observer(
@@ -145,11 +146,11 @@ const handleEditPayment = async () => {
       payoffLetter,
       currentTerm,
     });
-
+        const { payments, profit } = await fetchPaymentsByLoan(loan._id);
+        onPaymentSuccess?.(payments, profit);
         await loanStore.fetchActiveLoans(clientId);
         await clientStore.refreshDataTable();
         await loanStore.getLoanProfitByLoanId(loan._id);
-        onPaymentSuccess?.();
         toast.success("Payment updated successfully");
        onClose();
       } catch (err) {

@@ -698,3 +698,115 @@ exports.getProfitByLoanId = async (req, res) => {
   };
 };  
 
+exports.getProfitByClientId = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const results = await Loan.aggregate([
+      // 1️⃣ Match client loans
+      {
+        $match: { client: new mongoose.Types.ObjectId(clientId) }
+      },
+
+      // 2️⃣ Resolve rootLoanId
+      {
+        $addFields: {
+          rootLoanId: { $ifNull: ["$parentLoanId", "$_id"] }
+        }
+      },
+
+      // 3️⃣ Graph lookup merged loans
+      {
+        $graphLookup: {
+          from: "loans",
+          startWith: "$rootLoanId",
+          connectFromField: "_id",
+          connectToField: "parentLoanId",
+          as: "mergedLoans"
+        }
+      },
+
+      // 4️⃣ Combine root + children
+      {
+        $project: {
+          loanId: "$_id",
+          rootLoanId: 1,
+          allLoans: {
+            $concatArrays: [
+              [{ _id: "$_id", baseAmount: "$baseAmount" }],
+              "$mergedLoans"
+            ]
+          }
+        }
+      },
+
+      { $unwind: "$allLoans" },
+
+      // 5️⃣ Sum base amounts per root loan
+      {
+        $group: {
+          _id: {
+            loanId: "$loanId",
+            rootLoanId: "$rootLoanId"
+          },
+          loanIds: { $addToSet: "$allLoans._id" },
+          totalBaseAmount: {
+            $sum: { $ifNull: ["$allLoans.baseAmount", 0] }
+          }
+        }
+      },
+
+      // 6️⃣ Lookup payments
+      {
+        $lookup: {
+          from: "loanpayments",
+          localField: "loanIds",
+          foreignField: "loanId",
+          as: "payments"
+        }
+      },
+
+      // 7️⃣ Sum payments
+      {
+        $addFields: {
+          totalPaid: { $sum: "$payments.paidAmount" }
+        }
+      },
+
+      // 8️⃣ Profit calculation
+      {
+        $addFields: {
+          totalProfit: {
+            $max: [
+              0,
+              { $subtract: ["$totalPaid", "$totalBaseAmount"] }
+            ]
+          }
+        }
+      },
+
+      // 9️⃣ Final shape
+      {
+        $project: {
+          _id: 0,
+          loanId: "$_id.loanId",
+          rootLoanId: "$_id.rootLoanId",
+          totalBaseAmount: 1,
+          totalPaid: 1,
+          totalProfit: 1
+        }
+      }
+    ]);
+
+    return res.json({
+      success: true,
+      data: results
+    });
+
+  } catch (err) {
+    console.error("Client profit error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};

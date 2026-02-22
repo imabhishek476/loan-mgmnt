@@ -89,14 +89,110 @@ exports.addPayment = async (req, res) => {
   }
 };
 
+// exports.getPayments = async (req, res) => {
+//   try {
+//     const { loanId } = req.params;
+//     const payments = await LoanPayment.find({ loanId }).sort({ paidDate: -1 });
+//     res.status(200).json({ success: true, payments });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
 exports.getPayments = async (req, res) => {
   try {
     const { loanId } = req.params;
-    const payments = await LoanPayment.find({ loanId }).sort({ paidDate: -1 });
-    res.status(200).json({ success: true, payments });
+    if (!loanId) {
+      return res.status(400).json({
+        success: false,
+        message: "loanId is required",
+      });
+    }
+
+    /** ✅ 1. Fetch payments */
+    const payments = await LoanPayment.find({ loanId })
+      .sort({ paidDate: -1 });
+
+    /** ✅ 2. Fetch loan */
+    const loan = await Loan.findById(loanId);
+
+    if (!loan) {
+      return res.status(404).json({
+        success: false,
+        message: "Loan not found",
+      });
+    }
+
+    /** ✅ 3. Resolve root loan */
+    const rootLoanId = loan.parentLoanId || loan._id;
+
+    /** ✅ 4. Get merged loan chain */
+    const [result] = await Loan.aggregate([
+      { $match: { _id: rootLoanId } },
+      {
+        $graphLookup: {
+          from: "loans",
+          startWith: "$_id",
+          connectFromField: "_id",
+          connectToField: "parentLoanId",
+          as: "mergedLoans",
+        },
+      },
+      {
+        $project: {
+          allLoans: {
+            $concatArrays: [["$$ROOT"], "$mergedLoans"],
+          },
+        },
+      },
+      { $unwind: "$allLoans" },
+      {
+        $group: {
+          _id: null,
+          loanIds: { $addToSet: "$allLoans._id" },
+          totalBaseAmount: {
+            $sum: { $ifNull: ["$allLoans.baseAmount", 0] },
+          },
+        },
+      },
+    ]);
+
+    const loanIds = result?.loanIds || [];
+    const totalBaseAmount = result?.totalBaseAmount || 0;
+
+    /** ✅ 5. Sum payments across chain */
+    const paymentStats = await LoanPayment.aggregate([
+      { $match: { loanId: { $in: loanIds } } },
+      {
+        $group: {
+          _id: null,
+          totalPaid: { $sum: "$paidAmount" },
+        },
+      },
+    ]);
+
+    const totalPaid = paymentStats[0]?.totalPaid || 0;
+    const totalProfit = Math.max(0, totalPaid - totalBaseAmount);
+
+    /** ✅ 6. Final response */
+    return res.status(200).json({
+      success: true,
+      payments,
+      profit: {
+        loanId,
+        rootLoanId,
+        totalBaseAmount,
+        totalPaid,
+        totalProfit,
+      },
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("getPayments error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
 exports.editPayment = async (req, res) => {

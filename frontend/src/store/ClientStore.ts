@@ -42,6 +42,7 @@ class ClientStore {
   tableRef: any = null; //table Ref is for customers table screen
   clientFilters: any = {};
   filtersOpen: boolean = false;   
+  selectedClient: Client | null = null;
   constructor() {
     makeAutoObservable(this);
   }
@@ -91,6 +92,7 @@ async fetchClientById(id: string) {
   try {
     const client = await getClientById(id);
     runInAction(() => {
+      this.selectedClient = client; 
       const exists = this.clients.some(c => c._id === id);
       if (!exists && client) this.clients.push(client);
     });
