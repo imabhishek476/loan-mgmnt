@@ -9,7 +9,7 @@ import { getClientsSearch, toggleClientStatus } from "../../../services/ClientSe
 import Confirm from "../../../components/Confirm";
 import { calculateLoanAmounts,formatUSD } from "../../../utils/loanCalculations";
 import { getAllowedTerms, LOAN_STATUS_OPTIONS } from "../../../utils/constants";
-import {updateLoanStatus } from "../../../services/LoanService";
+// import {updateLoanStatus } from "../../../services/LoanService";
 import CustomerSearch from "./CustomerSearch";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
@@ -141,16 +141,16 @@ const renderLoanStatus = (loan: any) => {
 
     return "bg-gray-400 text-white";
   };
-  const handleLoanStatusChange = async (loanId: string, newStatus: string) => {
-    try {
-      await updateLoanStatus(loanId, newStatus);
-      toast.success("Loan status updated");
-      tableRef.current?.onQueryChange();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update loan status");
-    }
-  };
+  // const handleLoanStatusChange = async (loanId: string, newStatus: string) => {
+  //   try {
+  //     await updateLoanStatus(loanId, newStatus);
+  //     toast.success("Loan status updated");
+  //     tableRef.current?.onQueryChange();
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to update loan status");
+  //   }
+  // };
 
   function calculateLoanTotals(clientLoans) {
     let totalPaid = 0;

@@ -15,7 +15,7 @@ const Clients = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [selectedClientForLoan, setSelectedClientForLoan] = useState(null);
-  const [viewClient, setViewClient] = useState(null);
+  const [, setViewClient] = useState(null);
   const navigate = useNavigate();
   const handleViewClient = (client: Client) => {
     navigate(`/client/${client._id}`);
