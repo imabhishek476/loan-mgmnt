@@ -600,7 +600,7 @@ return (
 
       {/* ✅ Client TAB */}
       {activeTab === "client" && (
-        <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
+        <div className="h-[calc(90vh-53px)] overflow-y-auto p-3">
           <div className="flex items-center mb-4 gap-3">
             <h3 className="font-bold text-gray-800">
               Client Information
