@@ -68,7 +68,6 @@ export const deleteLoan = async (id: string) => {
   return data;
 };
 export const updateLoanStatus = async (id: string, status: string) => {
-  console.log(status,'status');
   const { data } = await api.put(`/loans/${id}/status`, { status });
   return data.data || data;
 };

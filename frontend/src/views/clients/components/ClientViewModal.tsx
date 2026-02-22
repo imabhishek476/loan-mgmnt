@@ -64,6 +64,7 @@ const [loadingLoans, setLoadingLoans] = useState(true);
 const [loadingPaymentsMap, setLoadingPaymentsMap] = useState<Record<string, boolean>>({});
 const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templates">("client");
 const [loading, setLoading] = useState(true)
+const [loanProfitMap, setLoanProfitMap] = useState<Record<string, any>>({});
   const loadInitialData = async () => {
     try {
       const promises = [];
@@ -90,9 +91,15 @@ const [loading, setLoading] = useState(true)
 
   const refreshPayments = async (loanId: string) => {
     try {
-      const payments = await fetchPaymentsByLoan(loanId);
-      setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
-        await loanStore.getLoanProfitByLoanId(loanId);    
+      const { payments, profit } = await fetchPaymentsByLoan(loanId);
+      setLoanPayments(prev => ({
+        ...prev,
+        [loanId]: payments,
+      }));
+      setLoanProfitMap(prev => ({
+        ...prev,
+        [loanId]: profit, 
+      }));
     } catch (err) {
       console.error(err);
       toast.error("Failed to fetch payment history");
@@ -137,8 +144,7 @@ const [loading, setLoading] = useState(true)
     const end = Number(selectedDynamicTerm) * 30;
     const currentEndDate = moment(loan.issueDate).add(end, "day");
     const isDelayed = today.isAfter(endDate, "day");
-    const profitData = loanStore.loanProfitMap[String(loan?._id)];
-
+    const profitData = loanProfitMap[loan?._id];
     return {
       loan,
       companyName,
@@ -171,6 +177,33 @@ useEffect(() => {
   }
 }, [client?._id, clientLoans]);
 
+ const loadPaymentsForLoans = async () => {
+      for (const loan of clientLoans) {
+        try {
+          setLoadingPaymentsMap(prev => ({
+            ...prev,
+            [loan._id]: true,
+          }));
+          const { payments, profit } = await fetchPaymentsByLoan(loan._id);
+           setLoanPayments(prev => ({
+            ...prev,
+            [loan._id]: payments,
+          }));
+          setLoanProfitMap(prev => ({
+                  ...prev,
+                  [loan._id]: profit,   // ✅ PROFIT HERE
+                }));
+        } catch (err) {
+          console.error("Failed payments:", loan._id);
+        } finally {
+          setLoadingPaymentsMap(prev => ({
+            ...prev,
+            [loan._id]: false,
+          }));
+        }
+      }
+    };
+
     useEffect(() => {
   if (!client?._id) return;
 
@@ -200,33 +233,6 @@ useEffect(() => {
   loadData();
 }, [activeTab, client?._id]);
 
- const loadPaymentsForLoans = async () => {
-      for (const loan of clientLoans) {
-        try {
-          setLoadingPaymentsMap(prev => ({
-            ...prev,
-            [loan._id]: true,
-          }));
-
-          const payments = await fetchPaymentsByLoan(loan._id);
-
-          setLoanPayments(prev => ({
-            ...prev,
-            [loan._id]: payments,
-          }));
-
-          await loanStore.getLoanProfitByLoanId(loan._id);
-
-        } catch (err) {
-          console.error("Failed payments:", loan._id);
-        } finally {
-          setLoadingPaymentsMap(prev => ({
-            ...prev,
-            [loan._id]: false,
-          }));
-        }
-      }
-    };
 
   useEffect(() => {
   if (!client?._id) return;
@@ -259,14 +265,29 @@ const handleToggleLoan = async (loanId: string) => {
   );
 
   try {
-    setLoadingPaymentsMap(prev => ({ ...prev, [loanId]: true }));
-    const payments = await fetchPaymentsByLoan(loanId);
-    setLoanPayments((prev) => ({ ...prev, [loanId]: payments }));
-    loanStore.getLoanProfitByLoanId(loanId);
+    setLoadingPaymentsMap(prev => ({
+      ...prev,
+      [loanId]: true,
+    }));
+
+    const { payments, profit } = await fetchPaymentsByLoan(loanId);
+    setLoanPayments(prev => ({
+      ...prev,
+      [loanId]: payments,
+    }));
+    setLoanProfitMap(prev => ({
+      ...prev,
+      [loanId]: profit,
+    }));
+
   } catch (err) {
     toast.error("Failed to fetch payment history");
   } finally {
-    setLoadingPaymentsMap(prev => ({ ...prev, [loanId]: false }));
+    // Stop loader
+    setLoadingPaymentsMap(prev => ({
+      ...prev,
+      [loanId]: false,
+    }));
   }
 };
 const handleDeletePayment = async (payment: any) => {
@@ -355,7 +376,6 @@ const handleStatusChange = async (loanId, newStatus) => {
   try {
     await updateLoanStatus(loanId, newStatus);
     toast.success("Loan status updated");
-    await loanStore.getLoanProfitByLoanId(loanId);
     await loanStore.fetchActiveLoans(client._id);
     await clientStore.refreshDataTable();
   } catch (err) {
@@ -1022,14 +1042,15 @@ return (
                                   No payments recorded yet.
                                 </p>
                               )}
-                                  {Number(profitData?.totalProfit) > 0 && (
-                                    <div className="text-sm font-semibold text-emerald-600">                                   
-                                    <span className="text-sm font-semibold text-gray-600">
-                                        {" "} ( Total Base: {formatUSD(profitData.totalBaseAmount)} | Total Paid: {formatUSD(profitData.totalPaid)} )
-                                    </span> {" "}
-                                       Profit: {formatUSD(profitData.totalProfit)}
-                                    </div>
-                                )}
+                            {profitData?.totalProfit > 0 && (
+                              <div className="text-sm font-semibold mt-2 text-emerald-600">
+                                <span className="text-gray-600">
+                                  ( Total Base: {formatUSD(profitData.totalBaseAmount)} |
+                                    Total Paid: {formatUSD(profitData.totalPaid)} )
+                                </span>
+                                {" "}Profit: {formatUSD(profitData.totalProfit)}
+                              </div>
+                            )}
                               </div>
 
                               {/* Loan Details */}

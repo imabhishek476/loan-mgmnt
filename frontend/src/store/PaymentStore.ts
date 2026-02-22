@@ -5,6 +5,7 @@ class PaymentStore {
   //@ts-ignore
   payments: Record<string, Payment[]> = {};
   loading = false;
+  profitMap: Record<string, any> = {};
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
@@ -13,14 +14,17 @@ class PaymentStore {
   async fetchPayments(loanId: string) {
     this.loading = true;
     try {
-      const data = await fetchPaymentsByLoan(loanId);
+      const { payments, profit } = await fetchPaymentsByLoan(loanId);
       runInAction(() => {
-        this.payments[loanId] = data;
+        this.payments[loanId] = payments;
+        this.profitMap[loanId] = profit; 
       });
     } catch (err) {
       console.error("Error fetching payments:", err);
     } finally {
-      runInAction(() => (this.loading = false));
+      runInAction(() => {
+        this.loading = false;
+      });
     }
   }
 
