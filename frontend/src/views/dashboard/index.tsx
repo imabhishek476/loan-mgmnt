@@ -65,7 +65,7 @@ const StatCard = ({
   ) : (
     value
   )}
-              {!expanded && subValue && (
+           {" "}   {!expanded && subValue && (
           <span className="text-xs text-gray-600 font-medium">
             {subValue}
           </span>
