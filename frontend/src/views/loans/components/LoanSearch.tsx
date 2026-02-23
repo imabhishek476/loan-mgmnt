@@ -88,6 +88,7 @@ export const LoanSearch = observer(
   />
   <Autocomplete
     options={[
+      "Active",
       "Partial Payment",
       "Paid Off",
       "Merged",
