@@ -89,16 +89,6 @@ exports.addPayment = async (req, res) => {
   }
 };
 
-// exports.getPayments = async (req, res) => {
-//   try {
-//     const { loanId } = req.params;
-//     const payments = await LoanPayment.find({ loanId }).sort({ paidDate: -1 });
-//     res.status(200).json({ success: true, payments });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: "Server error" });
-//   }
-// };
 exports.getPayments = async (req, res) => {
   try {
     const { loanId } = req.params;
@@ -195,6 +185,7 @@ exports.getPayments = async (req, res) => {
     });
   }
 };
+
 exports.editPayment = async (req, res) => {
   try {
     const { paymentId } = req.params;
