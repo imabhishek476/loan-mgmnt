@@ -28,6 +28,7 @@ import Confirm from "../../../components/Confirm";
 import {deactivateLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { getAllowedTerms } from "../../../utils/constants";
 import ClientNotes from "./ClientNotes";
+import ClientViewTab from "./ClientViewTab";
 
 interface ClientViewModalProps {
   open: boolean;
@@ -203,10 +204,6 @@ useEffect(() => {
         }
       }
     };
-
-    useEffect(() => {
-  if (!client?._id) return;
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -229,25 +226,11 @@ useEffect(() => {
       setLoading(false);
     }
   };
-
+    useEffect(() => {
+  if (!client?._id) return;
   loadData();
 }, [activeTab, client?._id]);
 
-
-  useEffect(() => {
-  if (!client?._id) return;
-  if (activeTab === "client") {
-   loadInitialData();
-    loanStore.fetchActiveLoans(client._id); 
-    loanStore.getClientLoansProfit(client?._id);
-  }
-  else if (activeTab === "loans") {
-    loanStore.fetchActiveLoans(client._id);
-    loanStore.getClientLoansProfit(client?._id);
-    loadPaymentsForLoans();
-
-  }
-}, [activeTab, client?._id]);
   useEffect(() => {
     const newMap: Record<string, number> = {};
     clientLoans.forEach((loan) => {
@@ -390,165 +373,6 @@ const tabs = [
   { key: "templates", label: "Templates", icon: <FileText size={16} /> },
 ];
 
-const loansWithTs = useMemo(() => {
-  return clientLoans.map((loan) => ({
-    ...loan,
-    issueTs: moment(loan.issueDate, "MM-DD-YYYY").valueOf(),
-  }));
-}, [clientLoans]);
-
-const mergeMap = useMemo(() => {
-  const map: Record<string, any[]> = {};
-
-  loansWithTs.forEach((loan) => {
-    if (!loan.parentLoanId) return;
-
-    if (!map[loan.parentLoanId]) {
-      map[loan.parentLoanId] = [];
-    }
-
-    map[loan.parentLoanId].push(loan);
-  });
-
-  return map;
-}, [loansWithTs]);
-
-const buildMergeChain = (loanId: string): any[] => {
-  const chain: any[] = [];
-  const stack = [...(mergeMap[loanId] || [])];
-
-  while (stack.length) {
-    const loan = stack.pop();
-    chain.push(loan);
-
-    if (mergeMap[loan._id]) {
-      stack.push(...mergeMap[loan._id]);
-    }
-  }
-
-  return chain;
-};
-
-const allLoanSummary = useMemo(() => {
-  if (!loansWithTs.length) return [];
-
-  const parentLoans = loansWithTs.filter(
-    (loan) => !loan.parentLoanId
-  );
-
-  return parentLoans.map((parent) => {
-    const mergedLoans = buildMergeChain(parent._id);
-    const allLoans = [parent, ...mergedLoans];
-
-    const totals = allLoans.reduce(
-      (acc, loan) => {
-        const profit =
-          loanStore.loanProfitMap[String(loan._id)];
-
-        const paid = Number(
-          profit?.totalPaid ?? loan.paidAmount ?? 0
-        );
-
-        const profitValue = Number(
-          profit?.totalProfit ?? 0
-        );
-
-        acc.base += Number(loan.baseAmount || 0);
-        acc.paid += paid;
-        acc.profit += profitValue;
-
-        return acc;
-      },
-      { base: 0, paid: 0, profit: 0 }
-    );
-
-    const company =
-      companyStore.companies.find(
-        (c) => c._id === parent.company
-      );
-
-    return {
-      parent,
-      loans: allLoans.sort(
-        (a, b) => a.issueTs - b.issueTs
-      ), // ⚡ FAST
-      totals,
-      companyName: company?.companyName || "—",
-    };
-  });
-}, [loansWithTs, mergeMap, loanStore.loanProfitMap]);
-
-const latestActiveLoanId = useMemo(() => {
-  if (!loansWithTs.length) return null;
-
-  // const activeLoans = loansWithTs.filter(
-  //   (loan) =>
-  //     ["Active", "Partial Payment"].includes(
-  //       loan.status
-  //     ) && loan.loanStatus !== "Deactivated"
-  // );
-  const activeLoans = loansWithTs;
-
-  if (!activeLoans.length) return null;
-
-  return activeLoans.sort(
-    (a, b) => b.issueTs - a.issueTs
-  )[0]._id;
-}, [loansWithTs]);
-
-const StatBox = ({
-  label,
-  value,
-  valueClass = "text-gray-900",
-}: {
-  label: string;
-  value: any;
-  valueClass?: string;
-}) => (
-  <div className="bg-white border rounded-lg px-3 py-2 shadow-sm">
-    <p className="text-xs text-gray-500">{label}</p>
-    <p className={`font-bold ${valueClass}`}>
-      {value}
-    </p>
-  </div>
-);
-const LoanSummarySkeleton = () => {
-  return (
-    <div className="space-y-4">
-      {[1, 2].map((i) => (
-        <div
-          key={i}
-          className="rounded-xl border bg-white shadow-sm overflow-hidden"
-        >
-          {/* Header */}
-          <div className="px-4 py-2">
-            <Skeleton width="40%" height={20} />
-          </div>
-
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left */}
-            <div className="space-y-2">
-              <Skeleton width="30%" height={16} />
-              {[1, 2, 3].map((j) => (
-                <Skeleton key={j} height={50} className="rounded-lg" />
-              ))}
-            </div>
-
-            {/* Right */}
-            <div className="space-y-2">
-              <Skeleton width="30%" height={16} />
-              <div className="grid grid-cols-2 gap-3">
-                {[1, 2, 3, 4].map((k) => (
-                  <Skeleton key={k} height={40} className="rounded-lg" />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
 return (
   <div className="flex-col">
     <div className=" sticky top-0 z-20">
@@ -556,10 +380,10 @@ return (
         <h1 className="font-bold text-xl text-gray-800">
           {client.fullName}
         </h1>
-      </div>
-      <div className="sticky top-[48px] z-20 px-3">
+        </div>
+       <div className="sticky top-[48px] z-20 px-3">
 
-<div className="flex items-center gap-3 w-ful my-2l">
+        <div className="flex items-center gap-3 w-ful my-2l">
   <div className="flex-1">
     <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm w-full">
       <div
@@ -590,186 +414,23 @@ return (
       ))}
     </div>
   </div>
-
         </div>
       </div>
     </div>
-
     {/* Content */}
     <div className="flex-1  overflow-hidden ">
-
       {/* ✅ Client TAB */}
       {activeTab === "client" && (
-        <div className="h-[calc(90vh-53px)] overflow-y-auto p-3">
-          <div className="flex items-center mb-4 gap-3">
-            <h3 className="font-bold text-gray-800">
-              Client Information
-            </h3>
-
-            <Pencil
-              size={18}
-              className="text-green-700 cursor-pointer hover:text-green-900"
-             onClick={() => onEditClient({ ...client })}
-            />
-          </div>
-
-          {loadingClient ? (
-            <div className="p-3 space-y-3">
-              <Skeleton variant="text" width={200} height={30} />
-              <Skeleton variant="rectangular" height={80} />
-              <Skeleton variant="rectangular" height={80} />
-            </div>
-          ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700">
-                  <Info label="Full Name" value={client.fullName} />
-                  <Info label="Email" value={client.email} />
-                  <Info label="Phone" value={client.phone} />
-                  <Info label="DOB" value={client.dob} />
-                  <Info label="Accident Date" value={client.accidentDate} />
-                  <Info label="Attorney" value={client.attorneyName} />
-                  <Info label="SSN" value={client.ssn} />
-              <Info label="Underwriter" value={client.underwriter} />
-              <Info label="Medical Paralegal" value={client.medicalParalegal} />
-              <Info label="Case ID" value={client.caseId} />
-              <Info label="Case Type" value={client.caseType} />
-              <Info label="Index #" value={client.indexNumber} />
-              <Info label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} />
-              <Info label="Address" value={client.address} />
-
-
-              {/* Memo */}
-                  <div className="sm:col-span-2">
-                    <p className="text-xs uppercase text-gray-500 font-medium">
-                      Memo
-                    </p>
-                    <div className="bg-yellow-100 border-l-4 border-yellow-600 p-3 rounded text-sm">
-                      {client.memo || "—"}
-                    </div>
-                  </div>
-           <div className="sm:col-span-2 mt-6">
-  <h3 className="font-bold text-gray-800 mb-3">
-    Loan Summary
-  </h3>
-
-  {loading ? (
-    <LoanSummarySkeleton />
-  ) : allLoanSummary.length === 0 ? (
-    <p className="text-gray-500 italic text-sm">
-      No loans found for this client.
-    </p>
-  ) : (
-    <div className="space-y-4">
-      {allLoanSummary.map((group) => {
-        const isLatestGroup = group.loans.some(
-          (l) => l._id === latestActiveLoanId
-        );
-
-        return (
-          <div
-            key={group.parent._id}
-            className={`rounded-xl border shadow-sm overflow-hidden
-              ${
-                isLatestGroup
-                  ? "border-green-500 bg-green-50"
-                  : "bg-white"
-              }`}
-          >
-            {/* Header */}
-            <div className="px-4 py-2 font-semibold text-sm flex justify-between bg-gray-300 text-black">
-              <span>{group.companyName}</span>
-              <span>
-                {group.loans.length} Loan
-                {group.loans.length > 1 ? "s" : ""}
-              </span>
-            </div>
-
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              {/* LEFT */}
-              <div>
-                <p className="text-xs uppercase text-gray-500 mb-2 font-semibold">
-                  Loan Chain
-                </p>
-
-                <div className="space-y-2">
-                  {group.loans.map((loan) => (
-                    <div
-                      key={loan._id}
-                      className={`border text-xs rounded-lg p-2 shadow-sm
-                        ${
-                          loan.loanStatus === "Deactivated"
-                            ? "bg-red-100 border-red-400"
-                            : "bg-gray-100 hover:bg-gray-50"
-                        }
-                        ${loan.status === "Merged" ? "ml-6 sm:ml-6" : ""}
-                      `}
-                    >
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          {moment(loan.issueDate).format("MMM DD, YYYY")}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Loan Status : {loan.loanStatus}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Payment Status : {loan.status}
-                        </p>
-                      </div>
-
-                      <div className="font-semibold text-blue-700">
-                        {formatUSD(loan.baseAmount)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* RIGHT */}
-              <div>
-                <p className="text-xs uppercase text-gray-500 mb-2 font-semibold">
-                  Totals
-                </p>
-
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <StatBox
-                    label="Total Base"
-                    value={formatUSD(group.totals.base)}
-                  />
-
-                  <StatBox
-                    label="Total Paid"
-                    value={formatUSD(group.totals.paid)}
-                    valueClass="text-blue-600"
-                  />
-
-                  {group.totals.profit > 0 && (
-                    <StatBox
-                      label="Profit"
-                      value={formatUSD(group.totals.profit)}
-                      valueClass="text-green-600"
-                    />
-                  )}
-
-                  <StatBox
-                    label="Payment Status"
-                    value={group.parent.status}
-                  />
-                </div>
-              </div>
-
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  )}
-</div>
-                </div>
-          )}
-        </div>
-      )}
+            <ClientViewTab
+              client={client}
+              loading = {loading}
+              loanPayments = {loanPayments}
+              loadingClient={loadingClient}
+              onEditClient={onEditClient}
+              clientLoans={clientLoans} />  )}
       {/* ✅ LOANS TAB */}
       {activeTab === "loans" && (
+
         <div className="h-[calc(88vh-30px)] overflow-y-auto p-2 space-y-4">
            <div className="flex justify-end">
               <Button
@@ -1177,16 +838,6 @@ return (
                                             </tr>
                                           </>
                                           )}
-                                            {/* 
-                                            <tr className="">
-                                              <td className="font-semibold py-0">
-                                                Loan Amount:
-                                              </td>
-                                              <td className="py-0">
-                                                {formatUSD(loan.subTotal)}
-                                              </td>
-                                            </tr> */}
-                                            {/* {loan.status !== "Paid Off" && ( */}
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
                                                 Total Loan Amount:
@@ -1199,38 +850,6 @@ return (
                                                 )}{" "}
                                                  ({" "} Principal : {formatUSD(loan.subTotal)} {" "})
                                               </td>
-                                            </tr>
-                                           {/* )} */}
-                                            <tr>
-                                              <td>
-                                              {/* <td className="font-semibold py-0">
-                                                Paid Amount:
-                                              </td>
-                                              <td className="py-0 flex items-center gap-2">
-                                                {formatUSD(
-                                                  selectedLoanData.paidAmount
-                                                )}
-                                                <span className="text-xs text-red-600 rounded-full whitespace-nowrap">
-                                                  Outstanding:{" "}
-                                                  <strong>
-                                                    {formatUSD(
-                                                      selectedLoanData.remaining
-                                                )}
-                                              </strong>
-                                            </span>
-                                            {loanPayments[loan._id]
-                                                  ?.length > 0 && (
-                                              <button
-                                                onClick={() =>
-                                                  setPaymentLoan(loan)
-                                                }
-                                                className="p-1 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition ml-2"
-                                              >
-                                                <Plus className="w-4 h-4" />
-                                              </button>
-                                            )}
-                                          </td> */}
-                                            </td>
                                             </tr>
                                             <tr className="">
                                               <td className="font-semibold py-0">
@@ -1328,14 +947,15 @@ return (
               )}
             </div>
           </div>
-        )}
+      )}
       {activeTab === "notes" && (
-            <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
-      <ClientNotes
-        clientId={client._id}
-        clientName={client.fullName}
-      />    </div>
-              )}
+        <div className="h-[calc(90vh-53px)] overflow-y-auto p-3">
+        <ClientNotes
+          clientId={client._id}
+          clientName={client.fullName}
+        />
+        </div>
+      )}
       {activeTab === "templates" && (
         <div className="flex flex-col items-center justify-center py-12 text-gray-500">
           <FileText size={28} className="mb-2 text-gray-400" />
@@ -1345,7 +965,7 @@ return (
           </p>
           </div>
         )}
-      </div>
+    </div>
 
       {/* Modals */}
       {loanModalOpen && selectedClientForLoan && (
@@ -1398,16 +1018,8 @@ return (
           onPaymentSuccess={() => refreshPayments(editPaymentLoan._id)}
         />
       )}
-    </div>
+  </div>
   );
 
 };
-
-const Info = ({ label, value }: { label: string; value: string }) => (
-  <div>
-    <p className="text-xs uppercase text-gray-500 font-medium">{label}</p>
-    <p className="font-semibold text-sm">{value || "—"}</p>
-  </div>
-);
-
 export default observer(ClientViewModal);
