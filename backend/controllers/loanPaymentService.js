@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
 const { LoanPayment } = require("../models/LoanPayment");
@@ -185,7 +186,132 @@ exports.getPayments = async (req, res) => {
     });
   }
 };
+exports.getAllPaymentsForClient = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    console.log(clientId, "client");
 
+    if (!clientId) {
+      return res.status(400).json({
+        success: false,
+        message: "clientId is required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid clientId",
+      });
+    }
+
+    const clientObjectId = new mongoose.Types.ObjectId(clientId);
+
+    /** ✅ 1. Get ALL loans of client */
+    const loans = await Loan.find({ client: clientObjectId });
+
+    console.log("Loans found:", loans.length);
+
+    if (!loans.length) {
+      return res.status(200).json({
+        success: true,
+        paymentsMap: {},
+        profitMap: {},
+      });
+    }
+
+    const loanIds = loans.map(l => l._id);
+
+    /** ✅ 2. Fetch ALL payments */
+    const payments = await LoanPayment.find({
+      loanId: { $in: loanIds },
+    }).sort({ paidDate: -1 });
+
+    /** ✅ 3. Group payments */
+    const paymentsMap = {};
+    payments.forEach(p => {
+      const key = p.loanId.toString();
+      if (!paymentsMap[key]) paymentsMap[key] = [];
+      paymentsMap[key].push(p);
+    });
+
+    /** ✅ 4. Profit per loan */
+    const profitMap = {};
+
+    for (const loan of loans) {
+      const rootLoanId = loan.parentLoanId || loan._id;
+
+      const [result] = await Loan.aggregate([
+        { $match: { _id: rootLoanId } },
+        {
+          $graphLookup: {
+            from: "loans",
+            startWith: "$_id",
+            connectFromField: "_id",
+            connectToField: "parentLoanId",
+            as: "mergedLoans",
+          },
+        },
+        {
+          $project: {
+            allLoans: {
+              $concatArrays: [["$$ROOT"], "$mergedLoans"],
+            },
+          },
+        },
+        { $unwind: "$allLoans" },
+        {
+          $group: {
+            _id: null,
+            loanIds: { $addToSet: "$allLoans._id" },
+            totalBaseAmount: {
+              $sum: { $ifNull: ["$allLoans.baseAmount", 0] },
+            },
+          },
+        },
+      ]);
+
+      const chainLoanIds = result?.loanIds || [];
+      const totalBaseAmount = result?.totalBaseAmount || 0;
+
+      const paymentStats = await LoanPayment.aggregate([
+        { $match: { loanId: { $in: chainLoanIds } } },
+        {
+          $group: {
+            _id: null,
+            totalPaid: { $sum: "$paidAmount" },
+          },
+        },
+      ]);
+
+      const totalPaid = paymentStats[0]?.totalPaid || 0;
+      const totalProfit = Math.max(0, totalPaid - totalBaseAmount);
+
+      profitMap[loan._id] = {
+        loanId: loan._id,
+        rootLoanId,
+        totalBaseAmount,
+        totalPaid,
+        totalProfit,
+      };
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        Payments: paymentsMap,
+        profits: profitMap,
+      },
+    });
+
+  } catch (error) {
+    console.error("getAllPaymentsForClient error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
 exports.editPayment = async (req, res) => {
   try {
     const { paymentId } = req.params;
@@ -280,11 +406,24 @@ exports.deletePayment = async (req, res) => {
     if (loan) {
       const updatedPaidAmount =
         Number(loan.paidAmount || 0) - Number(payment.paidAmount || 0);
-      loan.paidAmount = updatedPaidAmount < 0 ? 0 : updatedPaidAmount; 
+      loan.paidAmount = updatedPaidAmount < 0 ? 0 : updatedPaidAmount;
+
+      await LoanPayment.findByIdAndDelete(paymentId);
+      /** ✅ Check remaining payments */
+      const remainingPayments = await LoanPayment.countDocuments({
+        loanId: loan._id,
+      });
+
+      /** ✅ If no payments → Reset Status */
+      if (remainingPayments === 0) {
+        loan.status = "Active";
+      }
       await loan.save();
+    } else {
+      /** If loan missing → still delete payment */
+      await LoanPayment.findByIdAndDelete(paymentId);
     }
-    await LoanPayment.findByIdAndDelete(paymentId);
-  const user = await User.findById(req.user?.id).select("name email");
+  const user = await User.findById(req.user?.id).select("name email userRole");
   const createdBy = user?.name || user?.email || "Unknown User";
 
   await createAuditLog(
