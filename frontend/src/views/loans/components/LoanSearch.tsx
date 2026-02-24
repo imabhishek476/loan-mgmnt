@@ -49,7 +49,12 @@ export const LoanSearch = observer(
       }
     };
     return (
-      <div className="bg-gray-300  py-2 px-2 rounded-lg ">
+      <form
+      onSubmit={(e) => {
+      e.preventDefault();
+      handleSearch();
+    }}
+    className="bg-gray-300 py-2 px-2 rounded-lg">
        <div className="mb-0 grid  grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
         <TextField
           size="small"
@@ -150,6 +155,7 @@ export const LoanSearch = observer(
    <div className="flex gap-2 items-end">
             <button
               title="Submit"
+              type="submit"
               className="bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded w-full font-semibold"
               onClick={handleSearch}
             >
@@ -157,6 +163,7 @@ export const LoanSearch = observer(
             </button>
 
             <button
+              type="button"
               title="Reset"
               className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 text-sm rounded w-full font-semibold"
               onClick={handleReset}
@@ -165,7 +172,7 @@ export const LoanSearch = observer(
             </button>
           </div>
 </div>
-      </div>
+      </form>
     );
   }
 );
