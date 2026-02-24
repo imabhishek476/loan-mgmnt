@@ -45,14 +45,12 @@ class CompanyStore {
       const res = await createCompany(company);
       const newCompany = res.data;
 
-      const companyWithId = { ...newCompany, id: newCompany._id };
-
       runInAction(() => {
-        this.companies.push(companyWithId);
+        this.companies = [newCompany, ...this.companies];
         this.filteredCompanies = [...this.companies];
       });
 
-      return companyWithId;
+      return newCompany;
     } catch (err) {
       console.error("Failed to create company:", err);
       throw err; 

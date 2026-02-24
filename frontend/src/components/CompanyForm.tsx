@@ -14,12 +14,11 @@ const companyFields: FieldConfig[] = [
   { label: "Company Name", key: "companyName", type: "text", required: true },
   { label: "Color Code", key: "backgroundColor", type: "color", required: true },
   { label: "Active Company", key: "activeCompany", type: "toggle", required: false },
-
   { label: "Available Loan Terms", key: "loanTerms", type: "toggle", required: true },
   { label: "Interest Rate Configuration", key: "interestRateConfiguration", type: "section", icon: <Percent size={18} /> },
   { label: "Interest Rate (%)", key: "interestRate", type: "number", min: 0,required: true },
-
   { label: "Fee Structure", key: "feeStructure", type: "section", icon: <DollarSign size={18} /> },
+  { label: "Address", key: "address", type: "textarea", required: false },
 ];
 
 interface CompanyFormProps {
