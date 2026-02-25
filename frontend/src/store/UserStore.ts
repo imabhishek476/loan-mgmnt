@@ -35,7 +35,7 @@ class UserStore {
   searchLoading = false;
   isUsersFetched = false;
   isFetching = false; 
-  activeAdminTab: "companies" | "users" | "system" | "audit" = "companies";
+  activeAdminTab: "companies" | "attorneys" | "users" | "system" | "audit" = "companies";
   constructor() {
     makeAutoObservable(this);
   }
@@ -186,7 +186,7 @@ class UserStore {
       });
     }
   }
-  setActiveAdminTab(tab: "companies" | "users" | "system" | "audit") {
+  setActiveAdminTab(tab: "companies" | "attorneys" | "users" | "system" | "audit") {
     this.activeAdminTab = tab;
   }
 }

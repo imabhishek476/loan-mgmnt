@@ -30,6 +30,14 @@ export const fetchPaymentsByLoan = async (
     profit: data.profit || null,
   };
 };
+export const fetchAllPaymentsForClient = async (clientId: string) => {
+  const res = await api.get(`/payments/client/${clientId}`);
+
+  return {
+    payments: res.data?.data?.Payments ?? {},
+    profits: res.data?.data?.profits ?? {},
+  };
+};
 // Add a new payment
 export const addPayment = async (payload: PaymentPayload): Promise<Payment> => {
   const { data } = await api.post("/payments/store", payload);

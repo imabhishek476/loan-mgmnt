@@ -1,14 +1,15 @@
-import React, { useState} from "react";
+import React, { useEffect, useState} from "react";
 import { observer } from "mobx-react-lite";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
-import { Plus, Save } from "lucide-react";
+import { Plus, Save, User } from "lucide-react";
 import ClientsDataTable from "./components/clientDataTable";
 import { type FieldConfig } from "../../components/FormModal";
 import { clientStore, type Client } from "../../store/ClientStore";
 // import { activeLoans } from "../../services/LoanService";
 import Loans from "../loans/index";
 import { useNavigate } from "react-router-dom";
+import { getAttorney } from "../../services/AttorneyServices";
 // import { loanStore } from "../../store/LoanStore";
 const FormModal = React.lazy(()=> import("../../components/FormModal"))
 const Clients = observer(() => {
@@ -16,6 +17,7 @@ const Clients = observer(() => {
   const [editingClient, setEditingClient] = useState(null);
   const [selectedClientForLoan, setSelectedClientForLoan] = useState(null);
   const [, setViewClient] = useState(null);
+  const [attorneyOptions, setAttorneyOptions] = useState<any[]>([]);
   const navigate = useNavigate();
   const handleViewClient = (client: Client) => {
     navigate(`/client/${client._id}`);
@@ -41,7 +43,16 @@ const clientFields: FieldConfig[] = [
       { label: "No", value: false },
     ],
   },
-  { label: "Attorney Name", key: "attorneyName", type: "text" },
+  // { label: "Attorney Name", key: "attorneyName", type: "text" },
+  {
+    label: "Attorney",
+    key: "attorneyId",
+    type: "select",
+    options: attorneyOptions.map((attorney) => ({
+      label: attorney.fullName,
+      value: attorney._id,
+    })),
+  },
   { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
   { label: "Case ID", key: "caseId", type: "text" },
   { label: "Index #", key: "indexNumber", type: "text" },
@@ -98,14 +109,28 @@ const handleSave = async (data: any) => {
     toast.error(error.response?.data?.error || "Failed to save Client");
   }
 };
+  useEffect(() => {
+    if (modalOpen) {
+      loadAttorneys();
+    }
+  }, [modalOpen]);
 
+  const loadAttorneys = async () => {
+    try {
+      const res = await getAttorney();
+      setAttorneyOptions(res.data || []);
+    } catch (err) {
+      console.error("Failed to load attorneys", err);
+    }
+  };
 
   return (
     <div className="text-left flex flex-col transition-all duration-300">
       {/* Header */}
       <div className="mb-2 flex flex-col sm:flex-row justify-between items-left gap-4 ">
         <div>
-          <h1 className="text-2xl  text-gray-800 font-bold ">
+          <h1 className="text-2xl text-gray-800 font-bold flex items-center gap-1">
+              <User size={25} className="text-green-600" />
             Client Management
           </h1>
           {/* <p className="text-gray-600 text-base">

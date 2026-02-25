@@ -5,7 +5,9 @@ const moment = require("moment");
 const createAuditLog = require("../utils/auditLog");
 const User = require("../models/User");
 const { LoanPayment } = require("../models/LoanPayment");
-exports.Clientstore = async (req, res) => {
+const { Attorney } = require("../models/Attorney");
+const { default: mongoose } = require("mongoose");
+exports.AddClients = async (req, res) => {
   try {
     const {
       fullName,
@@ -15,7 +17,8 @@ exports.Clientstore = async (req, res) => {
       dob,
       accidentDate,
       address,
-      attorneyName,
+      // attorneyName,
+      attorneyId,
       underwriter,
       uccFiled,
       medicalParalegal,
@@ -53,6 +56,17 @@ exports.Clientstore = async (req, res) => {
       });
     }
 
+    let attorney = null;
+    if (attorneyId) {
+      attorney = await Attorney.findById(attorneyId);
+
+      if (!attorney) {
+        return res.status(400).json({
+          success: false,
+          error: "Selected attorney not found",
+        });
+      }
+    }
     const dobStr = dob ? moment(dob).format("MM-DD-YYYY") : "";
     const accidentDateStr = accidentDate ? moment(accidentDate).format("MM-DD-YYYY") : "";
     const uccBoolean = uccFiled === true || uccFiled === "yes" || uccFiled === "Yes";
@@ -70,7 +84,8 @@ exports.Clientstore = async (req, res) => {
       dob: dobStr,
       accidentDate: accidentDateStr,
       address: address || "",
-      attorneyName: attorneyName || "",
+      attorneyId: attorney?._id || null,               
+      // attorneyName: attorney?.fullName || attorneyName || "",
       memo: memo || "",
 
       customFields: Array.isArray(customFields) ? customFields : [],
@@ -103,7 +118,8 @@ exports.searchClients = async (req, res) => {
       name,
       email,
       phone,
-      attorneyName,
+      // attorneyName,
+      attorneyId,
       status,
       allLoanStatus,
       latestLoanStatus,
@@ -152,7 +168,10 @@ exports.searchClients = async (req, res) => {
     if (name) matchStage.fullName = new RegExp(name, "i");
     if (email) matchStage.email = new RegExp(email, "i");
     if (phone) matchStage.phone = new RegExp(phone, "i");
-    if (attorneyName) matchStage.attorneyName = new RegExp(attorneyName, "i");
+    if (attorneyId && mongoose.Types.ObjectId.isValid(attorneyId)) {
+        matchStage.attorneyId = new mongoose.Types.ObjectId(attorneyId);
+      }
+    // if (attorneyName) matchStage.attorneyName = new RegExp(attorneyName, "i");    
     if (status) matchStage.isActive = status === "Active";
     if (ssn) matchStage.ssn = new RegExp(ssn, "i");
     if (dob) {
@@ -188,6 +207,20 @@ exports.searchClients = async (req, res) => {
         { $match: matchStage },
         {
           $lookup: {
+            from: "attorneys",
+            localField: "attorneyId",
+            foreignField: "_id",
+            as: "attorney",
+          },
+        },
+        {
+          $addFields: {
+            attorney: { $arrayElemAt: ["$attorney", 0] },
+            attorneyName: { $arrayElemAt: ["$attorney.fullName", 0] },
+          },
+        },
+        {
+          $lookup: {
             from: "loans",
             let: { clientId: "$_id" },
           pipeline: [
@@ -195,6 +228,11 @@ exports.searchClients = async (req, res) => {
               $match: {
                 $expr: { $eq: ["$client", "$$clientId"] },
               },
+            },
+            {
+              $addFields: {
+                attorney: { $arrayElemAt: ["$attorney", 0] }
+              }
             },
             {
               $addFields: {
@@ -328,8 +366,8 @@ exports.updateClient = async (req, res) => {
       updates.medicalParalegal = updates.medicalParalegal.trim();
     if (updates.caseId) updates.caseId = updates.caseId.trim();
     if (updates.indexNumber) updates.indexNumber = updates.indexNumber.trim();
-    if (updates.attorneyName)
-      updates.attorneyName = updates.attorneyName.trim();
+    // if (updates.attorneyName)
+    //   updates.attorneyName = updates.attorneyName.trim();
     if (updates.address) updates.address = updates.address.trim();
     if (updates.memo) updates.memo = updates.memo.trim();
     if (updates.caseType) updates.caseType = updates.caseType.trim();
@@ -349,7 +387,23 @@ exports.updateClient = async (req, res) => {
         });
       }
     }
+      if (updates.attorneyId !== undefined) {
+      if (!updates.attorneyId) {
+        updates.attorneyId = null;
+        updates.attorneyName = "";
+      } else {
+        const attorney = await Attorney.findById(updates.attorneyId);
 
+        if (!attorney) {
+          return res.status(400).json({
+            success: false,
+            error: "Selected attorney not found",
+          });
+        }
+
+        updates.attorneyName = attorney.fullName;
+      }
+    }
     // Update client
     const client = await Client.findByIdAndUpdate(id, updates, { new: true });
     if (!client) {
@@ -499,12 +553,24 @@ exports.toggleClientStatus = async (req, res) => {
 exports.getClientById = async (req, res) => {
   try {
     const { id } = req.params;
-    const client = await Client.findById(id);
-    if (!client)
-      return res.status(404).json({ success: false, error: "Client not found" });
-    res.status(200).json({ success: true, client });
+    const client = await Client.findById(id)
+      .populate("attorneyId", "fullName");
+
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        error: "Client not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      client,
+    });
   } catch (error) {
     console.error("Error fetching client by ID:", error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };

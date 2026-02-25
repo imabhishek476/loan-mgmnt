@@ -1,42 +1,30 @@
-import React, { useState, useMemo, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2 } from "lucide-react";
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  userRole: string;
-}
-
-interface UsersDataTableProps {
-  users?: User[];
-  onSearch: (query: string) => void;
-  onEdit: (user: User) => void;
-  onDelete: (id: string) => void;
+interface AttorneysDataTableProps {
+  data: any[];
   loading: boolean;
+  onSearch: (query: string) => void;
+  onEdit: (attorney: any) => void;
+  onDelete: (id: string) => void;
 }
 
-const UsersDataTable = ({
-  users = [],
+const AttorneysDataTable = ({
+  data,
+  loading,
   onSearch,
   onEdit,
   onDelete,
-  loading,
-}: UsersDataTableProps) => {
+}: AttorneysDataTableProps) => {
   const [search, setSearch] = useState("");
 
   const debouncedSearch = useMemo(
     () => debounce((value: string) => onSearch(value), 300),
     [onSearch]
   );
-
-  useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [debouncedSearch]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -45,27 +33,27 @@ const UsersDataTable = ({
   };
 
   const capitalizeFirst = (text?: string) => {
-    if (!text) return "";
+    if (!text) return "-";
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
 
   return (
     <div className="w-full">
-      {/* 🔍 Search */}
+      {/* Search */}
       <div className="mb-4 relative w-full">
         <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <Search className="w-5 h-5 text-gray-400" />
         </span>
         <input
           type="text"
-          placeholder="Search by name or email"
+          placeholder="Search by attorney name / email / phone"
           value={search}
           onChange={handleSearchChange}
           className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
         />
       </div>
 
-      {/* 📊 Table */}
+      {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
         <MaterialTable
           isLoading={loading}
@@ -74,34 +62,58 @@ const UsersDataTable = ({
             {
               title: "Sr.no",
               width: "5%",
-              render: (rowData:any) => (rowData.tableData?.id ?? 0) + 1,
+              render: (rowData: any) => (rowData.tableData?.id ?? 0) + 1,
             },
             {
-              title: "Name",
-              field: "name",
-              render: (rowData) => capitalizeFirst(rowData.name),
+              title: "Full Name",
+              field: "fullName",
+              render: (rowData: any) =>
+                capitalizeFirst(rowData.fullName),
             },
             {
               title: "Email",
               field: "email",
+              render: (rowData: any) =>
+                rowData.email || "-",
             },
             {
-              title: "Role",
-              field: "userRole",
-              render: (rowData) => capitalizeFirst(rowData.userRole),
+              title: "Phone",
+              field: "phone",
+              render: (rowData: any) =>
+                rowData.phone || "-",
             },
+            // {
+            //   title: "Firm",
+            //   field: "firmName",
+            //   render: (rowData: any) =>
+            //     rowData.firmName || "-",
+            // },
+            // {
+            //   title: "Status",
+            //   render: (rowData: any) =>
+            //     rowData.isActive ? (
+            //       <span className="px-2 py-0.5 bg-green-600 text-white text-sm font-semibold rounded-md">
+            //         Active
+            //       </span>
+            //     ) : (
+            //       <span className="px-2 py-0.5 bg-red-500 text-white text-sm font-semibold rounded-md">
+            //         Inactive
+            //       </span>
+            //     ),
+            // },
           ]}
-          data={users}
+          data={data}
           actions={[
             {
               icon: () => <Pencil className="w-4 h-4 text-green-600" />,
               tooltip: "Edit",
-               onClick: (_event, rowData) => onEdit(rowData as User),
+              onClick: (_: any, rowData: any) => onEdit(rowData),
             },
             {
               icon: () => <Trash2 className="w-4 h-4 text-red-600" />,
               tooltip: "Delete",
-               onClick: (_event, rowData) => onDelete((rowData as User)._id),
+              onClick: (_: any, rowData: any) =>
+                onDelete(rowData._id),
             },
           ]}
           options={{
@@ -113,43 +125,33 @@ const UsersDataTable = ({
             actionsColumnIndex: -1,
             padding: "dense",
             toolbar: false,
-            // paginationType: "stepped",
-            tableLayout: "auto",
+            paginationType: "stepped",
+
             headerStyle: {
-              position: "sticky",
               fontWeight: "600",
               backgroundColor: "#f9fafb",
               color: "#374151",
               fontSize: "13px",
-              height: 36,
-              padding: "6px 8px",
               borderBottom: "1px solid #e5e7eb",
               whiteSpace: "nowrap",
-              right: 0,
-              zIndex: 30,
             },
             maxBodyHeight: "calc(100vh - 320px)",
             minBodyHeight: "calc(100vh - 370px)",
-            actionsCellStyle: {
-              position: "sticky",
-              right: 0,
-              zIndex: 10,
-              background: "#fff",
-            },
             rowStyle: {
               fontSize: "13px",
               height: 38,
               borderBottom: "1px solid #f1f1f1",
             },
+
             emptyRowsWhenPaging: false,
           }}
           localization={{
             body: {
               emptyDataSourceMessage: loading
-                ? "Loading users..."
+                ? "Loading attorneys..."
                 : search
                 ? `No results found for "${search}"`
-                : "No users available.",
+                : "No attorneys available.",
             },
           }}
         />
@@ -158,4 +160,4 @@ const UsersDataTable = ({
   );
 };
 
-export default UsersDataTable;
+export default AttorneysDataTable;
