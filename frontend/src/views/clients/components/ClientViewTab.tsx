@@ -64,7 +64,7 @@ const ClientViewTab = (
 
             <div className="grid grid-cols-2 gap-1 bg-gray-50 p-2">
               {client.customFields.map((field, idx) => (
-                <div className="col-span-1 flex text-gray-500 items-center gap-2 text-xs uppercase  font-medium ">
+                <div key={idx} className="col-span-1 flex text-gray-500 items-center gap-2 text-xs uppercase  font-medium ">
                   <p className="">
                     {field.name} :
                   </p>

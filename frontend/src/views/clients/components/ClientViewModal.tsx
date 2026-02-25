@@ -22,7 +22,7 @@ const ClientViewModal = ({ client, onEditClient }: ClientViewModalProps) => {
   const [loadingClient, setLoadingClient] = useState(true);
   const [, setLoadingLoans] = useState(true);
   const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templates">("client");
-  const [loading, setLoading] = useState(true);
+  const [ setLoading] = useState(true);
 
   const loadInitialData = async () => {
     try {
