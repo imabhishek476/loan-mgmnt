@@ -84,7 +84,7 @@ return (
     <div className=" sticky top-0 z-20">
       <div className="border-b  py-1 my-2 sticky top-0 z-20  flex justify-between items-left">
         <h1 className="font-bold text-xl text-gray-800">
-          {client.fullName}
+          {client?.fullName}
         </h1>
         </div>
        <div className="sticky top-[48px] z-20 px-3">
@@ -140,8 +140,8 @@ return (
       {activeTab === "notes" && (
         // <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
         <ClientNotes
-          clientId={client._id}
-          clientName={client.fullName}
+          clientId={client?._id}
+          clientName={client?.fullName}
         />
         // </div>
       )}

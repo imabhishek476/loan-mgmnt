@@ -158,8 +158,8 @@ const renderFee = (fee: any) => {
               right: 0,
               zIndex: 30,
             },
-            maxBodyHeight: "calc(100vh - 450px)",
-            minBodyHeight: "calc(100vh - 450px)",
+            maxBodyHeight: "calc(100vh - 320px)",
+            minBodyHeight: "calc(100vh - 370px)",
             rowStyle: {
               fontSize: "13px",
               height: 38,

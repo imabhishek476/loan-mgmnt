@@ -6,10 +6,6 @@ import {
   Trash2,
   RefreshCcw,
   Eye,
-  FileText,
-  StickyNote,
-  User,
-  Building2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import moment from "moment";
@@ -24,7 +20,6 @@ import Confirm from "../../../components/Confirm";
 import {activeLoansData, deactivateLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { getAllowedTerms } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
-import api from "../../../api/axios";
 import { fetchCompanies } from "../../../services/CompaniesServices";
 
 interface LoansTabProps {
@@ -81,7 +76,6 @@ const [editingLoanId, setEditingLoanId] = useState<any>(null);
 const [editingPayment, setEditingPayment] = useState<any>(null);
 const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
 const [loadingLoans, setLoadingLoans] = useState(true);
-const [loadingPaymentsMap, setLoadingPaymentsMap] = useState<Record<string, boolean>>({});
 const [loading, setLoading] = useState(true);
 
 // const refreshPayments = async () => {
@@ -199,9 +193,6 @@ const loadData = async () => {
     setLoanProfitMap(paymentRes.profits || {});
 
     setCompanies(companyRes.data || companyRes || []);
-    console.log("paymentRes →", paymentRes);
-console.log("paymentsMap →", paymentRes.payments);
-
   } catch (err) {
     console.error("loadData error →", err);
     toast.error("Failed to load data");
@@ -332,13 +323,6 @@ const handleStatusChange = async (loanId: string, newStatus: string) => {
     toast.error("Failed to update status");
   }
 };
-const tabs = [
-  { key: "client", label: "Client Info", icon: <User size={16} /> },
-  { key: "loans", label: "Loan History", icon: <Building2 size={16} /> },
-  { key: "notes", label: "Notes", icon: <StickyNote size={16} /> },
-  { key: "templates", label: "Templates", icon: <FileText size={16} /> },
-];
-
 return (
         <div className="h-[calc(88vh-30px)] overflow-y-auto p-2 space-y-4">
            <div className="flex justify-end">
@@ -542,7 +526,7 @@ return (
                                   </button>
                                 )}
                                 </h4>
-                                {loadingPaymentsMap[loan._id] ? (
+                                {loading ? (
                                  <div className="space-y-3 p-2">
                                     <Skeleton variant="rectangular" height={15} />
                                     <Skeleton variant="rectangular" height={15} />

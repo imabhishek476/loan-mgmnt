@@ -2,14 +2,16 @@ import { observer } from "mobx-react-lite";
 import AuditLogsTable from "./components/AuditLogsTable";
 import { CompaniesTab } from "./components/CompaniesTab";
 import { UsersTab } from "./components/UsersTab";
-import { Building2, Shield, User } from "lucide-react";
+import { Building2, Scale, Settings, Shield, User } from "lucide-react";
 import { userStore } from "../../store/UserStore";
 import { useEffect } from "react";
-type TabType = "system" | "companies" | "users" | "audit";
+import AttorneysTab from "./components/AttorneysTab";
+type TabType = "system" | "companies" | "attorneys" | "users" | "audit";
 
 const Administration = observer(() => {
   const tabs: { key: TabType; label: string; icon: React.ReactElement }[] = [
     { key: "companies", label: "Companies", icon: <Building2 size={18} /> },
+      { key: "attorneys", label: "Manage Attorney", icon: <Scale size={18} /> },
     { key: "users", label: "Users", icon: <User size={18} /> },
     { key: "audit", label: "Audit Logs", icon: <Shield size={18} /> },
   ];
@@ -24,8 +26,9 @@ const Administration = observer(() => {
     <div className="flex flex-col  transition-all duration-300">
       <div className="mb-1 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl text-gray-800 font-bold text-left">
-            Administration
+          <h1 className="text-2xl text-gray-800 font-bold flex items-center gap-1">
+              <Settings size={25} className="text-green-600" />
+                  Administration
           </h1>
           <p className="text-gray-600 text-base text-left">
             Manage companies, users, and system configuration
@@ -66,6 +69,7 @@ const Administration = observer(() => {
       {userStore.activeAdminTab === "companies" && (
         <CompaniesTab activeTab={userStore.activeAdminTab} />
       )}
+      {userStore.activeAdminTab === "attorneys" && <AttorneysTab />}
       {userStore.activeAdminTab === "users" && (
         <UsersTab activeTab={userStore.activeAdminTab} />
       )}

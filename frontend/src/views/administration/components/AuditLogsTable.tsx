@@ -246,8 +246,8 @@ const AuditLogsTable: React.FC = () => {
               right: 0,
               zIndex: 30,
             },
-            maxBodyHeight: "calc(100vh - 400px)",
-            minBodyHeight: "calc(100vh - 400px)",
+            maxBodyHeight: "calc(100vh - 250px)",
+            minBodyHeight: "calc(100vh - 320px)",
             actionsCellStyle: {
               position: "sticky",
               right: 0,

@@ -11,7 +11,6 @@ interface ClientViewTabProps {
 
 const ClientViewTab = (
     ({ client, loadingClient, onEditClient, clientLoans, }: ClientViewTabProps) => {
-console.log('client View');
 
      return (
             <div className="h-[calc(90vh-80px)] overflow-hidden">
@@ -46,7 +45,7 @@ console.log('client View');
         <Info label="Phone" value={client.phone} />
         <Info label="DOB" value={client.dob} />
         <Info label="Accident Date" value={client.accidentDate} />
-        <Info label="Attorney" value={client.attorneyName} />
+        <Info label="Attorney" value={client.attorneyId?.fullName || "—"} />
         <Info label="SSN" value={client.ssn} />
         <Info label="Underwriter" value={client.underwriter} />
         <Info label="Medical Paralegal" value={client.medicalParalegal} />
@@ -63,14 +62,13 @@ console.log('client View');
               Custom Fields
             </p>
 
-            <div className="space-y-1">
+            <div className="grid grid-cols-2 gap-1 bg-gray-50 p-2">
               {client.customFields.map((field, idx) => (
-                <div key={idx} className="flex text-sm py-1">
-                  <span className="text-xs uppercase text-gray-500 font-medium min-w-[140px]">
-                    {field.name}
-                  </span>
-                  <span className="px-2 font-semibold text-sm text-gray-700">:</span>
-                  <span className="px-2 font-semibold text-sm text-gray-700">{field.value || "—"}</span>
+                <div className="col-span-1 flex text-gray-500 items-center gap-2 text-xs uppercase  font-medium ">
+                  <p className="">
+                    {field.name} :
+                  </p>
+                  <p className="font-semibold text-sm text-gray-700">{field.value || "—"}</p>
                 </div>
               ))}
             </div>

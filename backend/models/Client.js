@@ -39,6 +39,7 @@ const ClientSchema = new mongoose.Schema(
   accidentDate: String,
   address: String,
   attorneyName: String,
+  attorneyId: { type: mongoose.Schema.Types.ObjectId, ref: "Attorney" },
   memo: String,
    isActive: { type: Boolean, default: true },
   customFields: [customFieldSchema],

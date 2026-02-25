@@ -43,7 +43,6 @@ const loadMeta = async () => {
       fetchCompanies(),
     ]);
 
-    console.log("LoanSummary paymentRes →", paymentRes);
 
     /** ✅ FIXED */
     setLoanProfitMap(paymentRes.profits || {});
@@ -214,7 +213,6 @@ if(loadingMeta){
                       loanPayments[String(loan._id)] ||
                       loanPayments[String(loan.loanId)] ||
                       [];
-                    console.log(payments,'payments');
                     const paidAmount = payments.reduce(
                       (sum, p) => sum + Number(p.paidAmount ?? 0),
                       0

@@ -14,7 +14,7 @@ export interface ClientPayload {
 } 
 
 export const createClient = async (data: ClientPayload) => {
-  const { data: response } = await api.post("/client/store", data);
+  const { data: response } = await api.post("/client/add", data);
   return response;
 };
 
