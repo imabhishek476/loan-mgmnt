@@ -22,7 +22,6 @@ const ClientViewModal = ({ client, onEditClient }: ClientViewModalProps) => {
   const [loadingClient, setLoadingClient] = useState(true);
   const [, setLoadingLoans] = useState(true);
   const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templates">("client");
-  const [ setLoading] = useState(true);
 
   const loadInitialData = async () => {
     try {
@@ -49,7 +48,6 @@ const ClientViewModal = ({ client, onEditClient }: ClientViewModalProps) => {
     if (!client?._id) return;
 
     try {
-      setLoading(true);
 
       if (activeTab === "client" || activeTab === "loans") {
         const loans = await activeLoansData(client._id);
@@ -59,9 +57,7 @@ const ClientViewModal = ({ client, onEditClient }: ClientViewModalProps) => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to load loans");
-    } finally {
-      setLoading(false);
-    }
+    } 
   }, [activeTab, client?._id]);
 
   useEffect(() => {
