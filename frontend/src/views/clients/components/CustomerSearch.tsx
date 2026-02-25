@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Autocomplete, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { LOAN_STATUS_OPTIONS } from "../../../utils/constants";
@@ -6,19 +6,21 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { observer } from "mobx-react-lite";
+import { getAttorney } from "../../../services/AttorneyServices";
 
 export const CustomerSearch = observer(({ tableRef }:any) => {
 
     const { clientFilters } = clientStore;
     const [localFilters, setLocalFilters] = useState(clientFilters);
     const [filterActive, setFilterActive] = useState(false);
+    const [attorneyOptions, setAttorneyOptions] = useState<any[]>([]);
   const handleReset = () => {
   setFilterActive(false);
     const emptyFilters = {
       name: "",
       email: "",
       phone: "",
-      attorneyName: "",
+      attorneyId: "",
       status: "",
       latestLoanStatus: "",
       allLoanStatus: "",
@@ -46,7 +48,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
   name: "Name",
   email: "Email",
   phone: "Phone",
-  attorneyName: "Attorney",
+  attorneyId: "Attorney",
   status: "Client Status",
   allLoanStatus: "All Payment Status",
   latestLoanStatus: "Latest Payment Status",
@@ -60,11 +62,19 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
   caseType: "Case Type",
   indexNumber: "Index #",
   uccFiled: "UCC Filed",
-};  
+  };  
   const handleSearch = () => {
     setFilterActive(true);
     clientStore.setClientFilters(localFilters);
     tableRef.current?.onQueryChange();
+  };
+  const loadAttorneys = async () => {
+    try {
+      const res = await getAttorney();
+      setAttorneyOptions(res.data || []);
+    } catch (err) {
+      console.error("Failed to load attorneys", err);
+    }
   };
   const smallLabel = {
     sx: { fontSize: 13 }
@@ -94,6 +104,9 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       backgroundColor: "#fff!important",
     }
   };
+  useEffect(() => {
+  loadAttorneys();
+}, []);
   return (
     <div className=" bg-gray-300 rounded-lg mb-3">
       <div className="relative  px-2 rounded-t-lg ">
@@ -108,32 +121,37 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
             <span className="text-sm text-black font-medium">
               Active Filters :
             </span>
-            {Object.entries(clientFilters).filter(
-                ([_, value]) =>
-                  value !== "" && value !== null && value !== undefined
-              ).map(([key, value]) => (
+            {Object.entries(clientFilters)
+            .filter(([_, value]) => value !== "" && value !== null && value !== undefined)
+            .map(([key, value]) => {
+
+              let displayValue = value;
+
+              if (key === "uccFiled") {
+                displayValue =
+                  value === "yes" ? "Yes" :
+                  value === "no" ? "No" :
+                  value;
+              }
+
+              else if (key === "attorneyId") {
+                displayValue =
+                  attorneyOptions.find(a => a._id === value)?.fullName || value;
+              }
+
+              else if (["issueDate", "dob", "accidentDate"].includes(key)) {
+                displayValue = moment(value).format("MM/DD/YYYY");
+              }
+
+              return (
                 <span
                   key={key}
-                  className="
-            bg-green-700 text-white
-            px-1 
-            rounded
-            text-xs
-            font-semibold
-            leading-tight">
-                  {FILTER_LABELS[key] || key} :{" "}
-
-                  {key === "uccFiled"
-                    ? value === "yes"
-                      ? "Yes"
-                      : value === "no"
-                        ? "No"
-                        : value
-                    : ["issueDate", "dob", "accidentDate"].includes(key)
-                      ? moment(value).format("MM/DD/YYYY")
-                      : String(value)}
+                  className="bg-green-700 text-white px-1 rounded text-xs font-semibold"
+                >
+                  {FILTER_LABELS[key] || key} : {displayValue}
                 </span>
-              ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -186,16 +204,31 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
     />
   </div>
   <div>
-    <TextField
+      <Autocomplete
       size="small"
+      options={attorneyOptions}
+      getOptionLabel={(option) => option.fullName || ""}
+      value={
+        attorneyOptions.find(
+          (a) => a._id === localFilters.attorneyId
+        ) || null
+      }
+      onChange={(_, value) =>
+        setLocalFilters({
+          ...localFilters,
+          attorneyId: value?._id || "",
+        })
+      }
+      renderInput={(params) => (
+        <TextField
+          {...params}
       label="Attorney"
       color="success"
-      name="attorneyName"
-      value={localFilters.attorneyName}
-      onChange={onChange}
       sx={compactFieldSx}
       slotProps={{ inputLabel: smallLabel }}
       fullWidth
+        />
+      )}
     />
   </div>
   <div>

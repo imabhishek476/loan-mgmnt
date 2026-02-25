@@ -43,6 +43,7 @@ class ClientStore {
   clientFilters: any = {};
   filtersOpen: boolean = false;   
   selectedClient: Client | null = null;
+  attorneyId: string | null = null;
   constructor() {
     makeAutoObservable(this);
   }

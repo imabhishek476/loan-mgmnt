@@ -5,12 +5,15 @@ import ClientViewModal from "./ClientViewModal";
 import { useEffect, useState } from "react";
 import FormModal, { type FieldConfig } from "../../../components/FormModal";
 import { toast } from "react-toastify";
+import { getAttorney } from "../../../services/AttorneyServices";
+import ClientDetailsSkeleton from "../../components/ClientDetailsSkeleton";
 
 const ClientDetailsPage = observer(() => {
   const { id } = useParams();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [attorneyOptions, setAttorneyOptions] = useState<any[]>([]);
 
   const clientFields: FieldConfig[] = [
     { label: "Full Name", key: "fullName", type: "text", required: true },
@@ -27,7 +30,16 @@ const ClientDetailsPage = observer(() => {
         { label: "No", value: false },
       ],
     },
-    { label: "Attorney Name", key: "attorneyName", type: "text" },
+    // { label: "Attorney Name", key: "attorneyName", type: "text" },
+      {
+  label: "Attorneya",
+  key: "attorneyId",
+  type: "select",
+  options: attorneyOptions.map((attorney) => ({
+    label: attorney.fullName,
+    value: attorney._id,
+  })),
+},
     { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
     { label: "Case ID", key: "caseId", type: "text" },
     { label: "Index #", key: "indexNumber", type: "text" },
@@ -51,10 +63,23 @@ const ClientDetailsPage = observer(() => {
     }
   }, [id]);
 
+
   const client = clientStore.selectedClient;
 
-  if (!client) return <p>Loading...</p>;
-
+const loadAttorneys = async () => {
+  try {
+    const res = await getAttorney();
+    setAttorneyOptions(res.data || []);
+  } catch (err) {
+    console.error("Failed to load attorneys", err);
+  }
+};
+useEffect(() => {
+  if (modalOpen) {
+    loadAttorneys();
+  }
+}, [modalOpen]);
+if (!client) return <ClientDetailsSkeleton />;
   return (
     <div className="w-full text-left flex flex-col">
 

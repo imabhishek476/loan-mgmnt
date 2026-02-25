@@ -3,18 +3,17 @@ import { observer } from "mobx-react-lite";
 import { paymentStore } from "../store/PaymentStore";
 import { loanStore } from "../store/LoanStore";
 import { toast } from "react-toastify";
-import { clientStore } from "../store/ClientStore";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import moment, { type Moment } from "moment";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { fetchPaymentsByLoan, getLastPaymentDate } from "../services/LoanPaymentServices";
+import { getLastPaymentDate } from "../services/LoanPaymentServices";
 
 interface LoanPaymentModalProps {
   open: boolean;
   onClose: () => void;
   loan: any;
   clientId: string;
-    onPaymentSuccess?: (payments: any[], profit: any) => void;
+    onPaymentSuccess?:() => void;
 }
 
 const LoanPaymentModal = observer(
@@ -153,11 +152,10 @@ const LoanPaymentModal = observer(
           formated_Outstanding,
           currentTerm,
         });
-      const { payments, profit }  = await fetchPaymentsByLoan(loan._id);
-        onPaymentSuccess?.(payments, profit);
-        await loanStore.fetchActiveLoans(clientId);
-        await clientStore.refreshDataTable();
-        await loanStore.getLoanProfitByLoanId(loan._id);        
+        onPaymentSuccess?.();
+        // await loanStore.fetchActiveLoans(clientId);
+        // await clientStore.refreshDataTable();
+        // await loanStore.getLoanProfitByLoanId(loan._id);        
         toast.success("Payment recorded successfully");
         onClose();
       } catch (err) {

@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  Clientstore,
+  AddClients,
   searchClients,
   updateClient,
   deleteClient,
@@ -12,7 +12,7 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
 const clientRouter = express.Router();
 
-clientRouter.route("/store").post(isAuthenticated, isAdmin, Clientstore);
+clientRouter.route("/add").post(isAuthenticated, isAdmin, AddClients);
 clientRouter.route("/search").get(isAuthenticated, isAdmin, searchClients);
 clientRouter.route("/loans/:id").get(isAuthenticated, isAdmin, getClietsLoan);
 clientRouter.route("/:id").put(isAuthenticated, isAdmin, updateClient);

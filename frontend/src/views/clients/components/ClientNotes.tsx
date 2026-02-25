@@ -126,7 +126,7 @@ const ClientNotes = ({
   };
 
   return (
-    <div className="h-[calc(88vh-30px)] overflow-y-auto p-3 space-y-4">  
+    <div className="h-[calc(88vh-30px)] overflow-y-auto p-2 space-y-4">  
       {/* Header */}
       <div className="flex justify-end">
         <Button

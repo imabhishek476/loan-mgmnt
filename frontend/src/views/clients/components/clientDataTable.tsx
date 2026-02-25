@@ -38,7 +38,7 @@ const fetchClientsData = useCallback(async (query) => {
         name: clientFilters.name,
         email: clientFilters.email,
         phone: clientFilters.phone,
-        attorneyName: clientFilters.attorneyName,
+        attorneyId: clientFilters.attorneyId,
         status: clientFilters.status,
         allLoanStatus: clientFilters.allLoanStatus,
         latestLoanStatus: clientFilters.latestLoanStatus,

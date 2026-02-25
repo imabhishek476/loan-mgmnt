@@ -384,6 +384,18 @@ import { useNavigate } from "react-router-dom";
                       case "Partial Payment":
                         bgColor = "bg-yellow-500 text-white font-semibold";
                         break;
+                         case "Denied":
+                        bgColor = "bg-red-600 text-white font-semibold";
+                        displayText = "Denied";
+                        break;
+                         case "Fraud":
+                        bgColor = "bg-red-600 text-white font-semibold";
+                        displayText = "Fraud";
+                        break;
+                         case "Lost":
+                        bgColor = "bg-red-600 text-white font-semibold";
+                        displayText = "Lost";
+                        break;
                       case "Active":
                       default:
                         bgColor = "bg-green-600 text-white font-semibold";
