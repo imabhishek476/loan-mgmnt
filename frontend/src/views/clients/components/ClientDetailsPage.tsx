@@ -32,7 +32,7 @@ const ClientDetailsPage = observer(() => {
     },
     // { label: "Attorney Name", key: "attorneyName", type: "text" },
       {
-  label: "Attorneya",
+  label: "Attorney",
   key: "attorneyId",
   type: "select",
   options: attorneyOptions.map((attorney) => ({
@@ -93,7 +93,13 @@ if (!client) return <ClientDetailsSkeleton />;
 }}
         client={client}
         onEditClient={(clientData: Client) => {
-          setEditingClient(clientData);
+        setEditingClient({
+            ...clientData,
+            attorneyId:
+              typeof clientData.attorneyId === "object"
+                ? clientData.attorneyId?._id
+                : clientData.attorneyId,
+          });
           setModalOpen(true);
         }}
       />
@@ -108,8 +114,17 @@ if (!client) return <ClientDetailsSkeleton />;
         fields={clientFields}
         //@ts-ignore
         customFields={customFields}
-           initialData={editingClient || {}}
-
+        initialData={
+          editingClient
+            ? {
+                ...editingClient,
+                attorneyId:
+                  typeof editingClient.attorneyId === "object"
+                    ? editingClient.attorneyId?._id
+                    : editingClient.attorneyId,
+              }
+            : {}
+        }
         onSubmit={async (data:any) => {
           if (!editingClient) return;
 
