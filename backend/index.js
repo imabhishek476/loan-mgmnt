@@ -12,6 +12,7 @@ const auditRouter = require("./routes/auditLog.router");
 const clientNotesRouter = require("./routes/clientNotes.router")
 const userRouter = require("./routes/users.router");
 const attorneyRouter = require("./routes/attorney.router");
+const templateRouter = require("./routes/template.router");
 const app = express();
 
 // Middleware
@@ -48,6 +49,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/logs", auditRouter);
 app.use("/api/users", userRouter);
 app.use("/api/attorneys", attorneyRouter);
+app.use("/api/templates", templateRouter);
 // Seed admin user
 const seedAdmin = require("./admin");
 seedAdmin();
