@@ -8,7 +8,7 @@ import ClientViewTab from "./ClientViewTab";
 import LoansTab from "./LoansTab";
 import { activeLoansData } from "../../../services/LoanService";
 
-interface ClientViewModalProps {
+interface ClientViewScreenProps {
   open: boolean;
   onClose: () => void;
   client: any;
@@ -17,7 +17,7 @@ interface ClientViewModalProps {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-const ClientViewModal = ({ client, onEditClient }: ClientViewModalProps) => {
+const ClientViewScreen = ({ client, onEditClient }: ClientViewScreenProps) => {
   const [clientLoans, setClientLoans] = useState<any[]>([]);
   const [loadingClient, setLoadingClient] = useState(true);
   const [, setLoadingLoans] = useState(true);
@@ -154,4 +154,4 @@ return (
   </div>
   );
 };
-export default ClientViewModal;
+export default ClientViewScreen;

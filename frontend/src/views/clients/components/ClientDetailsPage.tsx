@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { clientStore, type Client } from "../../../store/ClientStore";
 import { useParams } from "react-router-dom";
-import ClientViewModal from "./ClientViewModal";
+import ClientViewScreen from "./ClientViewScreen";
 import { useEffect, useState } from "react";
 import FormModal, { type FieldConfig } from "../../../components/FormModal";
 import { toast } from "react-toastify";
@@ -83,7 +83,7 @@ if (!client) return <ClientDetailsSkeleton />;
   return (
     <div className="w-full text-left flex flex-col">
 
-      <ClientViewModal
+      <ClientViewScreen
         open={true}
                 onClose={() => {
   setModalOpen(false);

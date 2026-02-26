@@ -21,7 +21,7 @@
   import { getAllowedTerms } from "../../../utils/constants";
   import LoanView from "./LoanView";
   import LoanSearch from "./LoanSearch";
-  import ClientViewModal from "../../clients/components/ClientViewModal";
+  import ClientViewScreen from "../../clients/components/ClientViewScreen";
   import FormModal, { type FieldConfig } from "../../../components/FormModal";
 import { useNavigate } from "react-router-dom";
 
@@ -538,7 +538,7 @@ import { useNavigate } from "react-router-dom";
           onSubmit={handleSave}
         />
         {viewModalOpen && viewClient && (
-          <ClientViewModal
+          <ClientViewScreen
             open={viewModalOpen}
             onClose={() => setViewModalOpen(false)}
             client={viewClient}
