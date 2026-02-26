@@ -11,11 +11,16 @@ import  Loans from "./views/loans/index";
 import NotFound from "./views/components/404"; 
 import { ErrorMessage } from "./components/ErrorMessage";
 import ClientDetailsPage from "./views/clients/components/ClientDetailsPage";
+import TemplateEditor from "./views/administration/components/TemplateEditor";
 
 const appRouter = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/template",
+    element: <TemplateEditor />
   },
   {
     path: "/",
