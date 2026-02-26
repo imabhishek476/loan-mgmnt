@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
-import { Search, Pencil, Trash2 } from "lucide-react";
+import { Search, Pencil, Trash2, Eye } from "lucide-react";
 
 interface TemplatesDataTableProps {
   data: any[];
   loading: boolean;
   onSearch: (query: string) => void;
   onEdit: (template: any) => void;
+  onView: (template: any) => void;  
   onDelete: (id: string) => void;
 }
 
@@ -16,6 +17,7 @@ const TemplatesDataTable = ({
   loading,
   onSearch,
   onEdit,
+  onView,
   onDelete,
 }: TemplatesDataTableProps) => {
   const [search, setSearch] = useState("");
@@ -81,6 +83,12 @@ const TemplatesDataTable = ({
           ]}
           data={data}
           actions={[
+             {
+              icon: () => <Eye className="w-4 h-4 text-blue-600" />,
+              tooltip: "View",
+              //@ts-ignore
+              onClick: (event, rowData: any) => onView(rowData),
+            },
             {
               icon: () => <Pencil className="w-4 h-4 text-green-600" />,
               tooltip: "Edit",
