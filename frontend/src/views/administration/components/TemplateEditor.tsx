@@ -117,40 +117,55 @@ const handleSave = async () => {
 const handlePrint = () => {
   if (!editorRef.current) return;
 
-  const editor = editorRef.current;
+  const content = editorRef.current.getContent();
 
-  const content = editor.getContent();
+  if (!content || content.trim() === "") {
+    toast.error("Template content cannot be empty");
+    return;
+  }
+  // Create hidden iframe
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
 
-  const printContent = `
-  <div style="text-align:center; margin-bottom:30px;">
-  <h1 style="margin:0;">${title}</h1>
-  <hr />
-</div>
-    ${content}
-  `;
+  document.body.appendChild(iframe);
 
-  const printWindow = window.open("", "_blank");
+  const doc = iframe.contentWindow?.document;
+  if (!doc) return;
 
-  printWindow?.document.write(`
+  doc.open();
+  doc.write(`
     <html>
       <head>
-        <title>${title}</title>
+        <title>Print</title>
         <style>
+          @media print {
+            @page { margin: 20mm; }
+          }
           body {
             font-family: "Times New Roman", serif;
+            margin: 0;
             padding: 40px;
           }
         </style>
       </head>
       <body>
-        ${printContent}
+        ${content}
       </body>
     </html>
   `);
+  doc.close();
 
-  printWindow?.document.close();
-  printWindow?.focus();
-  printWindow?.print();
+  iframe.contentWindow?.focus();
+  iframe.contentWindow?.print();
+
+  iframe.contentWindow!.onafterprint = () => {
+    document.body.removeChild(iframe);
+  };
 };
   return (
  <div className="h-screen flex flex-col bg-white">
@@ -160,7 +175,7 @@ const handlePrint = () => {
     <div className="relative flex items-center justify-end py-1">
 
       {/* 🎯 Center Title */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 text-center ">
+      <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 text-center ">
         <h2 className="text-base font-semibold text-gray-800 leading-tight ">
           {mode === "edit"
             ? "Edit Template"

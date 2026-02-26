@@ -110,11 +110,6 @@ const editTemplate = async (template: any) => {
       res.data.htmlData || ""
     );
 
-    newWindow.sessionStorage.setItem(
-      "templateTitle",
-      res.data.title || ""
-    );
-
   } catch (err: any) {
     toast.error("Failed to open template");
   } finally {
