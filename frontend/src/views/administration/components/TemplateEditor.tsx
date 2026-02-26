@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate,  } from "react-router-dom";
-import { Button, Input, TextField } from "@mui/material";
-import { Save, ArrowLeft, Printer, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { TextField } from "@mui/material";
+import { Save,Printer, X } from "lucide-react";
 import { toast } from "react-toastify";
 
 import {
@@ -232,7 +232,7 @@ const handlePrint = () => {
     <div className="bg-white rounded-lg  flex-1 overflow-hidden">
 
       <BundledEditor
-        onInit={(evt, editor) => (editorRef.current = editor)}
+        onInit={(_evt, editor) => (editorRef.current = editor)}
         initialValue={htmlData}
         init={{
           height: "100%",   // ✅ CRITICAL FIX

@@ -76,10 +76,10 @@ const editTemplate = async (template: any) => {
   try {
     setLoading(true);
 
-    const obj = {
-      templateId: template._id,
-      createdAt: new Date(),
-    };
+    // const obj = {
+    //   templateId: template._id,
+    //   createdAt: new Date(),
+    // };
 
     const res = await getTemplateById(template._id);
 
