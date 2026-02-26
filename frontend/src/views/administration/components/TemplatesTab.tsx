@@ -1,4 +1,4 @@
-import { LayoutTemplate } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@mui/material";
 import { toast } from "react-toastify";
@@ -218,7 +218,7 @@ const viewTemplate = async (template: any) => {
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-700 flex items-center gap-2">
-          <LayoutTemplate size={18} />
+          <FileText size={18} />
           Templates ({templates.length})
         </h2>
 
