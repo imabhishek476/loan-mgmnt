@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button, Skeleton, TextField } from "@mui/material";
-import {  LocalizationProvider,  DatePicker,} from "@mui/x-date-pickers";
+import {  LocalizationProvider,  DatePicker} from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { StickyNote, Trash2, X, Pencil } from "lucide-react";
+import { StickyNote, Trash2, Pencil } from "lucide-react";
 import moment from "moment";
 import { toast } from "react-toastify";
 import { addClientNote, deleteClientNote, fetchClientNotes, updateClientNote} from "../../../services/ClientNotesService";
@@ -18,8 +18,8 @@ const ClientNotes = ({
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [openModal, setOpenModal] = useState(false);
 
+  const [showEditor, setShowEditor] = useState(false);
   const [text, setText] = useState("");
   const [noteDate, setNoteDate] = useState<any>(moment());
   const [editingNote, setEditingNote] = useState<any>(null);
@@ -52,15 +52,15 @@ const ClientNotes = ({
     setNoteDate(moment());
     setEditingNote(null);
   };
-  const openAddModal = () => {
+  const openAddEditor = () => {
     resetForm();
-    setOpenModal(true);
+    setShowEditor(true);
   };
-  const openEditModal = (note: any) => {
+  const openEditEditor = (note: any) => {
     setEditingNote(note);
     setText(note.text);
     setNoteDate(moment(note.date));
-    setOpenModal(true);
+    setShowEditor(true);
   };
   const handleSave = async () => {
     if (!text.trim()) {
@@ -78,9 +78,7 @@ const ClientNotes = ({
         });
 
         setNotes((prev) =>
-          prev.map((n) =>
-            n._id === editingNote._id ? updated : n
-          )
+          prev.map((n) => (n._id === editingNote._id ? updated : n))
         );
 
         toast.success("Note updated");
@@ -95,7 +93,7 @@ const ClientNotes = ({
         toast.success("Note added");
       }
 
-      setOpenModal(false);
+      setShowEditor(false);
       resetForm();
     } catch (err: any) {
       toast.error(
@@ -114,12 +112,10 @@ const ClientNotes = ({
           onConfirm: async () => {
             try {
               await deleteClientNote(id);
-              setNotes((prev) =>
-                prev.filter((n) => n._id !== id)
-              );
+              setNotes((prev) => prev.filter((n) => n._id !== id));
               toast.success("Client Note deleted");
-            } catch {
-              toast.error("Failed to delete note");
+            } catch (err: any) {
+              toast.error(err?.response?.data?.message || "Failed to delete note");
             }
           },
         });
@@ -132,7 +128,7 @@ const ClientNotes = ({
         <Button
           variant="contained"
           startIcon={<StickyNote size={18} />}
-          onClick={openAddModal}
+          onClick={openAddEditor}
           sx={{
             backgroundColor: "#15803d",
             "&:hover": { backgroundColor: "#166534" },
@@ -145,8 +141,57 @@ const ClientNotes = ({
           Add Note
         </Button>
       </div>
+      {showEditor && (
+        <div className="bg-white border rounded-xl p-4 shadow-sm space-y-4">
+          <h3 className="text-sm font-semibold text-gray-700">
+            {editingNote ? "Edit Note" : `Add Note to ${clientName}`}
+          </h3>
 
-      {/* Loading */}
+          <LocalizationProvider dateAdapter={AdapterMoment}>
+            <DatePicker
+              label="Date"
+              value={noteDate}
+              onChange={(newValue) => setNoteDate(newValue)}
+              slotProps={{
+                textField: { fullWidth: true, size: "small" },
+              }}
+            />
+          </LocalizationProvider>
+
+          <TextField
+            label="Description"
+            fullWidth
+            multiline
+            rows={3}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => {
+                setShowEditor(false);
+                resetForm();
+              }}
+               className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition" 
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800"
+            >
+              {saving
+                ? "Saving..."
+                : editingNote
+                ? "Update Note"
+                : "Add Note"}
+            </button>
+          </div>
+        </div>
+      )}
 {loading ? (
   <div className="space-y-4">
     {[1, 2, 3].map((i) => (
@@ -161,7 +206,6 @@ const ClientNotes = ({
     ))}
   </div>
 ) : sortedNotes.length > 0 ? (
-
   <div className="relative">
     
     <div className="absolute left-[7px] top-0 bottom-0 w-[2px] bg-green-200" />
@@ -172,9 +216,9 @@ const ClientNotes = ({
           {/* Dot */}
           <div className="w-[14px] h-[14px] mt-2 rounded-full bg-green-600 border-2 border-white shadow-sm z-10" />
           {/* Card */}
-          <div className="flex-1 bg-white border rounded-xl px-4 py-3 shadow-sm hover:shadow-md transition">           
+          <div className="flex-1 bg-white border rounded-xl px-4 py-3 shadow-sm hover:shadow-md transition">
             {/* Header Row */}
-            <div className="flex justify-left items-center mb-1 gap-5">
+            <div className="flex items-center mb-1 gap-5">
               <p className="text-xs font-semibold text-green-700">
                 {moment(note.date ?? note.createdAt).format(
                   "MMM DD, YYYY"
@@ -185,7 +229,7 @@ const ClientNotes = ({
                 <Pencil
                   size={15}
                   className="text-blue-600 cursor-pointer hover:text-blue-800"
-                  onClick={() => openEditModal(note)}
+                  onClick={() => openEditEditor(note)}
                 />
                 <Trash2
                   size={15}
@@ -202,7 +246,6 @@ const ClientNotes = ({
       ))}
     </div>
   </div>
-
 ) : (
   <div className="flex flex-col items-center justify-center py-12 text-gray-500">
             <StickyNote size={28} className="mb-2 text-gray-400" />
@@ -213,87 +256,6 @@ const ClientNotes = ({
             <p className="text-xs text-gray-400 mt-1">
       Click "Add Note" to create one
     </p>
-            </div>
-)}
-
-      {openModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 ">
-          
-          <div className="bg-white w-full max-w-lg rounded-xl shadow-xl">
-            <div className="flex justify-between items-center px-4 py-2 border-b">
-              <div>
-                <h2 className="text-base font-semibold">
-                  {editingNote ? "Edit Note to" : "Add Note to"} {clientName || null}
-                </h2>
-                <p className="text-xs text-gray-500">
-                </p>
-              </div>
-
-              <X
-                size={18}
-                className="cursor-pointer text-gray-500 hover:text-gray-700"
-                onClick={() => {
-                  setOpenModal(false);
-                  resetForm();
-                }}
-              />
-            </div>
-
-            {/* Body */}
-            <div className="p-4 space-y-4">
-              <LocalizationProvider dateAdapter={AdapterMoment}>
-                <DatePicker
-                  label="Date"
-                  value={noteDate}
-                  onChange={(newValue) =>
-                    setNoteDate(newValue)
-                  }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: "small",
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-
-              <TextField
-                label="Description"
-                fullWidth
-                multiline
-                rows={4}
-                value={text}
-                onChange={(e) =>
-                  setText(e.target.value)
-                }
-              />
-            </div>
-            <div className="flex justify-end gap-3 px-4 py-3 border-t">
-              <button
-                onClick={() => {
-                  setOpenModal(false);
-                  resetForm();
-                }}
-                type="button"
-                 title="Close" 
-              className="px-4 py-2 font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                Cancel
-              </button>
-                <button
-                onClick={handleSave}
-                disabled={saving}
-                type="button"
-                className="px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition flex items-center gap-2"
-                >
-                {saving
-                    ? "Saving..."
-                    : editingNote
-                    ? "Update Note"
-                    : "Add Note"}
-                </button>
-            </div>
-          </div>
         </div>
       )}
     </div>
