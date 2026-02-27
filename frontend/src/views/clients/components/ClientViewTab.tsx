@@ -23,10 +23,10 @@ const ClientViewTab = ({
   clientLoans,
 }: ClientViewTabProps) => {
   return (
-<div className="flex flex-col h-[calc(95vh-105px)] overflow-hidden p-4 bg-gray-50">
+<div className="flex flex-col h-[calc(92vh-100px)] overflow-hidden p-4 bg-gray-50">
 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
       {/* LEFT SIDE */}
-      <div className="flex flex-col min-h-0 lg:col-span-5">
+      <div className="flex flex-col min-h-0 lg:col-span-4">
 
         {loadingClient ? (
           <div className="p-3 space-y-3">
@@ -125,7 +125,7 @@ const ClientViewTab = ({
       </div>
 
       {/* RIGHT SIDE */}
-     <div className="flex flex-col min-h-0 lg:col-span-7">
+     <div className="flex flex-col min-h-0 lg:col-span-8">
         <div className="flex-1 min-h-0">
           <LoanSummary client={client} clientLoans={clientLoans} />
         </div>

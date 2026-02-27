@@ -12,8 +12,11 @@ const SummaryCards = ({ clientLoans }: { clientLoans: any[] }) => {
     0
   );
 
-const totalProfit = Math.max(totalPaid - totalBase, 0);
-
+const totalProfit = totalPaid - totalBase;
+const isLoss = totalProfit < 0;
+const formattedProfit = isLoss
+  ? `(${formatUSD(Math.abs(totalProfit))})`
+  : formatUSD(totalProfit);
   const activeLoans = clientLoans.filter(
     (l) => l.status === "Active"
   ).length;
@@ -27,11 +30,12 @@ const totalProfit = Math.max(totalPaid - totalBase, 0);
       <div className={`p-2 rounded-lg ${color}`}>
         {icon}
       </div>
+      
     </div>
   );
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2 px-4 py-2">
       <Card
         title="Total Base"
         value={formatUSD(totalBase)}
@@ -44,12 +48,22 @@ const totalProfit = Math.max(totalPaid - totalBase, 0);
         icon={<DollarSign size={18} className="text-green-700" />}
         color="bg-green-700  bg-opacity-20"
       />
-      <Card
+    <Card
         title="Total Profit"
-        value={formatUSD(totalProfit)}
-        icon={<TrendingUp size={18} className="text-green-700" />}
-        color="bg-green-700  bg-opacity-20"
-      />
+        value={
+            <span className={isLoss ? "text-red-600" : "text-green-700"}>
+            {formattedProfit}
+            </span>
+        }
+        icon={
+            <TrendingUp
+            size={18}
+            className={isLoss ? "text-red-600" : "text-green-700"}
+            />
+        }
+        color={isLoss ? "bg-red-200" : "bg-green-100"}
+        />
+        
       <Card
         title="Active Loans"
         value={activeLoans}
