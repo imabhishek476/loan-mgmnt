@@ -23,6 +23,7 @@
   import LoanSearch from "./LoanSearch";
   import ClientViewScreen from "../../clients/components/ClientViewScreen";
   import FormModal, { type FieldConfig } from "../../../components/FormModal";
+  
 import { useNavigate } from "react-router-dom";
 
   interface LoanTableProps {

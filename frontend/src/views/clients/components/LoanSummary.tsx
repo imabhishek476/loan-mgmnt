@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { fetchAllPaymentsForClient } from "../../../services/LoanPaymentServices";
 import { fetchCompanies } from "../../../services/CompaniesServices";
+import { statusStyles } from "../../../utils/helpers";
 
 interface LoanProfit {
   loanId: string;
@@ -169,31 +170,48 @@ const loadMeta = async () => {
 if(loadingMeta){
     return <LoanSummarySkeleton/>
 }
-  return (
-    <div className="overflow-hidden h-full flex flex-col min-h-0">
-      <div className="sticky top-0 z-10 border-b border-gray-200">
-        <div className="flex items-center gap-3 pt-2 pb-1 px-2">
-          <h3 className="font-bold text-gray-800">Loan Summary</h3>
-        </div>
-      </div>
+const StatusBadge = ({ status }: { status: string }) => (
+  <span
+    className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+      statusStyles[status] || "bg-gray-100 text-gray-700"
+    }`}
+  >
+    {status}
+  </span>
+);
+return (
+  <div className="bg-white rounded-lg shadow-sm border flex flex-col h-full overflow-hidden">
 
-      <div className="flex-1 overflow-auto min-h-0">
-        {allLoanSummary.length === 0 ? (
-          <p className="text-gray-500 italic text-sm p-3">
-            No loans found for this client.
-          </p>
-        ) : (
-          <table className="w-full text-xs border-collapse">
-            <thead className="bg-gray-200 sticky top-0">
-              <tr>
-                <th className="border px-2 py-1 text-left">Date</th>
-                <th className="border px-2 py-1 text-left">Loan #</th>
-                <th className="border px-2 py-1 text-left">Total Base</th>
-                <th className="border px-2 py-1 text-left">Status</th>
-                <th className="border px-2 py-1 text-left">Paid Dates</th>
-                <th className="border px-2 py-1 text-left">Loan Status</th>
-                <th className="border px-2 py-1 text-left">Total Paid</th>
-                <th className="border px-2 py-1 text-left">Profit</th>
+    {/* Header */}
+    <div className="flex justify-between items-center p-2 shrink-0">
+      <h3 className="font-semibold text-gray-800 text-lg">
+        Loan Summary
+      </h3>
+    </div>
+
+    {/* Table Wrapper */}
+    <div className="flex-1 min-h-0">
+
+      {allLoanSummary.length === 0 ? (
+        <p className="text-gray-500 italic text-sm p-4">
+          No loans found for this client.
+        </p>
+      ) : (
+     <div className="h-full overflow-auto p-4 pt-0 bg-gray-50">
+        <div className="bg-white rounded-xl shadow-sm overflow-auto">
+          <table className="w-full text-sm">
+
+            {/* Sticky Header */}
+            <thead className="bg-[#14532d] text-white sticky top-0 z-10">
+              <tr className="text-left text-xs uppercase tracking-wide">
+                <th className="px-2 py-2">Date</th>
+                <th className="px-2 py-2">Loan #</th>
+                <th className="px-2 py-2">Broker Fee</th>
+                <th className="px-2 py-2">Total Base</th>
+                <th className="px-2 py-2">Status</th>
+                <th className="px-2 py-2">Paid Dates</th>
+                <th className="px-2 py-2">Total Paid</th>
+                <th className="px-2 py-2">Profit</th>
               </tr>
             </thead>
 
@@ -202,99 +220,123 @@ if(loadingMeta){
 
               return (
                 <tbody key={group.parent._id}>
+
                   {group.loans.map((loan, index) => {
+
                     const displayLoanNumber =
                       index === 0
                         ? `${groupIndex + 1}`
                         : `${groupIndex + 1}${alphabet[index - 1]}`;
 
-                    /** ✅ FIXED payments lookup */
                     const payments =
                       loanPayments[String(loan._id)] ||
                       loanPayments[String(loan.loanId)] ||
                       [];
+
                     const paidAmount = payments.reduce(
                       (sum, p) => sum + Number(p.paidAmount ?? 0),
                       0
                     );
 
                     const paidDates = payments
-                        .filter(p => p.paidDate)
-                        .map(p => moment(p.paidDate).format("MM/DD/YYYY"));
+                      .filter(p => p.paidDate)
+                      .map(p => moment(p.paidDate).format("MM/DD/YYYY"));
 
                     const profitValue = Number(
                       loanProfitMap[String(loan._id)]?.totalProfit ?? 0
                     );
+                    const brokerFee = (() => {
+                    const fee = loan?.fees?.brokerFee;
+                    if (!fee) return 0;
 
-                    const isLatest = loan._id === latestActiveLoanId;
+                    const base = Number(loan.baseAmount || 0);
+                    const value = Number(fee.value || 0);
+
+                    return fee.type === "percentage"
+                      ? (base * value) / 100
+                      : value;
+                  })();
 
                     return (
                       <tr
                         key={loan._id}
-                        className={
-                          isLatest ? "bg-green-50 font-semibold" : ""
-                        }
+                        className="border-b hover:bg-gray-50 transition"
                       >
-                        <td className="border px-2 py-1">
+                        <td className="px-3 py-2 text-gray-600">
                           {moment(loan.issueDate).format("MM/DD/YYYY")}
                         </td>
-                        <td className="border px-2 py-1">
+
+                        <td className="px-3 py-2 font-semibold">
                           {displayLoanNumber}
                         </td>
-                        <td className="border px-2 py-1">
-                          {formatUSD(loan.baseAmount)}
+
+                        <td className="px-3 py-2">
+                          {formatUSD(brokerFee || 0)}
                         </td>
-                        <td className="border px-2 py-1">
-                          {loan.status}
+                         <td className="px-3 py-2 text-blue-600 font-medium">
+                          {formatUSD(loan.baseAmount || 0 )}
                         </td>
-                        <td className="border px-2 py-1">
-                        {paidDates.length ? (
-                            <div className="flex flex-col">
-                            {paidDates.map((date, i) => (
-                                <span key={i}>{date}</span>
-                            ))}
-                            </div>
-                        ) : (
-                            ""
-                        )}
+
+                        <td className="px-3 py-2">
+                         <StatusBadge status={loan.status} />
                         </td>
-                        <td className="border px-2 py-1">
-                          {loan.loanStatus}
+
+                        <td className="px-3 py-2 text-gray-600">
+                          {paidDates.map((date, i) => (
+                            <div key={i}>{date}</div>
+                          ))}
                         </td>
-                        <td className="border px-2 py-1 text-blue-600">
+
+                        {/* <td className="px-3 py-2">
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+                            {loan.loanStatus}
+                          </span>
+                        </td> */}
+
+                        <td className="px-3 py-2 font-normal text-green-600">
                           {formatUSD(paidAmount)}
                         </td>
-                        <td className="border px-2 py-1 text-green-600">
+
+                        <td className="px-3 py-2 font-semibold text-green-600">
                           {formatUSD(profitValue)}
                         </td>
                       </tr>
                     );
                   })}
 
-                  <tr className="bg-green-700 text-white font-semibold">
-                    <td className="border px-2 py-1"></td>
-                    <td className="border px-2 py-1">Totals</td>
-                    <td className="border px-2 py-1">
+                  {/* Totals Row */}
+                  <tr className="bg-green-100 font-semibold">
+                    <td></td>
+                    <td className="px-3 py-2">
+                      <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-full">
+                        TOTALS
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
                       {formatUSD(group.totals.base)}
                     </td>
-                    <td className="border px-2 py-1"></td>
-                    <td className="border px-2 py-1"></td>
-                    <td className="border px-2 py-1"></td>
-                    <td className="border px-2 py-1">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td className="px-3 py-2 text-green-700">
                       {formatUSD(group.totals.paid)}
                     </td>
-                    <td className="border px-2 py-1">
+                    <td className="px-3 py-2 text-green-700">
                       {formatUSD(group.totals.profit)}
                     </td>
                   </tr>
+
                 </tbody>
               );
             })}
+
           </table>
-        )}
+        </div>
       </div>
+      )}
     </div>
-  );
+  </div>
+);
 };
 
 export default LoanSummary;

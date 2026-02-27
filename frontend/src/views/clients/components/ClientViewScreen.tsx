@@ -7,6 +7,7 @@ import ClientNotes from "./ClientNotes";
 import ClientViewTab from "./ClientViewTab";
 import LoansTab from "./LoansTab";
 import { activeLoansData } from "../../../services/LoanService";
+import SummaryCards from "./SummaryCards";
 
 interface ClientViewScreenProps {
   open: boolean;
@@ -75,49 +76,81 @@ const ClientViewScreen = ({ client, onEditClient }: ClientViewScreenProps) => {
   { key: "notes", label: "Notes", icon: <StickyNote size={16} /> },
   { key: "templates", label: "Templates", icon: <FileText size={16} /> },
 ];
+const getInitials = (fullName?: string) => {
+  if (!fullName) return "";
+
+  const names = fullName.trim().split(" ");
+  
+  if (names.length === 1) {
+    return names[0].charAt(0).toUpperCase();
+  }
+
+  return (
+    names[0].charAt(0) +
+    names[names.length - 1].charAt(0)
+  ).toUpperCase();
+};
 return (
-  <div className="flex-col">
-    <div className=" sticky top-0 z-20">
-      <div className="border-b  py-1 my-2 sticky top-0 z-20  flex justify-between items-left">
-        <h1 className="font-bold text-xl text-gray-800">
-          {client?.fullName}
-        </h1>
-        </div>
-       <div className="sticky top-[48px] z-20 px-3">
-        <div className="flex items-center gap-3 w-ful my-2l">
-          <div className="flex-1">
-            <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm w-full">
-              <div
-                className="absolute top-1 bottom-1 rounded-md bg-[#166534] transition-all duration-300 ease-in-out"
-                style={{
-                  width: `calc(${100 / tabs.length}% - 0.5rem)`,
-                  left: `calc(${
-                    (tabs.findIndex((t) => t.key === activeTab) * 100) /
-                    tabs.length
-                  }% + 0.25rem)`,
-                }}
-              />
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key as any)}
-                  className={`relative z-10 flex-1 py-2 text-sm font-semibold rounded-md transition ${
-                    activeTab === tab.key
-                      ? "text-white"
-                      : "text-gray-700 hover:text-green-700"
-                  }`}
-                >
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2">
-                            <span className="text-lg">{tab.icon}</span>
-                    <span className="text-xs md:text-sm">{tab.label}</span>
-                  </div>
-                </button>
-              ))}
+  <div className="flex-col ">
+<div className="sticky top-0 z-20 bg-gray-50 pb-2">
+
+  <SummaryCards clientLoans={clientLoans} />
+
+  {/* NAME + TABS SAME ROW */}
+  <div className="flex items-center justify-between px-4 mt-2 gap-4">
+
+    {/* LEFT: CLIENT NAME */}
+<h1 className="flex items-center gap-3 font-bold text-xl text-gray-800 border-b-2 border-green-700 pb-1">
+  
+  <div className="bg-green-700 text-white w-10 h-10 flex items-center justify-center rounded-lg font-bold">
+    {getInitials(client?.fullName)}
+  </div>
+
+  <span className="whitespace-nowrap">
+    {client?.fullName}
+  </span>
+
+</h1>
+
+    {/* RIGHT: TABS */}
+    <div className="flex-1 max-w-6xl">
+      <div className="relative flex bg-gray-200 border border-gray-300 rounded-md p-1 shadow-sm">
+
+        <div
+          className="absolute top-1 bottom-1 rounded-md bg-[#166534] transition-all duration-300 ease-in-out"
+          style={{
+            width: `calc(${100 / tabs.length}% - 0.5rem)`,
+            left: `calc(${
+              (tabs.findIndex((t) => t.key === activeTab) * 100) /
+              tabs.length
+            }% + 0.25rem)`,
+          }}
+        />
+
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            className={`relative z-10 flex-1 py-2 text-sm font-semibold rounded-md transition ${
+              activeTab === tab.key
+                ? "text-white"
+                : "text-gray-700 hover:text-green-700"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-lg">{tab.icon}</span>
+              <span className="hidden md:inline text-sm">
+                {tab.label}
+              </span>
             </div>
-          </div>
-        </div>
+          </button>
+        ))}
       </div>
     </div>
+
+  </div>
+</div>
+    
     {/* Content */}
     <div className="flex-1  overflow-hidden ">
       {/* ✅ Client TAB */}

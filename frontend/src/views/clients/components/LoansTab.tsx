@@ -324,7 +324,7 @@ const handleStatusChange = async (loanId: string, newStatus: string) => {
   }
 };
 return (
-        <div className="h-[calc(88vh-30px)] overflow-y-auto p-2 space-y-4">
+        <div className="h-[calc(84vh-20px)] overflow-y-auto p-2 space-y-4">
            <div className="flex justify-end">
               <Button
                 variant="contained"

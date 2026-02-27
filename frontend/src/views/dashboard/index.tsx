@@ -244,7 +244,7 @@ const { globalStats } = dashboardStore;
           subValue={`(${recoveredPercentage}%)`}
           icon={DollarSign}
           enableToggle
-          color="bg-green-500"
+          color="bg-green-700"
           isCurrency
         />
         <StatCard
