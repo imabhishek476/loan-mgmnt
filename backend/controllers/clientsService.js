@@ -23,7 +23,7 @@ exports.AddClients = async (req, res) => {
       uccFiled,
       medicalParalegal,
       caseId,
-      caseType,
+      loanType,
       indexNumber,
       memo,
       customFields,
@@ -74,7 +74,7 @@ exports.AddClients = async (req, res) => {
       fullName: fullName.trim(),
       underwriter: underwriter,
       uccFiled: uccBoolean,
-      caseType: caseType,
+      loanType: loanType,
       medicalParalegal: medicalParalegal,
       caseId: caseId,
       indexNumber: indexNumber,
@@ -130,7 +130,7 @@ exports.searchClients = async (req, res) => {
       underwriter,
       medicalParalegal,
       caseId,
-      caseType,
+      loanType,
       indexNumber,
       uccFiled,
       orderBy,
@@ -191,8 +191,8 @@ exports.searchClients = async (req, res) => {
     if (caseId){
       matchStage.caseId = new RegExp(caseId, "i");
     }
-    if (caseType){
-      matchStage.caseType = new RegExp(caseType, "i");
+    if (loanType){
+      matchStage.loanType = new RegExp(loanType, "i");
     }
     if (indexNumber){
       matchStage.indexNumber = new RegExp(indexNumber, "i");
@@ -370,7 +370,7 @@ exports.updateClient = async (req, res) => {
     //   updates.attorneyName = updates.attorneyName.trim();
     if (updates.address) updates.address = updates.address.trim();
     if (updates.memo) updates.memo = updates.memo.trim();
-    if (updates.caseType) updates.caseType = updates.caseType.trim();
+    if (updates.loanType) updates.loanType = updates.loanType.trim();
     if (updates.email) {
       updates.email = updates.email.trim().toLowerCase();
 

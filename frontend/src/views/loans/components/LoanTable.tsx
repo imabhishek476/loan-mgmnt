@@ -46,7 +46,7 @@ import { useNavigate } from "react-router-dom";
       company: "",
       issueDate: null,
       paymentStatus: "",
-      loanStatus: "",
+      // loanStatus: "",
     });
     const handleReset = () => {
       setFilters({
@@ -54,7 +54,7 @@ import { useNavigate } from "react-router-dom";
         company: "",
         issueDate: null,
         paymentStatus: "",
-        loanStatus: "",
+        // loanStatus: "",
       });
       if (tableRef.current) tableRef.current.onQueryChange();
     };
@@ -77,7 +77,7 @@ import { useNavigate } from "react-router-dom";
               ? moment(filters.issueDate).format("MM-DD-YYYY")
               : null,
             paymentStatus: filters.paymentStatus,
-            loanStatus: filters.loanStatus,
+            // loanStatus: filters.loanStatus,
             page: query.page,
             limit: query.pageSize,
             clientId: clientId || null,
@@ -411,23 +411,23 @@ import { useNavigate } from "react-router-dom";
                     );
                   },
                 },
-                {
-                  title: "Active Status",
-                  headerStyle: { whiteSpace: "nowrap" },
-                  sorting: false,
-                  cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
-                  render: (rowData) => (
-                    <span
-                      className={`px-2 py-1 rounded-md text-white text-sm font-semibold ${
-                        rowData.loanStatus === "Active"
-                          ? "bg-green-600"
-                          : "bg-red-500"
-                      }`}
-                    >
-                      {rowData.loanStatus}
-                    </span>
-                  ),
-                },
+                // {
+                //   title: "Active Status",
+                //   headerStyle: { whiteSpace: "nowrap" },
+                //   sorting: false,
+                //   cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
+                //   render: (rowData) => (
+                //     <span
+                //       className={`px-2 py-1 rounded-md text-white text-sm font-semibold ${
+                //         rowData.loanStatus === "Active"
+                //           ? "bg-green-600"
+                //           : "bg-red-500"
+                //       }`}
+                //     >
+                //       {rowData.loanStatus}
+                //     </span>
+                //   ),
+                // },
               ]}
               data={fetchLoansData}
               actions={[

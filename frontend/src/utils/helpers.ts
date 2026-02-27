@@ -49,3 +49,12 @@ export const statusStyles: Record<string, string> = {
   Lost: "bg-rose-100 text-rose-700",
   Denied: "bg-purple-100 text-purple-700",
 };
+export const LOAN_TYPE_OPTIONS = [
+  { label: "Trip and Fall", value: "Trip and Fall" },
+  { label: "Workers Comp", value: "Workers Comp" },
+  { label: "MVA", value: "MVA" },
+  { label: "Labor Law", value: "Labor Law" },
+  { label: "Commercial", value: "Commercial" },
+];
+
+export const getLoanTypeOptions = () => LOAN_TYPE_OPTIONS;

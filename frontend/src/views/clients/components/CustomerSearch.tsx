@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, MenuItem, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { LOAN_STATUS_OPTIONS } from "../../../utils/constants";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
@@ -7,6 +7,7 @@ import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
 import { observer } from "mobx-react-lite";
 import { getAttorney } from "../../../services/AttorneyServices";
+import { getLoanTypeOptions } from "../../../utils/helpers";
 
 export const CustomerSearch = observer(({ tableRef }:any) => {
 
@@ -31,7 +32,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       underwriter: "",
       medicalParalegal: "",
       caseId: "",
-      caseType: "",
+      loanType: null,
       indexNumber: "",
       uccFiled: "",
     };
@@ -59,7 +60,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
   // underwriter: "Underwriter",
   medicalParalegal: "Medical Paralegal",
   caseId: "Case ID",
-  caseType: "Case Type",
+  loanType: "Loan Type",
   // indexNumber: "Index #",
   // uccFiled: "UCC Filed",
   };  
@@ -423,21 +424,26 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       fullWidth
     />
   </div> */}
-  <div>
-    <TextField
-      size="small"
-      color="success"
-      label="Case Type"
-      name="caseType"
-      value={localFilters.caseType}
-      onChange={onChange}
-      sx = {compactFieldSx}
-      slotProps={{ inputLabel: smallLabel }}
-      fullWidth
-    />
-  </div>
-  <div>
-    {/* <Autocomplete
+<TextField
+  select
+  size="small"
+  color="success"
+  label="Loan Type"
+  name="loanType"
+  value={localFilters.loanType || ""}
+  onChange={onChange}
+  sx={compactFieldSx}
+  slotProps={{ inputLabel: smallLabel }}
+  fullWidth
+>
+  {getLoanTypeOptions().map((option) => (
+    <MenuItem key={option.value} value={option.value}>
+      {option.label}
+    </MenuItem>
+  ))}
+</TextField>
+  {/* <div>
+    <Autocomplete
       size="small"
       color="success"
       options={["Yes", "No"]}
@@ -470,8 +476,8 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
           fullWidth
         />
       )}
-    /> */}
-  </div>
+    />
+  </div> */}
   <div className="gap-2 mt-0 flex sm:col-span-1">
     <button
       onClick={handleSearch}

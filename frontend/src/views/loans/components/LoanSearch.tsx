@@ -11,7 +11,7 @@ interface LoanSearchProps {
     company: string;
     issueDate: any;
     paymentStatus: string;
-    loanStatus: string;
+    // loanStatus: string;
   };
   setFilters: (data: any) => void;
   handleSearch: () => void;
@@ -118,7 +118,7 @@ export const LoanSearch = observer(
     )}
   />
 
-  <Autocomplete
+  {/* <Autocomplete
     options={["Active", "Deactivated"]}
     value={filters.loanStatus || null}
     onChange={(_e, val) =>
@@ -135,7 +135,7 @@ export const LoanSearch = observer(
         slotProps={{ inputLabel: smallLabel }}
       />
     )}
-  />
+  /> */}
   <LocalizationProvider dateAdapter={AdapterMoment}>
     <DatePicker
       label="Issue Date"

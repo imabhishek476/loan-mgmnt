@@ -86,31 +86,39 @@ const ClientViewTab = ({
                 <MiniInfo label="Medical Paralegal" value={client.medicalParalegal} />
                 {/* <MiniInfo label="Index #" value={client.indexNumber} /> */}
                 <MiniInfo label="Case ID" value={client.caseId} />
-                <MiniInfo label="Case Type #" value={client.caseType} />
+                <MiniInfo label="Loan Type" value={client.loanType} />
 
                 {/* <MiniInfo label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} /> */}
               </div>
 
               {/* Custom Fields */}
-              {client?.customFields?.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-green-700 uppercase mb-2">
-                    Custom Fields
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {client.customFields.map((field: any, idx: number) => (
-                      <span
-                        key={idx}
-                        className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full"
-                      >
-                        <span className="text-green-600 font-semibold">
-                          {field.name}
-                        </span>: <span className="text-gray-800 font-medium">{field.value}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+      {client?.customFields?.length > 0 ? (
+  <div>
+    <p className="text-xs font-semibold text-green-700 uppercase mb-2">
+      Custom Fields
+    </p>
+
+    <div className="flex flex-wrap gap-2">
+      {client.customFields.map((field: any, idx: number) => (
+        <span
+          key={idx}
+          className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full"
+        >
+          <span className="text-green-600 font-semibold">
+            {field.name}
+          </span>:{" "}
+          <span className="text-gray-800 font-medium">
+            {field.value}
+          </span>
+        </span>
+      ))}
+    </div>
+  </div>
+) : (
+  <p className="text-xs text-gray-600 font-semibold italic">
+    No custom fields available.
+  </p>
+)}
 
               {/* Memo */}
               <div>

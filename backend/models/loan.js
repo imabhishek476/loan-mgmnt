@@ -53,11 +53,11 @@ const LoanSchema = new mongoose.Schema(
       enum: ["Active", "Paid Off", "Partial Payment", "Fraud", "Lost","Denied", "Merged"],
       default: "Active",
     },
-    loanStatus: {
-      type: String,
-      enum: ["Active", "Deactivated"],
-      default: "Active",
-    },
+    // loanStatus: {
+    //   type: String,
+    //   enum: ["Active", "Deactivated"],
+    //   default: "Active",
+    // },
     parentLoanId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Loan",

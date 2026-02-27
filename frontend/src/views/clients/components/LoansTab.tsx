@@ -232,26 +232,48 @@ const handleDeletePayment = async (payment: any) => {
     }
   });
 };
-const handleDeleteLoan = async (loanId: string) => {
-  Confirm({
-    title: "Confirm Delete",
-    message: "Are you sure you want to delete this loan?",
-    confirmText: "Yes, Delete",
-    onConfirm: async () => {
-      try {
-        await deleteLoan(loanId);
-        toast.success("Loan Deleted successfully");
+    const handleDelete = async (loan: any) => {
+          const isMerged = loan.status === "Merged";
+      Confirm({
+        title: isMerged ? "⚠️ Delete Merged Loan" : "Confirm Delete",
+        message: isMerged ? (
+              <div className="text-left">
+              <div className="text-sm text-gray-700 leading-6">
+                <p className="mb-2">
+                  This loan is <strong className="text-red-600">MERGED</strong>.
+                  Deleting it will permanently delete:
+                </p>
 
-        // ✅ Reload loans + payments from API
-        onDataChanged();
+                <ul className="list-disc list-inside mb-3 text-gray-800">
+                  <li>This loan</li>
+                  <li>All linked / merged loans</li>
+                  <li>All payment history</li>
+                </ul>
+              </div>
 
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to delete loan");
-      }
+                <p className="text-red-600 font-semibold">
+                  This action CANNOT be undone.
+                </p>
+              </div>
+            ) : (
+              "Are you sure you want to delete this loan?"
+            ),
+            confirmText: isMerged
+              ? "Yes, Delete"
+              : "Yes, Delete",
+        onConfirm: async () => {
+          await deleteLoan(loan._id);
+             await loanStore.fetchActiveLoans(loan.client);
+             onDataChanged();
+
+             toast.success(
+                isMerged
+                  ? "Merged loan and all linked loans deleted"
+                  : "Loan deleted successfully"
+              );
     },
-  });
-};
+    });
+    };
 const handleRecover = async (loanId: string) => {
   Confirm({
     title: "Recover Loan",
@@ -286,7 +308,7 @@ const handleRecover = async (loanId: string) => {
   };
 
   const getStatusStyles = (loan: any) => {
-    if (loan.loanStatus === "Deactivated") return "bg-gray-400 text-white";
+    // if (loan.loanStatus === "Deactivated") return "bg-gray-400 text-white";
   const paid = loan.paidAmount || 0;
   const total = loan.totalLoan || 0;
   const lower = loan.status?.toLowerCase() || "";
@@ -643,10 +665,10 @@ return (
                                                <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDeleteLoan(loan._id);
+                                                handleDelete(loan);
                                               }}
                                               className="p-1 rounded-full  hover:bg-red-200 text-red-600 transition ml-2"
-                                              title="Deactivate Loan"
+                                              title="Delete Loan"
                                             >
                                               <Trash2 className="w-4 h-4" />
                                             </button>

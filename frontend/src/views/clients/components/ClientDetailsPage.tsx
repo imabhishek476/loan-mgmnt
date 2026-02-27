@@ -7,6 +7,7 @@ import FormModal, { type FieldConfig } from "../../../components/FormModal";
 import { toast } from "react-toastify";
 import { getAttorney } from "../../../services/AttorneyServices";
 import ClientDetailsSkeleton from "../../components/ClientDetailsSkeleton";
+import { getLoanTypeOptions } from "../../../utils/helpers";
 
 const ClientDetailsPage = observer(() => {
   const { id } = useParams();
@@ -31,19 +32,24 @@ const ClientDetailsPage = observer(() => {
     //   ],
     // },
     // { label: "Attorney Name", key: "attorneyName", type: "text" },
-      {
-  label: "Attorney",
-  key: "attorneyId",
-  type: "select",
-  options: attorneyOptions.map((attorney) => ({
-    label: attorney.fullName,
-    value: attorney._id,
-  })),
-},
+    {
+      label: "Attorney",
+      key: "attorneyId",
+      type: "select",
+      options: attorneyOptions.map((attorney) => ({
+        label: attorney.fullName,
+        value: attorney._id,
+      })),
+    },
     { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
     { label: "Case ID", key: "caseId", type: "text" },
     // { label: "Index #", key: "indexNumber", type: "text" },
-    { label: "Case Type", key: "caseType", type: "text" },
+    {
+      label: "Loan Type",
+      key: "loanType",
+      type: "select",
+      options: getLoanTypeOptions(),
+    },
     { label: "Address", key: "address", type: "text" },
     { label: "Date of Birth", key: "dob", type: "date" },
     { label: "Accident Date", key: "accidentDate", type: "date" },

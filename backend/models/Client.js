@@ -33,7 +33,16 @@ const ClientSchema = new mongoose.Schema(
   medicalParalegal: String,
   caseId: String,
   indexNumber: String,
-  caseType: String,
+  loanType: {
+  type: String,
+  enum: [
+    "Trip and Fall",
+    "Workers Comp",
+    "MVA",
+    "Labor Law",
+    "Commercial",
+    ],
+  },
   ssn: String,
   dob: String,
   accidentDate: String,
@@ -56,7 +65,7 @@ ClientSchema.index({ address: 1 });
 ClientSchema.index({ attorneyName: 1 });
 ClientSchema.index({ underwriter: 1 });
 ClientSchema.index({ medicalParalegal: 1 });
-ClientSchema.index({ caseType: 1 });
+ClientSchema.index({ loanType: 1 });
 ClientSchema.index({ caseId: 1 });
 ClientSchema.index({ indexNumber: 1 });
 ClientSchema.index({ uccFiled: 1 });
