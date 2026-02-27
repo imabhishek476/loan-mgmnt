@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import {
   getLoansSearch,
   createLoan,
-  deactivateLoan,
+  // deactivateLoan,
   updateLoan,
   recoverLoan,
   activeLoansData,
@@ -124,23 +124,23 @@ clientLoanProfitMap:{};
     }
   }
 
-  async deactivateLoan(id: string) {
-    this.loading = true;
-    try {
-      const updated = await deactivateLoan(id);
-      runInAction(() => {
-        const index = this.loans.findIndex((l) => l._id === id);
-        if (index !== -1) {
-          this.loans[index].loanStatus = "Deactivated";
-        }
-      });
-      return updated;
-    } catch (err) {
-      console.error("Error deactivating loan:", err);
-    } finally {
-      runInAction(() => (this.loading = false));
-    }
-  }
+  // async deactivateLoan(id: string) {
+  //   this.loading = true;
+  //   try {
+  //     const updated = await deactivateLoan(id);
+  //     runInAction(() => {
+  //       const index = this.loans.findIndex((l) => l._id === id);
+  //       if (index !== -1) {
+  //         this.loans[index].loanStatus = "Deactivated";
+  //       }
+  //     });
+  //     return updated;
+  //   } catch (err) {
+  //     console.error("Error deactivating loan:", err);
+  //   } finally {
+  //     runInAction(() => (this.loading = false));
+  //   }
+  // }
 
   async recoverLoan(id: string) {
     this.loading = true;

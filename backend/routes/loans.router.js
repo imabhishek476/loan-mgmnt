@@ -3,7 +3,7 @@ const {
   LoansCreate,
   AllLoans,
   updateLoan,
-  deactivateLoan,
+  // deactivateLoan,
   recoverLoan,
   activeLoansData,
   getLoanById,
@@ -21,7 +21,7 @@ loanRouter.get("/", isAuthenticated, isAdmin, AllLoans);
 loanRouter.post("/", isAuthenticated, isAdmin, LoansCreate);
 loanRouter.put("/:id", isAuthenticated, isAdmin, updateLoan);
 loanRouter.delete("/delete/:id", isAuthenticated, isAdmin, deleteLoan);
-loanRouter.delete("/:id", isAuthenticated, isAdmin, deactivateLoan);
+// loanRouter.delete("/:id", isAuthenticated, isAdmin, deactivateLoan);
 loanRouter.get("/search", isAuthenticated, isAdmin, searchLoans);
 loanRouter.get("/edit/:id", isAuthenticated, isAdmin, getLoanById);
 loanRouter.put("/:id/recover", isAuthenticated, isAdmin, recoverLoan); 

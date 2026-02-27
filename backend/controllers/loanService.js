@@ -327,51 +327,52 @@ exports.searchLoans = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-exports.deactivateLoan = async (req, res) => {
-  try {
-    const { id } = req.params;
+// exports.deactivateLoan = async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
 
-    const loan = await Loan.findByIdAndUpdate(
-      id,
-      { loanStatus: "Deactivated" },
-      { new: true, runValidators: true, context: "query" }
-    );
+//     const loan = await Loan.findByIdAndUpdate(
+//       id,
+//       { loanStatus: "Deactivated" },
+//       { new: true, runValidators: true, context: "query" }
+//     );
 
-    if (!loan) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Loan not found" });
-    }
-    res.status(200).json({
-      success: true,
-      message: "Loan status set to Deactivated",
-      data: loan,
-    });
-   Promise.all([
-    Client.findById(loan.client).select("fullName"),
-    Company.findById(loan.company).select("companyName"),
-    User.findById(req.user?.id).select("name email"),
-  ])
-      .then(([client, company, user]) => {
-        const clientName = client?.fullName || "";
-        const companyName = company?.companyName || "";
-        const deletedBy = user?.name || user?.email || "";
-        return createAuditLog(
-    req.user?.id || null,
-    req.user?.userRole || null,
-    `Loan deactivated for ${clientName} under ${companyName} by ${deletedBy}`,
-    "Loan",
-    loan._id,
-    { after: loan }
-  );
-      })
-      .catch((err) => console.error("Audit log failed:", err));
-  } catch (error) {
-    console.error("Error in deactivateLoan:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+//     if (!loan) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Loan not found" });
+//     }
+//     res.status(200).json({
+//       success: true,
+//       message: "Loan status set to Deactivated",
+//       data: loan,
+//     });
+//    Promise.all([
+//     Client.findById(loan.client).select("fullName"),
+//     Company.findById(loan.company).select("companyName"),
+//     User.findById(req.user?.id).select("name email"),
+//   ])
+//       .then(([client, company, user]) => {
+//         const clientName = client?.fullName || "";
+//         const companyName = company?.companyName || "";
+//         const deletedBy = user?.name || user?.email || "";
+//         return createAuditLog(
+//     req.user?.id || null,
+//     req.user?.userRole || null,
+//     `Loan deactivated for ${clientName} under ${companyName} by ${deletedBy}`,
+//     "Loan",
+//     loan._id,
+//     { after: loan }
+//   );
+//       })
+//       .catch((err) => console.error("Audit log failed:", err));
+//   } catch (error) {
+//     console.error("Error in deactivateLoan:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 exports.deleteLoan = async (req, res) => {
   try {
     const { id } = req.params;
