@@ -17,7 +17,7 @@ import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
-import {activeLoansData, deactivateLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
+import {activeLoansData,deleteLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { getAllowedTerms } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
@@ -25,6 +25,8 @@ import { fetchCompanies } from "../../../services/CompaniesServices";
 interface LoansTabProps {
 client: any;
 clientLoans: any[];
+refreshKey: number;
+  onDataChanged: () => void;  
 }
  type Payment = {
   _id?: string;
@@ -50,8 +52,7 @@ clientLoans: any[];
 }
 // eslint-disable-next-line react-refresh/only-export-components
 
-const LoansTab = ({ client }: LoansTabProps) => {
-const [loans, setLoans] = useState<any[]>([]);
+const LoansTab = ({ client,refreshKey,clientLoans,onDataChanged }: LoansTabProps) => {
 const [companies, setCompanies] = useState<any[]>([]);
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [editPaymentLoan, setEditPaymentLoan] = useState<any>(null);
@@ -77,7 +78,7 @@ const [editingPayment, setEditingPayment] = useState<any>(null);
 const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
 const [loadingLoans, setLoadingLoans] = useState(true);
 const [loading, setLoading] = useState(true);
-
+const loans = clientLoans || [];
 // const refreshPayments = async () => {
 //   if (!client?._id) return;
 
@@ -187,7 +188,6 @@ const loadData = async () => {
       fetchCompanies(),
     ]);
 
-    setLoans(loanRes || []);
 
     setLoanPayments(paymentRes.payments || {});
     setLoanProfitMap(paymentRes.profits || {});
@@ -202,9 +202,8 @@ const loadData = async () => {
   }
 };
 useEffect(() => {
-  loadData();
-  
-}, [client?._id]);
+  loadData();  
+}, [client?._id,refreshKey]);
 
   useEffect(() => {
     const newMap: Record<string, number> = {};
@@ -228,29 +227,27 @@ const handleDeletePayment = async (payment: any) => {
     confirmText: "Yes, Delete",
     onConfirm: async () => {
     await deletePayment(payment._id!);
-    await loadData();
+    onDataChanged();
     toast.success("Payment deleted successfully");
     }
   });
 };
 const handleDeleteLoan = async (loanId: string) => {
   Confirm({
-    title: "Confirm Deactivate",
-    message: "Are you sure you want to deactivate this loan?",
-    confirmText: "Yes, Deactivate",
-
+    title: "Confirm Delete",
+    message: "Are you sure you want to delete this loan?",
+    confirmText: "Yes, Delete",
     onConfirm: async () => {
       try {
-        await deactivateLoan(loanId);
-
-        toast.success("Loan Deactivated successfully");
+        await deleteLoan(loanId);
+        toast.success("Loan Deleted successfully");
 
         // ✅ Reload loans + payments from API
-        await loadData();
+        onDataChanged();
 
       } catch (err) {
         console.error(err);
-        toast.error("Failed to deactivate loan");
+        toast.error("Failed to delete loan");
       }
     },
   });
@@ -269,7 +266,7 @@ const handleRecover = async (loanId: string) => {
         toast.success("Loan has been recovered successfully!");
 
         // ✅ Reload loans + payments
-        await loadData();
+        onDataChanged();
 
       } catch (error: any) {
         console.error(error);
@@ -316,7 +313,7 @@ const handleStatusChange = async (loanId: string, newStatus: string) => {
     toast.success("Loan status updated");
 
     // ✅ Reload loans + payments from API
-    await loadData();
+    onDataChanged();
 
   } catch (err) {
     console.error(err);
@@ -600,8 +597,8 @@ return (
                             {profitData?.totalProfit > 0 && (
                               <div className="text-sm font-semibold mt-2 text-emerald-600">
                                 <span className="text-gray-600">
-                                  ( Total Base: {formatUSD(profitData.totalBaseAmount)} |
-                                    Total Paid: {formatUSD(profitData.totalPaid)} )
+                                  ( Base: {formatUSD(profitData.totalBaseAmount)} |
+                                    Paid: {formatUSD(profitData.totalPaid)} )
                                 </span>
                                 {" "}Profit: {formatUSD(profitData.totalProfit)}
                               </div>
@@ -842,15 +839,18 @@ return (
             </div>
      
 
-      {/* Modals */}
+      {/* Add loan Modals */}
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
           showTable={false}
           fromClientPage={true}
+           
+          
           onClose={() => {
           setLoanModalOpen(false);
           setSelectedClientForLoan(null);
+           onDataChanged(); 
         }}
         />
       )}
@@ -862,7 +862,7 @@ return (
           onClose={() => {
             setEditLoanModalOpen(false);
             setEditingLoanId(null);
-  loadData();
+            onDataChanged(); 
           }}
         />
       )}
@@ -876,7 +876,8 @@ return (
             loanTerms: currentTermMap[paymentLoan._id],
           }}
           clientId={client._id}
-onPaymentSuccess={loadData}        />
+          onPaymentSuccess={onDataChanged}    
+    />
       )}
 
       {editPaymentModalOpen && (
@@ -889,7 +890,7 @@ onPaymentSuccess={loadData}        />
           }}
           clientId={client._id}
           payment={editingPayment}
-    onPaymentSuccess={loadData}        />
+          onPaymentSuccess={onDataChanged}        />
       )}
   </div>
   );

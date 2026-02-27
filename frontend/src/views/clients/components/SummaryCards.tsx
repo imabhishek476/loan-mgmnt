@@ -1,4 +1,4 @@
-import { DollarSign, TrendingUp, Gift, AlertCircle, Wallet, Activity } from "lucide-react";
+import { DollarSign, TrendingUp, Gift, AlertCircle, Wallet, Activity, TrendingDown } from "lucide-react";
 import { formatUSD } from "../../../utils/loanCalculations";
 
 const SummaryCards = ({ clientLoans }: { clientLoans: any[] }) => {
@@ -48,21 +48,28 @@ const formattedProfit = isLoss
         icon={<DollarSign size={18} className="text-green-700" />}
         color="bg-green-700  bg-opacity-20"
       />
-    <Card
-        title="Total Profit"
-        value={
-            <span className={isLoss ? "text-red-600" : "text-green-700"}>
-            {formattedProfit}
-            </span>
-        }
-        icon={
-            <TrendingUp
-            size={18}
-            className={isLoss ? "text-red-600" : "text-green-700"}
-            />
-        }
-        color={isLoss ? "bg-red-200" : "bg-green-100"}
-        />
+<Card
+  title="Total Profit"
+  value={
+    <span className={isLoss ? "text-red-600" : "text-green-700"}>
+      {formattedProfit}
+    </span>
+  }
+  icon={
+    isLoss ? (
+      <TrendingDown
+        size={18}
+        className="text-red-600"
+      />
+    ) : (
+      <TrendingUp
+        size={18}
+        className="text-green-700"
+      />
+    )
+  }
+  color={isLoss ? "bg-red-200" : "bg-green-100"}
+/>
         
       <Card
         title="Active Loans"

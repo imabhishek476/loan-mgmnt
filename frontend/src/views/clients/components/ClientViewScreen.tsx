@@ -23,7 +23,7 @@ const ClientViewScreen = ({ client, onEditClient }: ClientViewScreenProps) => {
   const [loadingClient, setLoadingClient] = useState(true);
   const [, setLoadingLoans] = useState(true);
   const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templates">("client");
-
+  const [loanRefreshKey, setLoanRefreshKey] = useState(0);
   const loadInitialData = async () => {
     try {
       setLoadingClient(true);
@@ -47,7 +47,7 @@ const ClientViewScreen = ({ client, onEditClient }: ClientViewScreenProps) => {
 
   const loadData = useCallback(async () => {
     if (!client?._id) return;
-
+    
     try {
 
       if (activeTab === "client" || activeTab === "loans") {
@@ -66,10 +66,10 @@ const ClientViewScreen = ({ client, onEditClient }: ClientViewScreenProps) => {
     loadInitialData();
   }, [client?._id]);
 
-  useEffect(() => {
-    if (!client?._id) return;
-    loadData();
-  }, [activeTab, client?._id]);
+useEffect(() => {
+  if (!client?._id) return;
+  loadData();
+}, [activeTab, client?._id, loanRefreshKey]);
   const tabs = [
   { key: "client", label: "Client Info", icon: <User size={16} /> },
   { key: "loans", label: "Loan History", icon: <Building2 size={16} /> },
@@ -163,7 +163,7 @@ return (
       {/* ✅ LOANS TAB */}
       {activeTab === "loans" && (
         <>
-        <LoansTab client = {client} clientLoans={clientLoans} />
+        <LoansTab client = {client} clientLoans={clientLoans}  refreshKey={loanRefreshKey}  onDataChanged={() => setLoanRefreshKey(prev => prev + 1)} />
         </>
       )}
       {activeTab === "notes" && (

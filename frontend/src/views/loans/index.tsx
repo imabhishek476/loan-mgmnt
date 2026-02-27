@@ -33,11 +33,13 @@ const Loans = observer(
     showTable = true,
     fromClientPage = false,
     onClose,
+    onLoanCreated,  
   }: {
     defaultClient?: any;
     showTable?: boolean;
     fromClientPage?: boolean;
     onClose?: () => void;
+    onLoanCreated?: () => void;
   }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingLoan, setEditingLoan] = useState<any | null>(null);
@@ -306,6 +308,10 @@ const Loans = observer(
           await loanStore.fetchActiveLoans(createdLoan.client);
         } await loanStore.refreshDataTable();
           await clientStore.refreshDataTable();
+             if (onLoanCreated) {
+                 onLoanCreated(); 
+                 } 
+            
           toast.success("Loan created successfully");
         }
         setModalOpen(false);

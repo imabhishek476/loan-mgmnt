@@ -41,10 +41,10 @@ export const formatCompact = (num: number) => {
 };
 export const getAppTitle = () => appTitle;
 export const statusStyles: Record<string, string> = {
-  Active: "bg-green-100 text-green-700",
-  "Paid Off": "bg-blue-100 text-blue-700",
-  "Partial Payment": "bg-yellow-100 text-yellow-700",
-  Merged: "bg-gray-200 text-gray-600",
+  Active: "bg-green-600 text-white",
+  "Paid Off": "bg-blue-500 text-white",
+  "Partial Payment": "bg-yellow-500 text-white",
+  Merged: "bg-gray-500 text-white",
   Fraud: "bg-red-100 text-red-700",
   Lost: "bg-rose-100 text-rose-700",
   Denied: "bg-purple-100 text-purple-700",

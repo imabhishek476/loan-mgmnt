@@ -33,16 +33,16 @@ const clientFields: FieldConfig[] = [
   { label: "Email", key: "email", type: "email" },
   { label: "Phone", key: "phone", type: "text" },
   { label: "SSN / TIN (Last 4 Digits)", key: "ssn", type: "text" },
-  { label: "Underwriter", key: "underwriter", type: "text" },
-  { 
-    label: "UCC Filed", 
-    key: "uccFiled", 
-    type: "select",
-    options: [
-      { label: "Yes", value: true },
-      { label: "No", value: false },
-    ],
-  },
+  // { label: "Underwriter", key: "underwriter", type: "text" },
+  // { 
+  //   label: "UCC Filed", 
+  //   key: "uccFiled", 
+  //   type: "select",
+  //   options: [
+  //     { label: "Yes", value: true },
+  //     { label: "No", value: false },
+  //   ],
+  // },
   // { label: "Attorney Name", key: "attorneyName", type: "text" },
   {
     label: "Attorney",
@@ -55,7 +55,7 @@ const clientFields: FieldConfig[] = [
   },
   { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
   { label: "Case ID", key: "caseId", type: "text" },
-  { label: "Index #", key: "indexNumber", type: "text" },
+  // { label: "Index #", key: "indexNumber", type: "text" },
   { label: "Case Type", key: "caseType", type: "text" },
   { label: "Address", key: "address", type: "text" },
   { label: "Date of Birth", key: "dob", type: "date" },

@@ -1,5 +1,5 @@
 import { Skeleton } from "@mui/material";
-import { Pencil } from "lucide-react";
+import { Pencil, User } from "lucide-react";
 import LoanSummary from "./LoanSummary";
 import {
   Mail,
@@ -23,7 +23,7 @@ const ClientViewTab = ({
   clientLoans,
 }: ClientViewTabProps) => {
   return (
-<div className="flex flex-col h-[calc(92vh-100px)] overflow-hidden p-4 bg-gray-50">
+<div className="flex flex-col h-[calc(92vh-90px)] overflow-hidden p-4 bg-gray-50">
 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
       {/* LEFT SIDE */}
       <div className="flex flex-col min-h-0 lg:col-span-4">
@@ -38,10 +38,13 @@ const ClientViewTab = ({
           <div className="bg-white rounded-lg shadow-sm border flex flex-col h-full overflow-hidden">
 
             {/* Header */}
-            <div className="flex justify-between items-center p-2  shrink-0">
-              <h3 className="font-semibold text-gray-800 text-lg">
-                Client Information
-              </h3>
+            <div className="flex justify-between items-center p-2 ">
+                
+                <h3 className="font-semibold text-gray-800 text-lg tracking-wide flex gap-2 items-center">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <User size={18} className="text-green-700" />
+                </div> Customer Information
+                </h3>
               <button
                 onClick={() => onEditClient({ ...client })}
                 className="bg-green-700 hover:bg-green-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1"
@@ -79,13 +82,13 @@ const ClientViewTab = ({
               <div className="border rounded-xl p-3 grid grid-cols-2 gap-3 text-xs">
                 <MiniInfo label="DOB" value={client.dob} />
                 <MiniInfo label="Accident Date" value={client.accidentDate} />
-                <MiniInfo label="Underwriter" value={client.underwriter} />
+                {/* <MiniInfo label="Underwriter" value={client.underwriter} /> */}
                 <MiniInfo label="Medical Paralegal" value={client.medicalParalegal} />
-                <MiniInfo label="Index #" value={client.indexNumber} />
+                {/* <MiniInfo label="Index #" value={client.indexNumber} /> */}
                 <MiniInfo label="Case ID" value={client.caseId} />
                 <MiniInfo label="Case Type #" value={client.caseType} />
 
-                <MiniInfo label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} />
+                {/* <MiniInfo label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} /> */}
               </div>
 
               {/* Custom Fields */}

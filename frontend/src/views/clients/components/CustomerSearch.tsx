@@ -56,12 +56,12 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
   dob: "Date Of Birth",
   accidentDate: "Accident Date",
   ssn: "SSN",
-  underwriter: "Underwriter",
+  // underwriter: "Underwriter",
   medicalParalegal: "Medical Paralegal",
   caseId: "Case ID",
   caseType: "Case Type",
-  indexNumber: "Index #",
-  uccFiled: "UCC Filed",
+  // indexNumber: "Index #",
+  // uccFiled: "UCC Filed",
   };  
   const handleSearch = () => {
     setFilterActive(true);
@@ -410,7 +410,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       fullWidth
     />
   </div>
-  <div>
+  {/* <div>
     <TextField
       size="small"
       color="success"
@@ -422,7 +422,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
       slotProps={{ inputLabel: smallLabel }}
       fullWidth
     />
-  </div>
+  </div> */}
   <div>
     <TextField
       size="small"
@@ -437,7 +437,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
     />
   </div>
   <div>
-    <Autocomplete
+    {/* <Autocomplete
       size="small"
       color="success"
       options={["Yes", "No"]}
@@ -470,7 +470,7 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
           fullWidth
         />
       )}
-    />
+    /> */}
   </div>
   <div className="gap-2 mt-0 flex sm:col-span-1">
     <button

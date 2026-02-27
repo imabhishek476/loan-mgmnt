@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { fetchAllPaymentsForClient } from "../../../services/LoanPaymentServices";
 import { fetchCompanies } from "../../../services/CompaniesServices";
 import { statusStyles } from "../../../utils/helpers";
+import { BarChart3 } from "lucide-react";
 
 interface LoanProfit {
   loanId: string;
@@ -183,11 +184,14 @@ return (
   <div className="bg-white rounded-lg shadow-sm border flex flex-col h-full overflow-hidden">
 
     {/* Header */}
-    <div className="flex justify-between items-center p-2 shrink-0">
-      <h3 className="font-semibold text-gray-800 text-lg">
-        Loan Summary
-      </h3>
-    </div>
+    <div className="flex items-center gap-3 p-2 shrink-0">
+  <div className="bg-green-200 p-2 rounded-lg">
+    <BarChart3 size={18} className="text-green-700" />
+  </div>
+  <h3 className="font-semibold text-gray-800 text-lg">
+    Loan Summary
+  </h3>
+</div>
 
     {/* Table Wrapper */}
     <div className="flex-1 min-h-0">
@@ -197,13 +201,14 @@ return (
           No loans found for this client.
         </p>
       ) : (
-     <div className="h-full overflow-auto p-4 pt-0 bg-gray-50">
-        <div className="bg-white rounded-xl shadow-sm overflow-auto">
-          <table className="w-full text-sm">
+     <div className="p-2 pt-0 bg-gray-50">
+  <div className="bg-white rounded-xl shadow-sm  ">
+<div className="max-h-[600px] overflow-y-auto rounded-xl">
+  <table className="w-full text-sm border-separate border-spacing-0">
 
             {/* Sticky Header */}
-            <thead className="bg-[#14532d] text-white sticky top-0 z-10">
-              <tr className="text-left text-xs uppercase tracking-wide">
+        <thead className="sticky top-0 z-20">
+  <tr className="text-left text-xs uppercase tracking-wide bg-[#14532d] text-white">
                 <th className="px-2 py-2">Date</th>
                 <th className="px-2 py-2">Loan #</th>
                 <th className="px-2 py-2">Broker Fee</th>
@@ -262,9 +267,9 @@ return (
                         key={loan._id}
                         className="border-b hover:bg-gray-50 transition"
                       >
-                        <td className="px-3 py-2 text-gray-600">
-                          {moment(loan.issueDate).format("MM/DD/YYYY")}
-                        </td>
+                        <td className="px-3 py-2 text-gray-700 font-medium">
+                            {moment(loan.issueDate).format("D MMM YYYY")}
+                         </td>
 
                         <td className="px-3 py-2 font-semibold">
                           {displayLoanNumber}
@@ -281,9 +286,9 @@ return (
                          <StatusBadge status={loan.status} />
                         </td>
 
-                        <td className="px-3 py-2 text-gray-600">
+                        <td className="px-3 py-2 text-gray-700 font-medium">
                           {paidDates.map((date, i) => (
-                            <div key={i}>{date}</div>
+                            <div key={i}> {moment(date).format("D MMM YYYY")}</div>
                           ))}
                         </td>
 
@@ -293,7 +298,7 @@ return (
                           </span>
                         </td> */}
 
-                        <td className="px-3 py-2 font-normal text-green-600">
+                        <td className="px-3 py-2 font-medium text-green-600">
                           {formatUSD(paidAmount)}
                         </td>
 
@@ -333,6 +338,8 @@ return (
           </table>
         </div>
       </div>
+      </div>
+
       )}
     </div>
   </div>
