@@ -148,7 +148,7 @@ const handleEditPayment = async () => {
     });
         const { payments, profit } = await fetchPaymentsByLoan(loan._id);
         onPaymentSuccess?.(payments, profit);
-        await loanStore.fetchActiveLoans(clientId);
+        await loanStore.fetchLoanByClientId(clientId);
         await clientStore.refreshDataTable();
         await loanStore.getLoanProfitByLoanId(loan._id);
         toast.success("Payment updated successfully");

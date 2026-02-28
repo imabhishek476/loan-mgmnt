@@ -134,7 +134,7 @@ import { useNavigate } from "react-router-dom";
         onConfirm: async () => {
           await deleteLoan(loan._id);
         if (tableRef.current) tableRef.current.onQueryChange();
-             await loanStore.fetchActiveLoans(clientId);
+             await loanStore.fetchLoanByClientId(clientId);
              await clientStore.refreshDataTable();
               toast.success(
                 isMerged

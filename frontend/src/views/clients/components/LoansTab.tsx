@@ -17,7 +17,7 @@ import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
-import {activeLoansData,deleteLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
+import {deleteLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { getAllowedTerms } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
@@ -182,8 +182,7 @@ const loadData = async () => {
     setLoading(true);
     setLoadingLoans(true);
 
-    const [loanRes, paymentRes, companyRes]:any = await Promise.all([
-      activeLoansData(client._id),              // ✅ USE SERVICE
+    const [paymentRes, companyRes]:any = await Promise.all([          
       fetchAllPaymentsForClient(client._id),
       fetchCompanies(),
     ]);
@@ -202,6 +201,7 @@ const loadData = async () => {
   }
 };
 useEffect(() => {
+  if(!client?._id && !refreshKey) return;
   loadData();  
 }, [client?._id,refreshKey]);
 
@@ -263,7 +263,7 @@ const handleDeletePayment = async (payment: any) => {
               : "Yes, Delete",
         onConfirm: async () => {
           await deleteLoan(loan._id);
-             await loanStore.fetchActiveLoans(loan.client);
+             await loanStore.fetchLoanByClientId(loan.client);
              onDataChanged();
 
              toast.success(

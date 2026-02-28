@@ -5,10 +5,10 @@ import {
   // deactivateLoan,
   updateLoan,
   recoverLoan,
-  activeLoansData,
   type LoanPayload,
   getLoanProfitByLoanId,
-  getClientLoansProfits
+  getClientLoansProfits,
+  fetchLoanByClientId
 } from "../services/LoanService";
 import { toast } from "react-toastify";
 import moment from "moment";
@@ -56,6 +56,9 @@ clientLoanProfitMap:{};
   setTableRef(ref: any) {
     this.tableRef = ref;
   }
+    setLoans(loans: any[]) {
+    this.loans = loans;
+  }
   async updateLoan(id: string, updates: any) {
     this.loading = true;
     try {
@@ -97,10 +100,25 @@ clientLoanProfitMap:{};
       runInAction(() => (this.loading = false));
     }
   }
-  async fetchActiveLoans(clientId: string) {
+  // async fetchActiveLoans(clientId: string) {
+  //   this.loading = true;
+  //   try {
+  //     const data = await activeLoansData(clientId);
+  //     runInAction(() => {
+  //       this.loans = data;
+  //     });
+  //   } catch (err) {
+  //     console.error("Error fetching loans:", err);
+  //   } finally {
+  //     runInAction(() => {
+  //       this.loading = false;
+  //     });
+  //   }
+  // }
+  async fetchLoanByClientId(clientId: string) {
     this.loading = true;
     try {
-      const data = await activeLoansData(clientId);
+      const data = await fetchLoanByClientId(clientId);
       runInAction(() => {
         this.loans = data;
       });

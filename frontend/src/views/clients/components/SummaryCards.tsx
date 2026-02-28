@@ -1,4 +1,4 @@
-import { DollarSign, TrendingUp, Gift, AlertCircle, Wallet, Activity, TrendingDown } from "lucide-react";
+import { DollarSign, TrendingUp, Wallet, Activity, TrendingDown } from "lucide-react";
 import { formatUSD } from "../../../utils/loanCalculations";
 
 const SummaryCards = ({ clientLoans }: { clientLoans: any[] }) => {
@@ -18,7 +18,7 @@ const formattedProfit = isLoss
   ? `(${formatUSD(Math.abs(totalProfit))})`
   : formatUSD(totalProfit);
   const activeLoans = clientLoans.filter(
-    (l) => l.status === "Active"
+    (l) => l.status === "Active" || l.status === "Partial Payment"
   ).length;
 
   const Card = ({ title, value, icon, color }: any) => (

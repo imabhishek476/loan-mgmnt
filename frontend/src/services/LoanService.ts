@@ -63,6 +63,10 @@ export const fetchLoanById = async (id: string) => {
   const { data } = await api.get(`/loans/edit/${id}`);
   return data.data || data;
 };
+export const fetchLoanByClientId = async (id: string) => {
+  const { data } = await api.get(`/loans/${id}/client-loans`);
+  return data.data || data;
+};
 export const deleteLoan = async (id: string) => {
   const { data } = await api.delete(`/loans/delete/${id}`);
   return data;

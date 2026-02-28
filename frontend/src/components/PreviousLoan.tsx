@@ -30,7 +30,7 @@ export const PreviousLoan = ({
         results.push({
           ...result,
           company: loan?.company,
-          client: loan?.client?._id,
+          client: loan?.client,
           issueDate: loan?.issueDate,
           status: loan?.status,
           _id: loan?._id,
@@ -113,7 +113,7 @@ export const PreviousLoan = ({
               <div className="flex items-center gap-1">
                 <IconButton
                   size="small"
-                  disabled={isDisabled || isGloballyDisabled}
+                  disabled={isGloballyDisabled}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleView(loan);

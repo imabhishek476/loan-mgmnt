@@ -6,8 +6,9 @@ import { toast } from "react-toastify";
 import ClientNotes from "./ClientNotes";
 import ClientViewTab from "./ClientViewTab";
 import LoansTab from "./LoansTab";
-import { activeLoansData } from "../../../services/LoanService";
+import { fetchLoanByClientId } from "../../../services/LoanService";
 import SummaryCards from "./SummaryCards";
+import { loanStore } from "../../../store/LoanStore";
 
 interface ClientViewScreenProps {
   open: boolean;
@@ -51,8 +52,9 @@ const ClientViewScreen = ({ client, onEditClient }: ClientViewScreenProps) => {
     try {
 
       if (activeTab === "client" || activeTab === "loans") {
-        const loans = await activeLoansData(client._id);
+        const loans = await fetchLoanByClientId(client._id);
         setClientLoans(loans || []);
+        loanStore.setLoans(loans || []);
       }
 
     } catch (err) {
@@ -163,7 +165,7 @@ return (
       {/* ✅ LOANS TAB */}
       {activeTab === "loans" && (
         <>
-        <LoansTab client = {client} clientLoans={clientLoans}  refreshKey={loanRefreshKey}  onDataChanged={() => setLoanRefreshKey(prev => prev + 1)} />
+        <LoansTab client = {client} clientLoans={clientLoans}  refreshKey={loanRefreshKey}  onDataChanged={() => setLoanRefreshKey(prev => prev + 1)}/>
         </>
       )}
       {activeTab === "notes" && (
