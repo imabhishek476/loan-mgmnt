@@ -31,7 +31,10 @@ const ClientSchema = new mongoose.Schema(
   underwriter: String,
   uccFiled: Boolean,
   medicalParalegal: String,
-  caseId: String,
+  caseId: {
+    type: String,
+    unique: true
+  },
   indexNumber: String,
   loanType: {
   type: String,

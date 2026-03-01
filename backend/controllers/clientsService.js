@@ -22,7 +22,6 @@ exports.AddClients = async (req, res) => {
       underwriter,
       uccFiled,
       medicalParalegal,
-      caseId,
       loanType,
       indexNumber,
       memo,
@@ -70,13 +69,42 @@ exports.AddClients = async (req, res) => {
     const dobStr = dob ? moment(dob).format("MM-DD-YYYY") : "";
     const accidentDateStr = accidentDate ? moment(accidentDate).format("MM-DD-YYYY") : "";
     const uccBoolean = uccFiled === true || uccFiled === "yes" || uccFiled === "Yes";
+    let cleanedCustomFields = null;
+
+    if (Array.isArray(customFields)) {
+      const filtered = customFields
+        .filter(
+          (field) =>
+            field?.name?.trim() &&
+            field?.value?.trim()
+        )
+        .map((field) => ({
+          name: field.name.trim(),
+          value: field.value.trim(),
+        }));
+
+      if (filtered.length > 0) {
+        cleanedCustomFields = filtered;
+      }
+    }
+    // Get last client by caseId (sorted descending)
+    const lastClient = await Client.findOne().sort({ caseId: -1 });
+
+    let nextCaseNumber = 1;
+
+    if (lastClient && lastClient.caseId) {
+      nextCaseNumber = parseInt(lastClient.caseId, 10) + 1;
+    }
+
+    // Convert to 5 digit format
+    const formattedCaseId = nextCaseNumber.toString().padStart(5, "0");
     const newClient = await Client.create({
       fullName: fullName.trim(),
       underwriter: underwriter,
       uccFiled: uccBoolean,
       loanType: loanType,
       medicalParalegal: medicalParalegal,
-      caseId: caseId,
+      caseId: formattedCaseId,
       indexNumber: indexNumber,
       email: trimEmail,
       phone: phone?.trim(),
@@ -88,7 +116,7 @@ exports.AddClients = async (req, res) => {
       // attorneyName: attorney?.fullName || attorneyName || "",
       memo: memo || "",
 
-      customFields: Array.isArray(customFields) ? customFields : null,
+      customFields: cleanedCustomFields,
       createdBy: req.user ? req.user.id : null,
     });
     await createAuditLog(
@@ -586,5 +614,23 @@ exports.getClientById = async (req, res) => {
       success: false,
       error: error.message,
     });
+  }
+};
+exports.fixCaseIds = async (req, res) => {
+  try {
+    const clients = await Client.find().sort({ createdAt: 1 });
+
+    let counter = 1;
+
+    for (const client of clients) {
+      client.caseId = counter.toString().padStart(5, "0");
+      await client.save();
+      counter++;
+    }
+
+    res.json({ success: true, message: "Case IDs updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Error updating case IDs" });
   }
 };
