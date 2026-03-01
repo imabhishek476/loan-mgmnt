@@ -662,7 +662,7 @@ return (
                                                     ).format("MMM DD, YYYY")
                                                   : "—"}
                                               </td>
-                                               <button
+                                               {/* <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleDelete(loan);
@@ -671,7 +671,7 @@ return (
                                               title="Delete Loan"
                                             >
                                               <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            </button> */}
                                             </tr>
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">

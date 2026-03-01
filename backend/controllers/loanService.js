@@ -801,17 +801,9 @@ exports.getProfitByClientId = async (req, res) => {
 };
 exports.getLoanByClientId = async (req, res) => {
   try {
+    
     const { id } = req.params; 
-
-    const loans = await Loan.find({ client: id })
-      .sort({ createdAt: -1 });
-
-    if (!loans || loans.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No loans found for this client",
-      });
-    }
+    const loans = await Loan.find({ client: id }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
