@@ -88,7 +88,7 @@ exports.AddClients = async (req, res) => {
       // attorneyName: attorney?.fullName || attorneyName || "",
       memo: memo || "",
 
-      customFields: Array.isArray(customFields) ? customFields : [],
+      customFields: Array.isArray(customFields) ? customFields : null,
       createdBy: req.user ? req.user.id : null,
     });
     await createAuditLog(
@@ -403,6 +403,20 @@ exports.updateClient = async (req, res) => {
 
         updates.attorneyName = attorney.fullName;
       }
+    }
+    if (updates.customFields && Array.isArray(updates.customFields)) {
+      updates.customFields = updates.customFields
+        .filter(
+          (field) =>
+            field.name &&
+            field.value &&
+            String(field.name).trim() !== "" &&
+            String(field.value).trim() !== ""
+        )
+        .map((field) => ({
+          name: String(field.name).trim(),
+          value: String(field.value).trim(),
+        }));
     }
     // Update client
     const client = await Client.findByIdAndUpdate(id, updates, { new: true });
