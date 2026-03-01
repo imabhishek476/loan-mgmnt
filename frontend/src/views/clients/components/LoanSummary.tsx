@@ -318,7 +318,7 @@ return (
                         TOTALS
                       </span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 font-semibold">
                       {formatUSD(group.totals.base)}
                     </td>
                     <td></td>
