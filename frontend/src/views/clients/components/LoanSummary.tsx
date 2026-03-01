@@ -154,14 +154,6 @@ const loadMeta = async () => {
     });
   }, [loansWithTs, mergeMap, loanProfitMap, companies]);
 
-  /** ✅ Latest Loan */
-  const latestActiveLoanId = useMemo(() => {
-    if (!loansWithTs.length) return null;
-
-    return [...loansWithTs].sort(
-      (a, b) => b.issueTs - a.issueTs
-    )[0]?._id;
-  }, [loansWithTs]);
 
   /** ✅ Prevent Loader Freeze */
  useEffect(() => {

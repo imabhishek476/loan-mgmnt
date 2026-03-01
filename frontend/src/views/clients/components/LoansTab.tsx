@@ -17,7 +17,7 @@ import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
-import {deleteLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
+import {recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { getAllowedTerms } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
@@ -232,48 +232,48 @@ const handleDeletePayment = async (payment: any) => {
     }
   });
 };
-    const handleDelete = async (loan: any) => {
-          const isMerged = loan.status === "Merged";
-      Confirm({
-        title: isMerged ? "⚠️ Delete Merged Loan" : "Confirm Delete",
-        message: isMerged ? (
-              <div className="text-left">
-              <div className="text-sm text-gray-700 leading-6">
-                <p className="mb-2">
-                  This loan is <strong className="text-red-600">MERGED</strong>.
-                  Deleting it will permanently delete:
-                </p>
+    // const handleDelete = async (loan: any) => {
+    //       const isMerged = loan.status === "Merged";
+    //   Confirm({
+    //     title: isMerged ? "⚠️ Delete Merged Loan" : "Confirm Delete",
+    //     message: isMerged ? (
+    //           <div className="text-left">
+    //           <div className="text-sm text-gray-700 leading-6">
+    //             <p className="mb-2">
+    //               This loan is <strong className="text-red-600">MERGED</strong>.
+    //               Deleting it will permanently delete:
+    //             </p>
 
-                <ul className="list-disc list-inside mb-3 text-gray-800">
-                  <li>This loan</li>
-                  <li>All linked / merged loans</li>
-                  <li>All payment history</li>
-                </ul>
-              </div>
+    //             <ul className="list-disc list-inside mb-3 text-gray-800">
+    //               <li>This loan</li>
+    //               <li>All linked / merged loans</li>
+    //               <li>All payment history</li>
+    //             </ul>
+    //           </div>
 
-                <p className="text-red-600 font-semibold">
-                  This action CANNOT be undone.
-                </p>
-              </div>
-            ) : (
-              "Are you sure you want to delete this loan?"
-            ),
-            confirmText: isMerged
-              ? "Yes, Delete"
-              : "Yes, Delete",
-        onConfirm: async () => {
-          await deleteLoan(loan._id);
-             await loanStore.fetchLoanByClientId(loan.client);
-             onDataChanged();
+    //             <p className="text-red-600 font-semibold">
+    //               This action CANNOT be undone.
+    //             </p>
+    //           </div>
+    //         ) : (
+    //           "Are you sure you want to delete this loan?"
+    //         ),
+    //         confirmText: isMerged
+    //           ? "Yes, Delete"
+    //           : "Yes, Delete",
+    //     onConfirm: async () => {
+    //       await deleteLoan(loan._id);
+    //          await loanStore.fetchLoanByClientId(loan.client);
+    //          onDataChanged();
 
-             toast.success(
-                isMerged
-                  ? "Merged loan and all linked loans deleted"
-                  : "Loan deleted successfully"
-              );
-    },
-    });
-    };
+    //          toast.success(
+    //             isMerged
+    //               ? "Merged loan and all linked loans deleted"
+    //               : "Loan deleted successfully"
+    //           );
+    // },
+    // });
+    // };
 const handleRecover = async (loanId: string) => {
   Confirm({
     title: "Recover Loan",
