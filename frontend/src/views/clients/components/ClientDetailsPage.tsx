@@ -42,7 +42,7 @@ const ClientDetailsPage = observer(() => {
       })),
     },
     { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
-    { label: "Case ID", key: "caseId", type: "text" },
+    // { label: "Case ID", key: "caseId", type: "text", disabled: true  },
     // { label: "Index #", key: "indexNumber", type: "text" },
     {
       label: "Loan Type",

@@ -55,7 +55,7 @@ const clientFields: FieldConfig[] = [
     })),
   },
   { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
-  { label: "Case ID", key: "caseId", type: "text" },
+  // { label: "Case ID", key: "caseId", type: "text" },
   // { label: "Index #", key: "indexNumber", type: "text" },
   { label: "Loan Type", key: "loanType", type: "select", required: false ,options: getLoanTypeOptions() },
   { label: "Address", key: "address", type: "text" },
