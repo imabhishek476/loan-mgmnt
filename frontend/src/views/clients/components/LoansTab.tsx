@@ -18,9 +18,10 @@ import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
 import {recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
-import { getAllowedTerms } from "../../../utils/constants";
+import { DocTypes, getAllowedTerms } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
+import api from "../../../api/axios";
 
 interface LoansTabProps {
 client: any;
@@ -79,6 +80,9 @@ const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
 const [loadingLoans, setLoadingLoans] = useState(true);
 const [loading, setLoading] = useState(true);
 const loans = clientLoans || [];
+const [generateDocMap, setGenerateDocMap] = useState<Record<string, boolean>>({});
+const [selectedDocTypeMap, setSelectedDocTypeMap] = useState<Record<string, string>>({});
+const [docLoadingMap, setDocLoadingMap] = useState<Record<string, boolean>>({});
 // const refreshPayments = async () => {
 //   if (!client?._id) return;
 
@@ -340,6 +344,124 @@ const handleStatusChange = async (loanId: string, newStatus: string) => {
   } catch (err) {
     console.error(err);
     toast.error("Failed to update status");
+  }
+};
+const handleGenerateDocument = async (loanData: any) => {
+  const { loan, companyName } = loanData;
+
+  const selectedDocUrl = selectedDocTypeMap[loan._id];
+
+  const selectedDoc = DocTypes.find(
+    (doc) => doc.value === selectedDocUrl
+  );
+  const selectedTitle = selectedDoc?.title || "";
+  if (!selectedDocUrl) {
+    toast.error("Please select document type");
+    return;
+  }
+
+  try {
+    // 🔥 Start loader
+    setDocLoadingMap((prev) => ({
+      ...prev,
+      [loan._id]: true,
+    }));
+
+    const calculated = loanStore.calculateLoans(
+      loan,
+      loans,
+      "mergedDate"
+    );
+
+    if (!calculated) {
+      toast.error("Calculation failed");
+      return;
+    }
+
+    const brokerFee = loan?.fees?.brokerFee || {};
+    const otherFees = loan?.fees || {};
+
+    const baseAmount = loan?.baseAmount || 0;
+    const previousLoanAmount = loan?.previousLoanAmount || 0;
+    const totalPrincipal = baseAmount + previousLoanAmount;
+
+    const feeCalculatedAmount =
+      brokerFee?.type === "percentage"
+        ? (totalPrincipal * brokerFee?.value) / 100
+        : brokerFee?.value || 0;
+      const now = new Date();
+      const formattedTimestamp = `${now.getFullYear()}${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
+        now.getHours()
+      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+        now.getSeconds()
+      ).padStart(2, "0")}`;
+    const payload = {
+      loanid: loan._id,
+      document_link: selectedDocUrl,
+      document_title: selectedTitle, 
+      document_data: {
+        company_companyName: companyName || "",
+        client_fullname: client?.fullName || "",
+        loan_status: loan.status || "",
+        loan_issueDate: calculated.issueDate?.format("MMM DD, YYYY"),
+        loan_interestType: loan.interestType,
+        loan_monthlyRate: loan.monthlyRate,
+        loan_baseAmount: baseAmount,
+        loan_previousLoanAmount: previousLoanAmount,
+        loan_totalPrincipal: totalPrincipal,
+        loan_subTotal: calculated.subtotal,
+        loan_interestAmount: calculated.interestAmount,
+        loan_totalAmount: calculated.total,
+        loan_paidAmount: calculated.paidAmount,
+        loan_remainingAmount: calculated.remaining,
+        loan_dynamicTerm: calculated.dynamicTerm,
+        // loan_monthsPassed: calculated.monthsPassed,
+        // loan_daysDiff: calculated.daysDiff,
+        loan_parentLoanId: loan.parentLoanId || "",
+        loan_mergedDate: calculated.mergedDate
+          ? calculated.mergedDate.format("MMM DD, YYYY")
+          : "",
+        loan_fee_type: brokerFee?.type || "",
+        loan_fee_value: brokerFee?.value || 0,
+        loan_fee_calculatedAmount: feeCalculatedAmount,
+        loan_allFees: otherFees,
+      },
+    };
+
+    console.log("🔥 FULL DOCUMENT PAYLOAD →", payload);
+
+    const response = await api.post(
+      "/templates/document/generate",
+      payload,
+      {
+        responseType: "blob",
+      }
+    );
+    // Create blob
+    const blob = new Blob([response.data], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    const url = window.URL.createObjectURL(blob);
+    // Auto download
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${selectedTitle}_${formattedTimestamp}.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+        toast.success("Document generated successfully");
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to generate document");
+  } finally {
+    // 🔥 Stop loader
+    setDocLoadingMap((prev) => ({
+      ...prev,
+      [loan._id]: false,
+    }));
   }
 };
 return (
@@ -616,15 +738,120 @@ return (
                                   No payments recorded yet.
                                 </p>
                               )}
-                            {profitData?.totalProfit > 0 && (
-                              <div className="text-sm font-semibold mt-2 text-emerald-600">
-                                <span className="text-gray-600">
-                                  ( Base: {formatUSD(profitData.totalBaseAmount)} |
-                                    Paid: {formatUSD(profitData.totalPaid)} )
-                                </span>
-                                {" "}Profit: {formatUSD(profitData.totalProfit)}
-                              </div>
-                            )}
+
+                          <div className="mt-2 flex items-center justify-between flex-wrap gap-2">
+  
+  {/* Profit Section */}
+  {profitData?.totalProfit > 0 && (
+    <div className="text-sm font-semibold text-emerald-600">
+      <span className="text-gray-600 font-medium">
+        ( Base: {formatUSD(profitData.totalBaseAmount)} |
+        {" "}Paid: {formatUSD(profitData.totalPaid)} )
+      </span>
+      {" "}Profit: {formatUSD(profitData.totalProfit)}
+    </div>
+  )}
+
+  {/* Generate Documents */}
+  <div className="flex items-center gap-2">
+    <input
+      id={`generate-${loan._id}`}
+      type="checkbox"
+      className="w-4 h-4 accent-green-600 cursor-pointer"
+      checked={generateDocMap[loan._id] || false}
+      onChange={(e) =>
+        setGenerateDocMap((prev) => ({
+          ...prev,
+          [loan._id]: e.target.checked,
+        }))
+      }
+    />
+    <label
+      htmlFor={`generate-${loan._id}`}
+      className="text-sm font-medium text-gray-700 cursor-pointer"
+    >
+      Generate Documents
+    </label>
+  </div>
+
+</div>
+                         {/* Generate Document Section */}
+<div className="mt-0 border-t pb-2">
+
+
+  {generateDocMap[loan._id] && (
+    <div className="flex items-center gap-3 mt-3">
+      
+      {/* Styled Select */}
+      <div className="relative">
+        <select
+          className="appearance-none bg-white border border-gray-300 
+                     rounded-md px-3 py-2 pr-8 text-sm 
+                     focus:outline-none focus:ring-2 focus:ring-green-600 
+                     focus:border-green-600 transition"
+          value={selectedDocTypeMap[loan._id] || ""}
+          onChange={(e) =>
+            setSelectedDocTypeMap((prev) => ({
+              ...prev,
+              [loan._id]: e.target.value,
+            }))
+          }
+        >
+          <option value="">Select Document</option>
+          {DocTypes.map((doc) => (
+            <option key={doc.value} value={doc.value}>
+              {doc.title}
+            </option>
+          ))}
+        </select>
+
+        {/* Dropdown Arrow */}
+        <span className="absolute inset-y-0 right-2 flex items-center pointer-events-none text-gray-500 text-xs">
+          ▼
+        </span>
+      </div>
+
+      {/* Submit Button (Matching Your Green Theme) */}
+    <button
+  onClick={() => handleGenerateDocument(loanData)}
+  disabled={docLoadingMap[loan._id]}
+  className={`px-4 py-2 text-white text-sm font-medium rounded-md transition shadow-sm
+    ${
+      docLoadingMap[loan._id]
+        ? "bg-green-700 cursor-not-allowed"
+        : "bg-green-700 hover:bg-green-800"
+    }`}
+>
+  {docLoadingMap[loan._id] ? (
+    <span className="flex items-center gap-2">
+      <svg
+        className="animate-spin h-4 w-4 text-white"
+        viewBox="0 0 24 24"
+        fill="none"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v8H4z"
+        />
+      </svg>
+      Generating...
+    </span>
+  ) : (
+    "Submit"
+  )}
+</button>
+    </div>
+  )}
+</div>
                               </div>
 
                               {/* Loan Details */}
