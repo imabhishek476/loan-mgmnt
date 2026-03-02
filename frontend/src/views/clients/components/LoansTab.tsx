@@ -21,6 +21,7 @@ import {recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { DocTypes, getAllowedTerms } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
+import api from "../../../api/axios";
 
 interface LoansTabProps {
 client: any;
@@ -350,6 +351,10 @@ const handleGenerateDocument = async (loanData: any) => {
 
   const selectedDocUrl = selectedDocTypeMap[loan._id];
 
+  const selectedDoc = DocTypes.find(
+    (doc) => doc.value === selectedDocUrl
+  );
+  const selectedTitle = selectedDoc?.title || "";
   if (!selectedDocUrl) {
     toast.error("Please select document type");
     return;
@@ -384,10 +389,18 @@ const handleGenerateDocument = async (loanData: any) => {
       brokerFee?.type === "percentage"
         ? (totalPrincipal * brokerFee?.value) / 100
         : brokerFee?.value || 0;
-
+      const now = new Date();
+      const formattedTimestamp = `${now.getFullYear()}${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
+        now.getHours()
+      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+        now.getSeconds()
+      ).padStart(2, "0")}`;
     const payload = {
       loanid: loan._id,
       document_link: selectedDocUrl,
+      document_title: selectedTitle, 
       document_data: {
         company_companyName: companyName || "",
         client_fullname: client?.fullName || "",
@@ -419,10 +432,26 @@ const handleGenerateDocument = async (loanData: any) => {
 
     console.log("🔥 FULL DOCUMENT PAYLOAD →", payload);
 
-    // 🔥 simulate API
-    await new Promise((res) => setTimeout(res, 1500));
-
-    toast.success("Document generated successfully");
+    const response = await api.post(
+      "/templates/document/generate",
+      payload,
+      {
+        responseType: "blob",
+      }
+    );
+    // Create blob
+    const blob = new Blob([response.data], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    const url = window.URL.createObjectURL(blob);
+    // Auto download
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${selectedTitle}_${formattedTimestamp}.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+        toast.success("Document generated successfully");
 
   } catch (error) {
     console.error(error);

@@ -26,6 +26,6 @@ export const isValidMMDDYYYY = (v: string) =>
 export const DocTypes =[
     {
         title: "Claim Advance INC",
-        value:"https://docs.google.com/document/d/1GDHHHqQ6DPo66kuKn8JSDloB9GIbj_bZ/edit?usp=sharing&ouid=103181170505145457020&rtpof=true&sd=true",
+        value:"https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
     }
 ]
