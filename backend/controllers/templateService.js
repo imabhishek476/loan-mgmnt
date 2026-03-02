@@ -1,4 +1,7 @@
 const { Template } = require("../models/Template");
+const {
+  generateDocumentFromGoogleDoc,
+} = require("../utils/documentGeneration");
 /**
  * GET /templates
  */
@@ -114,6 +117,71 @@ exports.getTemplateById = async (req, res) => {
     console.error("GET TEMPLATE ERROR:", err);
 
     res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+
+/**
+ * POST /templates/generate-document
+ *
+ * Body:
+ *   {
+ *     "loanid": "123456789",
+ *     "document_link": "https://docs.google.com/document/d/.../edit",
+ *     "document_data": { "name": "John Doe", "date": "2024-01-01", ... }
+ *   }
+ *
+ * Returns the filled .docx file as a download.
+ */
+exports.generateDocument = async (req, res) => {
+  try {
+    const { loanid, document_data, document_link } = req.body;
+
+    if (!document_link) {
+      return res.status(400).json({
+        success: false,
+        message: "document_link is required.",
+      });
+    }
+
+    if (!document_data || typeof document_data !== "object") {
+      return res.status(400).json({
+        success: false,
+        message: "document_data must be a non-empty JSON object.",
+      });
+    }
+
+    // Generate the filled .docx buffer
+    const docxBuffer = await generateDocumentFromGoogleDoc(document_link, document_data);
+
+    // Send as a file download
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="generated-document.docx"'
+    );
+    res.setHeader("Content-Length", docxBuffer.length);
+
+    return res.send(docxBuffer);
+  } catch (err) {
+    console.error("GENERATE DOCUMENT ERROR:", err);
+
+    // Provide a friendlier message for template tag errors
+    if (err.properties && err.properties.errors) {
+      return res.status(422).json({
+        success: false,
+        message: "Template rendering failed. Check placeholder tags.",
+        errors: err.properties.errors,
+      });
+    }
+
+    return res.status(500).json({
       success: false,
       message: err.message,
     });
