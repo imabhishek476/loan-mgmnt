@@ -22,3 +22,10 @@ export const todayMMDDYYYY = () => {
 
 export const isValidMMDDYYYY = (v: string) =>
     /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/.test(v);
+
+export const DocTypes =[
+    {
+        title: "Claim Advance INC",
+        value:"https://docs.google.com/document/d/1GDHHHqQ6DPo66kuKn8JSDloB9GIbj_bZ/edit?usp=sharing&ouid=103181170505145457020&rtpof=true&sd=true",
+    }
+]
