@@ -19,6 +19,7 @@ export interface Loan {
 }
 
 export interface Client {
+  attorneyId: any;
   isActive: boolean;
   _id?: string;
   fullName: string;

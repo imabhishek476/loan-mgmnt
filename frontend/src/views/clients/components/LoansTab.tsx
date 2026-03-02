@@ -17,7 +17,7 @@ import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
-import {activeLoansData, deactivateLoan,recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
+import {recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
 import { getAllowedTerms } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
@@ -25,6 +25,8 @@ import { fetchCompanies } from "../../../services/CompaniesServices";
 interface LoansTabProps {
 client: any;
 clientLoans: any[];
+refreshKey: number;
+  onDataChanged: () => void;  
 }
  type Payment = {
   _id?: string;
@@ -50,8 +52,7 @@ clientLoans: any[];
 }
 // eslint-disable-next-line react-refresh/only-export-components
 
-const LoansTab = ({ client }: LoansTabProps) => {
-const [loans, setLoans] = useState<any[]>([]);
+const LoansTab = ({ client,refreshKey,clientLoans,onDataChanged }: LoansTabProps) => {
 const [companies, setCompanies] = useState<any[]>([]);
   const [paymentLoan, setPaymentLoan] = useState<any>(null);
   const [editPaymentLoan, setEditPaymentLoan] = useState<any>(null);
@@ -77,7 +78,7 @@ const [editingPayment, setEditingPayment] = useState<any>(null);
 const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
 const [loadingLoans, setLoadingLoans] = useState(true);
 const [loading, setLoading] = useState(true);
-
+const loans = clientLoans || [];
 // const refreshPayments = async () => {
 //   if (!client?._id) return;
 
@@ -181,13 +182,11 @@ const loadData = async () => {
     setLoading(true);
     setLoadingLoans(true);
 
-    const [loanRes, paymentRes, companyRes]:any = await Promise.all([
-      activeLoansData(client._id),              // ✅ USE SERVICE
+    const [paymentRes, companyRes]:any = await Promise.all([          
       fetchAllPaymentsForClient(client._id),
       fetchCompanies(),
     ]);
 
-    setLoans(loanRes || []);
 
     setLoanPayments(paymentRes.payments || {});
     setLoanProfitMap(paymentRes.profits || {});
@@ -202,9 +201,9 @@ const loadData = async () => {
   }
 };
 useEffect(() => {
-  loadData();
-  
-}, [client?._id]);
+  if(!client?._id && !refreshKey) return;
+  loadData();  
+}, [client?._id,refreshKey]);
 
   useEffect(() => {
     const newMap: Record<string, number> = {};
@@ -228,33 +227,53 @@ const handleDeletePayment = async (payment: any) => {
     confirmText: "Yes, Delete",
     onConfirm: async () => {
     await deletePayment(payment._id!);
-    await loadData();
+    onDataChanged();
     toast.success("Payment deleted successfully");
     }
   });
 };
-const handleDeleteLoan = async (loanId: string) => {
-  Confirm({
-    title: "Confirm Deactivate",
-    message: "Are you sure you want to deactivate this loan?",
-    confirmText: "Yes, Deactivate",
+    // const handleDelete = async (loan: any) => {
+    //       const isMerged = loan.status === "Merged";
+    //   Confirm({
+    //     title: isMerged ? "⚠️ Delete Merged Loan" : "Confirm Delete",
+    //     message: isMerged ? (
+    //           <div className="text-left">
+    //           <div className="text-sm text-gray-700 leading-6">
+    //             <p className="mb-2">
+    //               This loan is <strong className="text-red-600">MERGED</strong>.
+    //               Deleting it will permanently delete:
+    //             </p>
 
-    onConfirm: async () => {
-      try {
-        await deactivateLoan(loanId);
+    //             <ul className="list-disc list-inside mb-3 text-gray-800">
+    //               <li>This loan</li>
+    //               <li>All linked / merged loans</li>
+    //               <li>All payment history</li>
+    //             </ul>
+    //           </div>
 
-        toast.success("Loan Deactivated successfully");
+    //             <p className="text-red-600 font-semibold">
+    //               This action CANNOT be undone.
+    //             </p>
+    //           </div>
+    //         ) : (
+    //           "Are you sure you want to delete this loan?"
+    //         ),
+    //         confirmText: isMerged
+    //           ? "Yes, Delete"
+    //           : "Yes, Delete",
+    //     onConfirm: async () => {
+    //       await deleteLoan(loan._id);
+    //          await loanStore.fetchLoanByClientId(loan.client);
+    //          onDataChanged();
 
-        // ✅ Reload loans + payments from API
-        await loadData();
-
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to deactivate loan");
-      }
-    },
-  });
-};
+    //          toast.success(
+    //             isMerged
+    //               ? "Merged loan and all linked loans deleted"
+    //               : "Loan deleted successfully"
+    //           );
+    // },
+    // });
+    // };
 const handleRecover = async (loanId: string) => {
   Confirm({
     title: "Recover Loan",
@@ -269,7 +288,7 @@ const handleRecover = async (loanId: string) => {
         toast.success("Loan has been recovered successfully!");
 
         // ✅ Reload loans + payments
-        await loadData();
+        onDataChanged();
 
       } catch (error: any) {
         console.error(error);
@@ -289,7 +308,7 @@ const handleRecover = async (loanId: string) => {
   };
 
   const getStatusStyles = (loan: any) => {
-    if (loan.loanStatus === "Deactivated") return "bg-gray-400 text-white";
+    // if (loan.loanStatus === "Deactivated") return "bg-gray-400 text-white";
   const paid = loan.paidAmount || 0;
   const total = loan.totalLoan || 0;
   const lower = loan.status?.toLowerCase() || "";
@@ -316,7 +335,7 @@ const handleStatusChange = async (loanId: string, newStatus: string) => {
     toast.success("Loan status updated");
 
     // ✅ Reload loans + payments from API
-    await loadData();
+    onDataChanged();
 
   } catch (err) {
     console.error(err);
@@ -324,7 +343,7 @@ const handleStatusChange = async (loanId: string, newStatus: string) => {
   }
 };
 return (
-        <div className="h-[calc(88vh-30px)] overflow-y-auto p-2 space-y-4">
+        <div className="h-[calc(84vh-20px)] overflow-y-auto p-2 space-y-4">
            <div className="flex justify-end">
               <Button
                 variant="contained"
@@ -600,8 +619,8 @@ return (
                             {profitData?.totalProfit > 0 && (
                               <div className="text-sm font-semibold mt-2 text-emerald-600">
                                 <span className="text-gray-600">
-                                  ( Total Base: {formatUSD(profitData.totalBaseAmount)} |
-                                    Total Paid: {formatUSD(profitData.totalPaid)} )
+                                  ( Base: {formatUSD(profitData.totalBaseAmount)} |
+                                    Paid: {formatUSD(profitData.totalPaid)} )
                                 </span>
                                 {" "}Profit: {formatUSD(profitData.totalProfit)}
                               </div>
@@ -643,16 +662,16 @@ return (
                                                     ).format("MMM DD, YYYY")
                                                   : "—"}
                                               </td>
-                                               <button
+                                               {/* <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDeleteLoan(loan._id);
+                                                handleDelete(loan);
                                               }}
                                               className="p-1 rounded-full  hover:bg-red-200 text-red-600 transition ml-2"
-                                              title="Deactivate Loan"
+                                              title="Delete Loan"
                                             >
                                               <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            </button> */}
                                             </tr>
                                             <tr className="">
                                               <td className="font-semibold py-0 whitespace-nowrap">
@@ -842,15 +861,18 @@ return (
             </div>
      
 
-      {/* Modals */}
+      {/* Add loan Modals */}
       {loanModalOpen && selectedClientForLoan && (
         <Loans
           defaultClient={selectedClientForLoan}
           showTable={false}
           fromClientPage={true}
+           
+          
           onClose={() => {
           setLoanModalOpen(false);
           setSelectedClientForLoan(null);
+           onDataChanged(); 
         }}
         />
       )}
@@ -862,7 +884,7 @@ return (
           onClose={() => {
             setEditLoanModalOpen(false);
             setEditingLoanId(null);
-  loadData();
+            onDataChanged(); 
           }}
         />
       )}
@@ -876,7 +898,8 @@ return (
             loanTerms: currentTermMap[paymentLoan._id],
           }}
           clientId={client._id}
-onPaymentSuccess={loadData}        />
+          onPaymentSuccess={onDataChanged}    
+    />
       )}
 
       {editPaymentModalOpen && (
@@ -889,7 +912,7 @@ onPaymentSuccess={loadData}        />
           }}
           clientId={client._id}
           payment={editingPayment}
-    onPaymentSuccess={loadData}        />
+          onPaymentSuccess={onDataChanged}        />
       )}
   </div>
   );

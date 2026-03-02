@@ -48,7 +48,7 @@ const fetchClientsData = useCallback(async (query) => {
         indexNumber: clientFilters.indexNumber,
         uccFiled: clientFilters.uccFiled,
         ssn: clientFilters.ssn,
-        caseType: clientFilters.caseType,
+        loanType: clientFilters.loanType,
         issueDate: clientFilters.issueDate
           ? moment(clientFilters.issueDate).format("MM-DD-YYYY")
           : null,

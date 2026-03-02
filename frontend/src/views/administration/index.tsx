@@ -63,12 +63,12 @@ const Administration = observer(() => {
     {/* ✅ Desktop Sliding Tabs */}
     <div className="hidden sm:flex justify-start">
         <div
-          className="relative grid bg-gray-100 border border-gray-300 rounded-lg p-1 shadow-sm w-full"
+          className="relative grid bg-gray-200 border border-gray-300 rounded-lg p-1 shadow-sm w-full"
           style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         >
           {/* Active Slider */}
           <div
-            className="absolute top-1 bottom-1 rounded-lg bg-green-700 transition-all duration-300 ease-in-out"
+            className="absolute top-1 bottom-1 rounded-lg bg-green-800 transition-all duration-300 ease-in-out"
             style={{
               width: `calc(100% / ${tabs.length})`,
               transform: `translateX(${

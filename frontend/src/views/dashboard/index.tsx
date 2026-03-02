@@ -201,7 +201,7 @@ const { globalStats } = dashboardStore;
   }, []);
   return (
     <div className=" text-left relative">
-      <h1 className="text-2xl font-bold text-gray-800 mb-3">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Dashboard</h1>
 
       {/* Stats Cards */}
       <div className="flex gap-2 flex-wrap">
@@ -244,7 +244,7 @@ const { globalStats } = dashboardStore;
           subValue={`(${recoveredPercentage}%)`}
           icon={DollarSign}
           enableToggle
-          color="bg-green-500"
+          color="bg-green-700"
           isCurrency
         />
         <StatCard

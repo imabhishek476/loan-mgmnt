@@ -7,11 +7,13 @@ const {
   getClietsLoan,
   toggleClientStatus,
   getClientById,
+  fixCaseIds,
 } = require("../controllers/clientsService");
 const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
 const clientRouter = express.Router();
 
+clientRouter.route("/fixCaseIds").get(isAuthenticated, isAdmin, fixCaseIds);
 clientRouter.route("/add").post(isAuthenticated, isAdmin, AddClients);
 clientRouter.route("/search").get(isAuthenticated, isAdmin, searchClients);
 clientRouter.route("/loans/:id").get(isAuthenticated, isAdmin, getClietsLoan);

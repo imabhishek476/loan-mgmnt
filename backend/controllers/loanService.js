@@ -99,51 +99,51 @@ exports.AllLoans = async (req, res) => {
     });
   }
 };
-exports.activeLoansData = async (req, res) => {
-  try {
-    const { clientId, page , limit } = req.query;
-    if(!clientId &&  !page && !limit ){
-      return res.status(400).json({
-        success: false,
-        message: "Missing parameters to get Loans"
-      });
-    }
-    const query = { loanStatus: { $in: ["Active", "Deactivated"] } };
-    if (clientId) {
-      query.client = new mongoose.Types.ObjectId(clientId);
-    }
-    let loans, total;
-    if (clientId) {
-      loans = await Loan.find(query).sort({ createdAt: -1 });
-      total = loans.length;
-    } else {
-      const skip = (parseInt(page || 1 ) - 1) * parseInt(limit || 10 );
-      [loans, total] = await Promise.all([
-        Loan.find(query)
-          .populate("client")
-          .populate("parentLoanId")
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(parseInt(limit || 10)),
-        Loan.countDocuments(query),
-      ]);
-    }
-    res.status(200).json({
-      success: true,
-      data: loans,
-      total,
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(total / limit),
-      message: "Active loans fetched successfully",
-    });
-  } catch (error) {
-    console.error("Error in activeLoans:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+// exports.activeLoansData = async (req, res) => {
+//   try {
+//     const { clientId, page , limit } = req.query;
+//     if(!clientId &&  !page && !limit ){
+//       return res.status(400).json({
+//         success: false,
+//         message: "Missing parameters to get Loans"
+//       });
+//     }
+//     const query = { loanStatus: { $in: ["Active", "Deactivated"] } };
+//     if (clientId) {
+//       query.client = new mongoose.Types.ObjectId(clientId);
+//     }
+//     let loans, total;
+//     if (clientId) {
+//       loans = await Loan.find(query).sort({ createdAt: -1 });
+//       total = loans.length;
+//     } else {
+//       const skip = (parseInt(page || 1 ) - 1) * parseInt(limit || 10 );
+//       [loans, total] = await Promise.all([
+//         Loan.find(query)
+//           .populate("client")
+//           .populate("parentLoanId")
+//           .sort({ createdAt: -1 })
+//           .skip(skip)
+//           .limit(parseInt(limit || 10)),
+//         Loan.countDocuments(query),
+//       ]);
+//     }
+//     res.status(200).json({
+//       success: true,
+//       data: loans,
+//       total,
+//       currentPage: parseInt(page),
+//       totalPages: Math.ceil(total / limit),
+//       message: "Active loans fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in activeLoans:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
 exports.updateLoan = async (req, res) => {
   try { 
     const { id } = req.params;
@@ -327,51 +327,52 @@ exports.searchLoans = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-exports.deactivateLoan = async (req, res) => {
-  try {
-    const { id } = req.params;
+// exports.deactivateLoan = async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
 
-    const loan = await Loan.findByIdAndUpdate(
-      id,
-      { loanStatus: "Deactivated" },
-      { new: true, runValidators: true, context: "query" }
-    );
+//     const loan = await Loan.findByIdAndUpdate(
+//       id,
+//       { loanStatus: "Deactivated" },
+//       { new: true, runValidators: true, context: "query" }
+//     );
 
-    if (!loan) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Loan not found" });
-    }
-    res.status(200).json({
-      success: true,
-      message: "Loan status set to Deactivated",
-      data: loan,
-    });
-   Promise.all([
-    Client.findById(loan.client).select("fullName"),
-    Company.findById(loan.company).select("companyName"),
-    User.findById(req.user?.id).select("name email"),
-  ])
-      .then(([client, company, user]) => {
-        const clientName = client?.fullName || "";
-        const companyName = company?.companyName || "";
-        const deletedBy = user?.name || user?.email || "";
-        return createAuditLog(
-    req.user?.id || null,
-    req.user?.userRole || null,
-    `Loan deactivated for ${clientName} under ${companyName} by ${deletedBy}`,
-    "Loan",
-    loan._id,
-    { after: loan }
-  );
-      })
-      .catch((err) => console.error("Audit log failed:", err));
-  } catch (error) {
-    console.error("Error in deactivateLoan:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+//     if (!loan) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Loan not found" });
+//     }
+//     res.status(200).json({
+//       success: true,
+//       message: "Loan status set to Deactivated",
+//       data: loan,
+//     });
+//    Promise.all([
+//     Client.findById(loan.client).select("fullName"),
+//     Company.findById(loan.company).select("companyName"),
+//     User.findById(req.user?.id).select("name email"),
+//   ])
+//       .then(([client, company, user]) => {
+//         const clientName = client?.fullName || "";
+//         const companyName = company?.companyName || "";
+//         const deletedBy = user?.name || user?.email || "";
+//         return createAuditLog(
+//     req.user?.id || null,
+//     req.user?.userRole || null,
+//     `Loan deactivated for ${clientName} under ${companyName} by ${deletedBy}`,
+//     "Loan",
+//     loan._id,
+//     { after: loan }
+//   );
+//       })
+//       .catch((err) => console.error("Audit log failed:", err));
+//   } catch (error) {
+//     console.error("Error in deactivateLoan:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 exports.deleteLoan = async (req, res) => {
   try {
     const { id } = req.params;
@@ -388,19 +389,7 @@ exports.deleteLoan = async (req, res) => {
       rootLoan = await Loan.findById(rootLoan.parentLoanId);
       if (!rootLoan) break;
     }
-    const chainLoanIds = [];
-    let currentId = rootLoan._id;
-    while (currentId) {
-      const currentLoan = await Loan.findById(currentId);
-      if (!currentLoan) break;
-
-      chainLoanIds.push(currentLoan._id);
-
-      const child = await Loan.findOne({
-        parentLoanId: currentId,
-      }).select("_id");
-      currentId = child ? child._id : null;
-    }
+    const chainLoanIds = await collectChainLoanIds(rootLoan._id);
     await LoanPayment.deleteMany({
       loanId: { $in: chainLoanIds }, });
     await Loan.deleteMany({
@@ -807,6 +796,25 @@ exports.getProfitByClientId = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error"
+    });
+  }
+};
+exports.getLoanByClientId = async (req, res) => {
+  try {
+    
+    const { id } = req.params; 
+    const loans = await Loan.find({ client: id }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: loans,
+      message: "Client loans fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error in getLoanByClientId:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
     });
   }
 };
