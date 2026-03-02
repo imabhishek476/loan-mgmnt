@@ -87,18 +87,32 @@ exports.AddClients = async (req, res) => {
         cleanedCustomFields = filtered;
       }
     }
-    // Get last client by caseId (sorted descending)
-    const lastClient = await Client.findOne().sort({ caseId: -1 });
+let newClient;
+let attempts = 0;
+
+  while (!newClient && attempts < 3) {
+    try {
+
+    // 🔥 Get highest numeric caseId safely
+        const lastClient = await Client.aggregate([
+          {
+            $addFields: {
+              numericCaseId: { $toInt: "$caseId" }
+            }
+          },
+          { $sort: { numericCaseId: -1 } },
+          { $limit: 1 }
+        ]);
 
     let nextCaseNumber = 1;
 
-    if (lastClient && lastClient.caseId) {
-      nextCaseNumber = parseInt(lastClient.caseId, 10) + 1;
+    if (lastClient.length > 0) {
+      nextCaseNumber = lastClient[0].numericCaseId + 1;
     }
 
     // Convert to 5 digit format
     const formattedCaseId = nextCaseNumber.toString().padStart(5, "0");
-    const newClient = await Client.create({
+      newClient = await Client.create({
       fullName: fullName.trim(),
       underwriter: underwriter,
       uccFiled: uccBoolean,
@@ -119,6 +133,14 @@ exports.AddClients = async (req, res) => {
       customFields: cleanedCustomFields,
       createdBy: req.user ? req.user.id : null,
     });
+        } catch (err) {
+          if (err.code === 11000) {
+            attempts++;
+          } else {
+            throw err;
+          }
+        }
+      }
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
@@ -134,6 +156,20 @@ exports.AddClients = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in Clientstore:", error);
+    // ✅ Duplicate Case ID
+  if (error.code === 11000 && error.keyPattern?.caseId) {
+    return res.status(400).json({
+      success: false,
+      message: `Case ID ${error.keyValue.caseId} already exists. Please try again.`,
+    });
+  }
+  if (error.code === 11000 && error.keyPattern?.email) {
+    return res.status(400).json({
+      success: false,
+      message: "Customer with this email already exists.",
+    });
+  }
+
     res.status(500).json({
       success: false,
       error: error.message,

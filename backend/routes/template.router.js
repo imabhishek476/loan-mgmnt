@@ -17,6 +17,6 @@ templateRouter.post("/", isAuthenticated, isAdmin, createTemplate);
 templateRouter.put("/:id", isAuthenticated, isAdmin, updateTemplate);
 templateRouter.get("/:id", isAuthenticated, getTemplateById);
 templateRouter.delete("/:id", isAuthenticated, isAdmin, deleteTemplate);
-templateRouter.post("/document/generate", generateDocument);
+templateRouter.post("/document/generate",isAuthenticated, isAdmin, generateDocument);
 
 module.exports = templateRouter;

@@ -1,4 +1,6 @@
+const { Loan } = require("../models/loan");
 const { Template } = require("../models/Template");
+const createAuditLog = require("../utils/auditLog");
 const {
   generateDocumentFromGoogleDoc,
 } = require("../utils/documentGeneration");
@@ -138,7 +140,7 @@ exports.getTemplateById = async (req, res) => {
  */
 exports.generateDocument = async (req, res) => {
   try {
-    const { loanid, document_data, document_link } = req.body;
+    const { loanid, document_data, document_link, document_title } = req.body;
 
     if (!document_link) {
       return res.status(400).json({
@@ -154,17 +156,47 @@ exports.generateDocument = async (req, res) => {
       });
     }
 
-    // Generate the filled .docx buffer
-    const docxBuffer = await generateDocumentFromGoogleDoc(document_link, document_data);
+    // 🔹 Get loan details for logging
+    const loan = await Loan.findById(loanid)
+      .populate("client")
+      .populate("company");
 
-    // Send as a file download
+    if (!loan) {
+      return res.status(404).json({
+        success: false,
+        message: "Loan not found",
+      });
+    }
+
+    // Generate the filled .docx buffer
+    const docxBuffer = await generateDocumentFromGoogleDoc(
+      document_link,
+      { ...document_data, document_title,loanid }
+    );
+    // 🔹 Create Audit Log
+    await createAuditLog(
+      req.user?._id,              // logged-in user ID (make sure auth middleware sets this)
+      req.user?.role || "Admin",  // user role
+      "Create Loan document",
+      "loan",
+      loan._id,
+      {
+        clientName: loan.client?.fullName,
+        companyName: loan.company?.companyName,
+        baseAmount: loan.baseAmount,
+        documentTitle: document_title,
+        loanId: loan._id,
+      }
+    );
+
+    // 🔹 Send file
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="generated-document.docx"'
+      `attachment; filename="${document_title || "generated-document"}.docx"`
     );
     res.setHeader("Content-Length", docxBuffer.length);
 

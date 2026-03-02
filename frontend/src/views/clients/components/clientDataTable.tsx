@@ -183,6 +183,14 @@ const renderLoanStatus = (loan: any) => {
       },
     },
     {
+      title: "Case ID",
+      sorting: true,
+      render: (rowData: any) => {
+        return rowData.caseId;
+      },
+
+    },
+    {
       title: "Name",
       field: "fullName",
       width: "100%",

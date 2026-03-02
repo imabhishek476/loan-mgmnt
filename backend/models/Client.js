@@ -69,7 +69,7 @@ ClientSchema.index({ attorneyName: 1 });
 ClientSchema.index({ underwriter: 1 });
 ClientSchema.index({ medicalParalegal: 1 });
 ClientSchema.index({ loanType: 1 });
-ClientSchema.index({ caseId: 1 });
+ClientSchema.index({ caseId: 1 },{unique:true});
 ClientSchema.index({ indexNumber: 1 });
 ClientSchema.index({ uccFiled: 1 });
 ClientSchema.index({ memo: 1 });
