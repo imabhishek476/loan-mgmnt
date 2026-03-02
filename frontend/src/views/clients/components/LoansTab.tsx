@@ -417,8 +417,8 @@ const handleGenerateDocument = async (loanData: any) => {
         loan_paidAmount: calculated.paidAmount,
         loan_remainingAmount: calculated.remaining,
         loan_dynamicTerm: calculated.dynamicTerm,
-        loan_monthsPassed: calculated.monthsPassed,
-        loan_daysDiff: calculated.daysDiff,
+        // loan_monthsPassed: calculated.monthsPassed,
+        // loan_daysDiff: calculated.daysDiff,
         loan_parentLoanId: loan.parentLoanId || "",
         loan_mergedDate: calculated.mergedDate
           ? calculated.mergedDate.format("MMM DD, YYYY")

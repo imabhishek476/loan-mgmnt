@@ -171,7 +171,7 @@ exports.generateDocument = async (req, res) => {
     // Generate the filled .docx buffer
     const docxBuffer = await generateDocumentFromGoogleDoc(
       document_link,
-      { ...document_data, document_title }
+      { ...document_data, document_title,loanid }
     );
     // 🔹 Create Audit Log
     await createAuditLog(
