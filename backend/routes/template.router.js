@@ -4,7 +4,8 @@ const {
   createTemplate,
   updateTemplate,
   deleteTemplate,
-  getTemplateById
+  getTemplateById,
+  generateDocument,
 } = require("../controllers/templateService");
 
 const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
@@ -16,5 +17,6 @@ templateRouter.post("/", isAuthenticated, isAdmin, createTemplate);
 templateRouter.put("/:id", isAuthenticated, isAdmin, updateTemplate);
 templateRouter.get("/:id", isAuthenticated, getTemplateById);
 templateRouter.delete("/:id", isAuthenticated, isAdmin, deleteTemplate);
+templateRouter.post("/document/generate", generateDocument);
 
 module.exports = templateRouter;
