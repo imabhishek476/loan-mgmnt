@@ -818,7 +818,7 @@ return (
   className={`px-4 py-2 text-white text-sm font-medium rounded-md transition shadow-sm
     ${
       docLoadingMap[loan._id]
-        ? "bg-green-500 cursor-not-allowed"
+        ? "bg-green-700 cursor-not-allowed"
         : "bg-green-700 hover:bg-green-800"
     }`}
 >
