@@ -107,7 +107,12 @@ const handleSave = async (data: any) => {
     }
   } catch (error: any) {
     console.error("Save error:", error);
-    toast.error(error.response?.data?.error || "Failed to save Client");
+    const backendMessage =
+      error?.response?.data?.message ||   // ✅ preferred
+      error?.response?.data?.error ||     // fallback
+      error?.message ||                   // axios fallback
+      "Failed to save Client";
+    toast.error(backendMessage);
   }
 };
   useEffect(() => {
