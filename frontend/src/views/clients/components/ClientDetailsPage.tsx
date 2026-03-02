@@ -1,12 +1,13 @@
 import { observer } from "mobx-react-lite";
 import { clientStore, type Client } from "../../../store/ClientStore";
 import { useParams } from "react-router-dom";
-import ClientViewModal from "./ClientViewModal";
+import ClientViewScreen from "./ClientViewScreen";
 import { useEffect, useState } from "react";
 import FormModal, { type FieldConfig } from "../../../components/FormModal";
 import { toast } from "react-toastify";
 import { getAttorney } from "../../../services/AttorneyServices";
 import ClientDetailsSkeleton from "../../components/ClientDetailsSkeleton";
+import { getLoanTypeOptions } from "../../../utils/helpers";
 
 const ClientDetailsPage = observer(() => {
   const { id } = useParams();
@@ -20,30 +21,35 @@ const ClientDetailsPage = observer(() => {
     { label: "Email", key: "email", type: "email" },
     { label: "Phone", key: "phone", type: "text" },
     { label: "SSN / TIN (Last 4 Digits)", key: "ssn", type: "text" },
-    { label: "Underwriter", key: "underwriter", type: "text" },
-    {
-      label: "UCC Filed",
-      key: "uccFiled",
-      type: "select",
-      options: [
-        { label: "Yes", value: true },
-        { label: "No", value: false },
-      ],
-    },
+    // { label: "Underwriter", key: "underwriter", type: "text" },
+    // {
+    //   label: "UCC Filed",
+    //   key: "uccFiled",
+    //   type: "select",
+    //   options: [
+    //     { label: "Yes", value: true },
+    //     { label: "No", value: false },
+    //   ],
+    // },
     // { label: "Attorney Name", key: "attorneyName", type: "text" },
-      {
-  label: "Attorneya",
-  key: "attorneyId",
-  type: "select",
-  options: attorneyOptions.map((attorney) => ({
-    label: attorney.fullName,
-    value: attorney._id,
-  })),
-},
+    {
+      label: "Attorney",
+      key: "attorneyId",
+      type: "select",
+      options: attorneyOptions.map((attorney) => ({
+        label: attorney.fullName,
+        value: attorney._id,
+      })),
+    },
     { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
-    { label: "Case ID", key: "caseId", type: "text" },
-    { label: "Index #", key: "indexNumber", type: "text" },
-    { label: "Case Type", key: "caseType", type: "text" },
+    // { label: "Case ID", key: "caseId", type: "text", disabled: true  },
+    // { label: "Index #", key: "indexNumber", type: "text" },
+    {
+      label: "Loan Type",
+      key: "loanType",
+      type: "select",
+      options: getLoanTypeOptions(),
+    },
     { label: "Address", key: "address", type: "text" },
     { label: "Date of Birth", key: "dob", type: "date" },
     { label: "Accident Date", key: "accidentDate", type: "date" },
@@ -83,7 +89,7 @@ if (!client) return <ClientDetailsSkeleton />;
   return (
     <div className="w-full text-left flex flex-col">
 
-      <ClientViewModal
+      <ClientViewScreen
         open={true}
                 onClose={() => {
   setModalOpen(false);
@@ -93,7 +99,13 @@ if (!client) return <ClientDetailsSkeleton />;
 }}
         client={client}
         onEditClient={(clientData: Client) => {
-          setEditingClient(clientData);
+        setEditingClient({
+            ...clientData,
+            attorneyId:
+              typeof clientData.attorneyId === "object"
+                ? clientData.attorneyId?._id
+                : clientData.attorneyId,
+          });
           setModalOpen(true);
         }}
       />
@@ -108,8 +120,17 @@ if (!client) return <ClientDetailsSkeleton />;
         fields={clientFields}
         //@ts-ignore
         customFields={customFields}
-           initialData={editingClient || {}}
-
+        initialData={
+          editingClient
+            ? {
+                ...editingClient,
+                attorneyId:
+                  typeof editingClient.attorneyId === "object"
+                    ? editingClient.attorneyId?._id
+                    : editingClient.attorneyId,
+              }
+            : {}
+        }
         onSubmit={async (data:any) => {
           if (!editingClient) return;
 

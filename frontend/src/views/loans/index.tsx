@@ -33,11 +33,13 @@ const Loans = observer(
     showTable = true,
     fromClientPage = false,
     onClose,
+    onLoanCreated,  
   }: {
     defaultClient?: any;
     showTable?: boolean;
     fromClientPage?: boolean;
     onClose?: () => void;
+    onLoanCreated?: () => void;
   }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingLoan, setEditingLoan] = useState<any | null>(null);
@@ -101,9 +103,9 @@ const Loans = observer(
         if (clientStore.clients.length == 0) {
           promises.push(clientStore.fetchClients());
         }
-        if (loanStore.loans.length == 0) {
+        // if (loanStore.loans.length == 0) {
           promises.push(loanStore.fetchLoans());
-        }
+        // }
         await Promise.all(promises);
       } catch (error) {
         console.error(error);
@@ -303,9 +305,13 @@ const Loans = observer(
         if (!editingLoan) {
           const createdLoan = await createLoan(payload);
         if (fromClientPage) {
-          await loanStore.fetchActiveLoans(createdLoan.client);
+          await loanStore.fetchLoanByClientId(createdLoan.client);
         } await loanStore.refreshDataTable();
           await clientStore.refreshDataTable();
+             if (onLoanCreated) {
+                 onLoanCreated(); 
+                 } 
+            
           toast.success("Loan created successfully");
         }
         setModalOpen(false);
@@ -368,7 +374,7 @@ const Loans = observer(
         const fetchClientLoans = async () => {
           if (formData?.client) {
             try {
-              await loanStore.fetchActiveLoans(formData.client);
+              await loanStore.fetchLoanByClientId(formData.client);
             } catch (error) {
               console.error("Error fetching client active loans:", error);
             }

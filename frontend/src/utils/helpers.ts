@@ -40,3 +40,21 @@ export const formatCompact = (num: number) => {
   return num.toString();
 };
 export const getAppTitle = () => appTitle;
+export const statusStyles: Record<string, string> = {
+  Active: "bg-green-600 text-white",
+  "Paid Off": "bg-blue-500 text-white",
+  "Partial Payment": "bg-yellow-500 text-white",
+  Merged: "bg-gray-500 text-white",
+  Fraud: "bg-red-100 text-red-700",
+  Lost: "bg-rose-100 text-rose-700",
+  Denied: "bg-purple-100 text-purple-700",
+};
+export const LOAN_TYPE_OPTIONS = [
+  { label: "Trip and Fall", value: "Trip and Fall" },
+  { label: "Workers Comp", value: "Workers Comp" },
+  { label: "MVA", value: "MVA" },
+  { label: "Labor Law", value: "Labor Law" },
+  { label: "Commercial", value: "Commercial" },
+];
+
+export const getLoanTypeOptions = () => LOAN_TYPE_OPTIONS;

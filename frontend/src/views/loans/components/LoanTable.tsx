@@ -21,8 +21,9 @@
   import { getAllowedTerms } from "../../../utils/constants";
   import LoanView from "./LoanView";
   import LoanSearch from "./LoanSearch";
-  import ClientViewModal from "../../clients/components/ClientViewModal";
+  import ClientViewScreen from "../../clients/components/ClientViewScreen";
   import FormModal, { type FieldConfig } from "../../../components/FormModal";
+  
 import { useNavigate } from "react-router-dom";
 
   interface LoanTableProps {
@@ -45,7 +46,7 @@ import { useNavigate } from "react-router-dom";
       company: "",
       issueDate: null,
       paymentStatus: "",
-      loanStatus: "",
+      // loanStatus: "",
     });
     const handleReset = () => {
       setFilters({
@@ -53,7 +54,7 @@ import { useNavigate } from "react-router-dom";
         company: "",
         issueDate: null,
         paymentStatus: "",
-        loanStatus: "",
+        // loanStatus: "",
       });
       if (tableRef.current) tableRef.current.onQueryChange();
     };
@@ -76,7 +77,7 @@ import { useNavigate } from "react-router-dom";
               ? moment(filters.issueDate).format("MM-DD-YYYY")
               : null,
             paymentStatus: filters.paymentStatus,
-            loanStatus: filters.loanStatus,
+            // loanStatus: filters.loanStatus,
             page: query.page,
             limit: query.pageSize,
             clientId: clientId || null,
@@ -133,7 +134,7 @@ import { useNavigate } from "react-router-dom";
         onConfirm: async () => {
           await deleteLoan(loan._id);
         if (tableRef.current) tableRef.current.onQueryChange();
-             await loanStore.fetchActiveLoans(clientId);
+             await loanStore.fetchLoanByClientId(clientId);
              await clientStore.refreshDataTable();
               toast.success(
                 isMerged
@@ -410,23 +411,23 @@ import { useNavigate } from "react-router-dom";
                     );
                   },
                 },
-                {
-                  title: "Active Status",
-                  headerStyle: { whiteSpace: "nowrap" },
-                  sorting: false,
-                  cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
-                  render: (rowData) => (
-                    <span
-                      className={`px-2 py-1 rounded-md text-white text-sm font-semibold ${
-                        rowData.loanStatus === "Active"
-                          ? "bg-green-600"
-                          : "bg-red-500"
-                      }`}
-                    >
-                      {rowData.loanStatus}
-                    </span>
-                  ),
-                },
+                // {
+                //   title: "Active Status",
+                //   headerStyle: { whiteSpace: "nowrap" },
+                //   sorting: false,
+                //   cellStyle: { whiteSpace: "nowrap", minWidth: 130 },
+                //   render: (rowData) => (
+                //     <span
+                //       className={`px-2 py-1 rounded-md text-white text-sm font-semibold ${
+                //         rowData.loanStatus === "Active"
+                //           ? "bg-green-600"
+                //           : "bg-red-500"
+                //       }`}
+                //     >
+                //       {rowData.loanStatus}
+                //     </span>
+                //   ),
+                // },
               ]}
               data={fetchLoansData}
               actions={[
@@ -538,7 +539,7 @@ import { useNavigate } from "react-router-dom";
           onSubmit={handleSave}
         />
         {viewModalOpen && viewClient && (
-          <ClientViewModal
+          <ClientViewScreen
             open={viewModalOpen}
             onClose={() => setViewModalOpen(false)}
             client={viewClient}

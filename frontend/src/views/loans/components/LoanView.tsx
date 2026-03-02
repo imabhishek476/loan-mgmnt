@@ -198,7 +198,7 @@ const LoanView = observer(
                   </div>
 
                   {/* Status */}
-                  <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
+                  {/* <div className="sm:col-span-2 border-t border-gray-200 pt-3 mt-2">
                     <p className="text-gray-500 text-xs uppercase mb-1">
                       Loan Status
                     </p>
@@ -215,7 +215,7 @@ const LoanView = observer(
                     >
                       {selectedLoan.status}
                     </p>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 

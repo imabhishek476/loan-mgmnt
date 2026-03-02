@@ -1,106 +1,183 @@
 import { Skeleton } from "@mui/material";
-import { Pencil } from "lucide-react";
+import { Pencil, User } from "lucide-react";
 import LoanSummary from "./LoanSummary";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Scale,
+  Shield,
+} from "lucide-react";
 
 interface ClientViewTabProps {
-    client: any;
-    loadingClient: boolean;
-    onEditClient: (client: any) => void;
-    clientLoans: any[];
+  client: any;
+  loadingClient: boolean;
+  onEditClient: (client: any) => void;
+  clientLoans: any[];
 }
 
-const ClientViewTab = (
-    ({ client, loadingClient, onEditClient, clientLoans, }: ClientViewTabProps) => {
+const ClientViewTab = ({
+  client,
+  loadingClient,
+  onEditClient,
+  clientLoans,
+}: ClientViewTabProps) => {
+  return (
+<div className="flex flex-col h-[calc(92vh-90px)] overflow-hidden p-4 bg-gray-50">
+<div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
+      {/* LEFT SIDE */}
+      <div className="flex flex-col min-h-0 lg:col-span-4">
 
-     return (
-            <div className="h-[calc(90vh-80px)] overflow-hidden">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 h-full min-h-0">
-                    <div className="overflow-hidden min-h-0 flex flex-col">
+        {loadingClient ? (
+          <div className="p-3 space-y-3">
+            <Skeleton variant="text" width={200} height={30} />
+            <Skeleton variant="rectangular" height={80} />
+            <Skeleton variant="rectangular" height={80} />
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm border flex flex-col h-full overflow-hidden">
 
-  {/* Header */}
-  <div className="flex items-center mb-2 gap-3 border-b border-green-700 pt-2 shrink-0">
-    <h3 className="font-bold text-gray-800">
-      Client Information
-    </h3>
-    <Pencil
-      size={18}
-      className="text-green-700 cursor-pointer hover:text-green-900"
-      onClick={() => onEditClient({ ...client })}
-    />
-  </div>
+            {/* Header */}
+            <div className="flex justify-between items-center p-2 ">
+                
+                <h3 className="font-semibold text-gray-800 text-lg tracking-wide flex gap-2 items-center">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <User size={18} className="text-green-700" />
+                </div> Customer Information
+                </h3>
+              <button
+                onClick={() => onEditClient({ ...client })}
+                className="bg-green-700 hover:bg-green-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1"
+              >
+                <Pencil size={14} /> Edit
+              </button>
+            </div>
 
-  {/* Body */}
-  {loadingClient ? (
-    <div className="p-3 space-y-3">
-      <Skeleton variant="text" width={200} height={30} />
-      <Skeleton variant="rectangular" height={80} />
-      <Skeleton variant="rectangular" height={80} />
-    </div>
-  ) : (
-    <div className="flex-1 overflow-y-auto pr-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700">
+            {/* SCROLL AREA */}
+            <div className="flex-1 overflow-auto p-4 space-y-4">
 
-        <Info label="Full Name" value={client.fullName} />
-        <Info label="Email" value={client.email} />
-        <Info label="Phone" value={client.phone} />
-        <Info label="DOB" value={client.dob} />
-        <Info label="Accident Date" value={client.accidentDate} />
-        <Info label="Attorney" value={client.attorneyId?.fullName || "—"} />
-        <Info label="SSN" value={client.ssn} />
-        <Info label="Underwriter" value={client.underwriter} />
-        <Info label="Medical Paralegal" value={client.medicalParalegal} />
-        <Info label="Case ID" value={client.caseId} />
-        <Info label="Case Type" value={client.caseType} />
-        <Info label="Index #" value={client.indexNumber} />
-        <Info label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} />
-        <Info label="Address" value={client.address} />
-
-        {/* Custom Fields */}
-        {client?.customFields?.length > 0 && (
-          <div className="sm:col-span-2 mt-2">
-            <p className="text-xs uppercase text-gray-500 font-medium mb-2">
-              Custom Fields
-            </p>
-
-            <div className="grid grid-cols-2 gap-1 bg-gray-50 p-2">
-              {client.customFields.map((field, idx) => (
-                <div key={idx} className="col-span-1 flex text-gray-500 items-center gap-2 text-xs uppercase  font-medium ">
-                  <p className="">
-                    {field.name} :
-                  </p>
-                  <p className="font-semibold text-sm text-gray-700">{field.value || "—"}</p>
+              {/* Profile Section */}
+              {/* <div className="bg-gray-100 rounded-xl p-3 flex items-center gap-3">
+                <div className="bg-green-700 text-white w-10 h-10 flex items-center justify-center rounded-lg font-bold">
+                  {client.fullName?.charAt(0)}
                 </div>
-              ))}
+                <div>
+                  <p className="font-semibold text-gray-800">
+                    {client.fullName}
+                  </p>
+                </div>
+              </div> */}
+
+              {/* Main Info */}
+              <div className="space-y-2 text-sm text-gray-700">
+                <InfoRow icon={<Mail size={16} />} label="full Name" value={client.fullName} />
+                <InfoRow icon={<Mail size={16} />} label="Email" value={client.email} />
+                <InfoRow icon={<Phone size={16} />} label="Phone" value={client.phone} />
+                <InfoRow icon={<MapPin size={16} />} label="Address" value={client.address} />
+                <InfoRow icon={<Scale size={16} />} label="Attorney" value={client.attorneyId?.fullName} />
+                <InfoRow icon={<Shield size={16} />} label="SSN" value={client.ssn} />
+              </div>
+
+              {/* Secondary Info */}
+              <div className="border rounded-xl p-3 grid grid-cols-2 gap-3 text-xs">
+                <MiniInfo label="DOB" value={client.dob} />
+                <MiniInfo label="Accident Date" value={client.accidentDate} />
+                {/* <MiniInfo label="Underwriter" value={client.underwriter} /> */}
+                <MiniInfo label="Medical Paralegal" value={client.medicalParalegal} />
+                {/* <MiniInfo label="Index #" value={client.indexNumber} /> */}
+                <MiniInfo label="Case ID" value={client.caseId} />
+                <MiniInfo label="Loan Type" value={client.loanType} />
+
+                {/* <MiniInfo label="UCC Filed" value={client.uccFiled ? "Yes" : "No"} /> */}
+              </div>
+
+              {/* Custom Fields */}
+      {client?.customFields?.length > 0 ? (
+  <div>
+    <p className="text-xs font-semibold text-green-700 uppercase mb-2">
+      Custom Fields
+    </p>
+
+    <div className="flex flex-wrap gap-2">
+      {client.customFields.map((field: any, idx: number) => (
+        <span
+          key={idx}
+          className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full"
+        >
+          <span className="text-green-600 font-semibold">
+            {field.name}
+          </span>:{" "}
+          <span className="text-gray-800 font-medium">
+            {field.value}
+          </span>
+        </span>
+      ))}
+    </div>
+  </div>
+) : (
+  <p className="text-xs text-gray-600 font-semibold italic">
+    No custom fields available.
+  </p>
+)}
+
+              {/* Memo */}
+              <div>
+                <p className="text-xs font-semibold text-green-700 uppercase mb-1">
+                  Memo
+                </p>
+                <div className="bg-yellow-100 border-l-4 border-green-700 p-3 rounded text-sm text-gray-700">
+                  {client.memo || "—"}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
-
-        {/* Memo */}
-        <div className="sm:col-span-2">
-          <p className="text-xs uppercase text-gray-500 font-medium">
-            Memo
-          </p>
-          <div className="bg-yellow-100 border-l-4 border-yellow-600 p-3 rounded text-sm">
-            {client.memo || "—"}
-          </div>
-        </div>
-
       </div>
-    </div>
-  )}
-</div>
-                   <LoanSummary
-                   client = {client}
-                    clientLoans={clientLoans}/>
-                </div>
-            </div>
-        );   
-    });
 
-const Info = ({ label, value }: { label: string; value: string }) => (
-    <div>
-        <p className="text-xs uppercase text-gray-500 font-medium">{label}</p>
-        <p className="font-semibold text-sm">{value || "—"}</p>
+      {/* RIGHT SIDE */}
+     <div className="flex flex-col min-h-0 lg:col-span-8">
+        <div className="flex-1 min-h-0">
+          <LoanSummary client={client} clientLoans={clientLoans} />
+        </div>
+      </div>
+
     </div>
+  </div>
 );
+};
+
+const InfoRow = ({
+  icon,
+  label,
+  value,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+}) => (
+  <div className="flex items-start gap-3">
+    <div className="bg-gray-100 p-2 rounded-lg text-green-700">
+      {icon}
+    </div>
+    <div>
+      <p className="text-xs text-gray-700 font-medium uppercase">{label}</p>
+      <p className="font-semibold text-gray-800">{value || "—"}</p>
+    </div>
+  </div>
+);
+
+const MiniInfo = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) => (
+  <div>
+    <p className="text-xs text-gray-700 font-medium uppercase">{label}</p>
+    <p className="font-semibold text-gray-800">{value || "—"}</p>
+  </div>
+);
+
 export default ClientViewTab;
