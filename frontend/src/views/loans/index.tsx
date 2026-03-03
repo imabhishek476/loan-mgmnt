@@ -118,7 +118,7 @@ const Loans = observer(
         setFormData((prev) => ({ ...prev, client: defaultClient?._id }));
 
         const defaultCompany = companyStore.companies.find(
-          (c) => c.activeCompany && c.companyName === "Claim Advance"
+          (c) => c.activeCompany && c.companyName.includes("Claim Advance")
         );
 
         if (defaultCompany) {
@@ -414,9 +414,7 @@ const Loans = observer(
                   setEditingLoan(null);
                   setModalOpen(true);
                   resetForm();
-                  const defaultCompany = companyStore.companies.find(
-                    (c) => c.activeCompany && c.companyName === "Claim Advance"
-                  );
+                  const defaultCompany = companyStore.companies.find((c) => c.activeCompany && c.companyName.includes("Claim Advance"));
                   if (defaultCompany) {
                     setFormData((prev) => ({
                       ...prev,
