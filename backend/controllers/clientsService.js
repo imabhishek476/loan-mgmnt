@@ -1,12 +1,14 @@
 const AuditLog = require("../models/AuditLog");
 const { Client } = require("../models/Client");
 const { Loan } = require("../models/loan");
+const Config = require("../models/Config");
 const moment = require("moment");
 const createAuditLog = require("../utils/auditLog");
 const User = require("../models/User");
 const { LoanPayment } = require("../models/LoanPayment");
 const { Attorney } = require("../models/Attorney");
 const { default: mongoose } = require("mongoose");
+const caseCounter = require("../utils/caseCounter");
 exports.AddClients = async (req, res) => {
   try {
     const {
@@ -32,7 +34,7 @@ exports.AddClients = async (req, res) => {
     if (!fullName) {
       return res.status(400).json({
         success: false,
-        error: "Full name are required",
+        error: "Full name is required",
       });
     }
 
@@ -46,13 +48,6 @@ exports.AddClients = async (req, res) => {
           error: "Customer with this email already exists",
         });
       }
-    }
-
-    if (exist_record) {
-      return res.status(400).json({
-        success: false,
-        error: "Customer with this email already exists",
-      });
     }
 
     let attorney = null;
@@ -88,29 +83,7 @@ exports.AddClients = async (req, res) => {
       }
     }
 let newClient;
-let attempts = 0;
-
-  while (!newClient && attempts < 3) {
-    try {
-
-    // 🔥 Get highest numeric caseId safely
-        const lastClient = await Client.aggregate([
-          {
-            $addFields: {
-              numericCaseId: { $toInt: "$caseId" }
-            }
-          },
-          { $sort: { numericCaseId: -1 } },
-          { $limit: 1 }
-        ]);
-
-    let nextCaseNumber = 1;
-
-    if (lastClient.length > 0) {
-      nextCaseNumber = lastClient[0].numericCaseId + 1;
-    }
-
-    // Convert to 5 digit format
+    const nextCaseNumber = await caseCounter("caseIdCounter");
     const formattedCaseId = nextCaseNumber.toString().padStart(5, "0");
       newClient = await Client.create({
       fullName: fullName.trim(),
@@ -133,23 +106,15 @@ let attempts = 0;
       customFields: cleanedCustomFields,
       createdBy: req.user ? req.user.id : null,
     });
-        } catch (err) {
-          if (err.code === 11000) {
-            attempts++;
-          } else {
-            throw err;
-          }
-        }
-      }
     await createAuditLog(
       req.user?.id || null,
       req.user?.userRole || null,
-      `Create Customer (${newClient.fullName ? newClient.fullName : ""})`,
+      `Create Customer (${newClient.fullName || ""})`,
       "Customer",
       newClient._id,
       { after: newClient }
     );
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Customer added successfully",
       client: newClient,
@@ -160,7 +125,7 @@ let attempts = 0;
   if (error.code === 11000 && error.keyPattern?.caseId) {
     return res.status(400).json({
       success: false,
-      message: `Case ID ${error.keyValue.caseId} already exists. Please try again.`,
+      message: `Case ID already exists. Please try again.`,
     });
   }
   if (error.code === 11000 && error.keyPattern?.email) {
@@ -170,7 +135,7 @@ let attempts = 0;
     });
   }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message,
     });
@@ -652,21 +617,58 @@ exports.getClientById = async (req, res) => {
     });
   }
 };
+
 exports.fixCaseIds = async (req, res) => {
   try {
-    const clients = await Client.find().sort({ createdAt: 1 });
+    const clients = await Client.find()
+      .sort({ createdAt: 1 })
+      .select("_id");
+
+    if (!clients.length) {
+      return res.json({
+        success: true,
+        message: "No clients found",
+      });
+    }
 
     let counter = 1;
 
-    for (const client of clients) {
-      client.caseId = counter.toString().padStart(5, "0");
-      await client.save();
-      counter++;
-    }
+    const bulkOps = clients.map((client) => {
+      const formattedCaseId = counter
+        .toString()
+        .padStart(5, "0");
 
-    res.json({ success: true, message: "Case IDs updated successfully" });
+      counter++;
+
+      return {
+        updateOne: {
+          filter: { _id: client._id },
+          update: { $set: { caseId: formattedCaseId } },
+        },
+      };
+    });
+
+    // 🔥 Bulk update (much faster)
+    await Client.bulkWrite(bulkOps);
+
+    // ✅ Sync counter with latest value
+    await Config.findOneAndUpdate(
+      { title: "caseIdCounter" },
+      { value: counter - 1 },
+      { upsert: true }
+    );
+
+    return res.json({
+      success: true,
+      message: "Case IDs updated successfully",
+      totalUpdated: counter - 1,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Error updating case IDs" });
+    console.error("FixCaseIds Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating case IDs",
+      error: error.message,
+    });
   }
 };
