@@ -22,6 +22,7 @@ import { DocTypes, getAllowedTerms } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
 import api from "../../../api/axios";
+import DocumentModal from "./DocumentModal";
 
 interface LoansTabProps {
 client: any;
@@ -83,19 +84,10 @@ const loans = clientLoans || [];
 const [generateDocMap, setGenerateDocMap] = useState<Record<string, boolean>>({});
 const [selectedDocTypeMap, setSelectedDocTypeMap] = useState<Record<string, string>>({});
 const [docLoadingMap, setDocLoadingMap] = useState<Record<string, boolean>>({});
-// const refreshPayments = async () => {
-//   if (!client?._id) return;
-
-//   try {
-//     const paymentRes = await fetchAllPaymentsForClient(client._id);
-
-//     setLoanPayments(paymentRes.payments ?? {});
-//     setLoanProfitMap(paymentRes.profits ?? {});
-//   } catch (err) {
-//     console.error(err);
-//     toast.error("Failed to refresh payments");
-//   }
-// };
+const [docModalOpen, setDocModalOpen] = useState(false);
+const [modalDocs, setModalDocs] = useState<any[]>([]);
+const [modalTitle, setModalTitle] = useState("");
+const [selectedLoanForDoc, setSelectedLoanForDoc] = useState<any>(null);
 const getClientLoansData = useMemo(() => {
   return loans.map((loan) => {
     const companyId =
@@ -161,24 +153,6 @@ useEffect(() => {
   }
 }, [client?._id, loans]);
 
-// const loadPaymentsForLoans = async () => {
-//   if (!client?._id) return;
-
-//   try {
-
-//     const { paymentsMap, profitMap } =
-//       await fetchAllPaymentsForClient(client._id);
-
-//     setLoanPayments(paymentsMap);
-//     setLoanProfitMap(profitMap);
-
-//   } catch (err) {
-//     console.error("Failed all payments");
-//     toast.error("Failed to load payments");
-//   } finally {
-//     // setGlobalPaymentsLoading(false);
-//   }
-// };
 const loadData = async () => {
   if (!client?._id) return;
 
@@ -346,15 +320,81 @@ const handleStatusChange = async (loanId: string, newStatus: string) => {
     toast.error("Failed to update status");
   }
 };
-const handleGenerateDocument = async (loanData: any) => {
+const handleOpenDocumentModal = (loanData: any) => {
   const { loan, companyName } = loanData;
 
-  const selectedDocUrl = selectedDocTypeMap[loan._id];
+  const selectedDocKey = selectedDocTypeMap[loan._id];
 
-  const selectedDoc = DocTypes.find(
-    (doc) => doc.value === selectedDocUrl
+  if (!selectedDocKey) {
+    toast.error("Please select document type");
+    return;
+  }
+
+  const selectedCategory = DocTypes.find(
+    (doc) => doc.key === selectedDocKey
   );
-  const selectedTitle = selectedDoc?.title || "";
+
+  if (!selectedCategory) {
+    toast.error("Invalid document type");
+    return;
+  }
+
+  // Filter documents for selected company
+  const filteredDocs = selectedCategory.companies.filter(
+    (c) =>
+      c.companyName.trim().toLowerCase() ===
+      companyName.trim().toLowerCase()
+  );
+
+  if (!filteredDocs.length) {
+    toast.error("No documents available for this company");
+    return;
+  }
+
+  setModalDocs(filteredDocs);
+  setModalTitle(selectedCategory.label);
+  setSelectedLoanForDoc(loanData);
+  setDocModalOpen(true);
+};
+
+const generateFinalDocument = async (
+  loanData: any,
+  selectedDocUrl: string,
+  selectedTitle: string
+) => {
+  const { loan, companyName } = loanData;
+
+  const todayFormatted = moment().format("MMM DD, YYYY");
+  const selectedDocKey = selectedDocTypeMap[loan._id];
+  const clientAddress = `${client?.address || ""}`.trim();
+
+if (!selectedDocKey) {
+  toast.error("Please select document type");
+  return;
+}
+
+const selectedCategory = DocTypes.find(
+  (doc) => doc.key === selectedDocKey
+);
+
+if (!selectedCategory) {
+  toast.error("Invalid document type");
+  return;
+}
+
+// Find company specific document
+const companyObj = companies.find(
+  (c) =>
+    c.companyName?.trim().toLowerCase() ===
+    companyName?.trim().toLowerCase()
+);
+    const companyAddress = `
+    ${companyObj?.address || ""}
+    ${companyObj?.city || ""}`.trim();
+    if (!companyObj) {
+      toast.error("No document available for this company");
+      return;
+    }
   if (!selectedDocUrl) {
     toast.error("Please select document type");
     return;
@@ -385,7 +425,7 @@ const handleGenerateDocument = async (loanData: any) => {
     const previousLoanAmount = loan?.previousLoanAmount || 0;
     const totalPrincipal = baseAmount + previousLoanAmount;
 
-    const feeCalculatedAmount =
+    const brokerFeeCalculatedAmount =
       brokerFee?.type === "percentage"
         ? (totalPrincipal * brokerFee?.value) / 100
         : brokerFee?.value || 0;
@@ -402,6 +442,9 @@ const handleGenerateDocument = async (loanData: any) => {
       document_link: selectedDocUrl,
       document_title: selectedTitle, 
       document_data: {
+        today_date: todayFormatted,
+        client_address: clientAddress,
+        company_address: companyAddress,
         company_companyName: companyName || "",
         client_fullname: client?.fullName || "",
         loan_status: loan.status || "",
@@ -417,15 +460,13 @@ const handleGenerateDocument = async (loanData: any) => {
         loan_paidAmount: calculated.paidAmount,
         loan_remainingAmount: calculated.remaining,
         loan_dynamicTerm: calculated.dynamicTerm,
-        // loan_monthsPassed: calculated.monthsPassed,
-        // loan_daysDiff: calculated.daysDiff,
         loan_parentLoanId: loan.parentLoanId || "",
         loan_mergedDate: calculated.mergedDate
           ? calculated.mergedDate.format("MMM DD, YYYY")
           : "",
         loan_fee_type: brokerFee?.type || "",
         loan_fee_value: brokerFee?.value || 0,
-        loan_fee_calculatedAmount: feeCalculatedAmount,
+        brokerFeeCalculatedAmount: brokerFeeCalculatedAmount,
         loan_allFees: otherFees,
       },
     };
@@ -463,6 +504,15 @@ const handleGenerateDocument = async (loanData: any) => {
       [loan._id]: false,
     }));
   }
+};
+const handleModalDocSubmit = (doc: any) => {
+  setDocModalOpen(false);
+
+  generateFinalDocument(
+    selectedLoanForDoc,
+    doc.value,
+    doc.fileName
+  );
 };
 return (
         <div className="h-[calc(84vh-20px)] overflow-y-auto p-2 space-y-4">
@@ -799,8 +849,8 @@ return (
         >
           <option value="">Select Document</option>
           {DocTypes.map((doc) => (
-            <option key={doc.value} value={doc.value}>
-              {doc.title}
+            <option key={doc.key} value={doc.key}>
+              {doc.label}
             </option>
           ))}
         </select>
@@ -813,7 +863,7 @@ return (
 
       {/* Submit Button (Matching Your Green Theme) */}
     <button
-  onClick={() => handleGenerateDocument(loanData)}
+onClick={() => handleOpenDocumentModal(loanData)}
   disabled={docLoadingMap[loan._id]}
   className={`px-4 py-2 text-white text-sm font-medium rounded-md transition shadow-sm
     ${
@@ -1128,7 +1178,15 @@ return (
           onPaymentSuccess={onDataChanged}    
     />
       )}
-
+        {docModalOpen && (
+        <DocumentModal
+          open={docModalOpen}
+          onClose={() => setDocModalOpen(false)}
+          documents={modalDocs}
+          title={modalTitle}
+          onSubmit={handleModalDocSubmit}
+        />
+        )}
       {editPaymentModalOpen && (
         <EditPaymentModal
           open={editPaymentModalOpen}
