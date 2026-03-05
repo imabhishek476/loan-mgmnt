@@ -12,6 +12,8 @@ const loanTermOptions = [6, 12, 18, 24, 30, 36, 48];
 
 const companyFields: FieldConfig[] = [
   { label: "Company Name", key: "companyName", type: "text", required: true },
+  { label: "Company Email", key: "email", type: "email", required: false },
+  { label: "Telephone Number", key: "phone", type: "text", required: false },
   { label: "Color Code", key: "backgroundColor", type: "color", required: true },
   { label: "Active Company", key: "activeCompany", type: "toggle", required: false },
   { label: "Available Loan Terms", key: "loanTerms", type: "toggle", required: true },
@@ -32,6 +34,8 @@ function normalizeCompany(data?: Company) {
   if (!data) return {};
   return {
     ...data,
+    email: data.email ?? "",
+    phone: data.phone ?? "",
     interestRate: data.interestRate?.monthlyRate ?? 0,
     interestType: data.interestRate?.interestType ?? "flat",
     adminFee: data.fees?.administrativeFee?.value ?? 0,
@@ -51,6 +55,8 @@ function normalizeCompany(data?: Company) {
 function denormalizeCompany(data: any): Company {
   return {
     ...data,
+    email: data.email ?? "",
+    phone: data.phone ?? "",
     activeCompany: data.activeCompany ?? true,
     interestRate: {
       monthlyRate: Number(data.interestRate ?? 0),

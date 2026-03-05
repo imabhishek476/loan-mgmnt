@@ -462,8 +462,8 @@ import { useNavigate } from "react-router-dom";
                 toolbar: false,
                 // paginationType: "stepped",
                 tableLayout: "auto",
-                maxBodyHeight: "calc(100vh - 213px)", // adjust
-                minBodyHeight: "calc(100vh - 305px)", // optional but helpful
+                maxBodyHeight: "calc(100vh - 199px)", // adjust
+                minBodyHeight: "calc(100vh - 199px)", // optional but helpful
                 headerStyle: {
                   fontWeight: 600,
                   backgroundColor: "#f9fafb",
