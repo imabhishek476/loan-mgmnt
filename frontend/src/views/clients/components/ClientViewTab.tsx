@@ -92,33 +92,33 @@ const ClientViewTab = ({
               </div>
 
               {/* Custom Fields */}
-      {client?.customFields?.length > 0 ? (
-  <div>
-    <p className="text-xs font-semibold text-green-700 uppercase mb-2">
-      Custom Fields
-    </p>
+               {client?.customFields?.length > 0 && client?.customFields[0]?.name?.length > 0  ? (
+                <div>
+                  <p className="text-xs font-semibold text-green-700 uppercase mb-2">
+                    Custom Fields
+                  </p>
 
-    <div className="flex flex-wrap gap-2">
-      {client.customFields.map((field: any, idx: number) => (
-        <span
-          key={idx}
-          className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full"
-        >
-          <span className="text-green-600 font-semibold">
-            {field.name}
-          </span>:{" "}
-          <span className="text-gray-800 font-medium">
-            {field.value}
-          </span>
-        </span>
-      ))}
-    </div>
-  </div>
-) : (
-  <p className="text-xs text-gray-600 font-semibold italic">
-    No custom fields available.
-  </p>
-)}
+                  <div className="flex flex-wrap gap-2">
+                    {client.customFields.map((field: any, idx: number) => (
+                      <span
+                        key={idx}
+                        className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full"
+                      >
+                        <span className="text-green-600 font-semibold">
+                          {field.name}
+                        </span>:{" "}
+                        <span className="text-gray-800 font-medium">
+                          {field.value}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-600 font-semibold italic">
+                  No custom fields available.
+                </p>
+              )}
 
               {/* Memo */}
               <div>

@@ -172,8 +172,8 @@ const renderLoanStatus = (loan: any) => {
     return { totalPaid, totalRemaining };
   }
   const tableHeight = filtersOpen
-  ? "calc(100vh - 253px)"
-  : "calc(100vh - 255px)";
+  ? "calc(100vh - 220px)"
+  : "calc(100vh - 232px)";
   const columns: any[] = useMemo(() => [
     // {
     //   title: "Sr.no",

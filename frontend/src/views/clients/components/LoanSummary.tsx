@@ -307,7 +307,7 @@ return (
                     <td></td>
                     <td className="px-3 py-2">
                       <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-full">
-                        TOTALS
+                        TOTAL
                       </span>
                     </td>
                     <td className="px-3 py-2 font-semibold">
