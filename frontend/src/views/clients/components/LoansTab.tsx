@@ -444,6 +444,7 @@ const companyObj = companies.find(
       document_data: {
         client_fullname: client?.fullName || "",
         client_address: clientAddress,
+        client_accidentDate: client?.accidentDate || "",
         company_companyName: companyName || "",
         company_address: companyAddress,
         today_date: todayFormatted,

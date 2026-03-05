@@ -205,6 +205,7 @@ const payload = {
   document_data: {
     client_fullname: client?.fullName || "",
     client_address: client?.address || "",
+    client_accidentDate: client?.accidentDate || "",
 
     company_companyName: companyName || "",
     company_address: companyAddress || "",
