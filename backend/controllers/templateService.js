@@ -175,20 +175,21 @@ exports.generateDocument = async (req, res) => {
     );
     // 🔹 Create Audit Log
     await createAuditLog(
-      req.user?._id,              // logged-in user ID (make sure auth middleware sets this)
-      req.user?.role || "Admin",  // user role
-      "Create Loan document",
-      "loan",
+      req.user?._id,
+      req.user?.role || "Admin",
+      `${document_title} Created`,
+      "template",
       loan._id,
       {
-        clientName: loan.client?.fullName,
-        companyName: loan.company?.companyName,
-        baseAmount: loan.baseAmount,
-        documentTitle: document_title,
-        loanId: loan._id,
+        type: "templates",
+        clientId: loan.client?._id,
+        allData: {
+          loanid,
+          document_title,
+          document_data
+        }
       }
     );
-
     // 🔹 Send file
     res.setHeader(
       "Content-Type",

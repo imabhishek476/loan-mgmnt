@@ -9,6 +9,7 @@ import LoansTab from "./LoansTab";
 import { fetchLoanByClientId } from "../../../services/LoanService";
 import SummaryCards from "./SummaryCards";
 import { loanStore } from "../../../store/LoanStore";
+import ClientTemplatesTab from "./ClientTemplatesTab";
 
 interface ClientViewScreenProps {
   open: boolean;
@@ -25,6 +26,7 @@ const ClientViewScreen = ({ client, onEditClient }: ClientViewScreenProps) => {
   const [, setLoadingLoans] = useState(true);
   const [activeTab, setActiveTab] = useState<"client" | "loans" | "notes" | "templates">("client");
   const [loanRefreshKey, setLoanRefreshKey] = useState(0);
+  const companies = companyStore.companies;
   const loadInitialData = async () => {
     try {
       setLoadingClient(true);
@@ -95,13 +97,8 @@ const getInitials = (fullName?: string) => {
 return (
   <div className="flex-col ">
 <div className="sticky top-0 z-20 bg-gray-50 pb-2">
-
   <SummaryCards clientLoans={clientLoans} />
-
-  {/* NAME + TABS SAME ROW */}
   <div className="flex items-center justify-between px-4 mt-2 gap-4">
-
-    {/* LEFT: CLIENT NAME */}
 <h1 className="flex items-center gap-3 font-bold text-xl text-gray-800 border-b-2 border-green-700 pb-1">
   
   <div className="bg-green-700 text-white w-10 h-10 flex items-center justify-center rounded-lg font-bold">
@@ -114,7 +111,6 @@ return (
 
 </h1>
 
-    {/* RIGHT: TABS */}
     <div className="flex-1 max-w-6xl">
       <div className="relative flex bg-gray-200 border border-gray-300 rounded-md p-1 shadow-sm">
 
@@ -153,37 +149,30 @@ return (
   </div>
 </div>
     
-    {/* Content */}
     <div className="flex-1  overflow-hidden ">
-      {/* ✅ Client TAB */}
       {activeTab === "client" && (
             <ClientViewTab
               client={client}
               loadingClient={loadingClient}
               onEditClient={onEditClient}
               clientLoans={clientLoans} />  )}
-      {/* ✅ LOANS TAB */}
       {activeTab === "loans" && (
         <>
         <LoansTab client = {client} clientLoans={clientLoans}  refreshKey={loanRefreshKey}  onDataChanged={() => setLoanRefreshKey(prev => prev + 1)}/>
         </>
       )}
       {activeTab === "notes" && (
-        // <div className="h-[calc(80vh-53px)] overflow-y-auto p-3">
         <ClientNotes
           clientId={client?._id}
           clientName={client?.fullName}
         />
-        // </div>
       )}
       {activeTab === "templates" && (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-          <FileText size={28} className="mb-2 text-gray-400" />
-          <p className="text-sm font-semibold">No Templates Available</p>
-          <p className="text-xs mt-1">
-            You haven’t created any templates yet.
-          </p>
-          </div>
+            <ClientTemplatesTab
+              client={client}
+              clientLoans={clientLoans}
+              companies={companies}
+            /> 
         )}
     </div>
   </div>

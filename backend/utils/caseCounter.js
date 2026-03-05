@@ -6,7 +6,7 @@ const caseCounter = async (title) => {
       { title },
       {
         $inc: { value: 1 },
-        $setOnInsert: { value: 1 }, // if document doesn’t exist
+        $setOnInsert: {title}, // if document doesn’t exist
       },
       {
         new: true,

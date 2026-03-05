@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 import moment from "moment";
 import LoanPaymentModal from "../../../components/PaymentModel";
 import { deletePayment, fetchAllPaymentsForClient } from "../../../services/LoanPaymentServices";
-import { Button, Skeleton } from "@mui/material";
+import { Autocomplete, Button, Skeleton, TextField } from "@mui/material";
 import Loans from "../../loans";
 import {formatUSD } from "../../../utils/loanCalculations";
 import EditLoanModal from "../../../components/EditLoanModal";
@@ -439,22 +439,22 @@ const companyObj = companies.find(
       ).padStart(2, "0")}`;
     const payload = {
       loanid: loan._id,
-      document_link: selectedDocUrl,
       document_title: selectedTitle, 
+      document_link: selectedDocUrl,
       document_data: {
-        today_date: todayFormatted,
-        client_address: clientAddress,
-        company_address: companyAddress,
-        company_companyName: companyName || "",
         client_fullname: client?.fullName || "",
-        loan_status: loan.status || "",
+        client_address: clientAddress,
+        client_accidentDate: client?.accidentDate || "",
+        company_companyName: companyName || "",
+        company_address: companyAddress,
+        today_date: todayFormatted,
         loan_issueDate: calculated.issueDate?.format("MMM DD, YYYY"),
-        loan_interestType: loan.interestType,
-        loan_monthlyRate: loan.monthlyRate,
         loan_baseAmount: baseAmount,
         loan_previousLoanAmount: previousLoanAmount,
         loan_totalPrincipal: totalPrincipal,
         loan_subTotal: calculated.subtotal,
+        loan_interestType: loan.interestType,
+        loan_monthlyRate: loan.monthlyRate,
         loan_interestAmount: calculated.interestAmount,
         loan_totalAmount: calculated.total,
         loan_paidAmount: calculated.paidAmount,
@@ -467,7 +467,8 @@ const companyObj = companies.find(
         loan_fee_type: brokerFee?.type || "",
         loan_fee_value: brokerFee?.value || 0,
         brokerFeeCalculatedAmount: brokerFeeCalculatedAmount,
-        loan_allFees: otherFees,
+        loan_status: loan.status || "",
+        loan_allFees: otherFees,       
       },
     };
 
@@ -828,40 +829,30 @@ return (
                          {/* Generate Document Section */}
 <div className="mt-0 border-t pb-2">
 
-
   {generateDocMap[loan._id] && (
     <div className="flex items-center gap-3 mt-3">
-      
-      {/* Styled Select */}
-      <div className="relative">
-        <select
-          className="appearance-none bg-white border border-gray-300 
-                     rounded-md px-3 py-2 pr-8 text-sm 
-                     focus:outline-none focus:ring-2 focus:ring-green-600 
-                     focus:border-green-600 transition"
-          value={selectedDocTypeMap[loan._id] || ""}
-          onChange={(e) =>
-            setSelectedDocTypeMap((prev) => ({
-              ...prev,
-              [loan._id]: e.target.value,
-            }))
-          }
-        >
-          <option value="">Select Document</option>
-          {DocTypes.map((doc) => (
-            <option key={doc.key} value={doc.key}>
-              {doc.label}
-            </option>
-          ))}
-        </select>
-
-        {/* Dropdown Arrow */}
-        <span className="absolute inset-y-0 right-2 flex items-center pointer-events-none text-gray-500 text-xs">
-          ▼
-        </span>
-      </div>
-
-      {/* Submit Button (Matching Your Green Theme) */}
+      <Autocomplete
+        size="small"
+        options={DocTypes}
+        getOptionLabel={(option) => option.label}
+        value={
+          DocTypes.find((doc) => doc.key === selectedDocTypeMap[loan._id]) || null
+        }
+        //@ts-ignore
+        onChange={(e, value) => {
+          setSelectedDocTypeMap((prev) => ({
+            ...prev,
+            [loan._id]: value?.key || "",
+          }));
+        }}
+        sx={{ width: 220 }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Select Document"
+          />
+        )}
+      />
     <button
 onClick={() => handleOpenDocumentModal(loanData)}
   disabled={docLoadingMap[loan._id]}
