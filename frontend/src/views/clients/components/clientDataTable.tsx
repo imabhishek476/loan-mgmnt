@@ -175,20 +175,22 @@ const renderLoanStatus = (loan: any) => {
   ? "calc(100vh - 253px)"
   : "calc(100vh - 255px)";
   const columns: any[] = useMemo(() => [
-    {
-      title: "Sr.no",
-      sorting: false,
-      render: (rowData: any) => {
-        return rowData.tableData.id + 1 + currentPage * currentPageSize;
-      },
-    },
+    // {
+    //   title: "Sr.no",
+    //   sorting: false,
+    //   render: (rowData: any) => {
+    //     return rowData.tableData.id + 1 + currentPage * currentPageSize;
+    //   },
+    // },
     {
       title: "Case ID",
       sorting: true,
-      render: (rowData: any) => {
-        return rowData.caseId;
-      },
-
+      field: "caseId",
+      render: (rowData: any) => (
+        <span className="text-black text-xs font-medium">
+          {rowData.caseId}
+        </span>
+      ),
     },
     {
       title: "Name",
