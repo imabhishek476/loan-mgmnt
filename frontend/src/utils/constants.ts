@@ -29,38 +29,77 @@ export const DocTypes = [
   // =========================
   {
     key: "contract",
-    label: "Contract Agreement",
+    label: "Contract / Plus Contract",
     companies: [
       {
         companyName: "Capital First Group",
-        fileName: "CAPITAL FIRST GROUP, LLC 2024",
+        fileName: "Capital First Contract",
+        value: "CAPITAL_FIRST_CONTRACT_LINK",
+      },
+      {
+        companyName: "Capital First Group",
+        fileName: "Capital First Plus Contract",
+        value: "CAPITAL_FIRST_PLUS_LINK",
+      },
+
+      {
+        companyName: "Claim Advance, Inc.",
+        fileName: "Claim Advance Contract",
         value: "https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
       },
       {
         companyName: "Claim Advance, Inc.",
-        fileName: "CLAIM ADVANCE INC 2024 sample",
-        value: "https://docs.google.com/document/d/16ok1yK_hkbvfe7ukMuNikEUfVlc4-RpV/edit?usp=sharing&ouid=109784674424040536778&rtpof=true&sd=true",
+        fileName: "Claim Advance Plus Contract",
+        value: "https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
+
+      },
+
+      {
+        companyName: "Gemini Fund",
+        fileName: "Gemini Contract",
+        value: "GEMINI_CONTRACT_LINK",
       },
       {
         companyName: "Gemini Fund",
-        fileName: "GEMINI FUND LLC 2024 sample",
-        value: "https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
+        fileName: "Gemini Plus Contract",
+        value: "GEMINI_PLUS_LINK",
       },
     ],
   },
 
   // =========================
-  // PAYOFF & REDUCTION
+  // PAYOFF LETTER
   // =========================
   {
     key: "payoff",
-    label: "Payoff & Reduction",
+    label: "Pay Off Letters",
     companies: [
       {
         companyName: "Capital First Group",
         fileName: "Capital First payoff letter",
-        value: "https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
+        value: "CAPITAL_FIRST_PAYOFF_LINK",
       },
+      {
+        companyName: "Claim Advance, Inc.",
+        fileName: "Claim Advance payoff letter",
+        value: "https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
+
+      },
+      {
+        companyName: "Gemini Fund",
+        fileName: "Gemini Fund payoff letter",
+        value: "GEMINI_PAYOFF_LINK",
+      },
+    ],
+  },
+
+  // =========================
+  // REDUCTION LETTER
+  // =========================
+  {
+    key: "reduction",
+    label: "Reduction Letters",
+    companies: [
       {
         companyName: "Capital First Group",
         fileName: "Capital First Reduction letter",
@@ -68,48 +107,14 @@ export const DocTypes = [
       },
       {
         companyName: "Claim Advance, Inc.",
-        fileName: "Claim Advance payoff letter",
-        value: "https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
-      },
-      {
-        companyName: "Claim Advance, Inc.",
         fileName: "Claim Advance Reduction Letter",
-        value: "CLAIM_ADVANCE_REDUCTION_LINK",
-      },
-      {
-        companyName: "Gemini Fund",
-        fileName: "Gemini Fund payoff letter",
-        value: "GEMINI_PAYOFF_LINK",
+        value: "https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
+
       },
       {
         companyName: "Gemini Fund",
         fileName: "Gemini Fund Reduction letter",
         value: "GEMINI_REDUCTION_LINK",
-      },
-    ],
-  },
-
-  // =========================
-  // PLUS CONTRACT
-  // =========================
-  {
-    key: "plus",
-    label: "Plus Contract",
-    companies: [
-      {
-        companyName: "Capital First Group",
-        fileName: "Capital First Group Plus",
-        value: "https://docs.google.com/document/d/1gerxng2nsxMKt-OXJq1Fux4SAdW5u7FpntMbfDVmOyc/edit?usp=sharing",
-      },
-      {
-        companyName: "Claim Advance, Inc.",
-        fileName: "Claim Advance Plus",
-        value: "CLAIM_ADVANCE_PLUS_LINK",
-      },
-      {
-        companyName: "Gemini Fund",
-        fileName: "Gemini Fund Plus",
-        value: "GEMINI_PLUS_LINK",
       },
     ],
   },

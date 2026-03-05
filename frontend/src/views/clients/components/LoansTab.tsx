@@ -439,22 +439,21 @@ const companyObj = companies.find(
       ).padStart(2, "0")}`;
     const payload = {
       loanid: loan._id,
-      document_link: selectedDocUrl,
       document_title: selectedTitle, 
+      document_link: selectedDocUrl,
       document_data: {
-        today_date: todayFormatted,
-        client_address: clientAddress,
-        company_address: companyAddress,
-        company_companyName: companyName || "",
         client_fullname: client?.fullName || "",
-        loan_status: loan.status || "",
+        client_address: clientAddress,
+        company_companyName: companyName || "",
+        company_address: companyAddress,
+        today_date: todayFormatted,
         loan_issueDate: calculated.issueDate?.format("MMM DD, YYYY"),
-        loan_interestType: loan.interestType,
-        loan_monthlyRate: loan.monthlyRate,
         loan_baseAmount: baseAmount,
         loan_previousLoanAmount: previousLoanAmount,
         loan_totalPrincipal: totalPrincipal,
         loan_subTotal: calculated.subtotal,
+        loan_interestType: loan.interestType,
+        loan_monthlyRate: loan.monthlyRate,
         loan_interestAmount: calculated.interestAmount,
         loan_totalAmount: calculated.total,
         loan_paidAmount: calculated.paidAmount,
@@ -467,7 +466,8 @@ const companyObj = companies.find(
         loan_fee_type: brokerFee?.type || "",
         loan_fee_value: brokerFee?.value || 0,
         brokerFeeCalculatedAmount: brokerFeeCalculatedAmount,
-        loan_allFees: otherFees,
+        loan_status: loan.status || "",
+        loan_allFees: otherFees,       
       },
     };
 
@@ -838,7 +838,7 @@ return (
           className="appearance-none bg-white border border-gray-300 
                      rounded-md px-3 py-2 pr-8 text-sm 
                      focus:outline-none focus:ring-2 focus:ring-green-600 
-                     focus:border-green-600 transition"
+                     focus:border-green-600 transition font-semibold text-gray-700"
           value={selectedDocTypeMap[loan._id] || ""}
           onChange={(e) =>
             setSelectedDocTypeMap((prev) => ({
@@ -847,9 +847,9 @@ return (
             }))
           }
         >
-          <option value="">Select Document</option>
+          <option value="" className=" font-semibold text-gray-700">Select Document</option>
           {DocTypes.map((doc) => (
-            <option key={doc.key} value={doc.key}>
+            <option className=" font-semibold text-gray-700"key={doc.key} value={doc.key}>
               {doc.label}
             </option>
           ))}
