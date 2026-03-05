@@ -73,7 +73,23 @@ function fillDocxTemplate(docxBuffer, data) {
   });
 
   // Replace all {key} placeholders with the corresponding values from `data`
-  doc.render(data);
+    function flattenObject(obj, prefix = "", res = {}) {
+      for (let key in obj) {
+        const value = obj[key];
+        const newKey = prefix ? `${prefix}_${key}` : key;
+
+        if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+          flattenObject(value, newKey, res);
+        } else {
+          res[newKey] = value;
+        }
+      }
+      return res;
+    }
+
+    const flatData = flattenObject(data);
+
+    doc.render(flatData);
 
   // Generate the final .docx as a Node.js Buffer
   const outputBuffer = doc.getZip().generate({

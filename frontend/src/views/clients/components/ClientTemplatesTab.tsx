@@ -75,10 +75,15 @@ const ClientTemplatesTab = ({
 
     return companies.find((c) => c._id === id);
   }, [selectedLoan, companies]);
+ const companyData = useMemo(() => {
+    if (!companyObj) return {};
 
-  const companyAddress = useMemo(() => {
-    if (!companyObj) return "";
-    return `${companyObj?.address || ""} ${companyObj?.city || ""}`.trim();
+    return {
+      name: companyObj.companyName || "",
+      address: `${companyObj.address || ""} ${companyObj.city || ""}`.trim(),
+      email: companyObj.email || "",
+      phone: companyObj.phone || "",
+    };
   }, [companyObj]);
 
   /* ---------------- Filter Documents ---------------- */
@@ -206,9 +211,7 @@ const payload = {
     client_fullname: client?.fullName || "",
     client_address: client?.address || "",
     client_accidentDate: client?.accidentDate || "",
-
-    company_companyName: companyName || "",
-    company_address: companyAddress || "",
+    company: companyData,
 
     today_date: moment().format("MMM DD, YYYY"),
 
@@ -401,8 +404,8 @@ const payload = {
           <Field label="Client Name" value={client?.fullName} />
           <Field label="Client Address" value={client?.address} />
 
-          <Field label="Company Name" value={companyName} />
-          <Field label="Company Address" value={companyAddress} />
+          <Field label="Company Name" value={companyData.name} />
+          <Field label="Company Address" value={companyData.address} />
 
           <Field label="Issue Date" value={moment(selectedLoan.issueDate).format("MM/DD/YYYY")} />
           <Field label="Loan Status" value={selectedLoan?.status} />
