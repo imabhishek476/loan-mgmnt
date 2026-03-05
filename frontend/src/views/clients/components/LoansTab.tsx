@@ -838,6 +838,7 @@ return (
         value={
           DocTypes.find((doc) => doc.key === selectedDocTypeMap[loan._id]) || null
         }
+        //@ts-ignore
         onChange={(e, value) => {
           setSelectedDocTypeMap((prev) => ({
             ...prev,

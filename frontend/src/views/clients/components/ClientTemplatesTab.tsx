@@ -309,6 +309,7 @@ const payload = {
           sx={{ width: 260 }}
           getOptionLabel={(o: any) => o.companyName}
           value={selectedCompany}
+          //@ts-ignore
           onChange={(e, v) => {
             setSelectedCompany(v);
             setSelectedLoan(null);
@@ -330,6 +331,7 @@ const payload = {
               )} - (${loan.status})`
             }
             value={selectedLoan}
+            //@ts-ignore
             onChange={(e, v) => setSelectedLoan(v)}
             renderInput={(params) => (
               <TextField {...params} label="Select Loan" size="small" />
@@ -345,6 +347,7 @@ const payload = {
             sx={{ width: 260 }}
             getOptionLabel={(o: any) => o.label}
             value={selectedDocType}
+            //@ts-ignore
             onChange={(e, v) => {
               setSelectedDocType(v);
               setSelectedDocument(null);
@@ -363,6 +366,7 @@ const payload = {
             sx={{ width: 320 }}
             getOptionLabel={(o: any) => o.fileName}
             value={selectedDocument}
+            //@ts-ignore
             onChange={(e, v) => setSelectedDocument(v)}
             renderInput={(params) => (
               <TextField {...params} label="Document" size="small" />
