@@ -353,14 +353,22 @@ const handleOpenDocumentModal = (loanData: any) => {
 
   setModalDocs(filteredDocs);
   setModalTitle(selectedCategory.label);
-  setSelectedLoanForDoc(loanData);
+  setSelectedLoanForDoc({
+  ...loanData,
+  calculatedLoan: loanStore.calculateLoans(
+    loanData.loan,
+    loans,
+    "mergedDate"
+    )
+  });
   setDocModalOpen(true);
 };
 
 const generateFinalDocument = async (
   loanData: any,
   selectedDocUrl: string,
-  selectedTitle: string
+  selectedTitle: string,
+  paidDate?: string
 ) => {
   const { loan, companyName } = loanData;
 
@@ -438,30 +446,39 @@ const companyObj = companies.find(
         now.getSeconds()
       ).padStart(2, "0")}`;
     const payload = {
-      loanid: loan._id,
-      document_title: selectedTitle, 
+      loanid: loan._id || "",
+      document_title: selectedTitle || "", 
       document_link: selectedDocUrl,
       document_data: {
         client_fullname: client?.fullName || "",
-        client_address: clientAddress,
-        client_accidentDate: client?.accidentDate || "",
+        client_address: clientAddress || "",
+        client_accidentDate: client?.accidentDate
+        ? moment(client.accidentDate).format("MMM DD, YYYY")
+        : "",
         company_companyName: companyName || "",
-        company_address: companyAddress,
-        today_date: todayFormatted,
-        loan_issueDate: calculated.issueDate?.format("MMM DD, YYYY"),
-        loan_baseAmount: baseAmount,
-        loan_previousLoanAmount: previousLoanAmount,
-        loan_totalPrincipal: totalPrincipal,
-        loan_subTotal: calculated.subtotal,
-        loan_interestType: loan.interestType,
-        loan_monthlyRate: loan.monthlyRate,
-        loan_interestAmount: calculated.interestAmount,
-        loan_totalAmount: calculated.total,
-        loan_paidAmount: calculated.paidAmount,
-        loan_remainingAmount: calculated.remaining,
-        loan_dynamicTerm: calculated.dynamicTerm,
+
+        company_name: companyObj?.companyName || "",
+        company_address: companyAddress || "",
+        company_email: companyObj?.email || "",
+        company_phone: companyObj?.phone || "",
+        today_date: todayFormatted || "",
+        loan_issueDate: calculated?.issueDate
+          ? calculated.issueDate.format("MMM DD, YYYY")
+          : moment(loan.issueDate).format("MMM DD, YYYY"),
+        loan_baseAmount: baseAmount || "",
+        loan_previousLoanAmount: previousLoanAmount || "",
+        loan_totalPrincipal: totalPrincipal || "",
+        loan_subTotal: calculated.subtotal || "",
+        loan_interestType: loan.interestType || "",
+        loan_monthlyRate: loan.monthlyRate || "",
+        loan_interestAmount: calculated.interestAmount || "",
+        loan_totalAmount: calculated.total || "",
+        loan_paidAmount: calculated.paidAmount || "",
+        loan_paidDate: paidDate || "",
+        loan_remainingAmount: calculated.remaining || "",
+        loan_dynamicTerm: calculated.dynamicTerm || "",
         loan_parentLoanId: loan.parentLoanId || "",
-        loan_mergedDate: calculated.mergedDate
+        loan_mergedDate: calculated.mergedDate || ""
           ? calculated.mergedDate.format("MMM DD, YYYY")
           : "",
         loan_fee_type: brokerFee?.type || "",
@@ -506,17 +523,68 @@ const companyObj = companies.find(
     }));
   }
 };
-const handleModalDocSubmit = (doc: any) => {
+const handleModalDocSubmit = (doc: any, paidDate?: string) => {
+
   setDocModalOpen(false);
 
   generateFinalDocument(
     selectedLoanForDoc,
     doc.value,
-    doc.fileName
+    doc.fileName,
+    paidDate
   );
 };
+const getFilteredDocTypes = (loan:any) => {
+
+  if (loan.status === "Merged") {
+    return DocTypes.filter((d) =>
+      ["plus_contract", "payoff", "reduction"].includes(d.key)
+    );
+  }
+
+  if (
+    loan.status === "Active" ||
+    loan.status === "Partial Payment"
+  ) {
+    return DocTypes.filter((d) =>
+      ["contract", "payoff", "reduction"].includes(d.key)
+    );
+  }
+
+  if (loan.status === "Paid Off") {
+    return DocTypes.filter((d) => d.key === "payoff");
+  }
+
+  return DocTypes;
+};
+useEffect(() => {
+
+  const map:any = {};
+
+  loans.forEach((loan:any) => {
+
+    if (loan.status === "Merged") {
+      map[loan._id] = "plus_contract";
+    }
+
+    if (
+      loan.status === "Active" ||
+      loan.status === "Partial Payment"
+    ) {
+      map[loan._id] = "contract";
+    }
+
+    if (loan.status === "Paid Off") {
+      map[loan._id] = "payoff";
+    }
+
+  });
+
+  setSelectedDocTypeMap(map);
+
+}, [loans]);
 return (
-        <div className="h-[calc(84vh-20px)] overflow-y-auto p-2 space-y-4">
+        <div className="h-[calc(100vh-170px)] overflow-y-auto p-2 space-y-4">
            <div className="flex justify-end">
               <Button
                 variant="contained"
@@ -832,27 +900,23 @@ return (
   {generateDocMap[loan._id] && (
     <div className="flex items-center gap-3 mt-3">
       <Autocomplete
-        size="small"
-        options={DocTypes}
-        getOptionLabel={(option) => option.label}
-        value={
-          DocTypes.find((doc) => doc.key === selectedDocTypeMap[loan._id]) || null
-        }
-        //@ts-ignore
-        onChange={(e, value) => {
-          setSelectedDocTypeMap((prev) => ({
-            ...prev,
-            [loan._id]: value?.key || "",
-          }));
-        }}
-        sx={{ width: 220 }}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Select Document"
-          />
-        )}
-      />
+  size="small"
+  options={getFilteredDocTypes(loan)}
+  getOptionLabel={(option) => option.label}
+  value={
+    DocTypes.find((doc) => doc.key === selectedDocTypeMap[loan._id]) || null
+  }
+  onChange={(e, value) => {
+    setSelectedDocTypeMap((prev) => ({
+      ...prev,
+      [loan._id]: value?.key || "",
+    }));
+  }}
+  sx={{ width: 220 }}
+  renderInput={(params) => (
+    <TextField {...params} label="Select Document" />
+  )}
+/>
     <button
 onClick={() => handleOpenDocumentModal(loanData)}
   disabled={docLoadingMap[loan._id]}
@@ -1176,6 +1240,8 @@ onClick={() => handleOpenDocumentModal(loanData)}
           documents={modalDocs}
           title={modalTitle}
           onSubmit={handleModalDocSubmit}
+          isPaidOff={selectedLoanForDoc?.loan?.status === "Paid Off"}
+          loan={selectedLoanForDoc?.loan}
         />
         )}
       {editPaymentModalOpen && (
