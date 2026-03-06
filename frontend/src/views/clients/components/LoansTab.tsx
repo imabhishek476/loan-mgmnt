@@ -906,7 +906,7 @@ return (
   value={
     DocTypes.find((doc) => doc.key === selectedDocTypeMap[loan._id]) || null
   }
-  onChange={(e, value) => {
+  onChange={(_e, value) => {
     setSelectedDocTypeMap((prev) => ({
       ...prev,
       [loan._id]: value?.key || "",

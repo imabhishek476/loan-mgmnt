@@ -2,11 +2,11 @@ import { observer } from "mobx-react-lite";
 import AuditLogsTable from "./components/AuditLogsTable";
 import { CompaniesTab } from "./components/CompaniesTab";
 import { UsersTab } from "./components/UsersTab";
-import { Building2, FileText, Scale, Settings, Shield, User } from "lucide-react";
+import { Building2, Scale, Settings, Shield, User } from "lucide-react";
 import { userStore } from "../../store/UserStore";
 import { useEffect } from "react";
 import AttorneysTab from "./components/AttorneysTab";
-import TemplatesTab from "./components/TemplatesTab";
+// import TemplatesTab from "./components/TemplatesTab";
 import { Autocomplete, TextField } from "@mui/material";
 type TabType = "system" | "companies" | "attorneys" | "templates" | "users" | "audit";
 
@@ -14,7 +14,7 @@ const Administration = observer(() => {
   const tabs: { key: TabType; label: string; icon: React.ReactElement }[] = [
     { key: "companies", label: "Companies", icon: <Building2 size={18} /> },
       { key: "attorneys", label: "Manage Attorney", icon: <Scale size={18} /> },
-      { key: "templates", label: "Manage Templates", icon: < FileText size={18} /> },
+      // { key: "templates", label: "Manage Templates", icon: < FileText size={18} /> },
     { key: "users", label: "Users", icon: <User size={18} /> },
     { key: "audit", label: "Audit Logs", icon: <Shield size={18} /> },
   ];
@@ -101,7 +101,7 @@ const Administration = observer(() => {
         <CompaniesTab activeTab={userStore.activeAdminTab} />
       )}
       {userStore.activeAdminTab === "attorneys" && <AttorneysTab />}
-      {userStore.activeAdminTab === "templates" && <TemplatesTab />}
+      {/* {userStore.activeAdminTab === "templates" && <TemplatesTab />} */}
 
       {userStore.activeAdminTab === "users" && (
         <UsersTab activeTab={userStore.activeAdminTab} />
