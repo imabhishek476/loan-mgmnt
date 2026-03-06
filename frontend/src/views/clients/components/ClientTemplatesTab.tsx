@@ -5,6 +5,8 @@ import { DocTypes, formatFee, moneyFormat } from "../../../utils/constants";
 import { toast } from "react-toastify";
 import { loanStore } from "../../../store/LoanStore";
 import api from "../../../api/axios";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 
 interface ClientTemplateTabProps {
   client: any;
@@ -23,7 +25,11 @@ const ClientTemplatesTab = ({
   const [selectedDocType, setSelectedDocType] = useState<any>(null);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-
+const [editableClient, setEditableClient] = useState<any>(null);
+const [editableCompany, setEditableCompany] = useState<any>(null);
+const [editableLoan, setEditableLoan] = useState<any>(null);
+const [todayDate, setTodayDate] = useState(moment());
+const [calculatedLoan,setCalculatedLoan] = useState<any>(null);
   /* ---------------- Company Options ---------------- */
 
   const companyOptions = useMemo(() => {
@@ -108,7 +114,25 @@ const ClientTemplatesTab = ({
   }, [selectedLoan, clientLoans]);
 
   /* ---------------- Auto Select Logic ---------------- */
+useEffect(() => {
 
+  if(!editableLoan) return;
+
+  const result = loanStore.calculateLoans(
+    editableLoan,
+    clientLoans,
+    "mergedDate",
+    todayDate
+  );
+
+  setCalculatedLoan(result);
+
+},[
+  editableLoan?.issueDate,
+  todayDate,
+  editableLoan?.baseAmount,
+  editableLoan?.previousLoanAmount
+]);
   useEffect(() => {
     if (!selectedLoan) return;
 
@@ -116,60 +140,89 @@ const ClientTemplatesTab = ({
       selectedLoan.company?.companyName ||
       companies.find((c) => c._id === selectedLoan.company)?.companyName;
 
+    let docKey = "";
+    if (
+      selectedLoan.status === "Active" ||
+      selectedLoan.status === "Partial Payment"
+    ) {
+      docKey = "contract";
+    }
     if (selectedLoan.status === "Merged") {
+      docKey = "plus_contract";
+    }
+      if (selectedLoan.status === "Paid Off") {
+        docKey = "payoff";
+      }
+      const docType = DocTypes.find((d) => d.key === docKey);
 
-      const contractType = DocTypes.find((d) => d.key === "contract");
+      setSelectedDocType(docType);
 
-      setSelectedDocType(contractType);
-
-      const docs =
-        contractType?.companies.filter(
-          (c) => c.companyName === company
-        ) || [];
-
-      const plusDoc =
-        docs.find((d) =>
-          d.fileName.toLowerCase().includes("plus")
-        ) || docs[0];
-
-      setSelectedDocument(plusDoc);
-
-    } else if (selectedLoan.status === "Paid Off") {
-
-      const payoffType = DocTypes.find((d) => d.key === "payoff");
-
-      setSelectedDocType(payoffType);
-
-      const payoffDoc = payoffType?.companies.find(
+      const doc = docType?.companies.find(
         (c) => c.companyName === company
       );
 
-      setSelectedDocument(payoffDoc);
+  setSelectedDocument(doc || null);
 
-    } else {
-
-      setSelectedDocType(null);
-      setSelectedDocument(null);
-
-    }
-
-  }, [selectedLoan, companies]);
-
+}, [selectedLoan, companies]);
   /* ---------------- Reset ---------------- */
+useEffect(() => {
 
+  if (!selectedLoan || !calculatedLoan) return;
+
+  setEditableLoan((prev:any)=>({
+
+    ...prev,
+
+    totalPrincipal:
+      prev?.totalPrincipal ??
+      selectedLoan.totalPrincipal ??
+      (selectedLoan.baseAmount || 0) +
+      (selectedLoan.previousLoanAmount || 0),
+
+    interestAmount:
+      prev?.interestAmount ??
+      calculatedLoan.interestAmount ??
+      0,
+
+    total:
+      prev?.total ??
+      calculatedLoan.total ??
+      0,
+
+    remaining:
+      prev?.remaining ??
+      calculatedLoan.remaining ??
+      0,
+
+  }));
+
+}, [calculatedLoan]);
   const handleReset = () => {
+    setEditableClient(null);
+    setEditableCompany(null);
     setSelectedCompany(null);
     setSelectedLoan(null);
     setSelectedDocType(null);
     setSelectedDocument(null);
     setIsGenerating(false);
   };
-
+const updateFee = (key:string,value:number)=>{
+  setEditableLoan({
+    ...editableLoan,
+    fees:{
+      ...editableLoan.fees,
+      [key]:{
+        ...editableLoan.fees[key],
+        value
+      }
+    }
+  })
+}
   /* ---------------- Generate ---------------- */
 
   const handleGenerate = async () => {
 
-    if (!selectedLoan || !selectedDocument) {
+    if (!editableLoan || !selectedDocument) {
       toast.error("Please select document");
       return;
     }
@@ -177,64 +230,53 @@ const ClientTemplatesTab = ({
     try {
 
       setIsGenerating(true);
-
-      const calculated = loanStore.calculateLoans(
-        selectedLoan,
-        clientLoans,
-        "mergedDate"
-      );
+    const calculated = calculatedLoan;
 
       if (!calculated) {
         toast.error("Loan calculation failed");
         return;
       }
-
-const baseAmount = selectedLoan?.baseAmount || 0;
-const previousLoanAmount = selectedLoan?.previousLoanAmount || 0;
-
-const totalPrincipal = baseAmount + previousLoanAmount;
-
-const brokerFee = selectedLoan?.fees?.brokerFee || {};
-const otherFees = selectedLoan?.fees || {};
-
-const brokerFeeCalculatedAmount =
-  brokerFee?.type === "percentage"
-    ? (totalPrincipal * brokerFee?.value) / 100
-    : brokerFee?.value || 0;
+const totalPrincipal = editableLoan?.totalPrincipal || 0;
+const brokerFee = editableLoan?.fees?.brokerFee || {};
+const otherFees = editableLoan?.fees || {};
+const brokerFeeCalculatedAmount = brokerFee?.value || 0;
 
 const payload = {
-  loanid: selectedLoan._id,
+  loanid: editableLoan._id,
   document_title: selectedDocument.fileName,
   document_link: selectedDocument.value,
 
   document_data: {
-    client_fullname: client?.fullName || "",
-    client_address: client?.address || "",
-    client_accidentDate: client?.accidentDate || "",
-    company: companyData,
-
-    today_date: moment().format("MMM DD, YYYY"),
-
+    client_fullname: editableClient?.fullName || "",
+    client_address: editableClient?.address || "",
+    client_accidentDate: editableClient?.accidentDate
+      ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
+      : "",
+      company: {
+      name: editableCompany?.name || "",
+      address: editableCompany?.address || "",
+      email: companyData?.email || "",
+      phone: companyData?.phone || "",
+    },
+    today_date: todayDate?.format("MMM DD, YYYY"),
     loan_issueDate: calculated?.issueDate?.format("MMM DD, YYYY"),
 
-    loan_baseAmount: moneyFormat(baseAmount),
-    loan_previousLoanAmount: moneyFormat(previousLoanAmount),
+    loan_baseAmount: moneyFormat(editableLoan?.baseAmount || 0),
+    loan_previousLoanAmount: moneyFormat(editableLoan?.previousLoanAmount || 0),
     loan_totalPrincipal: moneyFormat(totalPrincipal),
 
-    loan_subTotal: moneyFormat(calculated?.subtotal),
+    loan_subTotal: moneyFormat(editableLoan?.subtotal),
 
-    loan_interestType: selectedLoan?.interestType || "",
-    loan_monthlyRate: selectedLoan?.monthlyRate || 0,
+    loan_interestType: editableLoan?.interestType || "",
+    loan_monthlyRate: editableLoan?.monthlyRate || 0,
 
-    loan_interestAmount: moneyFormat(calculated?.interestAmount),
-
-    loan_totalAmount: moneyFormat(calculated?.total),
-    loan_paidAmount: moneyFormat(calculated?.paidAmount),
-    loan_remainingAmount: moneyFormat(calculated?.remaining),
-
+   loan_interestAmount: moneyFormat(editableLoan?.interestAmount),
+    loan_totalAmount: moneyFormat(editableLoan?.total),
+    loan_paidAmount: moneyFormat(editableLoan?.paidAmount),
+    loan_remainingAmount: moneyFormat(editableLoan?.remaining),
     loan_dynamicTerm: calculated?.dynamicTerm || 0,
 
-    loan_parentLoanId: selectedLoan?.parentLoanId || "",
+    loan_parentLoanId: editableLoan?.parentLoanId || "",
 
     loan_mergedDate: calculated?.mergedDate
       ? calculated.mergedDate.format("MMM DD, YYYY")
@@ -245,7 +287,7 @@ const payload = {
 
     brokerFeeCalculatedAmount: moneyFormat(brokerFeeCalculatedAmount),
 
-    loan_status: selectedLoan?.status || "",
+    loan_status: editableLoan?.status || "",
 
     loan_allFees: otherFees,
   },
@@ -272,31 +314,74 @@ const payload = {
       document.body.removeChild(link);
 
       toast.success("Document generated successfully");
-
-    } catch (error) {
-      toast.error("Failed to generate document");
-    } finally {
+      } catch (error:any) {
+    console.error("Generate error:", error);
+    console.error("Response:", error?.response);
+    toast.error(
+      error?.response?.data?.message || "Failed to generate document"
+    );
+  }finally {
       setIsGenerating(false);
     }
 
   };
 
   /* ---------------- Calculated Loan ---------------- */
+  useEffect(() => {
+    if (!selectedLoan) return;
+    setEditableLoan({
+      ...selectedLoan
+    });
+    setEditableClient({
+      fullName: client?.fullName || "",
+      address: client?.address || "",
+      accidentDate: client?.accidentDate || "",
+      attorneyName: client?.attorneyId?.fullName || "",
+    });
 
-  const calculated = useMemo(() => {
-    if (!selectedLoan) return null;
+    const company =
+      selectedLoan.company?._id || selectedLoan.company;
 
-    return loanStore.calculateLoans(
-      selectedLoan,
-      clientLoans,
-      "mergedDate"
-    );
-  }, [selectedLoan, clientLoans]);
+    const companyObj = companies.find((c:any)=>c._id === company);
 
+    setEditableCompany({
+      name: companyObj?.companyName || "",
+      address: `${companyObj?.address || ""} ${companyObj?.city || ""}`.trim(),
+      phone: companyObj?.phone || "",
+      email: companyObj?.email || "",
+    });
+
+  }, [selectedLoan, client, companies]);
   /* ---------------- UI ---------------- */
+  const filteredDocTypes = useMemo(() => {
+    if (!selectedLoan) return DocTypes;
 
+    if (selectedLoan.status === "Merged") {
+      // show only Plus Contract, Payoff, Reduction
+      return DocTypes.filter((d) =>
+        ["plus_contract", "payoff", "reduction"].includes(d.key)
+      );
+    }
+
+    if (
+      selectedLoan.status === "Active" ||
+      selectedLoan.status === "Partial Payment"
+    ) {
+      // show only normal Contract + Reduction
+      return DocTypes.filter((d) =>
+        ["contract", "payoff", "reduction"].includes(d.key)
+      );
+    }
+
+    if (selectedLoan.status === "Paid Off") {
+      // show only payoff
+      return DocTypes.filter((d) => d.key === "payoff");
+    }
+
+    return DocTypes;
+  }, [selectedLoan]);
   return (
-    <div className="p-6 space-y-6 bg-gray-50">
+    <div className="p-2 space-y-6 bg-gray-50">
 
       {/* Dropdown Row */}
 
@@ -343,7 +428,7 @@ const payload = {
 
         {selectedLoan && (
           <Autocomplete
-            options={DocTypes}
+            options={filteredDocTypes}
             sx={{ width: 260 }}
             getOptionLabel={(o: any) => o.label}
             value={selectedDocType}
@@ -373,7 +458,23 @@ const payload = {
             )}
           />
         )}
-
+        {selectedDocType?.key === "payoff" && (
+        <div className="flex flex-col">
+          <LocalizationProvider dateAdapter={AdapterMoment}>
+            <DatePicker
+              label="Paid Date"
+              value={todayDate}
+              onChange={(date: any) => setTodayDate(date)}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true
+                }
+              }}
+            />
+          </LocalizationProvider>
+        </div>
+      )}
         {/* Buttons */}
 
         <div className="flex gap-2 font-semibold">
@@ -396,63 +497,300 @@ const payload = {
           </button>
 
         </div>
+      </div>
+    {editableLoan && selectedLoan && calculatedLoan && (
 
+    <div className="bg-white rounded-md p-2 grid grid-cols-1 xl:grid-cols-2 gap-2">
+    <div className="flex flex-col gap-6">
+      {/* CLIENT DETAILS */}
+      <div className="p-2 pb-0">
+        <h3 className="font-semibold text-gray-800 mb-4">Client Details</h3>
+
+        <div className="grid grid-cols-1 gap-3">
+
+          <Field
+            label="Client Name"
+            value={editableClient?.fullName}
+            onChange={(v:any)=>setEditableClient({...editableClient,fullName:v})}
+          />
+
+          <Field
+            label="Client Address"
+            value={editableClient?.address}
+            onChange={(v:any)=>setEditableClient({...editableClient,address:v})}
+          />
+          <div className="flex flex-col">
+          <label className="text-xs text-gray-700 font-semibold mb-1">
+            Accident Date
+          </label>
+
+          <LocalizationProvider dateAdapter={AdapterMoment}>
+            <DatePicker
+              value={
+                editableClient?.accidentDate
+                  ? moment(editableClient.accidentDate)
+                  : null
+              }
+              onChange={(date: any) =>
+                setEditableClient({
+                  ...editableClient,
+                  accidentDate: date ? moment(date) : null
+                })
+              }
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true
+                }
+              }}
+            />
+          </LocalizationProvider>
+        </div>
+
+          <Field
+            label="Attorney Name"
+            value={editableClient?.attorneyName}
+            onChange={(v:any)=>setEditableClient({...editableClient, attorneyName:v})}
+          />
+
+        </div>
       </div>
 
-      {/* Loan Preview */}
 
-      {selectedLoan && calculated && (
+      {/* COMPANY DETAILS */}
+      <div className="p-2 pt-0">
+        <h3 className="font-semibold text-gray-800 mb-4">Company Details</h3>
 
-        <div className="bg-white border rounded-lg p-5 grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-3">
 
-          <Field label="Client Name" value={client?.fullName} />
-          <Field label="Client Address" value={client?.address} />
+          <Field
+            label="Company Name"
+            value={editableCompany?.name}
+            onChange={(v:any)=>setEditableCompany({...editableCompany,name:v})}
+          />
 
-          <Field label="Company Name" value={companyData.name} />
-          <Field label="Company Address" value={companyData.address} />
+          <Field
+            label="Company Address"
+            value={editableCompany?.address}
+            onChange={(v:any)=>setEditableCompany({...editableCompany,address:v})}
+          />
+            <Field
+            label="Telephone No."
+            value={editableCompany?.phone}
+            onChange={(v:any)=>setEditableCompany({...editableCompany,phone:v})}
+          />
+           <Field
+            label="Company Email"
+            value={editableCompany?.email}
+            onChange={(v:any)=>setEditableCompany({...editableCompany,email:v})}
+          />
+        </div>
+      </div>
+      </div>
 
-          <Field label="Issue Date" value={moment(selectedLoan.issueDate).format("MM/DD/YYYY")} />
-          <Field label="Loan Status" value={selectedLoan?.status} />
+      <div className="border-l p-4">
+            <div className="flex items-center justify-between mb-4">
+
+            <h3 className="font-semibold text-gray-800 text-lg">
+              Loan Details
+            </h3>
+
+            <div className="flex gap-4 text-sm">
+
+              <span className="bg-gray-200 px-3 py-1 rounded-md  font-semibold text-gray-700">
+              Loan Term: {calculatedLoan?.dynamicTerm} Months
+              </span>
+
+              <span className="bg-green-700 text-white px-3 py-1 rounded-md  font-semibold">
+                Total: $ {moneyFormat(editableLoan?.total || 0)}
+              </span>
+
+            </div>
+
+          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold text-gray-700 mb-1">
+              Issue Date
+            </label>
+
+            <LocalizationProvider dateAdapter={AdapterMoment}>
+              <DatePicker
+                value={editableLoan?.issueDate ? moment(editableLoan.issueDate) : null}
+                onChange={(date:any)=>setEditableLoan({
+                  ...editableLoan,
+                  issueDate: date ? moment(date).format("MM-DD-YYYY") : ""
+                })}
+                slotProps={{ textField:{size:"small"} }}
+              />
+            </LocalizationProvider>
+      </div>
+
+      <Field
+        label="Loan Status"
+        value={editableLoan?.status}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,status:v})}
+      />
+
+      <Field
+        label="Base Amount"
+         type="number"
+        value={editableLoan?.baseAmount}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,baseAmount:Number(v)})}
+      />
+
+      <Field
+        label="Previous Loan Amount"
+        type="number"
+        value={editableLoan?.previousLoanAmount}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,previousLoanAmount:Number(v)})}
+      />
+
+      <Field
+        label="Total Principal"
+        type="number"
+        value={editableLoan?.totalPrincipal}
+        onChange={(v:any)=>
+          setEditableLoan({
+            ...editableLoan,
+            totalPrincipal:Number(v)
+          })
+        }
+      />
 
         <Field
             label="Merged From"
             value={
               mergedFromLoan
-                ? `Issue: ${moment(mergedFromLoan.issueDate).format("MM/DD/YYYY")} | Base: $${moneyFormat(
-                    mergedFromLoan.baseAmount
-                  )} | Status: ${mergedFromLoan.status}`
+                ? `Issue: ${moment(mergedFromLoan.issueDate).format("MM/DD/YYYY")} | Base: $${moneyFormat(mergedFromLoan.baseAmount)}`
                 : "-"
             }
           />
 
-          <Field label="Merged Date" value={calculated?.mergedDate?.format("MM/DD/YYYY") || "-"} />
+      <Field
+        label="Merged Date"
+        value={calculatedLoan?.mergedDate?.format("MM/DD/YYYY") || "-"}
+      />
 
-          <Field label="Base Amount" value={moneyFormat(selectedLoan?.baseAmount)} />
-          <Field label="Previous Loan Amount" value={moneyFormat(selectedLoan?.previousLoanAmount)} />
+      <Field
+        label="Subtotal"
+        type="number"
+        value={editableLoan?.subtotal || calculatedLoan?.subtotal}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,subtotal:v})}
+      />
+      <Field
+        label="Interest Type"
+        type="number"
+        value={editableLoan?.interestType}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,interestType:v})}
+      />
 
+      <Field
+        label="Monthly Rate"
+        type="number"
+        value={editableLoan?.monthlyRate}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,monthlyRate:Number(v)})}
+      />
+
+     <Field
+        label="Interest Amount"
+        type="number"
+        value={editableLoan?.interestAmount}
+        onChange={(v:any)=>
+          setEditableLoan({
+            ...editableLoan,
+            interestAmount:Number(v)
+          })
+        }
+      />
+
+      <Field
+        label="Loan Total"
+        type="number"
+        value={editableLoan?.total}
+        onChange={(v:any)=>
+          setEditableLoan({
+            ...editableLoan,
+            total:Number(v)
+          })
+        }
+      />
           <Field
-            label="Total Principal"
-            value={moneyFormat(
-              (selectedLoan?.baseAmount || 0) +
-                (selectedLoan?.previousLoanAmount || 0)
-            )}
-          />
+        label="Paid Amount"
+        type="number"
+        value={editableLoan?.paidAmount}
+        onChange={(v:any)=>
+          setEditableLoan({
+            ...editableLoan,
+            paidAmount: Number(v)
+          })
+        }
+      />
 
-          <Field label="Subtotal" value={moneyFormat(calculated?.subtotal)} />
-          <Field label="Interest Type" value={selectedLoan?.interestType} />
-          <Field label="Monthly Rate" value={selectedLoan?.monthlyRate} />
-          <Field label="Interest Amount" value={moneyFormat(calculated?.interestAmount)} />
-
-          <Field label="Loan Total" value={moneyFormat(calculated?.total)} />
-          <Field label="Paid Amount" value={moneyFormat(calculated?.paidAmount)} />
-          <Field label="Remaining Amount" value={moneyFormat(calculated?.remaining)} />
-          <Field label="Loan Term" value={calculated?.dynamicTerm} />
-
-          <Field label="Application Fee" value={formatFee(selectedLoan?.fees?.applicationFee, selectedLoan?.baseAmount)} />
-          <Field label="Broker Fee" value={formatFee(selectedLoan?.fees?.brokerFee, selectedLoan?.baseAmount)} />
-          <Field label="Administrative Fee" value={formatFee(selectedLoan?.fees?.administrativeFee, selectedLoan?.baseAmount)} />
-          <Field label="Attorney Review Fee" value={formatFee(selectedLoan?.fees?.attorneyReviewFee, selectedLoan?.baseAmount)} />
-          <Field label="Annual Maintenance Fee" value={formatFee(selectedLoan?.fees?.annualMaintenanceFee, selectedLoan?.baseAmount)} />
+        <Field
+        label="Remaining Amount"
+        type="number"
+        value={editableLoan?.remaining}
+        onChange={(v:any)=>
+          setEditableLoan({
+            ...editableLoan,
+            remaining:Number(v)
+          })
+        }
+      />
+       <Field
+        type="number"
+        label="Application Fee"
+        value={editableLoan?.fees?.applicationFee?.value}
+        onChange={(v:any)=>updateFee("applicationFee",(v))}
+        preview={formatFee(
+          editableLoan?.fees?.applicationFee,
+          editableLoan?.baseAmount
+        )}
+      />
+      <Field
+        type="number"
+        label="Broker Fee"
+        value={editableLoan?.fees?.brokerFee?.value}
+        onChange={(v:any)=>updateFee("brokerFee",(v))}
+        preview={formatFee(
+          editableLoan?.fees?.brokerFee,
+          editableLoan?.baseAmount
+        )}
+      />
+      <Field
+        type="number"
+        label="Administrative Fee"
+        value={editableLoan?.fees?.administrativeFee?.value}
+        onChange={(v:any)=>updateFee("administrativeFee",(v))}
+        preview={formatFee(
+          editableLoan?.fees?.administrativeFee,
+          editableLoan?.baseAmount
+        )}
+        />
+      <Field
+        type="number"
+        label="Attorney Review Fee"
+        value={editableLoan?.fees?.attorneyReviewFee?.value}
+        onChange={(v:any)=>updateFee("attorneyReviewFee",(v))}
+        preview={formatFee(
+          editableLoan?.fees?.attorneyReviewFee,
+          editableLoan?.baseAmount
+        )}
+      />
+    <Field
+        type="number"
+        label="Annual Maintenance Fee"
+        value={editableLoan?.fees?.annualMaintenanceFee?.value}
+        onChange={(v:any)=>updateFee("annualMaintenanceFee",(v))}
+        preview={formatFee(
+          editableLoan?.fees?.annualMaintenanceFee,
+          editableLoan?.baseAmount
+        )}
+      />
+    </div>
+  </div>
 
         </div>
 
@@ -464,12 +802,22 @@ const payload = {
 
 /* ---------------- Field ---------------- */
 
-const Field = ({ label, value }: any) => {
+const Field = ({ label, value, onChange, type = "text", preview }: any) => {
 
-  const displayValue =
-    value === undefined || value === null || value === ""
-      ? "-"
-      : value;
+  const handleChange = (e:any) => {
+
+    let v = e.target.value;
+    if(type === "number"){
+      if(v === ""){
+        onChange("");
+        return;
+      }
+      if(!/^\d*\.?\d*$/.test(v)) return;
+      onChange(v);
+      return;
+    }
+    onChange(v);
+  };
 
   return (
     <div className="flex flex-col">
@@ -478,10 +826,16 @@ const Field = ({ label, value }: any) => {
       </label>
 
       <input
-        disabled
-        value={displayValue}
-        className="border rounded-md px-3 py-2 bg-gray-100 text-sm"
+        type="text"
+        value={value ?? ""}
+        onChange={handleChange}
+        className="border rounded-md px-3 py-2 bg-white text-sm"
       />
+      {preview && (
+        <span className="text-xs text-gray-500 mt-1">
+          {preview}
+        </span>
+      )}
     </div>
   );
 };
