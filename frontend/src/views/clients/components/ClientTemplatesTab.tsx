@@ -462,7 +462,7 @@ const payload = {
         <div className="flex flex-col">
           <LocalizationProvider dateAdapter={AdapterMoment}>
             <DatePicker
-              label="Paid Date"
+              label="Select Date"
               value={todayDate}
               onChange={(date: any) => setTodayDate(date)}
               slotProps={{
