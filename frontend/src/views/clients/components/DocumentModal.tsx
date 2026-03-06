@@ -1,23 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileText, X } from "lucide-react";
+import moment from "moment";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { loanStore } from "../../../store/LoanStore";
+import { moneyFormat } from "../../../utils/constants";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   documents: any[];
-  onSubmit: (doc: any) => void;
+  onSubmit: (doc: any, paidDate?: string) => void;
   title: string;
+  isPaidOff?: boolean;
+  dynamicTerm?: number;
+  totalAmount?: number;
+  loan?: any;
 }
-
 const DocumentModal = ({
   open,
   onClose,
   documents,
   onSubmit,
   title,
+  isPaidOff,
+ loan  
 }: Props) => {
   const [selectedValue, setSelectedValue] = useState<string>("");
-
+  const [paidDate, setPaidDate] = useState<any>(moment());  
+  const [calculatedLoan, setCalculatedLoan] = useState<any>(null);
   if (!open) return null;
 
   const handleSubmit = () => {
@@ -26,10 +37,26 @@ const DocumentModal = ({
       (doc) => doc.value === selectedValue
     );
     if (selectedDoc) {
-      onSubmit(selectedDoc);
-    }
+    onSubmit(
+      selectedDoc,
+      isPaidOff ? moment(paidDate).format("MMM DD, YYYY") : undefined
+    );
+  }
   };
+useEffect(() => {
 
+  if (!loan) return;
+
+  const result = loanStore.calculateLoans(
+    loan,
+    [], // empty array (not needed)
+    "mergedDate",
+    paidDate
+  );
+
+  setCalculatedLoan(result);
+
+}, [paidDate, loan]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white w-[500px] rounded-lg shadow-xl p-5 relative">
@@ -41,9 +68,41 @@ const DocumentModal = ({
             <X size={18} />
           </button>
         </div>
+{isPaidOff && (
+  <div className="flex gap-4 text-sm mb-4">
 
+    <span className="bg-gray-200 px-3 py-1 rounded-md font-semibold text-gray-700">
+      Loan Term: {calculatedLoan?.dynamicTerm || 0} Months
+    </span>
+
+    <span className="bg-green-700 text-white px-3 py-1 rounded-md font-semibold">
+      Total: ${moneyFormat(calculatedLoan?.total || 0)}
+    </span>
+
+  </div>
+)}
         {/* Document List */}
         <div className="space-y-3 max-h-[300px] overflow-y-auto">
+          {isPaidOff && (
+            <div className="mt-4">
+              <label className="text-xs font-semibold text-gray-700 mb-1 block">
+                Paid Date
+              </label>
+
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+                <DatePicker
+                  value={paidDate}
+                  onChange={(date:any) => setPaidDate(date)}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true
+                    }
+                  }}
+                />
+              </LocalizationProvider>
+            </div>
+          )}
           {documents.map((doc: any) => (
             <label
               key={doc.value}

@@ -346,7 +346,7 @@ async getLoanProfitByLoanId(id: string) {
     }
     return obj;
   }
-  calculateLoans= (loan: any, allLoans = null, calcType: string = null) => {
+  calculateLoans= (loan: any, allLoans = null, calcType: string = null,selectedToday = null) => {
       if (!loan) return null;
   
       const interestType = loan.interestType || "flat";
@@ -355,7 +355,7 @@ async getLoanProfitByLoanId(id: string) {
       let issueDate = moment(loan.issueDate, "MM-DD-YYYY");
       const paidAmount = loan.paidAmount || 0;
       const subtotal = loan.subTotal || 0;
-      let today = moment();
+      let today = selectedToday ? moment(selectedToday) : moment();
       let daysDiff = 0;
       let mergedDate = null;
       const originalTerm = loan.loanTerms || 0;
