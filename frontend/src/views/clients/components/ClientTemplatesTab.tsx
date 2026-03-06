@@ -385,7 +385,7 @@ const payload = {
 
       {/* Dropdown Row */}
 
-      <div className="flex gap-4 flex-wrap items-center">
+      <div className="flex gap-2 flex-wrap items-center">
 
         {/* Company */}
 
@@ -500,13 +500,13 @@ const payload = {
       </div>
     {editableLoan && selectedLoan && calculatedLoan && (
 
-    <div className="bg-white rounded-md p-2 grid grid-cols-1 xl:grid-cols-2 gap-2">
-    <div className="flex flex-col gap-6">
+    <div className="bg-white rounded-md p-2 grid grid-cols-1 xl:grid-cols-2 gap-2 mt-0">
+    <div className="flex flex-col gap-2">
       {/* CLIENT DETAILS */}
       <div className="p-2 pb-0">
         <h3 className="font-semibold text-gray-800 mb-4">Client Details</h3>
 
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-2 gap-2">
 
           <Field
             label="Client Name"
@@ -559,9 +559,9 @@ const payload = {
 
       {/* COMPANY DETAILS */}
       <div className="p-2 pt-0">
-        <h3 className="font-semibold text-gray-800 mb-4">Company Details</h3>
+        <h3 className="font-semibold text-gray-800 mb-2">Company Details</h3>
 
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-2 gap-2">
 
           <Field
             label="Company Name"
@@ -608,7 +608,7 @@ const payload = {
             </div>
 
           </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
           <div className="flex flex-col">
             <label className="text-xs font-semibold text-gray-700 mb-1">
