@@ -368,6 +368,7 @@ const generateFinalDocument = async (
   loanData: any,
   selectedDocUrl: string,
   selectedTitle: string,
+  //@ts-ignore
   selectDate?: string
 ) => {
   const { loan, companyName } = loanData;
