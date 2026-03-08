@@ -18,7 +18,7 @@ import EditLoanModal from "../../../components/EditLoanModal";
 import EditPaymentModal from "../../../components/EditPaymentModal";
 import Confirm from "../../../components/Confirm";
 import {recoverLoan, updateLoanStatus,} from "../../../services/LoanService";
-import { DocTypes, getAllowedTerms } from "../../../utils/constants";
+import { DocTypes, getAllowedTerms, LOAN_TERMS } from "../../../utils/constants";
 import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
 import api from "../../../api/axios";
@@ -368,7 +368,8 @@ const generateFinalDocument = async (
   loanData: any,
   selectedDocUrl: string,
   selectedTitle: string,
-  paidDate?: string
+  //@ts-ignore
+  selectDate?: string
 ) => {
   const { loan, companyName } = loanData;
 
@@ -415,28 +416,46 @@ const companyObj = companies.find(
       [loan._id]: true,
     }));
 
-    const calculated = loanStore.calculateLoans(
+    const calculated:any = await loanStore.calculateLoanAmounts({
       loan,
+      prevLoanTotal: loan?.previousLoanAmount || 0,
+      calculate: true
+    });
+  const allTenureData = LOAN_TERMS.map((term:number)=>{
+
+    const termLoan = JSON.parse(JSON.stringify(loan));
+    const newIssueDate = moment(loan.issueDate, "MM-DD-YYYY")
+      .subtract(term, "months")
+      .format("MM-DD-YYYY");
+    termLoan.issueDate = newIssueDate;
+    termLoan.loanTerms = term;
+    const termCalculation = loanStore.calculateLoans(
+      termLoan,
       loans,
       "mergedDate"
     );
 
+  return {
+    tenure: term,
+    interestAmount: parseFloat((termCalculation?.interestAmount || 0).toFixed(2)),
+    totalAmount: parseFloat((termCalculation?.total || 0).toFixed(2))
+  };
+  });
+
+  const tenureMap:any = {};
+  allTenureData.forEach((t:any)=>{
+  tenureMap[`loan_${t.tenure}_interest`] = parseFloat(t.interestAmount.toFixed(2));
+  tenureMap[`loan_${t.tenure}_total`] = parseFloat(t.totalAmount.toFixed(2));
+  });
     if (!calculated) {
       toast.error("Calculation failed");
       return;
     }
 
-    const brokerFee = loan?.fees?.brokerFee || {};
-    const otherFees = loan?.fees || {};
 
-    const baseAmount = loan?.baseAmount || 0;
+    const baseAmount = loan?.baseAmount + loan?.previousLoanAmount || 0;
     const previousLoanAmount = loan?.previousLoanAmount || 0;
-    const totalPrincipal = baseAmount + previousLoanAmount;
 
-    const brokerFeeCalculatedAmount =
-      brokerFee?.type === "percentage"
-        ? (totalPrincipal * brokerFee?.value) / 100
-        : brokerFee?.value || 0;
       const now = new Date();
       const formattedTimestamp = `${now.getFullYear()}${String(
         now.getMonth() + 1
@@ -445,49 +464,59 @@ const companyObj = companies.find(
       ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
         now.getSeconds()
       ).padStart(2, "0")}`;
-    const payload = {
-      loanid: loan._id || "",
-      document_title: selectedTitle || "", 
-      document_link: selectedDocUrl,
-      document_data: {
-        client_fullname: client?.fullName || "",
-        client_address: clientAddress || "",
-        client_accidentDate: client?.accidentDate
-        ? moment(client.accidentDate).format("MMM DD, YYYY")
-        : "",
-        company_companyName: companyName || "",
+   const payload = {
+  loanid: loan?._id ?? "-",
+  document_title: selectedTitle ?? "-",
+  document_link: selectedDocUrl ?? "-",
 
-        company_name: companyObj?.companyName || "",
-        company_address: companyAddress || "",
-        company_email: companyObj?.email || "",
-        company_phone: companyObj?.phone || "",
-        today_date: todayFormatted || "",
-        loan_issueDate: calculated?.issueDate
-          ? calculated.issueDate.format("MMM DD, YYYY")
-          : moment(loan.issueDate).format("MMM DD, YYYY"),
-        loan_baseAmount: baseAmount || "",
-        loan_previousLoanAmount: previousLoanAmount || "",
-        loan_totalPrincipal: totalPrincipal || "",
-        loan_subTotal: calculated.subtotal || "",
-        loan_interestType: loan.interestType || "",
-        loan_monthlyRate: loan.monthlyRate || "",
-        loan_interestAmount: calculated.interestAmount || "",
-        loan_totalAmount: calculated.total || "",
-        loan_paidAmount: calculated.paidAmount || "",
-        loan_paidDate: paidDate || "",
-        loan_remainingAmount: calculated.remaining || "",
-        loan_dynamicTerm: calculated.dynamicTerm || "",
-        loan_parentLoanId: loan.parentLoanId || "",
-        loan_mergedDate: calculated.mergedDate || ""
-          ? calculated.mergedDate.format("MMM DD, YYYY")
-          : "",
-        loan_fee_type: brokerFee?.type || "",
-        loan_fee_value: brokerFee?.value || 0,
-        brokerFeeCalculatedAmount: brokerFeeCalculatedAmount,
-        loan_status: loan.status || "",
-        loan_allFees: otherFees,       
-      },
-    };
+  document_data: {
+    client_fullname: client?.fullName ?? "-",
+    client_address: clientAddress ?? "-",
+    client_accidentDate: client?.accidentDate
+      ? moment(client.accidentDate).format("MMM DD, YYYY")
+      : "-",
+    client_attorney_name: client?.attorneyName ?? "-",
+    company: {
+      name: companyObj?.companyName ?? "-",
+      address: companyAddress ?? "-",
+      email: companyObj?.email ?? "-",
+      phone: companyObj?.phone ?? "-",
+    },
+    today_date: todayFormatted ?? "-",
+    loan_issueDate: calculated?.issueDate
+      ? calculated.issueDate.format("MMM DD, YYYY")
+      : "-",
+    loan_baseAmount: baseAmount ?? "-",
+    loan_previousLoanAmount: previousLoanAmount ?? "-",
+    loan_totalPrincipal:
+      (calculated?.baseNum ?? 0) + (calculated?.prevLoan ?? 0),
+    loan_subTotal: loan?.subTotal ?? calculated?.subtotal ?? "-",
+    loan_interestType: calculated?.interestType ?? "-",
+    loan_monthlyRate: calculated?.monthlyRate ?? "-",
+    loan_interestAmount: calculated?.interestAmount ?? "-",
+    loan_totalAmount: calculated?.totalWithInterest ?? "-",
+    loan_paidAmount: calculated?.paidAmount ?? "-",
+    loan_remainingAmount:
+      calculated?.remaining != null
+        ? Number(calculated.remaining).toFixed(2)
+        : "-",
+    loan_dynamicTerm: calculated?.dynamicTerm ?? "-",
+    loan_parentLoanId: loan?.parentLoanId ?? "-",
+    loan_mergedDate: calculated?.mergedDate
+      ? moment(calculated.mergedDate).format("MMM DD, YYYY")
+      : "-",
+    loan_fee_type: loan?.fees?.brokerFee?.type ?? "-",
+    loan_fee_value: loan?.fees?.brokerFee?.value ?? "-",
+    loan_status: loan?.status ?? "-",
+    loan_allTenure: allTenureData ?? "-",
+    ...tenureMap,
+    application_fee: calculated?.feeBreakdown?.applicationFee ?? "-",
+    broker_fee: calculated?.feeBreakdown?.brokerFee ?? "-",
+    administrative_fee: calculated?.feeBreakdown?.administrativeFee ?? "-",
+    attorney_review_fee: calculated?.feeBreakdown?.attorneyReviewFee ?? "-",
+    annual_maintenance_fee:calculated?.feeBreakdown?.annualMaintenanceFee ?? "-",
+  },
+};
 
     console.log("🔥 FULL DOCUMENT PAYLOAD →", payload);
 
@@ -523,7 +552,7 @@ const companyObj = companies.find(
     }));
   }
 };
-const handleModalDocSubmit = (doc: any, paidDate?: string) => {
+const handleModalDocSubmit = (doc: any, selectDate?: string) => {
 
   setDocModalOpen(false);
 
@@ -531,7 +560,7 @@ const handleModalDocSubmit = (doc: any, paidDate?: string) => {
     selectedLoanForDoc,
     doc.value,
     doc.fileName,
-    paidDate
+    selectDate
   );
 };
 const getFilteredDocTypes = (loan:any) => {

@@ -70,6 +70,7 @@ function fillDocxTemplate(docxBuffer, data) {
     // Throw a structured error instead of a silent failure
     paragraphLoop: true,
     linebreaks: true,
+    nullGetter: () => "__", // Return empty string for missing placeholders
   });
 
   // Replace all {key} placeholders with the corresponding values from `data`
@@ -80,8 +81,10 @@ function fillDocxTemplate(docxBuffer, data) {
 
         if (typeof value === "object" && value !== null && !Array.isArray(value)) {
           flattenObject(value, newKey, res);
+        } else if (Array.isArray(value)) {
+          res[newKey] = value.filter(Boolean).join(", ");
         } else {
-          res[newKey] = value;
+          res[newKey] = value !== null && value !== undefined ? String(value) : "__";
         }
       }
       return res;
