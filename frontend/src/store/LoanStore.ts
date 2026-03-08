@@ -280,14 +280,17 @@ async getLoanProfitByLoanId(id: string) {
       "brokerFee",
       "annualMaintenanceFee",
     ];
+    const feeBreakdown:any = {};
 
     const feeTotal = feeKeys.reduce((sum, key) => {
       const fee = loan?.fees[key];
       if (!fee) return sum;
       const value = convertToNumber(fee.value);
-      return fee.type === "percentage"
-        ? sum + (totalBase * value) / 100
-        : sum + value;
+      const amount = fee.type === "percentage"
+        ? (totalBase * value) / 100
+        : value;
+      feeBreakdown[key] = parseFloat(amount.toFixed(2));
+      return sum + amount;
     }, 0);
 
     if (calculate) {
@@ -343,6 +346,7 @@ async getLoanProfitByLoanId(id: string) {
       prevLoan,
       daysDiff,
       date,
+      feeBreakdown
     }
     return obj;
   }

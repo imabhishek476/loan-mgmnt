@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import moment from "moment";
 import { Autocomplete, TextField } from "@mui/material";
-import { DocTypes, formatFee, moneyFormat } from "../../../utils/constants";
+import { DocTypes, formatFee, LOAN_TERMS, moneyFormat } from "../../../utils/constants";
 import { toast } from "react-toastify";
 import { loanStore } from "../../../store/LoanStore";
 import api from "../../../api/axios";
@@ -130,7 +130,7 @@ useEffect(() => {
 },[
   editableLoan?.issueDate,
   todayDate,
-  editableLoan?.baseAmount,
+ (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0),
   editableLoan?.previousLoanAmount
 ]);
   useEffect(() => {
@@ -176,8 +176,7 @@ useEffect(() => {
     totalPrincipal:
       prev?.totalPrincipal ??
       selectedLoan.totalPrincipal ??
-      (selectedLoan.baseAmount || 0) +
-      (selectedLoan.previousLoanAmount || 0),
+      (selectedLoan.baseAmount || 0) + (selectedLoan.previousLoanAmount || 0),
 
     interestAmount:
       prev?.interestAmount ??
@@ -230,69 +229,103 @@ const updateFee = (key:string,value:number)=>{
     try {
 
       setIsGenerating(true);
-    const calculated = calculatedLoan;
+      const calculated: any = await loanStore.calculateLoanAmounts({
+        loan: editableLoan,
+        date: todayDate,
+        calculate: true
+      });
+      const allTenureData = LOAN_TERMS.map((term: number) => {
 
+        const termLoan = JSON.parse(JSON.stringify(editableLoan));
+
+        const newIssueDate = moment(editableLoan.issueDate, "MM-DD-YYYY")
+          .subtract(term, "months")
+          .format("MM-DD-YYYY");
+
+        termLoan.issueDate = newIssueDate;
+        termLoan.loanTerms = term;
+
+        const termCalculation = loanStore.calculateLoans(
+          termLoan,
+          clientLoans,
+          "mergedDate",
+          todayDate
+        );
+
+        return {
+          tenure: term,
+          interestAmount: moneyFormat(termCalculation?.interestAmount || 0),
+          totalAmount: moneyFormat(termCalculation?.total || 0)
+        };
+
+      });
+      const tenureMap: any = {};
+
+      allTenureData.forEach((t: any) => {
+        tenureMap[`loan_${t.tenure}_interest`] = t.interestAmount;
+        tenureMap[`loan_${t.tenure}_total`] = t.totalAmount;
+      });
       if (!calculated) {
         toast.error("Loan calculation failed");
         return;
       }
-const totalPrincipal = editableLoan?.totalPrincipal || 0;
-const brokerFee = editableLoan?.fees?.brokerFee || {};
-const otherFees = editableLoan?.fees || {};
-const brokerFeeCalculatedAmount = brokerFee?.value || 0;
+      const totalPrincipal = editableLoan?.totalPrincipal || 0;
+      const brokerFee = editableLoan?.fees?.brokerFee || {};
 
-const payload = {
-  loanid: editableLoan._id,
-  document_title: selectedDocument.fileName,
-  document_link: selectedDocument.value,
+      const payload = {
+        loanid: editableLoan?._id ?? "-",
+        document_title: selectedDocument?.fileName ?? "-",
+        document_link: selectedDocument?.value ?? "-",
 
-  document_data: {
-    client_fullname: editableClient?.fullName || "",
-    client_address: editableClient?.address || "",
-    client_accidentDate: editableClient?.accidentDate
-      ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
-      : "",
-      company: {
-      name: editableCompany?.name || "",
-      address: editableCompany?.address || "",
-      email: companyData?.email || "",
-      phone: companyData?.phone || "",
-    },
-    today_date: todayDate?.format("MMM DD, YYYY"),
-    loan_issueDate: calculated?.issueDate?.format("MMM DD, YYYY"),
-
-    loan_baseAmount: moneyFormat(editableLoan?.baseAmount || 0),
-    loan_previousLoanAmount: moneyFormat(editableLoan?.previousLoanAmount || 0),
-    loan_totalPrincipal: moneyFormat(totalPrincipal),
-
-    loan_subTotal: moneyFormat(editableLoan?.subtotal),
-
-    loan_interestType: editableLoan?.interestType || "",
-    loan_monthlyRate: editableLoan?.monthlyRate || 0,
-
-   loan_interestAmount: moneyFormat(editableLoan?.interestAmount),
-    loan_totalAmount: moneyFormat(editableLoan?.total),
-    loan_paidAmount: moneyFormat(editableLoan?.paidAmount),
-    loan_remainingAmount: moneyFormat(editableLoan?.remaining),
-    loan_dynamicTerm: calculated?.dynamicTerm || 0,
-
-    loan_parentLoanId: editableLoan?.parentLoanId || "",
-
-    loan_mergedDate: calculated?.mergedDate
-      ? calculated.mergedDate.format("MMM DD, YYYY")
-      : "",
-
-    loan_fee_type: brokerFee?.type || "",
-    loan_fee_value: brokerFee?.value || 0,
-
-    brokerFeeCalculatedAmount: moneyFormat(brokerFeeCalculatedAmount),
-
-    loan_status: editableLoan?.status || "",
-
-    loan_allFees: otherFees,
-  },
-};
-
+        document_data: {
+          client_fullname: editableClient?.fullName ?? "-",
+          client_address: editableClient?.address ?? "-",
+          client_accidentDate: editableClient?.accidentDate
+            ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
+            : "-",
+          client_attorney_name: editableClient?.attorneyName ?? "-",
+          company: {
+            name: editableCompany?.name ?? "-",
+            address: editableCompany?.address ?? "-",
+            email: companyData?.email ?? "-",
+            phone: companyData?.phone ?? "-",
+          },
+          today_date: todayDate
+            ? todayDate.format("MMM DD, YYYY")
+            : "-",
+          loan_issueDate: calculated?.issueDate
+            ? calculated.issueDate.format("MMM DD, YYYY")
+            : "-",
+          loan_baseAmount: moneyFormat(
+            (editableLoan?.baseAmount ?? 0) +
+            (editableLoan?.previousLoanAmount ?? 0)
+          ),
+          loan_previousLoanAmount: moneyFormat(editableLoan?.previousLoanAmount ?? 0),
+          loan_totalPrincipal: moneyFormat(totalPrincipal ?? 0),
+          loan_subTotal: moneyFormat(editableLoan?.subTotal ?? 0),
+          loan_interestType: editableLoan?.interestType ?? "-",
+          loan_monthlyRate: editableLoan?.monthlyRate ?? "-",
+          loan_interestAmount: moneyFormat(editableLoan?.interestAmount ?? 0),
+          loan_totalAmount: moneyFormat(editableLoan?.total ?? 0),
+          loan_paidAmount: moneyFormat(editableLoan?.paidAmount ?? 0),
+          loan_remainingAmount: moneyFormat(editableLoan?.remaining ?? 0),
+          loan_dynamicTerm: calculated?.dynamicTerm ?? "-",
+          loan_parentLoanId: editableLoan?.parentLoanId ?? "-",
+          loan_mergedDate: calculated?.mergedDate
+            ? calculated.mergedDate.format("MMM DD, YYYY")
+            : "-",
+          loan_fee_type: brokerFee?.type ?? "-",
+          loan_fee_value: brokerFee?.value ?? "-",
+          loan_status: editableLoan?.status ?? "-",
+          loan_allTenure: allTenureData ?? "-",
+          ...tenureMap,
+          application_fee: calculated?.feeBreakdown?.applicationFee ?? "-",
+          broker_fee: calculated?.feeBreakdown?.brokerFee ?? "-",
+          administrative_fee: calculated?.feeBreakdown?.administrativeFee ?? "-",
+          attorney_review_fee: calculated?.feeBreakdown?.attorneyReviewFee ?? "-",
+          annual_maintenance_fee: calculated?.feeBreakdown?.annualMaintenanceFee ?? "-",
+        },
+      };
       const response = await api.post(
         "/templates/document/generate",
         payload,
@@ -746,7 +779,7 @@ const payload = {
         onChange={(v:any)=>updateFee("applicationFee",(v))}
         preview={formatFee(
           editableLoan?.fees?.applicationFee,
-          editableLoan?.baseAmount
+          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
         )}
       />
       <Field
@@ -756,7 +789,7 @@ const payload = {
         onChange={(v:any)=>updateFee("brokerFee",(v))}
         preview={formatFee(
           editableLoan?.fees?.brokerFee,
-          editableLoan?.baseAmount
+          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
         )}
       />
       <Field
@@ -766,7 +799,7 @@ const payload = {
         onChange={(v:any)=>updateFee("administrativeFee",(v))}
         preview={formatFee(
           editableLoan?.fees?.administrativeFee,
-          editableLoan?.baseAmount
+          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
         )}
         />
       <Field
@@ -776,7 +809,7 @@ const payload = {
         onChange={(v:any)=>updateFee("attorneyReviewFee",(v))}
         preview={formatFee(
           editableLoan?.fees?.attorneyReviewFee,
-          editableLoan?.baseAmount
+          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
         )}
       />
     <Field
@@ -786,7 +819,7 @@ const payload = {
         onChange={(v:any)=>updateFee("annualMaintenanceFee",(v))}
         preview={formatFee(
           editableLoan?.fees?.annualMaintenanceFee,
-          editableLoan?.baseAmount
+          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
         )}
       />
     </div>

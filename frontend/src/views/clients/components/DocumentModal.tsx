@@ -10,7 +10,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   documents: any[];
-  onSubmit: (doc: any, paidDate?: string) => void;
+  onSubmit: (doc: any, selectDate?: string) => void;
   title: string;
   isPaidOff?: boolean;
   dynamicTerm?: number;
@@ -27,7 +27,7 @@ const DocumentModal = ({
  loan  
 }: Props) => {
   const [selectedValue, setSelectedValue] = useState<string>("");
-  const [paidDate, setPaidDate] = useState<any>(moment());  
+  const [selectDate, setSelectDate] = useState<any>(moment());  
   const [calculatedLoan, setCalculatedLoan] = useState<any>(null);
   if (!open) return null;
 
@@ -39,7 +39,7 @@ const DocumentModal = ({
     if (selectedDoc) {
     onSubmit(
       selectedDoc,
-      isPaidOff ? moment(paidDate).format("MMM DD, YYYY") : undefined
+      isPaidOff ? moment(selectDate).format("MMM DD, YYYY") : undefined
     );
   }
   };
@@ -51,12 +51,12 @@ useEffect(() => {
     loan,
     [], // empty array (not needed)
     "mergedDate",
-    paidDate
+    selectDate
   );
 
   setCalculatedLoan(result);
 
-}, [paidDate, loan]);
+}, [selectDate, loan]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white w-[500px] rounded-lg shadow-xl p-5 relative">
@@ -68,19 +68,19 @@ useEffect(() => {
             <X size={18} />
           </button>
         </div>
-{isPaidOff && (
-  <div className="flex gap-4 text-sm mb-4">
+      {isPaidOff && (
+        <div className="flex gap-4 text-sm mb-4">
 
-    <span className="bg-gray-200 px-3 py-1 rounded-md font-semibold text-gray-700">
-      Loan Term: {calculatedLoan?.dynamicTerm || 0} Months
-    </span>
+          <span className="bg-gray-200 px-3 py-1 rounded-md font-semibold text-gray-700">
+            Loan Term: {calculatedLoan?.dynamicTerm || 0} Months
+          </span>
 
-    <span className="bg-green-700 text-white px-3 py-1 rounded-md font-semibold">
-      Total: ${moneyFormat(calculatedLoan?.total || 0)}
-    </span>
+          <span className="bg-green-700 text-white px-3 py-1 rounded-md font-semibold">
+            Total: ${moneyFormat(calculatedLoan?.total || 0)}
+          </span>
 
-  </div>
-)}
+        </div>
+      )}
         {/* Document List */}
         <div className="space-y-3 max-h-[300px] overflow-y-auto">
           {isPaidOff && (
@@ -91,8 +91,8 @@ useEffect(() => {
 
               <LocalizationProvider dateAdapter={AdapterMoment}>
                 <DatePicker
-                  value={paidDate}
-                  onChange={(date:any) => setPaidDate(date)}
+                  value={selectDate}
+                  onChange={(date:any) => setSelectDate(date)}
                   slotProps={{
                     textField: {
                       size: "small",
