@@ -296,7 +296,7 @@ const updateFee = (key:string,value:number)=>{
             phone: companyData?.phone ?? "-",
           },
           reduction_amount: reductionAmount ?? "-",
-          after_reduction_amount:final_total - reductionAmount , 
+          after_reduction_amount: reductionAmount != null ? final_total - reductionAmount : final_total,
           selected_date: todayDate ? todayDate.format("MMM DD, YYYY") : "-",
           loan_issueDate: calculated?.issueDate
             ? calculated.issueDate.format("MMM DD, YYYY")
@@ -407,7 +407,7 @@ const updateFee = (key:string,value:number)=>{
     ) {
       // show only normal Contract + Reduction
       return DocTypes.filter((d) =>
-        ["contract", "payoff", "reduction"].includes(d.key)
+        ["contract", "reduction"].includes(d.key)
       );
     }
 
@@ -489,7 +489,7 @@ const updateFee = (key:string,value:number)=>{
 
         {/* Document */}
 
-        {companyDocs.length > 0 && (
+        {companyDocs.length > 1 && (
           <Autocomplete
             options={companyDocs}
             sx={{ width: 320 }}

@@ -10,12 +10,14 @@ interface Props {
   open: boolean;
   onClose: () => void;
   documents: any[];
-  onSubmit: (doc: any, selectDate?: string) => void;
+  onSubmit: (doc: any, selectDate?: string,reductionAmount?: number) => void;
   title: string;
   isPaidOff?: boolean;
+  isReduction?: boolean;
   dynamicTerm?: number;
   totalAmount?: number;
   loan?: any;
+  defaultDate?: any;
 }
 const DocumentModal = ({
   open,
@@ -24,11 +26,14 @@ const DocumentModal = ({
   onSubmit,
   title,
   isPaidOff,
+  isReduction,
+  defaultDate,  
  loan  
 }: Props) => {
   const [selectedValue, setSelectedValue] = useState<string>("");
-  const [selectDate, setSelectDate] = useState<any>(moment());  
   const [calculatedLoan, setCalculatedLoan] = useState<any>(null);
+  const [reductionAmount,setReductionAmount] = useState<number>(null);
+  const [selectDate, setSelectDate] = useState<any>(defaultDate || moment());
   if (!open) return null;
 
   const handleSubmit = () => {
@@ -39,8 +44,11 @@ const DocumentModal = ({
     if (selectedDoc) {
     onSubmit(
       selectedDoc,
-      isPaidOff ? moment(selectDate).format("MMM DD, YYYY") : undefined
-    );
+        (isPaidOff || isReduction)
+          ? moment(selectDate).format("MMM DD, YYYY")
+          : undefined,
+        isReduction ? reductionAmount : undefined,
+      );
   }
   };
 useEffect(() => {
@@ -57,6 +65,16 @@ useEffect(() => {
   setCalculatedLoan(result);
 
 }, [selectDate, loan]);
+  useEffect(() => {
+    if(defaultDate){
+      setSelectDate(moment(defaultDate))
+    }
+  },[defaultDate])
+  useEffect(()=>{
+    if(documents?.length === 1){
+      setSelectedValue(documents[0].value)
+    }
+  },[documents])
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white w-[500px] rounded-lg shadow-xl p-5 relative">
@@ -68,7 +86,7 @@ useEffect(() => {
             <X size={18} />
           </button>
         </div>
-      {isPaidOff && (
+      {(isPaidOff || isReduction) && (
         <div className="flex gap-4 text-sm mb-4">
 
           <span className="bg-gray-200 px-3 py-1 rounded-md font-semibold text-gray-700">
@@ -83,10 +101,10 @@ useEffect(() => {
       )}
         {/* Document List */}
         <div className="space-y-3 max-h-[300px] overflow-y-auto">
-          {isPaidOff && (
+          {(isPaidOff || isReduction) && (
             <div className="mt-4">
               <label className="text-xs font-semibold text-gray-700 mb-1 block">
-                Paid Date
+              {isReduction ? "Reduction Date" : "Paid Date"}
               </label>
 
               <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -103,6 +121,21 @@ useEffect(() => {
               </LocalizationProvider>
             </div>
           )}
+          {isReduction && (
+              <div className="mt-4">
+                <label className="text-xs font-semibold text-gray-700 mb-1 block">
+                  Reduction Amount
+                </label>
+
+                <input
+                  type="number"
+                  value={reductionAmount}
+                  onChange={(e)=>setReductionAmount(Number(e.target.value))}
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  placeholder="Enter reduction amount"
+                />
+            </div>
+         )}
           {documents.map((doc: any) => (
             <label
               key={doc.value}

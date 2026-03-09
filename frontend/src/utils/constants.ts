@@ -50,8 +50,8 @@ export const DocTypes = [
       {
         companyName: "Claim Advance, Inc.",
         fileName: "Claim Advance Contract",
-        // value: "https://docs.google.com/document/d/16ok1yK_hkbvfe7ukMuNikEUfVlc4-RpV/edit",
-        value: "https://docs.google.com/document/d/1f2TfvPyavMcJk41KUmQxiZ1saRVr-KBp/edit",
+        value: "https://docs.google.com/document/d/16ok1yK_hkbvfe7ukMuNikEUfVlc4-RpV/edit",
+        // value: "https://docs.google.com/document/d/1f2TfvPyavMcJk41KUmQxiZ1saRVr-KBp/edit",
       },
       {
         companyName: "Gemini Fund",
