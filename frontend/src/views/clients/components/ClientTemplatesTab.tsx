@@ -30,6 +30,7 @@ const [editableCompany, setEditableCompany] = useState<any>(null);
 const [editableLoan, setEditableLoan] = useState<any>(null);
 const [todayDate, setTodayDate] = useState(moment());
 const [calculatedLoan,setCalculatedLoan] = useState<any>(null);
+const [reductionAmount, setReductionAmount] = useState<number | null>(null);
   /* ---------------- Company Options ---------------- */
 
   const companyOptions = useMemo(() => {
@@ -102,7 +103,26 @@ const [calculatedLoan,setCalculatedLoan] = useState<any>(null);
         c.companyName.toLowerCase() === companyName.toLowerCase()
     );
   }, [selectedDocType, companyName]);
+  useEffect(() => {
 
+    if (companyOptions.length === 1 && !selectedCompany) {
+      setSelectedCompany(companyOptions[0]);
+    }
+    if (companyLoans.length === 1 && !selectedLoan) {
+      setSelectedLoan(companyLoans[0]);
+    }
+    if (companyDocs.length === 1 && !selectedDocument) {
+      setSelectedDocument(companyDocs[0]);
+    }
+
+  }, [
+    companyOptions,
+    companyLoans,
+    companyDocs,
+    selectedCompany,
+    selectedLoan,
+    selectedDocument
+  ]);
   /* ---------------- Merged From Loan ---------------- */
 
   const mergedFromLoan = useMemo(() => {
@@ -117,7 +137,6 @@ const [calculatedLoan,setCalculatedLoan] = useState<any>(null);
 useEffect(() => {
 
   if(!editableLoan) return;
-
   const result = loanStore.calculateLoans(
     editableLoan,
     clientLoans,
@@ -133,6 +152,20 @@ useEffect(() => {
  (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0),
   editableLoan?.previousLoanAmount
 ]);
+useEffect(() => {
+
+  if (!calculatedLoan) return;
+
+  setEditableLoan(prev => ({
+    ...prev,
+    interestAmount: calculatedLoan.interestAmount,
+    total: calculatedLoan.total,
+    remaining: calculatedLoan.remaining,
+    totalPrincipal :
+      (editableLoan?.baseAmount || 0) +
+      (editableLoan?.previousLoanAmount || 0)  }));
+
+}, [calculatedLoan]);
   useEffect(() => {
     if (!selectedLoan) return;
 
@@ -165,37 +198,6 @@ useEffect(() => {
 
 }, [selectedLoan, companies]);
   /* ---------------- Reset ---------------- */
-useEffect(() => {
-
-  if (!selectedLoan || !calculatedLoan) return;
-
-  setEditableLoan((prev:any)=>({
-
-    ...prev,
-
-    totalPrincipal:
-      prev?.totalPrincipal ??
-      selectedLoan.totalPrincipal ??
-      (selectedLoan.baseAmount || 0) + (selectedLoan.previousLoanAmount || 0),
-
-    interestAmount:
-      prev?.interestAmount ??
-      calculatedLoan.interestAmount ??
-      0,
-
-    total:
-      prev?.total ??
-      calculatedLoan.total ??
-      0,
-
-    remaining:
-      prev?.remaining ??
-      calculatedLoan.remaining ??
-      0,
-
-  }));
-
-}, [calculatedLoan]);
   const handleReset = () => {
     setEditableClient(null);
     setEditableCompany(null);
@@ -204,6 +206,8 @@ useEffect(() => {
     setSelectedDocType(null);
     setSelectedDocument(null);
     setIsGenerating(false);
+    setEditableLoan(null);     
+    setCalculatedLoan(null)
   };
 const updateFee = (key:string,value:number)=>{
   setEditableLoan({
@@ -271,6 +275,7 @@ const updateFee = (key:string,value:number)=>{
       }
       const totalPrincipal = editableLoan?.totalPrincipal || 0;
       const brokerFee = editableLoan?.fees?.brokerFee || {};
+      const final_total = editableLoan?.total || calculatedLoan.total || 0;
 
       const payload = {
         loanid: editableLoan?._id ?? "-",
@@ -290,9 +295,9 @@ const updateFee = (key:string,value:number)=>{
             email: companyData?.email ?? "-",
             phone: companyData?.phone ?? "-",
           },
-          today_date: todayDate
-            ? todayDate.format("MMM DD, YYYY")
-            : "-",
+          reduction_amount: reductionAmount ?? "-",
+          after_reduction_amount:final_total - reductionAmount , 
+          selected_date: todayDate ? todayDate.format("MMM DD, YYYY") : "-",
           loan_issueDate: calculated?.issueDate
             ? calculated.issueDate.format("MMM DD, YYYY")
             : "-",
@@ -413,6 +418,12 @@ const updateFee = (key:string,value:number)=>{
 
     return DocTypes;
   }, [selectedLoan]);
+  useEffect(() => {
+  if (filteredDocTypes.length === 1) {
+    setSelectedDocType(filteredDocTypes[0]);
+    setReductionAmount(null);
+  }
+}, [filteredDocTypes]);
   return (
     <div className="p-2 space-y-6 bg-gray-50">
 
@@ -444,9 +455,9 @@ const updateFee = (key:string,value:number)=>{
             options={companyLoans}
             sx={{ width: 350 }}
             getOptionLabel={(loan: any) =>
-              `Issue Date: ${moment(loan.issueDate).format("MM/DD/YYYY")} - Base: $${moneyFormat(
+              ` $${moneyFormat(
                 loan.baseAmount
-              )} - (${loan.status})`
+              )} - ${moment(loan.issueDate).format("MM/DD/YYYY")} - (${loan.status})`
             }
             value={selectedLoan}
             //@ts-ignore
@@ -491,23 +502,6 @@ const updateFee = (key:string,value:number)=>{
             )}
           />
         )}
-        {selectedDocType?.key === "payoff" && (
-        <div className="flex flex-col">
-          <LocalizationProvider dateAdapter={AdapterMoment}>
-            <DatePicker
-              label="Select Date"
-              value={todayDate}
-              onChange={(date: any) => setTodayDate(date)}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  fullWidth: true
-                }
-              }}
-            />
-          </LocalizationProvider>
-        </div>
-      )}
         {/* Buttons */}
 
         <div className="flex gap-2 font-semibold">
@@ -635,14 +629,36 @@ const updateFee = (key:string,value:number)=>{
               </span>
 
               <span className="bg-green-700 text-white px-3 py-1 rounded-md  font-semibold">
-                Total: $ {moneyFormat(editableLoan?.total || 0)}
+                Total: $ {moneyFormat( editableLoan?.total || calculatedLoan.total || 0)}
               </span>
 
             </div>
 
           </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {(selectedDocType?.key === "payoff" || selectedDocType?.key === "reduction") && (
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-gray-700 mb-1">
+                  Select Date
+                </label>
 
+                <LocalizationProvider dateAdapter={AdapterMoment}>
+                  <DatePicker
+                    value={todayDate}
+                    onChange={(date: any) => setTodayDate(date)}
+                    slotProps={{ textField: { size: "small" } }}
+                  />
+                </LocalizationProvider>
+              </div>
+            )}
+            {selectedDocType?.key === "reduction" && (
+              <Field
+                label="Reduction Amount"
+                type="number"
+                value={reductionAmount}
+                onChange={(v:any)=>setReductionAmount(Number(v))}
+              />
+            )}
           <div className="flex flex-col">
             <label className="text-xs font-semibold text-gray-700 mb-1">
               Issue Date
@@ -712,12 +728,12 @@ const updateFee = (key:string,value:number)=>{
         value={editableLoan?.subtotal || calculatedLoan?.subtotal}
         onChange={(v:any)=>setEditableLoan({...editableLoan,subtotal:v})}
       />
-      <Field
+      {/* <Field
         label="Interest Type"
         type="number"
         value={editableLoan?.interestType}
         onChange={(v:any)=>setEditableLoan({...editableLoan,interestType:v})}
-      />
+      /> */}
 
       <Field
         label="Monthly Rate"
@@ -860,7 +876,11 @@ const Field = ({ label, value, onChange, type = "text", preview }: any) => {
 
       <input
         type="text"
-        value={value ?? ""}
+        value={type === "number" && value !== "" && value !== null
+          ? !isNaN(Number(value))
+            ? Number(value).toFixed(2)
+            : ""
+          : value ?? ""}
         onChange={handleChange}
         className="border rounded-md px-3 py-2 bg-white text-sm"
       />
