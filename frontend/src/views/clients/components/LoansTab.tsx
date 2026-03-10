@@ -91,6 +91,7 @@ const [modalDocs, setModalDocs] = useState<any[]>([]);
 const [modalTitle, setModalTitle] = useState("");
 const [selectedLoanForDoc, setSelectedLoanForDoc] = useState<any>(null);
 const [modalDate,setModalDate] = useState<any>(null);
+const [activeDocLoaderKey, setActiveDocLoaderKey] = useState<string | null>(null);
 const getClientLoansData = useMemo(() => {
   return loans.map((loan) => {
     const companyId =
@@ -711,12 +712,21 @@ const handleTenureDocumentClick = (loanData: any, term: number, loanTermData: an
   // ✅ Get correct tenure end date from backend
   const tenureObj = loan.tenures?.find((t: any) => t.term === term);
 
-  const endDate = tenureObj?.endDate
+let endDate;
+
+if (loan.status === "Paid Off") {
+  // Payoff uses backend end date
+  endDate = tenureObj?.endDate
     ? moment(tenureObj.endDate, "MM-DD-YYYY")
     : moment(loan.issueDate).add(term, "months");
+} else {
+  // Reduction should use tenure calculation date
+  endDate = moment(loan.issueDate, "MM-DD-YYYY").add(term * 30, "days");
+}
 
   setModalDate(endDate);
   const loaderKey = `${loan._id}_${term}`;
+  setActiveDocLoaderKey(loaderKey);
   setDocLoadingMap(prev => ({
     ...prev,
     [loaderKey]: true
@@ -1457,7 +1467,15 @@ return (
         {docModalOpen && (
         <DocumentModal
           open={docModalOpen}
-          onClose={() => setDocModalOpen(false)}
+          onClose={() => {
+            setDocModalOpen(false);
+            if (activeDocLoaderKey) {
+              setDocLoadingMap(prev => ({
+                ...prev,
+                [activeDocLoaderKey]: false
+              }));
+            }
+          }}
           documents={modalDocs}
           title={modalTitle}
           onSubmit={handleModalDocSubmit}
