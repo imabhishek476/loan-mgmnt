@@ -1,6 +1,7 @@
 import React, { useState, useEffect, type ReactNode } from "react";
 import { toast } from "react-toastify";
 import { X, Plus, DollarSign, Percent, Trash } from "lucide-react";
+import { checkClientDuplicate } from "../services/ClientServices";
 import {
   TextField as MuiTextField,
   Switch,
@@ -91,15 +92,7 @@ const FormModal = ({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [customFields, setCustomFields] = useState<any>([]);
-
-  useEffect(() => {
-    setFormData(initialData || {});
-    if (initialData?.customFields && initialData.customFields.length > 0) {
-      setCustomFields(initialData.customFields);
-    } else if (open) {
-    setCustomFields([{ _id: 1, name: "", value: "" }]);
-    }
-  }, [initialData, open]);
+  const [duplicateErrors, setDuplicateErrors] = useState<Record<string,string>>({});      
 
   const addCustomField = () => {
     setCustomFields([
@@ -153,6 +146,29 @@ const FormModal = ({
         delete item["_id"];
         return item;
     });
+    const duplicateFields = ["fullName", "email", "phone", "ssn"];
+
+    let hasDuplicate = false;
+    const newDuplicateErrors: Record<string, string> = {};
+
+    for (const field of duplicateFields) {
+      const value = formData[field];
+
+      if (!value) continue;
+
+      const res = await checkClientDuplicate(field, value, initialData?._id);
+
+      if (res.duplicate) {
+        newDuplicateErrors[field] = res.message;
+        hasDuplicate = true;
+      }
+    }
+
+    if (hasDuplicate) {
+      setDuplicateErrors(newDuplicateErrors);
+      toast.error("Duplicate fields found");
+      return;
+    }
     if (!validate()) return;
     setLoading(true);
     try {
@@ -178,7 +194,39 @@ const FormModal = ({
       fontSize: "0.85rem",
     },
 };
+const checkDuplicate = async (field, value) => {
+  if (!value) return;
 
+  try {
+    const res = await checkClientDuplicate(field, value, initialData?._id);
+
+    if (res.duplicate) {
+      setDuplicateErrors((prev) => ({
+        ...prev,
+        [field]: res.message,
+      }));
+    } else {
+      setDuplicateErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
+  } catch (err) {
+    console.error("Duplicate check failed", err);
+  }
+};
+  useEffect(() => {
+    if(open){
+     setFormData(initialData || {});
+      setDuplicateErrors({});
+      setErrors({});  
+      if (initialData?.customFields && initialData.customFields.length > 0) {
+        setCustomFields(initialData.customFields);
+      } else if (open) {
+      setCustomFields([{ _id: 1, name: "", value: "" }]);
+      }
+    }
+  }, [ open]);
   if (!open) return null;
 
   return (
@@ -735,10 +783,19 @@ const FormModal = ({
                           onChange={(e) =>
                             handleChange(field.key, e.target.value)
                           }
+                          onBlur={() => {
+                          if (["fullName","email","phone","ssn"].includes(field.key)) {
+                            checkDuplicate(field.key, formData[field.key]);
+                          }
+                        }}
                           className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                         />
                       )}
-
+                        {duplicateErrors[field.key] && (
+                          <span className="text-red-600 text-sm">
+                            {duplicateErrors[field.key]}
+                          </span>
+                        )}
                       {errors[field.key] && (
                         <span className="text-red-600 text-sm">
                           {errors[field.key]}

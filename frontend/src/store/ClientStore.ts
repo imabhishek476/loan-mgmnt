@@ -45,6 +45,7 @@ class ClientStore {
   filtersOpen: boolean = false;   
   selectedClient: Client | null = null;
   attorneyId: string | null = null;
+  createClientModalOpen = false;
   constructor() {
     makeAutoObservable(this);
   }
@@ -161,6 +162,10 @@ async fetchClientById(id: string) {
   toggleFiltersOpen() {
     runInAction(() => (this.filtersOpen = !this.filtersOpen));
   }
+  toggleCreateClientModal = (value?: boolean) => {
+    this.createClientModalOpen =
+      typeof value === "boolean" ? value : !this.createClientModalOpen;
+  };
 }
 
 export const clientStore = new ClientStore();

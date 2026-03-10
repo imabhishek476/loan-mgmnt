@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import Sidebar from "../components/Sidebar";
 // import { userStore } from "../../store/UserStore";
 // import { User } from "lucide-react";
+import CreateClientModal from "./CreateClientModal";
 
 const Layout = observer(() => {
   const [sidebarOpen, setSidebarOpen] = useState(true); // sidebar open by default
@@ -81,6 +82,7 @@ const Layout = observer(() => {
         <main className="flex-1 h-[calc(100vh-53px)] overflow-auto min-w-0 p-2 bg-gray-50">
           <Outlet />
         </main>
+        <CreateClientModal/>
       </div>
     </div>
   );
