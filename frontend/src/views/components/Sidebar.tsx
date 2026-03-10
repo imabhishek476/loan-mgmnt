@@ -11,10 +11,12 @@ import {
   User,
   Menu,
   Settings,
+  Plus,
 } from "lucide-react";
 import Logo from "../../assets/img/logo/favicon.png";
 import Cookies from "js-cookie";
 import { getAppTitle } from "../../utils/helpers";
+import { clientStore } from "../../store/ClientStore";
 
 
 interface SidebarProps {
@@ -37,6 +39,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
   };
 
   const menuItems = [
+    { name: "Create Client", icon: <Plus className="w-5 h-5 b" />, action: "createClient" },
     { name: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, path: "dashboard" },
     { name: "BI Clients", icon: <Users className="w-5 h-5" />, path: "clients" },
     { name: "Loans", icon: <DollarSign className="w-5 h-5" />, path: "loans" },
@@ -87,6 +90,18 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
       <nav className="m-2 mt-4 flex flex-col gap-2 flex-1">
         {menuItems.map((item) => {
           const isActive = currentPath.startsWith(item.path);
+          if (item.action === "createClient") {
+            return (
+              <button
+                key={item.name}
+                onClick={() => clientStore.toggleCreateClientModal(true)}
+                className="flex items-center px-4 py-2 gap-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 w-full"
+              >
+                {item.icon}
+                {open && <span>{item.name}</span>}
+              </button>
+            );
+          }
           return (
             <Link
               key={item.path}
