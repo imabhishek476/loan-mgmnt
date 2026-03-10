@@ -597,8 +597,7 @@ exports.getClientById = async (req, res) => {
   try {
     const { id } = req.params;
     const client = await Client.findById(id)
-      .populate("attorneyId", "fullName");
-
+    .populate("attorneyId", "fullName firmName email phone");
     if (!client) {
       return res.status(404).json({
         success: false,

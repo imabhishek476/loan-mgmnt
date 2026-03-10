@@ -490,6 +490,7 @@ const companyObj = companies.find(
       : "-",
     client_ssn: client?.ssn ?? "-",
     client_attorney_name: client?.attorneyName ?? "-",
+    client_attorney_firm_name: client?.attorneyId?.firmName ?? "-",
     company: {
       name: companyObj?.companyName ?? "-",
       address: companyAddress ?? "-",

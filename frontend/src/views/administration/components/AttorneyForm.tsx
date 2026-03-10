@@ -37,7 +37,7 @@ const AttorneyForm = ({ initialData, onSubmit, onClose }: any) => {
   };
 
   return (
-<div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+<div className="bg-white rounded-lg shadow-lg w-full max-w-md px-3 py-2">
         {/* Header */}
       <div className="flex justify-between items-left border-b px-2 py-3">
         <h2 className="text-lg font-semibold text-gray-800">

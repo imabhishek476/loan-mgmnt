@@ -99,8 +99,7 @@ const [reductionAmount, setReductionAmount] = useState<number | null>(null);
     if (!selectedDocType || !companyName) return [];
 
     return selectedDocType.companies.filter(
-      (c: any) =>
-        c.companyName.toLowerCase() === companyName.toLowerCase()
+      (c: any) =>c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
     );
   }, [selectedDocType, companyName]);
   useEffect(() => {
@@ -110,9 +109,6 @@ const [reductionAmount, setReductionAmount] = useState<number | null>(null);
     }
     if (companyLoans.length === 1 && !selectedLoan) {
       setSelectedLoan(companyLoans[0]);
-    }
-    if (companyDocs.length === 1 && !selectedDocument) {
-      setSelectedDocument(companyDocs[0]);
     }
 
   }, [
@@ -290,6 +286,7 @@ const updateFee = (key:string,value:number)=>{
             ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
             : "-",
           client_attorney_name: editableClient?.attorneyName ?? "-",
+          client_attorney_firm_name : editableClient?.attorneyFirmName ?? "-",
           company: {
             name: editableCompany?.name ?? "-",
             address: editableCompany?.address ?? "-",
@@ -377,6 +374,7 @@ const updateFee = (key:string,value:number)=>{
       accidentDate: client?.accidentDate || "",
       attorneyName: client?.attorneyId?.fullName || "",
       ssn: client?.ssn || "",
+      attorneyFirmName: client?.attorneyId?.firmName || "",
     });
 
     const company =
@@ -426,6 +424,11 @@ const updateFee = (key:string,value:number)=>{
     setReductionAmount(null);
   }
 }, [filteredDocTypes]);
+useEffect(() => {
+  if (companyDocs.length === 1) {
+    setSelectedDocument(companyDocs[0]);
+  }
+}, [companyDocs]);
   return (
     <div className="p-2 space-y-6 bg-gray-50">
 
@@ -508,7 +511,7 @@ const updateFee = (key:string,value:number)=>{
 
         <div className="flex gap-2 font-semibold">
 
-          {selectedDocument && (
+ 
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
@@ -516,7 +519,7 @@ const updateFee = (key:string,value:number)=>{
             >
               {isGenerating ? "Generating..." : "Generate"}
             </button>
-          )}
+          
 
           <button
             onClick={handleReset}
@@ -586,7 +589,14 @@ const updateFee = (key:string,value:number)=>{
             value={editableClient?.attorneyName}
             onChange={(v:any)=>setEditableClient({...editableClient, attorneyName:v})}
           />
-
+         <Field
+            label="Attorney Firm"
+            value={editableClient?.attorneyFirmName}
+            onChange={(v:any)=>setEditableClient({
+              ...editableClient,
+              attorneyFirmName: v
+            })}
+          />
         </div>
       </div>
 
