@@ -565,6 +565,7 @@ const companyObj = companies.find(
     setDocLoadingMap((prev) => ({
       ...prev,
       [loan._id]: false,
+      [`${loan._id}_${selectedLoanForDoc?.calculatedLoan?.dynamicTerm}`]: false
     }));
   }
 };
@@ -715,6 +716,11 @@ const handleTenureDocumentClick = (loanData: any, term: number, loanTermData: an
     : moment(loan.issueDate).add(term, "months");
 
   setModalDate(endDate);
+  const loaderKey = `${loan._id}_${term}`;
+  setDocLoadingMap(prev => ({
+    ...prev,
+    [loaderKey]: true
+  }));
 
   const selectedLoanDataObj = {
     ...loanData,
@@ -1323,10 +1329,7 @@ return (
                                       <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
                                         {(() => {
                                           const companyTerms = companyLoanTerms(loan);
-                                          const allTerms = companyTerms.includes(
-                                              loan.loanTerms)
-                                            ? companyTerms
-                                            : [...companyTerms, loan.loanTerms].sort((a, b) => a - b);
+                                          const allTerms = companyTerms.includes(loan.loanTerms)? companyTerms                                            : [...companyTerms, loan.loanTerms].sort((a, b) => a - b);
                                           let termsToShow;
 
                                           if (loan.status === "Paid Off") {
@@ -1337,13 +1340,17 @@ return (
                                           : [currentTermMap[loan._id]];
                                           }
                                           return termsToShow.map((term) => {
-                                            const loanTermData = loanStore.calculateLoans({
-                                              ...loan,
-                                              loanTerms: term,
-                                            })!;
-                                          // const isSelected =
-                                          //   term ===
-                                          //   currentTermMap[loan._id];
+                                            const termLoan = JSON.parse(JSON.stringify(loan));
+                                            const newIssueDate = moment(loan.issueDate, "MM-DD-YYYY")
+                                              .subtract(term, "months")
+                                              .format("MM-DD-YYYY");
+                                              termLoan.issueDate = newIssueDate;
+                                            termLoan.loanTerms = term;
+                                           const loanTermData = loanStore.calculateLoans(
+                                                 termLoan,
+                                                 loans,
+                                                 "mergedDate"
+                                            )!;
 
                                           return (
                                             <li
@@ -1351,6 +1358,12 @@ return (
                                               className={`border rounded-lg cursor-pointer transition-all duration-200 `}
                                             >
                                             <div className="flex flex-col items-left font-bold p-1 relative">
+                                                  {docLoadingMap[`${loan._id}_${term}`] ? (
+                                                      <Loader2
+                                                        size={14}
+                                                        className="absolute top-1 right-1 text-green-600 animate-spin"
+                                                      />
+                                                    ) : (
                                                   <FileText
                                                         size={14}
                                                         className="absolute top-1 right-1 text-green-600 cursor-pointer hover:text-green-800"
@@ -1359,6 +1372,7 @@ return (
                                                           handleTenureDocumentClick(loanData, term, loanTermData);
                                                         }}
                                                   />
+                                                   )}
                                                 <div className="text-xs">
                                                   {term} months
                                                 </div>
