@@ -489,6 +489,7 @@ const companyObj = companies.find(
       ? moment(client.accidentDate).format("MMM DD, YYYY")
       : "-",
     client_ssn: client?.ssn ?? "-",
+    client_phone: client?.phone ?? "-",
     client_attorney_name: client?.attorneyName ?? "-",
     client_attorney_firm_name: client?.attorneyId?.firmName ?? "-",
     company: {

@@ -282,6 +282,7 @@ const updateFee = (key:string,value:number)=>{
           client_fullname: editableClient?.fullName ?? "-",
           client_address: editableClient?.address ?? "-",
           client_ssn: editableClient?.ssn ?? "-",
+          phone: editableClient?.phone ?? "-",
           client_accidentDate: editableClient?.accidentDate
             ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
             : "-",
@@ -371,6 +372,7 @@ const updateFee = (key:string,value:number)=>{
     setEditableClient({
       fullName: client?.fullName || "",
       address: client?.address || "",
+      phone: client?.phone || "",
       accidentDate: client?.accidentDate || "",
       attorneyName: client?.attorneyId?.fullName || "",
       ssn: client?.ssn || "",
@@ -555,6 +557,11 @@ useEffect(() => {
             label="Client SSN"
             value={editableClient?.ssn}
             onChange={(v:any)=>setEditableClient({...editableClient,ssn:v})}
+          />
+           <Field
+            label="Client Phone"
+            value={editableClient?.phone}
+            onChange={(v:any)=>setEditableClient({...editableClient,phone:v})}
           />
           <div className="flex flex-col">
           <label className="text-xs text-gray-700 font-semibold mb-1">
