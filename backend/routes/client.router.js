@@ -8,6 +8,7 @@ const {
   toggleClientStatus,
   getClientById,
   fixCaseIds,
+  checkDuplicateClient,
 } = require("../controllers/clientsService");
 const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
@@ -21,4 +22,5 @@ clientRouter.route("/:id").put(isAuthenticated, isAdmin, updateClient);
 clientRouter.route("/:id").delete(isAuthenticated, isAdmin, deleteClient);
 clientRouter.route("/toggle/:id").put(isAuthenticated, isAdmin, toggleClientStatus);
 clientRouter.route("/:id").get(isAuthenticated, isAdmin, getClientById);
+clientRouter.route("/checkDuplicate").post(isAuthenticated, isAdmin, checkDuplicateClient);
 module.exports = clientRouter;

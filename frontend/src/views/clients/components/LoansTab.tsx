@@ -6,6 +6,8 @@ import {
   Trash2,
   RefreshCcw,
   Eye,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import moment from "moment";
@@ -88,6 +90,8 @@ const [docModalOpen, setDocModalOpen] = useState(false);
 const [modalDocs, setModalDocs] = useState<any[]>([]);
 const [modalTitle, setModalTitle] = useState("");
 const [selectedLoanForDoc, setSelectedLoanForDoc] = useState<any>(null);
+const [modalDate,setModalDate] = useState<any>(null);
+const [activeDocLoaderKey, setActiveDocLoaderKey] = useState<string | null>(null);
 const getClientLoansData = useMemo(() => {
   return loans.map((loan) => {
     const companyId =
@@ -341,9 +345,7 @@ const handleOpenDocumentModal = (loanData: any) => {
 
   // Filter documents for selected company
   const filteredDocs = selectedCategory.companies.filter(
-    (c) =>
-      c.companyName.trim().toLowerCase() ===
-      companyName.trim().toLowerCase()
+    (c) => c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
   );
 
   if (!filteredDocs.length) {
@@ -351,17 +353,29 @@ const handleOpenDocumentModal = (loanData: any) => {
     return;
   }
 
-  setModalDocs(filteredDocs);
-  setModalTitle(selectedCategory.label);
-  setSelectedLoanForDoc({
+setModalDocs(filteredDocs);
+setModalTitle(selectedCategory.label);
+const selectedDoc = filteredDocs[0];
+const selectedLoanDataObj = {
   ...loanData,
   calculatedLoan: loanStore.calculateLoans(
     loanData.loan,
     loans,
     "mergedDate"
-    )
-  });
-  setDocModalOpen(true);
+  )
+};
+setSelectedLoanForDoc(selectedLoanDataObj);
+// 🚀 Contract & Plus Contract → direct generate
+if (["contract", "plus_contract"].includes(selectedDocKey)) {
+  generateFinalDocument(
+    selectedLoanDataObj,
+    selectedDoc.value,
+    selectedDoc.fileName
+  );
+  return;
+}
+// otherwise open modal
+setDocModalOpen(true);
 };
 
 const generateFinalDocument = async (
@@ -369,7 +383,8 @@ const generateFinalDocument = async (
   selectedDocUrl: string,
   selectedTitle: string,
   //@ts-ignore
-  selectDate?: string
+  selectDate?: string,
+  reductionAmount?:number
 ) => {
   const { loan, companyName } = loanData;
 
@@ -393,9 +408,7 @@ if (!selectedCategory) {
 
 // Find company specific document
 const companyObj = companies.find(
-  (c) =>
-    c.companyName?.trim().toLowerCase() ===
-    companyName?.trim().toLowerCase()
+  (c) =>  c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
 );
     const companyAddress = `
     ${companyObj?.address || ""}
@@ -475,14 +488,21 @@ const companyObj = companies.find(
     client_accidentDate: client?.accidentDate
       ? moment(client.accidentDate).format("MMM DD, YYYY")
       : "-",
+    client_ssn: client?.ssn ?? "-",
+    client_phone: client?.phone ?? "-",
     client_attorney_name: client?.attorneyName ?? "-",
+    client_attorney_firm_name: client?.attorneyId?.firmName ?? "-",
     company: {
       name: companyObj?.companyName ?? "-",
       address: companyAddress ?? "-",
       email: companyObj?.email ?? "-",
       phone: companyObj?.phone ?? "-",
     },
-    today_date: todayFormatted ?? "-",
+    reduction_amount: reductionAmount ?? "-",
+    after_reduction_amount:
+    reductionAmount != null  ? Number(calculated.totalWithInterest || 0) - reductionAmount
+    : "-",
+    selected_date: selectDate ?? todayFormatted,
     loan_issueDate: calculated?.issueDate
       ? calculated.issueDate.format("MMM DD, YYYY")
       : "-",
@@ -549,25 +569,26 @@ const companyObj = companies.find(
     setDocLoadingMap((prev) => ({
       ...prev,
       [loan._id]: false,
+      [`${loan._id}_${selectedLoanForDoc?.calculatedLoan?.dynamicTerm}`]: false
     }));
   }
 };
-const handleModalDocSubmit = (doc: any, selectDate?: string) => {
-
+const handleModalDocSubmit = ( doc: any, selectDate?: string, reductionAmount?: number ) => {
   setDocModalOpen(false);
 
   generateFinalDocument(
     selectedLoanForDoc,
     doc.value,
     doc.fileName,
-    selectDate
+    selectDate,
+    reductionAmount
   );
 };
 const getFilteredDocTypes = (loan:any) => {
 
   if (loan.status === "Merged") {
     return DocTypes.filter((d) =>
-      ["plus_contract", "payoff", "reduction"].includes(d.key)
+      ["plus_contract"].includes(d.key)
     );
   }
 
@@ -576,7 +597,7 @@ const getFilteredDocTypes = (loan:any) => {
     loan.status === "Partial Payment"
   ) {
     return DocTypes.filter((d) =>
-      ["contract", "payoff", "reduction"].includes(d.key)
+      ["contract", "reduction"].includes(d.key)
     );
   }
 
@@ -612,6 +633,189 @@ useEffect(() => {
   setSelectedDocTypeMap(map);
 
 }, [loans]);
+const handleFileIconClick = (e: any, loanData: any) => {
+  e.stopPropagation();
+
+  const { loan, companyName } = loanData;
+
+  // MERGED → direct generate
+  if (loan.status === "Merged") {
+
+    setDocLoadingMap((prev) => ({
+      ...prev,
+      [loan._id]: true
+    }));
+
+    const loanDataObj = {
+      ...loanData,
+      calculatedLoan: loanStore.calculateLoans(
+        loanData.loan,
+        loans,
+        "mergedDate"
+      ),
+    };
+
+    const plusDoc = DocTypes.find(d => d.key === "plus_contract");
+
+    const companyDoc = plusDoc?.companies?.find(
+      (c:any) =>   c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
+    );
+
+    if (companyDoc) {
+      generateFinalDocument(
+        loanDataObj,
+        companyDoc.value,
+        companyDoc.fileName
+      );
+    }
+
+    return;
+  }
+
+  // PAID OFF → open modal
+  if (loan.status === "Paid Off") {
+
+    const payoffDoc = DocTypes.find(d => d.key === "payoff");
+
+    const filteredDocs = payoffDoc?.companies?.filter(
+      (c:any) =>  c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
+    );
+
+    if (!filteredDocs?.length) {
+      toast.error("No documents available");
+      return;
+    }
+
+    setModalDocs(filteredDocs);
+    setModalTitle(payoffDoc.label);
+
+    setSelectedLoanForDoc({
+      ...loanData,
+      calculatedLoan: loanStore.calculateLoans(
+        loanData.loan,
+        loans,
+        "mergedDate"
+      ),
+    });
+
+    setDocModalOpen(true);
+    return;
+  }
+
+  // ACTIVE / PARTIAL → dropdown
+  setGenerateDocMap((prev) => ({
+    ...prev,
+    [loan._id]: !prev[loan._id],
+  }));
+};
+const handleTenureDocumentClick = (loanData: any, term: number, loanTermData: any) => {
+
+  const { loan, companyName } = loanData;
+
+  // ✅ Get correct tenure end date from backend
+  const tenureObj = loan.tenures?.find((t: any) => t.term === term);
+
+let endDate;
+
+if (loan.status === "Paid Off") {
+  // Payoff uses backend end date
+  endDate = tenureObj?.endDate
+    ? moment(tenureObj.endDate, "MM-DD-YYYY")
+    : moment(loan.issueDate).add(term, "months");
+} else {
+  // Reduction should use tenure calculation date
+  endDate = moment(loan.issueDate, "MM-DD-YYYY").add(term * 30, "days");
+}
+
+  setModalDate(endDate);
+  const loaderKey = `${loan._id}_${term}`;
+  setActiveDocLoaderKey(loaderKey);
+  setDocLoadingMap(prev => ({
+    ...prev,
+    [loaderKey]: true
+  }));
+
+  const selectedLoanDataObj = {
+    ...loanData,
+    calculatedLoan: loanTermData
+  };
+
+  setSelectedLoanForDoc(selectedLoanDataObj);
+
+  // -----------------------------------
+  // ✅ MERGED → Direct document
+  // -----------------------------------
+
+  if (loan.status === "Merged") {
+
+    const plusDoc = DocTypes.find(d => d.key === "plus_contract");
+
+    const companyDoc = plusDoc?.companies?.find(
+      (c: any) =>
+        c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
+    );
+
+    if (companyDoc) {
+      generateFinalDocument(
+        loanData,
+        companyDoc.value,
+        companyDoc.fileName
+      );
+    }
+
+    return;
+  }
+
+  // -----------------------------------
+  // ✅ PAID OFF → Payoff letter modal
+  // -----------------------------------
+
+  if (loan.status === "Paid Off") {
+
+    const payoffDoc = DocTypes.find(d => d.key === "payoff");
+
+    const filteredDocs = payoffDoc?.companies?.filter(
+      (c: any) =>
+        c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
+    );
+
+    setModalDocs(filteredDocs);
+    setModalTitle(payoffDoc?.label || "Payoff Letter");
+
+    setSelectedDocTypeMap((prev) => ({
+      ...prev,
+      [loan._id]: "payoff"
+    }));
+
+    setDocModalOpen(true);
+    return;
+  }
+
+  // -----------------------------------
+  // ✅ ACTIVE / PARTIAL → Reduction letter
+  // -----------------------------------
+
+  if (loan.status === "Active" || loan.status === "Partial Payment") {
+
+    const reductionDoc = DocTypes.find(d => d.key === "reduction");
+
+    const filteredDocs = reductionDoc?.companies?.filter(
+      (c: any) =>
+        c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
+    );
+
+    setModalDocs(filteredDocs);
+    setModalTitle(reductionDoc?.label || "Reduction Letter");
+
+    setSelectedDocTypeMap((prev) => ({
+      ...prev,
+      [loan._id]: "reduction"
+    }));
+
+    setDocModalOpen(true);
+  }
+
+};
 return (
         <div className="h-[calc(100vh-170px)] overflow-y-auto p-2 space-y-4">
            <div className="flex justify-end">
@@ -663,10 +867,80 @@ return (
                       >
                         <td colSpan={4} className="px-3 py-2 w-3/4">
                           <div className="flex justify-between items-center text-sm font-semibold text-gray-700  gap-10 sm:gap-6">
-                            <div className="flex items-center gap-2 flex-wrap  max-w-[150px]">
-                              <span className="font-bold text-gray-800 ">
+                           <div className="flex items-center gap-2 relative">
+                              <span className="font-bold text-gray-800">
                                 {companyName}
                               </span>
+                        {docLoadingMap[loan._id] ? (
+                              <Loader2 className="w-4 h-4 text-green-600 animate-spin" />
+                            ) : (
+                              <FileText
+                                className="w-4 h-4 text-green-600 cursor-pointer hover:text-green-800"
+                                onClick={(e) => handleFileIconClick(e, loanData)}
+                              />
+                            )}
+                              {generateDocMap[loan._id] && (
+                                <div
+                                  className="absolute left-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 flex items-center gap-2 z-50"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Autocomplete
+                                    size="small"
+                                    options={getFilteredDocTypes(loan)}
+                                    getOptionLabel={(option) => option.label}
+                                    value={
+                                      DocTypes.find((doc) => doc.key === selectedDocTypeMap[loan._id]) || null
+                                    }
+                                    onChange={(_e, value) => {
+                                      setSelectedDocTypeMap((prev) => ({
+                                        ...prev,
+                                        [loan._id]: value?.key || "",
+                                      }));
+                                    }}
+                                    sx={{ width: 180 }}
+                                    renderInput={(params) => (
+                                      <TextField {...params} label="Document" size="small" />
+                                    )}
+                                  />
+                                      <button
+                                        onClick={() => handleOpenDocumentModal(loanData)}
+                                        disabled={docLoadingMap[loan._id]}
+                                        className={`px-3 py-1.5 text-white text-sm rounded-md flex items-center gap-2
+                                          ${
+                                            docLoadingMap[loan._id]
+                                              ? "bg-green-700 cursor-not-allowed"
+                                              : "bg-green-600 hover:bg-green-700"
+                                          }`}
+                                      >
+                                        {docLoadingMap[loan._id] ? (
+                                          <>
+                                            <svg
+                                              className="animate-spin h-4 w-4 text-white"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                                fill="none"
+                                              />
+                                              <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v8H4z"
+                                              />
+                                            </svg>
+                                            Generating...
+                                          </>
+                                        ) : (
+                                          "Generate"
+                                        )}
+                                      </button>
+                                </div>
+                              )}
                             </div>
                             <div className="flex flex-wrap items-center justify-end gap-4 ml-auto text-right w-full sm:w-auto">
                               <span>
@@ -900,92 +1174,7 @@ return (
     </div>
   )}
 
-  {/* Generate Documents */}
-  <div className="flex items-center gap-2">
-    <input
-      id={`generate-${loan._id}`}
-      type="checkbox"
-      className="w-4 h-4 accent-green-600 cursor-pointer"
-      checked={generateDocMap[loan._id] || false}
-      onChange={(e) =>
-        setGenerateDocMap((prev) => ({
-          ...prev,
-          [loan._id]: e.target.checked,
-        }))
-      }
-    />
-    <label
-      htmlFor={`generate-${loan._id}`}
-      className="text-sm font-medium text-gray-700 cursor-pointer"
-    >
-      Generate Documents
-    </label>
   </div>
-
-</div>
-                         {/* Generate Document Section */}
-<div className="mt-0 border-t pb-2">
-
-  {generateDocMap[loan._id] && (
-    <div className="flex items-center gap-3 mt-3">
-      <Autocomplete
-  size="small"
-  options={getFilteredDocTypes(loan)}
-  getOptionLabel={(option) => option.label}
-  value={
-    DocTypes.find((doc) => doc.key === selectedDocTypeMap[loan._id]) || null
-  }
-  onChange={(_e, value) => {
-    setSelectedDocTypeMap((prev) => ({
-      ...prev,
-      [loan._id]: value?.key || "",
-    }));
-  }}
-  sx={{ width: 220 }}
-  renderInput={(params) => (
-    <TextField {...params} label="Select Document" />
-  )}
-/>
-    <button
-onClick={() => handleOpenDocumentModal(loanData)}
-  disabled={docLoadingMap[loan._id]}
-  className={`px-4 py-2 text-white text-sm font-medium rounded-md transition shadow-sm
-    ${
-      docLoadingMap[loan._id]
-        ? "bg-green-700 cursor-not-allowed"
-        : "bg-green-700 hover:bg-green-800"
-    }`}
->
-  {docLoadingMap[loan._id] ? (
-    <span className="flex items-center gap-2">
-      <svg
-        className="animate-spin h-4 w-4 text-white"
-        viewBox="0 0 24 24"
-        fill="none"
-      >
-        <circle
-          className="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          strokeWidth="4"
-        />
-        <path
-          className="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8v8H4z"
-        />
-      </svg>
-      Generating...
-    </span>
-  ) : (
-    "Submit"
-  )}
-</button>
-    </div>
-  )}
-</div>
                               </div>
 
                               {/* Loan Details */}
@@ -1153,10 +1342,7 @@ onClick={() => handleOpenDocumentModal(loanData)}
                                       <ul className="grid grid-cols-0 sm:grid-cols-3 gap-1">
                                         {(() => {
                                           const companyTerms = companyLoanTerms(loan);
-                                          const allTerms = companyTerms.includes(
-                                              loan.loanTerms)
-                                            ? companyTerms
-                                            : [...companyTerms, loan.loanTerms].sort((a, b) => a - b);
+                                          const allTerms = companyTerms.includes(loan.loanTerms)? companyTerms                                            : [...companyTerms, loan.loanTerms].sort((a, b) => a - b);
                                           let termsToShow;
 
                                           if (loan.status === "Paid Off") {
@@ -1167,20 +1353,39 @@ onClick={() => handleOpenDocumentModal(loanData)}
                                           : [currentTermMap[loan._id]];
                                           }
                                           return termsToShow.map((term) => {
-                                            const loanTermData = loanStore.calculateLoans({
-                                              ...loan,
-                                              loanTerms: term,
-                                            })!;
-                                          // const isSelected =
-                                          //   term ===
-                                          //   currentTermMap[loan._id];
+                                            const termLoan = JSON.parse(JSON.stringify(loan));
+                                            const newIssueDate = moment(loan.issueDate, "MM-DD-YYYY")
+                                              .subtract(term, "months")
+                                              .format("MM-DD-YYYY");
+                                              termLoan.issueDate = newIssueDate;
+                                            termLoan.loanTerms = term;
+                                           const loanTermData = loanStore.calculateLoans(
+                                                 termLoan,
+                                                 loans,
+                                                 "mergedDate"
+                                            )!;
 
                                           return (
                                             <li
                                               key={term}
                                               className={`border rounded-lg cursor-pointer transition-all duration-200 `}
                                             >
-                                              <div className="flex flex-col items-left font-bold p-1">
+                                            <div className="flex flex-col items-left font-bold p-1 relative">
+                                                  {docLoadingMap[`${loan._id}_${term}`] ? (
+                                                      <Loader2
+                                                        size={14}
+                                                        className="absolute top-1 right-1 text-green-600 animate-spin"
+                                                      />
+                                                    ) : (
+                                                  <FileText
+                                                        size={14}
+                                                        className="absolute top-1 right-1 text-green-600 cursor-pointer hover:text-green-800"
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          handleTenureDocumentClick(loanData, term, loanTermData);
+                                                        }}
+                                                  />
+                                                   )}
                                                 <div className="text-xs">
                                                   {term} months
                                                 </div>
@@ -1265,12 +1470,22 @@ onClick={() => handleOpenDocumentModal(loanData)}
         {docModalOpen && (
         <DocumentModal
           open={docModalOpen}
-          onClose={() => setDocModalOpen(false)}
+          onClose={() => {
+            setDocModalOpen(false);
+            if (activeDocLoaderKey) {
+              setDocLoadingMap(prev => ({
+                ...prev,
+                [activeDocLoaderKey]: false
+              }));
+            }
+          }}
           documents={modalDocs}
           title={modalTitle}
           onSubmit={handleModalDocSubmit}
           isPaidOff={selectedLoanForDoc?.loan?.status === "Paid Off"}
+          isReduction={selectedDocTypeMap[selectedLoanForDoc?.loan?._id] === "reduction"}
           loan={selectedLoanForDoc?.loan}
+           defaultDate={modalDate}
         />
         )}
       {editPaymentModalOpen && (

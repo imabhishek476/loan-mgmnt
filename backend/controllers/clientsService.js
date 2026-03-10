@@ -597,8 +597,7 @@ exports.getClientById = async (req, res) => {
   try {
     const { id } = req.params;
     const client = await Client.findById(id)
-      .populate("attorneyId", "fullName");
-
+    .populate("attorneyId", "fullName firmName email phone");
     if (!client) {
       return res.status(404).json({
         success: false,
@@ -615,6 +614,44 @@ exports.getClientById = async (req, res) => {
       success: false,
       error: error.message,
     });
+  }
+};
+exports.checkDuplicateClient = async (req, res) => {
+  try {
+    const { field, value, clientId } = req.body;
+
+    if (!field || !value) {
+      return res.status(400).json({
+        success: false,
+        message: "Field and value required",
+      });
+    }
+
+    let query = {};
+
+    if (field === "email") {
+      query[field] = value.trim().toLowerCase();
+    } else {
+      query[field] = value.trim();
+    }
+
+    if (clientId) {
+      query._id = { $ne: clientId };
+    }
+    const existing = await Client.findOne(query);
+
+    if (existing) {
+      return res.json({
+        duplicate: true,
+        message: `${field} already exists`,
+      });
+    }
+    res.json({
+      duplicate: false,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Duplicate check failed" });
   }
 };
 

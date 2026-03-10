@@ -389,7 +389,20 @@ exports.deleteLoan = async (req, res) => {
       rootLoan = await Loan.findById(rootLoan.parentLoanId);
       if (!rootLoan) break;
     }
-    const chainLoanIds = await collectChainLoanIds(rootLoan._id);
+    // const chainLoanIds = await collectChainLoanIds(rootLoan._id);
+        const chainLoanIds = [];
+    let currentId = rootLoan._id;
+    while (currentId) {
+      const currentLoan = await Loan.findById(currentId);
+      if (!currentLoan) break;
+
+      chainLoanIds.push(currentLoan._id);
+
+      const child = await Loan.findOne({
+        parentLoanId: currentId,
+      }).select("_id");
+      currentId = child ? child._id : null;
+    }
     await LoanPayment.deleteMany({
       loanId: { $in: chainLoanIds }, });
     await Loan.deleteMany({

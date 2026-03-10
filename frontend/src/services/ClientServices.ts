@@ -46,3 +46,8 @@ export const getClientById = async (id: string) => {
   const { data } = await api.get(`/client/${id}`);
   return data.client
 };
+
+export const checkClientDuplicate = async (field, value, clientId = null) => {
+  const res = await api.post("/client/checkDuplicate", {field,value,clientId,});
+  return res.data;
+};
