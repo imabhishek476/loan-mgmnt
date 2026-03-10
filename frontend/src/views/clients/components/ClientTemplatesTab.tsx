@@ -285,6 +285,7 @@ const updateFee = (key:string,value:number)=>{
         document_data: {
           client_fullname: editableClient?.fullName ?? "-",
           client_address: editableClient?.address ?? "-",
+          client_ssn: editableClient?.ssn ?? "-",
           client_accidentDate: editableClient?.accidentDate
             ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
             : "-",
@@ -375,6 +376,7 @@ const updateFee = (key:string,value:number)=>{
       address: client?.address || "",
       accidentDate: client?.accidentDate || "",
       attorneyName: client?.attorneyId?.fullName || "",
+      ssn: client?.ssn || "",
     });
 
     const company =
@@ -545,6 +547,11 @@ const updateFee = (key:string,value:number)=>{
             label="Client Address"
             value={editableClient?.address}
             onChange={(v:any)=>setEditableClient({...editableClient,address:v})}
+          />
+          <Field
+            label="Client SSN"
+            value={editableClient?.ssn}
+            onChange={(v:any)=>setEditableClient({...editableClient,ssn:v})}
           />
           <div className="flex flex-col">
           <label className="text-xs text-gray-700 font-semibold mb-1">
