@@ -359,12 +359,14 @@ const handleOpenDocumentModal = (loanData: any) => {
     toast.error("No documents available for this company");
     return;
   }
-const monthsPassed = Math.floor( moment().diff(loan.issueDate, "days") / 30);
+const issueDate = moment(loan.issueDate);
+const daysPassed = moment().diff(issueDate, "days");
+const monthsPassed = Math.floor(daysPassed / 30);
 const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
 const runningTenure =
   ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
-const runningTenureEndDate = loan.issueDate.clone().add(runningTenure * 30, "days");
 
+const runningTenureEndDate = issueDate.clone().add(runningTenure * 30, "days");
 setModalDate(moment());
 setEndModalDate(runningTenureEndDate);
 setModalDocs(filteredDocs);
@@ -739,11 +741,13 @@ const handleTenureDocumentClick = (loanData: any, term: number, loanTermData: an
 
   // ✅ Get correct tenure end date from backend
   const tenureObj = loan.tenures?.find((t: any) => t.term === term);
-const monthsPassed = Math.floor( moment().diff(loan.issueDate, "days") / 30);
+const issueDate = moment(loan.issueDate);
+const daysPassed = moment().diff(issueDate, "days");
+const monthsPassed = Math.floor(daysPassed / 30);
 const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
 const runningTenure =
   ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
-const runningTenureEndDate = loan.issueDate.clone().add(runningTenure * 30, "days");
+const runningTenureEndDate = issueDate.clone().add(runningTenure * 30, "days");
 let endDate;
 
 if (loan.status === "Paid Off") {
