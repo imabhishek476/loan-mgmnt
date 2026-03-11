@@ -10,7 +10,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   documents: any[];
-  onSubmit: (doc: any, selectDate?: string,reductionAmount?: number) => void;
+  onSubmit: (doc: any, selectDate?: string,reductionAmount?: number,endDate?:string) => void;
   title: string;
   isPaidOff?: boolean;
   isReduction?: boolean;
@@ -18,6 +18,7 @@ interface Props {
   totalAmount?: number;
   loan?: any;
   defaultDate?: any;
+  endDate?:any;
 }
 const DocumentModal = ({
   open,
@@ -28,12 +29,14 @@ const DocumentModal = ({
   isPaidOff,
   isReduction,
   defaultDate,  
+  endDate,
  loan  
 }: Props) => {
   const [selectedValue, setSelectedValue] = useState<string>("");
   const [calculatedLoan, setCalculatedLoan] = useState<any>(null);
   const [reductionAmount,setReductionAmount] = useState<number>(null);
   const [selectDate, setSelectDate] = useState<any>(defaultDate || moment());
+  const [endDateValue, setEndDateValue] = useState<any>(endDate || moment());
   if (!open) return null;
 
   const handleSubmit = () => {
@@ -48,6 +51,7 @@ const DocumentModal = ({
           ? moment(selectDate).format("MMM DD, YYYY")
           : undefined,
         isReduction ? reductionAmount : undefined,
+        isReduction ? moment(endDateValue).format("MMM DD, YYYY") : undefined,
       );
   }
   };
@@ -66,10 +70,9 @@ useEffect(() => {
 
 }, [selectDate, loan]);
   useEffect(() => {
-    if(defaultDate){
-      setSelectDate(moment(defaultDate))
-    }
-  },[defaultDate])
+    setSelectDate(defaultDate ? moment(defaultDate) : moment());
+    setEndDateValue(endDate ? moment(endDate) : null);
+  },[defaultDate,endDate])
   useEffect(()=>{
     if(documents?.length === 1){
       setSelectedValue(documents[0].value)
@@ -104,7 +107,7 @@ useEffect(() => {
           {(isPaidOff || isReduction) && (
             <div className="mt-4">
               <label className="text-xs font-semibold text-gray-700 mb-1 block">
-              {isReduction ? "Reduction Date" : "Paid Date"}
+              {isReduction ? "Select Date" : "Paid Date"}
               </label>
 
               <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -122,6 +125,25 @@ useEffect(() => {
             </div>
           )}
           {isReduction && (
+          <>
+              {/* <div className="mt-4">
+                <label className="text-xs font-semibold text-gray-700 mb-1 block">
+                  End Date
+                </label>
+
+                <LocalizationProvider dateAdapter={AdapterMoment}>
+                  <DatePicker
+                    value={endDateValue}
+                    onChange={(date:any) => setEndDateValue(date)}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true
+                      }
+                    }}
+                  />
+                </LocalizationProvider>
+              </div> */}
               <div className="mt-4">
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">
                   Reduction Amount
@@ -135,6 +157,7 @@ useEffect(() => {
                   placeholder="Enter reduction amount"
                 />
             </div>
+            </>
          )}
           {documents.map((doc: any) => (
             <label

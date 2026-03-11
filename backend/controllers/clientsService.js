@@ -641,9 +641,15 @@ exports.checkDuplicateClient = async (req, res) => {
     const existing = await Client.findOne(query);
 
     if (existing) {
+      let messageMap = {
+        fullName: "Client name already exists",
+        email: "Email already registered",
+        phone: "Phone number already registered",
+        ssn: "SSN already exists"
+      };
       return res.json({
         duplicate: true,
-        message: `${field} already exists`,
+        message: messageMap[field] || "This value already exists"
       });
     }
     res.json({
