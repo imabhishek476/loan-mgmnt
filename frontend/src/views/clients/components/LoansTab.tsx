@@ -25,6 +25,7 @@ import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
 import api from "../../../api/axios";
 import DocumentModal from "./DocumentModal";
+import { usd } from "../../../utils/helpers";
 
 interface LoansTabProps {
 client: any;
@@ -91,6 +92,7 @@ const [modalDocs, setModalDocs] = useState<any[]>([]);
 const [modalTitle, setModalTitle] = useState("");
 const [selectedLoanForDoc, setSelectedLoanForDoc] = useState<any>(null);
 const [modalDate,setModalDate] = useState<any>(null);
+const [modalEndDate,setEndModalDate] = useState<any>(null);
 const [activeDocLoaderKey, setActiveDocLoaderKey] = useState<string | null>(null);
 const getClientLoansData = useMemo(() => {
   return loans.map((loan) => {
@@ -121,7 +123,6 @@ const getClientLoansData = useMemo(() => {
     const end = Number(selectedDynamicTerm) * 30;
     const currentEndDate = moment(loan.issueDate).add(end, "day");
     const isDelayed = today.isAfter(endDate, "day");
-
     const profitData = loanProfitMap[loan._id];
 
     return {
@@ -140,9 +141,15 @@ const getClientLoansData = useMemo(() => {
   const getDefaultLoanTerm = (loan: any) => {
     const LOAN_TERMS = getAllowedTerms(loan.loanTerms) || [];
     if (!LOAN_TERMS.length) return loan.loanTerms;
-    const loanData = loanStore.calculateLoans(loan, loanStore.loans, "mergedDate");
+    const loanData = loanStore.calculateLoans(
+      loan,
+      loanStore.loans,
+      "mergedDate"
+    );
     if (!loanData) return LOAN_TERMS[0];
     const monthsPassed = Math.ceil(loanData.monthsPassed || 0);
+    const exactTerm = LOAN_TERMS.find((t) => t === monthsPassed);
+    if (exactTerm) return exactTerm;
     const nextTerm = LOAN_TERMS.find((t) => t > monthsPassed);
     return nextTerm ?? LOAN_TERMS[LOAN_TERMS.length - 1];
   };
@@ -352,7 +359,14 @@ const handleOpenDocumentModal = (loanData: any) => {
     toast.error("No documents available for this company");
     return;
   }
+const monthsPassed = Math.floor( moment().diff(loan.issueDate, "days") / 30);
+const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
+const runningTenure =
+  ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
+const runningTenureEndDate = loan.issueDate.clone().add(runningTenure * 30, "days");
 
+setModalDate(moment());
+setEndModalDate(runningTenureEndDate);
 setModalDocs(filteredDocs);
 setModalTitle(selectedCategory.label);
 const selectedDoc = filteredDocs[0];
@@ -384,7 +398,8 @@ const generateFinalDocument = async (
   selectedTitle: string,
   //@ts-ignore
   selectDate?: string,
-  reductionAmount?:number
+  reductionAmount?:number,
+  endDate?:string,
 ) => {
   const { loan, companyName } = loanData;
 
@@ -457,8 +472,10 @@ const companyObj = companies.find(
 
   const tenureMap:any = {};
   allTenureData.forEach((t:any)=>{
-  tenureMap[`loan_${t.tenure}_interest`] = parseFloat(t.interestAmount.toFixed(2));
-  tenureMap[`loan_${t.tenure}_total`] = parseFloat(t.totalAmount.toFixed(2));
+ allTenureData.forEach((t: any) => {
+  tenureMap[`loan_${t.tenure}_interest`] = usd(t.interestAmount);
+  tenureMap[`loan_${t.tenure}_total`] = usd(t.totalAmount);
+});
   });
     if (!calculated) {
       toast.error("Calculation failed");
@@ -477,7 +494,7 @@ const companyObj = companies.find(
       ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
         now.getSeconds()
       ).padStart(2, "0")}`;
-   const payload = {
+const payload = {
   loanid: loan?._id ?? "-",
   document_title: selectedTitle ?? "-",
   document_link: selectedDocUrl ?? "-",
@@ -498,27 +515,32 @@ const companyObj = companies.find(
       email: companyObj?.email ?? "-",
       phone: companyObj?.phone ?? "-",
     },
-    reduction_amount: reductionAmount ?? "-",
+    loan_end_date: endDate ?? "-",
+    today_date: moment().format("MM/DD/YYYY"),
+    reduction_amount:
+      reductionAmount != null ? usd(reductionAmount) : "-",
     after_reduction_amount:
-    reductionAmount != null  ? Number(calculated.totalWithInterest || 0) - reductionAmount
-    : "-",
+      reductionAmount != null
+        ? usd(Number(calculated.totalWithInterest || 0) - reductionAmount)
+        : "-",
     selected_date: selectDate ?? todayFormatted,
     loan_issueDate: calculated?.issueDate
       ? calculated.issueDate.format("MMM DD, YYYY")
       : "-",
-    loan_baseAmount: baseAmount ?? "-",
-    loan_previousLoanAmount: previousLoanAmount ?? "-",
-    loan_totalPrincipal:
-      (calculated?.baseNum ?? 0) + (calculated?.prevLoan ?? 0),
-    loan_subTotal: loan?.subTotal ?? calculated?.subtotal ?? "-",
+    loan_baseAmount: usd(baseAmount),
+    loan_previousLoanAmount: usd(previousLoanAmount),
+    loan_totalPrincipal: usd(
+      (calculated?.baseNum ?? 0) + (calculated?.prevLoan ?? 0)
+    ),
+    loan_subTotal: usd(loan?.subTotal ?? calculated?.subtotal),
     loan_interestType: calculated?.interestType ?? "-",
     loan_monthlyRate: calculated?.monthlyRate ?? "-",
-    loan_interestAmount: calculated?.interestAmount ?? "-",
-    loan_totalAmount: calculated?.totalWithInterest ?? "-",
-    loan_paidAmount: calculated?.paidAmount ?? "-",
+    loan_interestAmount: usd(calculated?.interestAmount),
+    loan_totalAmount: usd(calculated?.totalWithInterest),
+    loan_paidAmount: usd(calculated?.paidAmount),
     loan_remainingAmount:
       calculated?.remaining != null
-        ? Number(calculated.remaining).toFixed(2)
+        ? usd(calculated.remaining)
         : "-",
     loan_dynamicTerm: calculated?.dynamicTerm ?? "-",
     loan_parentLoanId: loan?.parentLoanId ?? "-",
@@ -530,11 +552,13 @@ const companyObj = companies.find(
     loan_status: loan?.status ?? "-",
     loan_allTenure: allTenureData ?? "-",
     ...tenureMap,
-    application_fee: calculated?.feeBreakdown?.applicationFee ?? "-",
-    broker_fee: calculated?.feeBreakdown?.brokerFee ?? "-",
-    administrative_fee: calculated?.feeBreakdown?.administrativeFee ?? "-",
-    attorney_review_fee: calculated?.feeBreakdown?.attorneyReviewFee ?? "-",
-    annual_maintenance_fee:calculated?.feeBreakdown?.annualMaintenanceFee ?? "-",
+    application_fee: usd(calculated?.feeBreakdown?.applicationFee),
+    broker_fee: usd(calculated?.feeBreakdown?.brokerFee),
+    administrative_fee: usd(calculated?.feeBreakdown?.administrativeFee),
+    attorney_review_fee: usd(calculated?.feeBreakdown?.attorneyReviewFee),
+    annual_maintenance_fee: usd(
+      calculated?.feeBreakdown?.annualMaintenanceFee
+    ),
   },
 };
 
@@ -573,7 +597,7 @@ const companyObj = companies.find(
     }));
   }
 };
-const handleModalDocSubmit = ( doc: any, selectDate?: string, reductionAmount?: number ) => {
+const handleModalDocSubmit = ( doc: any, selectDate?: string, reductionAmount?: number,endDate?:string ) => {
   setDocModalOpen(false);
 
   generateFinalDocument(
@@ -581,7 +605,8 @@ const handleModalDocSubmit = ( doc: any, selectDate?: string, reductionAmount?: 
     doc.value,
     doc.fileName,
     selectDate,
-    reductionAmount
+    reductionAmount,
+    endDate
   );
 };
 const getFilteredDocTypes = (loan:any) => {
@@ -714,7 +739,11 @@ const handleTenureDocumentClick = (loanData: any, term: number, loanTermData: an
 
   // ✅ Get correct tenure end date from backend
   const tenureObj = loan.tenures?.find((t: any) => t.term === term);
-
+const monthsPassed = Math.floor( moment().diff(loan.issueDate, "days") / 30);
+const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
+const runningTenure =
+  ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
+const runningTenureEndDate = loan.issueDate.clone().add(runningTenure * 30, "days");
 let endDate;
 
 if (loan.status === "Paid Off") {
@@ -728,6 +757,7 @@ if (loan.status === "Paid Off") {
 }
 
   setModalDate(endDate);
+  setEndModalDate(runningTenureEndDate);
   const loaderKey = `${loan._id}_${term}`;
   setActiveDocLoaderKey(loaderKey);
   setDocLoadingMap(prev => ({
@@ -1355,7 +1385,7 @@ return (
                                           return termsToShow.map((term) => {
                                             const termLoan = JSON.parse(JSON.stringify(loan));
                                             const newIssueDate = moment(loan.issueDate, "MM-DD-YYYY")
-                                              .subtract(term, "months")
+                                              .subtract(term * 30, "days")
                                               .format("MM-DD-YYYY");
                                               termLoan.issueDate = newIssueDate;
                                             termLoan.loanTerms = term;
@@ -1486,6 +1516,7 @@ return (
           isReduction={selectedDocTypeMap[selectedLoanForDoc?.loan?._id] === "reduction"}
           loan={selectedLoanForDoc?.loan}
            defaultDate={modalDate}
+           endDate = {modalEndDate}
         />
         )}
       {editPaymentModalOpen && (

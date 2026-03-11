@@ -56,5 +56,10 @@ export const LOAN_TYPE_OPTIONS = [
   { label: "Labor Law", value: "Labor Law" },
   { label: "Commercial", value: "Commercial" },
 ];
-
+export const formatMoney = (val: any) => {
+  return convertToUsd.format(convertToNumber(val)).replace("$", "");
+};
+export const usd = (v: any) => {
+  return convertToUsd.format(convertToNumber(v)).replace("$", "");
+};
 export const getLoanTypeOptions = () => LOAN_TYPE_OPTIONS;
