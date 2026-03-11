@@ -126,7 +126,7 @@ useEffect(() => {
           )}
           {isReduction && (
           <>
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">
                   End Date
                 </label>
@@ -143,7 +143,7 @@ useEffect(() => {
                     }}
                   />
                 </LocalizationProvider>
-              </div>
+              </div> */}
               <div className="mt-4">
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">
                   Reduction Amount
