@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import moment from "moment";
 import { Autocomplete, TextField } from "@mui/material";
-import { DocTypes, formatFee, LOAN_TERMS, moneyFormat } from "../../../utils/constants";
+import { DocTypes, formatFee, getAllowedTerms, LOAN_TERMS, moneyFormat } from "../../../utils/constants";
 import { toast } from "react-toastify";
 import { loanStore } from "../../../store/LoanStore";
 import api from "../../../api/axios";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-
+import { convertToNumber, usd } from "../../../utils/helpers";
 interface ClientTemplateTabProps {
   client: any;
   clientLoans: any[];
@@ -170,17 +170,11 @@ useEffect(() => {
       companies.find((c) => c._id === selectedLoan.company)?.companyName;
 
     let docKey = "";
-    if (
-      selectedLoan.status === "Active" ||
-      selectedLoan.status === "Partial Payment"
-    ) {
-      docKey = "contract";
-    }
-    if (selectedLoan.status === "Merged") {
-      docKey = "plus_contract";
-    }
+    const prevAmount = Number(selectedLoan?.previousLoanAmount || 0);
       if (selectedLoan.status === "Paid Off") {
         docKey = "payoff";
+      } else {
+        docKey = prevAmount > 0 ? "plus_contract" : "contract";
       }
       const docType = DocTypes.find((d) => d.key === docKey);
 
@@ -218,7 +212,15 @@ const updateFee = (key:string,value:number)=>{
   })
 }
   /* ---------------- Generate ---------------- */
+const mergedData = useMemo(() => {
 
+  if (!selectedLoan) return null;
+
+  return clientLoans.find(
+    (l:any) => l.parentLoanId === selectedLoan._id
+  );
+
+}, [selectedLoan, clientLoans]);
   const handleGenerate = async () => {
 
     if (!editableLoan || !selectedDocument) {
@@ -262,8 +264,8 @@ const updateFee = (key:string,value:number)=>{
       const tenureMap: any = {};
 
       allTenureData.forEach((t: any) => {
-        tenureMap[`loan_${t.tenure}_interest`] = t.interestAmount;
-        tenureMap[`loan_${t.tenure}_total`] = t.totalAmount;
+        tenureMap[`loan_${t.tenure}_interest`] = usd(t.interestAmount);
+        tenureMap[`loan_${t.tenure}_total`] = usd(t.totalAmount);
       });
       if (!calculated) {
         toast.error("Loan calculation failed");
@@ -272,6 +274,19 @@ const updateFee = (key:string,value:number)=>{
       const totalPrincipal = editableLoan?.totalPrincipal || 0;
       const brokerFee = editableLoan?.fees?.brokerFee || {};
       const final_total = editableLoan?.total || calculatedLoan.total || 0;
+      const reductionNum = convertToNumber(reductionAmount);
+      const finalTotalNum = convertToNumber(final_total);
+      const issueDate = moment(editableLoan.issueDate);
+      const daysPassed = todayDate.diff(issueDate, "days");
+      const monthsPassed = Math.floor(daysPassed / 30);
+      const ALLOWED_TERMS = getAllowedTerms(editableLoan.loanTerms);
+      const runningTenure =
+        ALLOWED_TERMS.find((t) => monthsPassed <= t) || editableLoan.loanTerms;
+
+      const runningTenureEndDate = issueDate
+        .clone()
+        .add(runningTenure * 30, "days")
+        .format("MMM DD, YYYY");
 
       const payload = {
         loanid: editableLoan?._id ?? "-",
@@ -287,47 +302,64 @@ const updateFee = (key:string,value:number)=>{
             ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
             : "-",
           client_attorney_name: editableClient?.attorneyName ?? "-",
-          client_attorney_firm_name : editableClient?.attorneyFirmName ?? "-",
+          client_attorney_firm_name: editableClient?.attorneyFirmName ?? "-",
           company: {
             name: editableCompany?.name ?? "-",
             address: editableCompany?.address ?? "-",
             email: companyData?.email ?? "-",
             phone: companyData?.phone ?? "-",
           },
-          reduction_amount: reductionAmount ?? "-",
-          after_reduction_amount: reductionAmount != null ? final_total - reductionAmount : final_total,
-          selected_date: todayDate ? todayDate.format("MMM DD, YYYY") : "-",
+          today_date: moment().format("MM/DD/YYYY"),
+          loan_end_date: runningTenureEndDate ?? "-",
+          reduction_amount:
+            reductionAmount != null ? usd(reductionNum) : usd(0),
+          after_reduction_amount:
+            reductionAmount != null
+              ? usd(finalTotalNum - reductionNum)
+              : usd(finalTotalNum),
+          selected_date: todayDate
+            ? todayDate.format("MMM DD, YYYY")
+            : "-",
           loan_issueDate: calculated?.issueDate
             ? calculated.issueDate.format("MMM DD, YYYY")
             : "-",
-          loan_baseAmount: moneyFormat(
-            (editableLoan?.baseAmount ?? 0) +
-            (editableLoan?.previousLoanAmount ?? 0)
+          loan_baseAmount: usd(
+            convertToNumber(editableLoan?.baseAmount) +
+            convertToNumber(editableLoan?.previousLoanAmount)
           ),
-          loan_previousLoanAmount: moneyFormat(editableLoan?.previousLoanAmount ?? 0),
-          loan_totalPrincipal: moneyFormat(totalPrincipal ?? 0),
-          loan_subTotal: moneyFormat(editableLoan?.subTotal ?? 0),
-          loan_interestType: editableLoan?.interestType ?? "-",
+          loan_previousLoanAmount: usd(editableLoan?.previousLoanAmount),
+          loan_totalPrincipal: usd(totalPrincipal),
+          loan_subTotal: usd(editableLoan?.subTotal),
+          loan_interestAmount: usd(editableLoan?.interestAmount),
+          loan_totalAmount: usd(editableLoan?.total),
+          loan_paidAmount: usd(editableLoan?.paidAmount),
+          loan_remainingAmount: usd(editableLoan?.remaining),
           loan_monthlyRate: editableLoan?.monthlyRate ?? "-",
-          loan_interestAmount: moneyFormat(editableLoan?.interestAmount ?? 0),
-          loan_totalAmount: moneyFormat(editableLoan?.total ?? 0),
-          loan_paidAmount: moneyFormat(editableLoan?.paidAmount ?? 0),
-          loan_remainingAmount: moneyFormat(editableLoan?.remaining ?? 0),
           loan_dynamicTerm: calculated?.dynamicTerm ?? "-",
           loan_parentLoanId: editableLoan?.parentLoanId ?? "-",
           loan_mergedDate: calculated?.mergedDate
             ? calculated.mergedDate.format("MMM DD, YYYY")
             : "-",
           loan_fee_type: brokerFee?.type ?? "-",
-          loan_fee_value: brokerFee?.value ?? "-",
+          loan_fee_value: usd(brokerFee?.value) ?? "-",
           loan_status: editableLoan?.status ?? "-",
           loan_allTenure: allTenureData ?? "-",
           ...tenureMap,
-          application_fee: calculated?.feeBreakdown?.applicationFee ?? "-",
-          broker_fee: calculated?.feeBreakdown?.brokerFee ?? "-",
-          administrative_fee: calculated?.feeBreakdown?.administrativeFee ?? "-",
-          attorney_review_fee: calculated?.feeBreakdown?.attorneyReviewFee ?? "-",
-          annual_maintenance_fee: calculated?.feeBreakdown?.annualMaintenanceFee ?? "-",
+          application_fee: usd(calculated?.feeBreakdown?.applicationFee),
+          broker_fee: usd(calculated?.feeBreakdown?.brokerFee),
+          administrative_fee: usd(calculated?.feeBreakdown?.administrativeFee),
+          attorney_review_fee: usd(calculated?.feeBreakdown?.attorneyReviewFee),
+          annual_maintenance_fee: usd(
+            calculated?.feeBreakdown?.annualMaintenanceFee
+          ),
+          merged_loan_issueDate:
+            mergedData?.issueDate
+              ? moment(mergedData.issueDate).format("MMM DD, YYYY")
+              : "-",
+          merged_loan_baseAmount:
+            mergedData?.baseAmount
+              ? usd(mergedData.baseAmount)
+              : "-",
         },
       };
       const response = await api.post(
@@ -397,19 +429,21 @@ const updateFee = (key:string,value:number)=>{
     if (!selectedLoan) return DocTypes;
 
     if (selectedLoan.status === "Merged") {
-      // show only Plus Contract, Payoff, Reduction
       return DocTypes.filter((d) =>
         ["plus_contract", "payoff", "reduction"].includes(d.key)
       );
     }
+   const prevAmount = Number(selectedLoan?.previousLoanAmount || 0);
 
     if (
       selectedLoan.status === "Active" ||
-      selectedLoan.status === "Partial Payment"
+      selectedLoan.status === "Partial Payment" ||
+      selectedLoan.status === "Merged"
     ) {
-      // show only normal Contract + Reduction
+      const docKey = prevAmount > 0 ? "plus_contract" : "contract";
+
       return DocTypes.filter((d) =>
-        ["contract", "reduction"].includes(d.key)
+        [docKey, "reduction"].includes(d.key)
       );
     }
 
