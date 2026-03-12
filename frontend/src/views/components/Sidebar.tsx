@@ -95,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
               <button
                 key={item.name}
                 onClick={() => clientStore.toggleCreateClientModal(true)}
-                className="flex items-center px-4 py-2 gap-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 w-full"
+                className={`flex items-center px-4 py-2 gap-3 rounded-lg font-medium w-full !bg-gradient-to-r !from-red-500 !to-red-600 !text-white`}
               >
                 {item.icon}
                 {open && <span>{item.name}</span>}
