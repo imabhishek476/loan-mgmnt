@@ -473,12 +473,11 @@ const companyObj = companies.find(
   });
 
   const tenureMap:any = {};
-  allTenureData.forEach((_t:any)=>{
- allTenureData.forEach((t: any) => {
-  tenureMap[`loan_${t.tenure}_interest`] = usd(t.interestAmount);
-  tenureMap[`loan_${t.tenure}_total`] = usd(t.totalAmount);
-});
-  });
+    allTenureData.forEach((t: any) => {
+      tenureMap[`loan_${t.tenure}_interest`] = usd(t.interestAmount);
+      tenureMap[`loan_${t.tenure}_total`] = usd(t.totalAmount);
+    });
+
     if (!calculated) {
       toast.error("Calculation failed");
       return;
