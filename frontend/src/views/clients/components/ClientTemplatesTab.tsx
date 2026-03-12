@@ -7,7 +7,7 @@ import { loanStore } from "../../../store/LoanStore";
 import api from "../../../api/axios";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { convertToNumber, convertToUsd, usd } from "../../../utils/helpers";
+import { convertToNumber, usd } from "../../../utils/helpers";
 interface ClientTemplateTabProps {
   client: any;
   clientLoans: any[];
