@@ -473,7 +473,7 @@ const companyObj = companies.find(
   });
 
   const tenureMap:any = {};
-  allTenureData.forEach((t:any)=>{
+  allTenureData.forEach((_t:any)=>{
  allTenureData.forEach((t: any) => {
   tenureMap[`loan_${t.tenure}_interest`] = usd(t.interestAmount);
   tenureMap[`loan_${t.tenure}_total`] = usd(t.totalAmount);
@@ -496,6 +496,9 @@ const companyObj = companies.find(
       ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
         now.getSeconds()
       ).padStart(2, "0")}`;
+      const mergedFromLoan = loans.find(
+  (l:any) => l.parentLoanId === loan._id
+);
 const payload = {
   loanid: loan?._id ?? "-",
   document_title: selectedTitle ?? "-",
@@ -561,6 +564,15 @@ const payload = {
     annual_maintenance_fee: usd(
       calculated?.feeBreakdown?.annualMaintenanceFee
     ),
+    merged_loan_issueDate:
+      mergedFromLoan?.issueDate
+        ? moment(mergedFromLoan.issueDate).format("MMM DD, YYYY")
+        : "-",
+
+    merged_loan_baseAmount:
+      mergedFromLoan?.baseAmount
+        ? usd(mergedFromLoan.baseAmount)
+        : "-",
   },
 };
 
@@ -611,48 +623,61 @@ const handleModalDocSubmit = ( doc: any, selectDate?: string, reductionAmount?: 
     endDate
   );
 };
-const getFilteredDocTypes = (loan:any) => {
+const getFilteredDocTypes = (loan: any) => {
 
   if (loan.status === "Merged") {
-    return DocTypes.filter((d) =>
-      ["plus_contract"].includes(d.key)
-    );
+    return loan.previousLoanAmount > 0
+      ? DocTypes.filter(d => d.key === "plus_contract")
+      : DocTypes.filter(d => d.key === "contract");
   }
 
   if (
     loan.status === "Active" ||
     loan.status === "Partial Payment"
   ) {
-    return DocTypes.filter((d) =>
+    if (loan.previousLoanAmount > 0) {
+      return DocTypes.filter(d =>
+        ["plus_contract", "reduction"].includes(d.key)
+      );
+    }
+    return DocTypes.filter(d =>
       ["contract", "reduction"].includes(d.key)
     );
   }
 
   if (loan.status === "Paid Off") {
-    return DocTypes.filter((d) => d.key === "payoff");
+    return DocTypes.filter(d => d.key === "payoff");
   }
 
   return DocTypes;
 };
 useEffect(() => {
 
-  const map:any = {};
+  const map: any = {};
 
-  loans.forEach((loan:any) => {
+  loans.forEach((loan: any) => {
+
+    if (loan.status === "Paid Off") {
+      map[loan._id] = "payoff";
+      return;
+    }
 
     if (loan.status === "Merged") {
-      map[loan._id] = "plus_contract";
+      map[loan._id] =
+        loan.previousLoanAmount > 0
+          ? "contract"
+          : "plus_contract";
+      return;
     }
 
     if (
       loan.status === "Active" ||
       loan.status === "Partial Payment"
     ) {
-      map[loan._id] = "contract";
-    }
-
-    if (loan.status === "Paid Off") {
-      map[loan._id] = "payoff";
+      map[loan._id] =
+        loan.previousLoanAmount > 0
+          ? "plus_contract"
+          : "contract";
     }
 
   });
@@ -682,12 +707,16 @@ const handleFileIconClick = (e: any, loanData: any) => {
       ),
     };
 
-    const plusDoc = DocTypes.find(d => d.key === "plus_contract");
+   const docKey =
+  loan.previousLoanAmount == null || loan.previousLoanAmount == 0
+      ? "contract"
+      : "plus_contract";
+  const selectedDoc = DocTypes.find(d => d.key === docKey);
 
-    const companyDoc = plusDoc?.companies?.find(
-      (c:any) =>   c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
-    );
-
+  const companyDoc = selectedDoc?.companies?.find(
+    (c:any) =>
+      c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
+  );
     if (companyDoc) {
       generateFinalDocument(
         loanDataObj,
@@ -782,16 +811,21 @@ if (loan.status === "Paid Off") {
 
   if (loan.status === "Merged") {
 
-    const plusDoc = DocTypes.find(d => d.key === "plus_contract");
+     const docKey =
+    loan.previousLoanAmount == null || loan.previousLoanAmount == 0
+      ? "contract"
+      : "plus_contract";
 
-    const companyDoc = plusDoc?.companies?.find(
+  const selectedDoc = DocTypes.find(d => d.key === docKey);
+
+  const companyDoc = selectedDoc?.companies?.find(
       (c: any) =>
         c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
     );
 
     if (companyDoc) {
       generateFinalDocument(
-        loanData,
+        selectedLoanDataObj,
         companyDoc.value,
         companyDoc.fileName
       );
