@@ -7,7 +7,7 @@ import { loanStore } from "../../../store/LoanStore";
 import api from "../../../api/axios";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { convertToNumber, convertToUsd, usd } from "../../../utils/helpers";
+import { convertToNumber, usd } from "../../../utils/helpers";
 interface ClientTemplateTabProps {
   client: any;
   clientLoans: any[];
@@ -170,17 +170,11 @@ useEffect(() => {
       companies.find((c) => c._id === selectedLoan.company)?.companyName;
 
     let docKey = "";
-    if (
-      selectedLoan.status === "Active" ||
-      selectedLoan.status === "Partial Payment"
-    ) {
-      docKey = "contract";
-    }
-    if (selectedLoan.status === "Merged") {
-      docKey = "plus_contract";
-    }
+    const prevAmount = Number(selectedLoan?.previousLoanAmount || 0);
       if (selectedLoan.status === "Paid Off") {
         docKey = "payoff";
+      } else {
+        docKey = prevAmount > 0 ? "plus_contract" : "contract";
       }
       const docType = DocTypes.find((d) => d.key === docKey);
 
@@ -218,7 +212,15 @@ const updateFee = (key:string,value:number)=>{
   })
 }
   /* ---------------- Generate ---------------- */
+const mergedData = useMemo(() => {
 
+  if (!selectedLoan) return null;
+
+  return clientLoans.find(
+    (l:any) => l.parentLoanId === selectedLoan._id
+  );
+
+}, [selectedLoan, clientLoans]);
   const handleGenerate = async () => {
 
     if (!editableLoan || !selectedDocument) {
@@ -350,6 +352,14 @@ const updateFee = (key:string,value:number)=>{
           annual_maintenance_fee: usd(
             calculated?.feeBreakdown?.annualMaintenanceFee
           ),
+          merged_loan_issueDate:
+            mergedData?.issueDate
+              ? moment(mergedData.issueDate).format("MMM DD, YYYY")
+              : "-",
+          merged_loan_baseAmount:
+            mergedData?.baseAmount
+              ? usd(mergedData.baseAmount)
+              : "-",
         },
       };
       const response = await api.post(
@@ -419,19 +429,21 @@ const updateFee = (key:string,value:number)=>{
     if (!selectedLoan) return DocTypes;
 
     if (selectedLoan.status === "Merged") {
-      // show only Plus Contract, Payoff, Reduction
       return DocTypes.filter((d) =>
         ["plus_contract", "payoff", "reduction"].includes(d.key)
       );
     }
+   const prevAmount = Number(selectedLoan?.previousLoanAmount || 0);
 
     if (
       selectedLoan.status === "Active" ||
-      selectedLoan.status === "Partial Payment"
+      selectedLoan.status === "Partial Payment" ||
+      selectedLoan.status === "Merged"
     ) {
-      // show only normal Contract + Reduction
+      const docKey = prevAmount > 0 ? "plus_contract" : "contract";
+
       return DocTypes.filter((d) =>
-        ["contract", "reduction"].includes(d.key)
+        [docKey, "reduction"].includes(d.key)
       );
     }
 
