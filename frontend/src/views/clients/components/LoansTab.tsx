@@ -575,7 +575,6 @@ const payload = {
   },
 };
 
-    console.log("🔥 FULL DOCUMENT PAYLOAD →", payload);
 
     const response = await api.post(
       "/templates/document/generate",

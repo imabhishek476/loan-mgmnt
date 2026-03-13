@@ -199,14 +199,15 @@ useEffect(() => {
     setEditableLoan(null);     
     setCalculatedLoan(null)
   };
-const updateFee = (key:string,value:number)=>{
+const updateFee = (key:string,value:any)=>{
+  const numericValue = Number(value) || 0;
   setEditableLoan({
     ...editableLoan,
     fees:{
       ...editableLoan.fees,
       [key]:{
         ...editableLoan.fees[key],
-        value
+        value: numericValue
       }
     }
   })
@@ -940,20 +941,13 @@ const Field = ({ label, value, onChange, type = "text", preview, readOnly = fals
         return;
       }
 
-      if (!/^\d*\.?\d*$/.test(v)) return;
+      const num = (parseInt(v.replace(/\D/g, ""), 10) / 100).toFixed(2);
 
-      onChange(v);
+      onChange(num);
       return;
     }
 
     onChange(v);
-  };
-
-  const handleBlur = () => {
-    if (!readOnly && type === "number" && value !== "" && value !== null) {
-      const formatted = Number(value).toFixed(2);
-      onChange(formatted);
-    }
   };
 
   return (
@@ -967,7 +961,6 @@ const Field = ({ label, value, onChange, type = "text", preview, readOnly = fals
         value={value ?? ""}
         readOnly={readOnly}
         onChange={handleChange}
-        onBlur={handleBlur}
         className={`border rounded-md px-3 py-2 text-sm ${
           readOnly ? "bg-gray-100 cursor-not-allowed" : "bg-white"
         }`}
