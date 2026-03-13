@@ -7,7 +7,7 @@ import { loanStore } from "../../../store/LoanStore";
 import api from "../../../api/axios";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { convertToNumber, usd } from "../../../utils/helpers";
+import { convertToNumber, formatPhone, usd } from "../../../utils/helpers";
 interface ClientTemplateTabProps {
   client: any;
   clientLoans: any[];
@@ -297,7 +297,7 @@ const mergedData = useMemo(() => {
           client_fullname: editableClient?.fullName ?? "-",
           client_address: editableClient?.address ?? "-",
           client_ssn: editableClient?.ssn ?? "-",
-          phone: editableClient?.phone ?? "-",
+          client_phone: formatPhone(editableClient?.phone),
           client_accidentDate: editableClient?.accidentDate
             ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
             : "-",
@@ -307,7 +307,7 @@ const mergedData = useMemo(() => {
             name: editableCompany?.name ?? "-",
             address: editableCompany?.address ?? "-",
             email: companyData?.email ?? "-",
-            phone: companyData?.phone ?? "-",
+            phone: formatPhone(companyData?.phone ?? "-"),
           },
           today_date: moment().format("MM/DD/YYYY"),
           loan_end_date: runningTenureEndDate ?? "-",
@@ -443,7 +443,7 @@ const mergedData = useMemo(() => {
       const docKey = prevAmount > 0 ? "plus_contract" : "contract";
 
       return DocTypes.filter((d) =>
-        [docKey, "reduction"].includes(d.key)
+        [docKey, "payoff", "reduction"].includes(d.key)
       );
     }
 
@@ -571,7 +571,7 @@ useEffect(() => {
     <div className="bg-white rounded-md p-2 grid grid-cols-1 xl:grid-cols-2 gap-2 mt-0">
     <div className="flex flex-col gap-2">
       {/* CLIENT DETAILS */}
-      <div className="p-2 pb-0">
+      <div className="p-4 border rounded-lg shadow-sm bg-white ">
         <h3 className="font-semibold text-gray-800 mb-4">Client Details</h3>
 
         <div className="grid grid-cols-2 gap-2">
@@ -643,7 +643,7 @@ useEffect(() => {
 
 
       {/* COMPANY DETAILS */}
-      <div className="p-2 pt-0">
+      <div className="p-4 border rounded-lg shadow-sm bg-white">
         <h3 className="font-semibold text-gray-800 mb-2">Company Details</h3>
 
         <div className="grid grid-cols-2 gap-2">
@@ -673,14 +673,14 @@ useEffect(() => {
       </div>
       </div>
 
-      <div className="border-l p-4">
+      <div className="border rounded-lg shadow-md bg-gray-50 p-4">
             <div className="flex items-center justify-between mb-4">
 
             <h3 className="font-semibold text-gray-800 text-lg">
               Loan Details
             </h3>
 
-            <div className="flex gap-4 text-sm">
+            <div className="flex gap-4 text-sm ">
 
               <span className="bg-gray-200 px-3 py-1 rounded-md  font-semibold text-gray-700">
               Loan Term: {calculatedLoan?.dynamicTerm} Months
@@ -693,7 +693,7 @@ useEffect(() => {
             </div>
 
           </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ">
           {(selectedDocType?.key === "payoff" || selectedDocType?.key === "reduction") && (
               <div className="flex flex-col">
                 <label className="text-xs font-semibold text-gray-700 mb-1">
@@ -714,7 +714,7 @@ useEffect(() => {
                 label="Reduction Amount"
                 type="number"
                 value={reductionAmount}
-                onChange={(v:any)=>setReductionAmount(Number(v))}
+                onChange={(v:any)=>setReductionAmount(v)}
               />
             )}
           <div className="flex flex-col">
@@ -735,79 +735,50 @@ useEffect(() => {
       </div>
 
       <Field
-        label="Loan Status"
-        value={editableLoan?.status}
-        onChange={(v:any)=>setEditableLoan({...editableLoan,status:v})}
-      />
-
-      <Field
         label="Base Amount"
          type="number"
         value={editableLoan?.baseAmount}
-        onChange={(v:any)=>setEditableLoan({...editableLoan,baseAmount:Number(v)})}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,baseAmount:v})}
       />
-
-      <Field
-        label="Previous Loan Amount"
-        type="number"
-        value={editableLoan?.previousLoanAmount}
-        onChange={(v:any)=>setEditableLoan({...editableLoan,previousLoanAmount:Number(v)})}
-      />
-
-      <Field
-        label="Total Principal"
-        type="number"
-        value={editableLoan?.totalPrincipal}
-        onChange={(v:any)=>
-          setEditableLoan({
-            ...editableLoan,
-            totalPrincipal:Number(v)
-          })
-        }
-      />
-
-        <Field
-            label="Merged From"
-            value={
-              mergedFromLoan
-                ? `Issue: ${moment(mergedFromLoan.issueDate).format("MM/DD/YYYY")} | Base: $${moneyFormat(mergedFromLoan.baseAmount)}`
-                : "-"
-            }
-          />
-
-      <Field
-        label="Merged Date"
-        value={calculatedLoan?.mergedDate?.format("MM/DD/YYYY") || "-"}
-      />
-
-      <Field
-        label="Subtotal"
-        type="number"
-        value={editableLoan?.subtotal || calculatedLoan?.subtotal}
-        onChange={(v:any)=>setEditableLoan({...editableLoan,subtotal:v})}
-      />
-      {/* <Field
-        label="Interest Type"
-        type="number"
-        value={editableLoan?.interestType}
-        onChange={(v:any)=>setEditableLoan({...editableLoan,interestType:v})}
-      /> */}
 
       <Field
         label="Monthly Rate"
         type="number"
         value={editableLoan?.monthlyRate}
-        onChange={(v:any)=>setEditableLoan({...editableLoan,monthlyRate:Number(v)})}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,monthlyRate:v})}
       />
 
-     <Field
+      <Field
         label="Interest Amount"
         type="number"
         value={editableLoan?.interestAmount}
         onChange={(v:any)=>
           setEditableLoan({
             ...editableLoan,
-            interestAmount:Number(v)
+            interestAmount:v
+          })
+        }
+      />
+       <Field
+        label="Subtotal"
+        type="number"
+        value={editableLoan?.subtotal || calculatedLoan?.subtotal}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,subtotal:v})}
+      />
+      <Field
+        label="Previous Loan Amount"
+        type="number"
+        value={editableLoan?.previousLoanAmount}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,previousLoanAmount:v})}
+      />
+       <Field
+        label="Total Principal"
+        type="number"
+        value={editableLoan?.totalPrincipal}
+        onChange={(v:any)=>
+          setEditableLoan({
+            ...editableLoan,
+            totalPrincipal:v
           })
         }
       />
@@ -819,18 +790,18 @@ useEffect(() => {
         onChange={(v:any)=>
           setEditableLoan({
             ...editableLoan,
-            total:Number(v)
+            total:v
           })
         }
       />
-          <Field
+      <Field
         label="Paid Amount"
         type="number"
         value={editableLoan?.paidAmount}
         onChange={(v:any)=>
           setEditableLoan({
             ...editableLoan,
-            paidAmount: Number(v)
+            paidAmount: v
           })
         }
       />
@@ -842,60 +813,107 @@ useEffect(() => {
         onChange={(v:any)=>
           setEditableLoan({
             ...editableLoan,
-            remaining:Number(v)
+            remaining:v
           })
         }
       />
-       <Field
+      <Field
+        label="Loan Status"
+        type="text"
+        value={editableLoan?.status}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,status:v})}
+      />
+      {mergedFromLoan && (
+        <div className="col-span-full border rounded-lg shadow-md bg-gray-50 p-4 mt-1">
+          <h3 className="text-sm font-semibold text-gray-800 mb-3">
+            Merged Loan Details
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field
+              label="Merged From"
+              value={`Issue: ${moment(mergedFromLoan.issueDate).format("MM/DD/YYYY")} | Base: $${moneyFormat(mergedFromLoan.baseAmount)}`}
+            />
+
+            {calculatedLoan?.mergedDate && (
+              <Field
+                label="Merged Date"
+                value={calculatedLoan.mergedDate.format("MM/DD/YYYY")}
+              />
+            )}
+          </div>
+        </div>
+      )}
+      {/* <Field
+        label="Interest Type"
+        type="number"
+        value={editableLoan?.interestType}
+        onChange={(v:any)=>setEditableLoan({...editableLoan,interestType:v})}
+      /> */}
+  <div className="col-span-full border rounded-lg shadow-sm bg-white p-4 mt-1">
+    <h3 className="text-sm font-semibold text-gray-800 mb-3">
+      Additional Fees
+    </h3>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      
+      <Field
         type="number"
         label="Application Fee"
         value={editableLoan?.fees?.applicationFee?.value}
-        onChange={(v:any)=>updateFee("applicationFee",(v))}
+        onChange={(v:any)=>updateFee("applicationFee",v)}
         preview={formatFee(
           editableLoan?.fees?.applicationFee,
-          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
+          (editableLoan?.baseAmount || 0) +
+          (editableLoan?.previousLoanAmount || 0)
         )}
       />
       <Field
         type="number"
         label="Broker Fee"
         value={editableLoan?.fees?.brokerFee?.value}
-        onChange={(v:any)=>updateFee("brokerFee",(v))}
+        onChange={(v:any)=>updateFee("brokerFee",v)}
         preview={formatFee(
           editableLoan?.fees?.brokerFee,
-          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
+          (editableLoan?.baseAmount || 0) +
+          (editableLoan?.previousLoanAmount || 0)
         )}
       />
       <Field
         type="number"
         label="Administrative Fee"
         value={editableLoan?.fees?.administrativeFee?.value}
-        onChange={(v:any)=>updateFee("administrativeFee",(v))}
+        onChange={(v:any)=>updateFee("administrativeFee",v)}
         preview={formatFee(
           editableLoan?.fees?.administrativeFee,
-          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
+          (editableLoan?.baseAmount || 0) +
+          (editableLoan?.previousLoanAmount || 0)
         )}
-        />
+      />
       <Field
         type="number"
         label="Attorney Review Fee"
         value={editableLoan?.fees?.attorneyReviewFee?.value}
-        onChange={(v:any)=>updateFee("attorneyReviewFee",(v))}
+        onChange={(v:any)=>updateFee("attorneyReviewFee",v)}
         preview={formatFee(
           editableLoan?.fees?.attorneyReviewFee,
-          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
+          (editableLoan?.baseAmount || 0) +
+          (editableLoan?.previousLoanAmount || 0)
         )}
       />
-    <Field
+      <Field
         type="number"
         label="Annual Maintenance Fee"
         value={editableLoan?.fees?.annualMaintenanceFee?.value}
-        onChange={(v:any)=>updateFee("annualMaintenanceFee",(v))}
+        onChange={(v:any)=>updateFee("annualMaintenanceFee",v)}
         preview={formatFee(
           editableLoan?.fees?.annualMaintenanceFee,
-          (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0)
+          (editableLoan?.baseAmount || 0) +
+          (editableLoan?.previousLoanAmount || 0)
         )}
       />
+    </div>
+  </div>
     </div>
   </div>
 
@@ -909,21 +927,33 @@ useEffect(() => {
 
 /* ---------------- Field ---------------- */
 
-const Field = ({ label, value, onChange, type = "text", preview }: any) => {
+const Field = ({ label, value, onChange, type = "text", preview, readOnly = false }: any) => {
 
   const handleChange = (e:any) => {
+    if (readOnly) return;
 
     let v = e.target.value;
-    if(type === "number"){
-      if(v === ""){
+
+    if (type === "number") {
+      if (v === "") {
         onChange("");
         return;
       }
-      if(!/^\d*\.?\d*$/.test(v)) return;
+
+      if (!/^\d*\.?\d*$/.test(v)) return;
+
       onChange(v);
       return;
     }
+
     onChange(v);
+  };
+
+  const handleBlur = () => {
+    if (!readOnly && type === "number" && value !== "" && value !== null) {
+      const formatted = Number(value).toFixed(2);
+      onChange(formatted);
+    }
   };
 
   return (
@@ -934,14 +964,15 @@ const Field = ({ label, value, onChange, type = "text", preview }: any) => {
 
       <input
         type="text"
-        value={type === "number" && value !== "" && value !== null
-          ? !isNaN(Number(value))
-            ? Number(value).toFixed(2)
-            : ""
-          : value ?? ""}
+        value={value ?? ""}
+        readOnly={readOnly}
         onChange={handleChange}
-        className="border rounded-md px-3 py-2 bg-white text-sm"
+        onBlur={handleBlur}
+        className={`border rounded-md px-3 py-2 text-sm ${
+          readOnly ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+        }`}
       />
+
       {preview && (
         <span className="text-xs text-gray-500 mt-1">
           {preview}

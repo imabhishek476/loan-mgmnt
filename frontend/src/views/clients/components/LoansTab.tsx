@@ -25,7 +25,7 @@ import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
 import api from "../../../api/axios";
 import DocumentModal from "./DocumentModal";
-import { usd } from "../../../utils/helpers";
+import { formatPhone, usd } from "../../../utils/helpers";
 
 interface LoansTabProps {
 client: any;
@@ -510,14 +510,14 @@ const payload = {
       ? moment(client.accidentDate).format("MMM DD, YYYY")
       : "-",
     client_ssn: client?.ssn ?? "-",
-    client_phone: client?.phone ?? "-",
+    client_phone: formatPhone(client?.phone ?? "-"),
     client_attorney_name: client?.attorneyName ?? "-",
     client_attorney_firm_name: client?.attorneyId?.firmName ?? "-",
     company: {
       name: companyObj?.companyName ?? "-",
       address: companyAddress ?? "-",
       email: companyObj?.email ?? "-",
-      phone: companyObj?.phone ?? "-",
+      phone: formatPhone(companyObj?.phone ?? "-"),
     },
     loan_end_date: endDate ?? "-",
     today_date: moment().format("MM/DD/YYYY"),
@@ -636,11 +636,11 @@ const getFilteredDocTypes = (loan: any) => {
   ) {
     if (loan.previousLoanAmount > 0) {
       return DocTypes.filter(d =>
-        ["plus_contract", "reduction"].includes(d.key)
+        ["plus_contract", "payoff", "reduction"].includes(d.key)
       );
     }
     return DocTypes.filter(d =>
-      ["contract", "reduction"].includes(d.key)
+      ["contract","payoff", "reduction"].includes(d.key)
     );
   }
 

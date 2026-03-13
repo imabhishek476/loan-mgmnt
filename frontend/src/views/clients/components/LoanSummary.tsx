@@ -79,7 +79,7 @@ const loadMeta = async () => {
   const loansWithTs = useMemo(() => {
     return clientLoans.map((loan) => ({
       ...loan,
-      issueTs: moment(loan.issueDate).valueOf(),
+      issueTs: loan.issueDate ? moment(loan.issueDate, "MM-DD-YYYY").valueOf() : 0,
     }));
   }, [clientLoans]);
 
@@ -260,7 +260,7 @@ return (
                         className="border-b hover:bg-gray-50 transition"
                       >
                         <td className="px-3 py-2 text-gray-700 font-medium">
-                            {moment(loan.issueDate).format("D MMM YYYY")}
+                            {moment(loan.issueDate, "MM-DD-YYYY").format("D MMM YYYY")}
                          </td>
 
                         <td className="px-3 py-2 font-semibold">
