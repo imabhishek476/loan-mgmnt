@@ -139,7 +139,7 @@ const CompanyForm = observer(({ initialData, onSubmit, open, onClose }: CompanyF
       title={initialData ? "Edit Company" : "Add New Company"}
       submitButtonText={initialData ? "Update Company" : "Create Company"}
       fields={visibleFields}
-      initialData={formData}
+      initialData={initialData ? normalizeCompany(initialData) : formData}
       onSubmit={handleSubmit}
       onFormDataChange={setFormData}
       renderToggle={(key, value, onChange) => (

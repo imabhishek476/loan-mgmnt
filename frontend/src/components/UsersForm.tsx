@@ -68,7 +68,7 @@ const UserForm = observer(
         title={initialData ? "Edit User" : "Add New User"}
         submitButtonText={initialData ? "Update User" : "Create User"}
         fields={userFields}
-        initialData={formData}
+        initialData={initialData ? normalizeUser(initialData) : formData}
         onSubmit={handleSubmit}
         onFormDataChange={setFormData}
         // @ts-ignore
