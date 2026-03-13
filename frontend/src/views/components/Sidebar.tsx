@@ -92,14 +92,19 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
           const isActive = currentPath.startsWith(item.path);
           if (item.action === "createClient") {
             return (
+              <div className="border-b-2 border-gray-500">
               <button
                 key={item.name}
                 onClick={() => clientStore.toggleCreateClientModal(true)}
-                className="flex items-center px-4 py-2 gap-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 w-full"
-              >
+                className={`flex items-center px-4 py-2 gap-3 mb-2 rounded-lg font-medium w-full 
+                !bg-gradient-to-r !from-green-500 !to-green-600 !text-white
+                shadow-md hover:shadow-lg             
+                hover:!from-green-600 hover:!to-green-700
+                 `}>
                 {item.icon}
-                {open && <span>{item.name}</span>}
+                {open && <span className="tracking-wide">{item.name}</span>}
               </button>
+              </div>             
             );
           }
           return (
