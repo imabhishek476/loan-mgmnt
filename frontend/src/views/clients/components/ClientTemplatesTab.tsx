@@ -145,8 +145,9 @@ useEffect(() => {
 },[
   editableLoan?.issueDate,
   todayDate,
- (editableLoan?.baseAmount || 0) + (editableLoan?.previousLoanAmount || 0),
-  editableLoan?.previousLoanAmount
+  Number(editableLoan?.baseAmount || 0) +
+  Number(editableLoan?.previousLoanAmount || 0),
+  Number(editableLoan?.previousLoanAmount)
 ]);
 useEffect(() => {
 
@@ -154,12 +155,14 @@ useEffect(() => {
 
   setEditableLoan(prev => ({
     ...prev,
-    interestAmount: calculatedLoan.interestAmount,
-    total: calculatedLoan.total,
-    remaining: calculatedLoan.remaining,
-    totalPrincipal :
-      (editableLoan?.baseAmount || 0) +
-      (editableLoan?.previousLoanAmount || 0)  }));
+    interestAmount: Number(calculatedLoan.interestAmount).toFixed(2),
+    total: Number(calculatedLoan.total).toFixed(2),
+    remaining: Number(calculatedLoan.remaining).toFixed(2),
+    totalPrincipal: (
+      Number(editableLoan?.baseAmount || 0) +
+      Number(editableLoan?.previousLoanAmount || 0)
+    ).toFixed(2)
+  }));
 
 }, [calculatedLoan]);
   useEffect(() => {
