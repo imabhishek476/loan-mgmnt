@@ -864,19 +864,20 @@ if (loan.status === "Paid Off") {
   if (loan.status === "Active" || loan.status === "Partial Payment") {
 
     const reductionDoc = DocTypes.find(d => d.key === "reduction");
+    const payoffDoc = DocTypes.find(d => d.key === "payoff");
 
     const filteredDocs = reductionDoc?.companies?.filter(
       (c: any) =>
         c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
-    );
+    ) || [];
+    const payoffDocs = payoffDoc?.companies?.filter(
+      (c:any) =>
+        c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
+    ) || [];
+    const allDocs = [...filteredDocs, ...payoffDocs];
 
-    setModalDocs(filteredDocs);
-    setModalTitle(reductionDoc?.label || "Reduction Letter");
-
-    setSelectedDocTypeMap((prev) => ({
-      ...prev,
-      [loan._id]: "reduction"
-    }));
+    setModalDocs(allDocs);
+    setModalTitle("Generate Document");
 
     setDocModalOpen(true);
   }
@@ -1548,7 +1549,6 @@ return (
           documents={modalDocs}
           title={modalTitle}
           onSubmit={handleModalDocSubmit}
-          isPaidOff={selectedLoanForDoc?.loan?.status === "Paid Off"}
           isReduction={selectedDocTypeMap[selectedLoanForDoc?.loan?._id] === "reduction"}
           loan={selectedLoanForDoc?.loan}
            defaultDate={modalDate}
