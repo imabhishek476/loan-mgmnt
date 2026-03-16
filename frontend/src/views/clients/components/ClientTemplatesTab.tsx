@@ -432,28 +432,24 @@ const mergedData = useMemo(() => {
   const filteredDocTypes = useMemo(() => {
     if (!selectedLoan) return DocTypes;
 
-    if (selectedLoan.status === "Merged") {
-      return DocTypes.filter((d) =>
-        ["plus_contract", "payoff", "reduction"].includes(d.key)
-      );
-    }
-   const prevAmount = Number(selectedLoan?.previousLoanAmount || 0);
+    const prevAmount = Number(selectedLoan?.previousLoanAmount || 0);
+      const contractType = prevAmount > 0 ? "plus_contract" : "contract";
 
     if (
       selectedLoan.status === "Active" ||
       selectedLoan.status === "Partial Payment" ||
       selectedLoan.status === "Merged"
     ) {
-      const docKey = prevAmount > 0 ? "plus_contract" : "contract";
 
       return DocTypes.filter((d) =>
-        [docKey, "payoff", "reduction"].includes(d.key)
+        [contractType, "payoff", "reduction"].includes(d.key)
       );
     }
 
     if (selectedLoan.status === "Paid Off") {
-      // show only payoff
-      return DocTypes.filter((d) => d.key === "payoff");
+      return DocTypes.filter((d) =>
+    [contractType, "payoff", "reduction"].includes(d.key)
+        );
     }
 
     return DocTypes;
