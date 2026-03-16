@@ -624,9 +624,14 @@ const handleModalDocSubmit = ( doc: any, selectDate?: string, reductionAmount?: 
 const getFilteredDocTypes = (loan: any) => {
 
   if (loan.status === "Merged") {
-    return loan.previousLoanAmount > 0
-      ? DocTypes.filter(d => d.key === "plus_contract")
-      : DocTypes.filter(d => d.key === "contract");
+    if (loan.previousLoanAmount > 0) {
+      return DocTypes.filter(d =>
+        ["plus_contract", "payoff", "reduction"].includes(d.key)
+      );
+    }
+    return DocTypes.filter(d =>
+        ["contract", "payoff", "reduction"].includes(d.key)
+      );
   }
 
   if (
@@ -643,10 +648,16 @@ const getFilteredDocTypes = (loan: any) => {
     );
   }
 
-  if (loan.status === "Paid Off") {
-    return DocTypes.filter(d => d.key === "payoff");
+if (loan.status === "Paid Off") {
+    if (loan.previousLoanAmount > 0) {
+      return DocTypes.filter(d =>
+        ["plus_contract", "payoff", "reduction"].includes(d.key)
+      );
+    }
+    return DocTypes.filter(d =>
+        ["contract", "payoff", "reduction"].includes(d.key)
+      );
   }
-
   return DocTypes;
 };
 useEffect(() => {
@@ -663,9 +674,8 @@ useEffect(() => {
     if (loan.status === "Merged") {
       map[loan._id] =
         loan.previousLoanAmount > 0
-          ? "contract"
-          : "plus_contract";
-      return;
+          ? "plus_contract"
+          : "contract";
     }
 
     if (
@@ -686,75 +696,8 @@ useEffect(() => {
 const handleFileIconClick = (e: any, loanData: any) => {
   e.stopPropagation();
 
-  const { loan, companyName } = loanData;
+  const { loan } = loanData;
 
-  // MERGED → direct generate
-  if (loan.status === "Merged") {
-
-    setDocLoadingMap((prev) => ({
-      ...prev,
-      [loan._id]: true
-    }));
-
-    const loanDataObj = {
-      ...loanData,
-      calculatedLoan: loanStore.calculateLoans(
-        loanData.loan,
-        loans,
-        "mergedDate"
-      ),
-    };
-
-   const docKey =
-  loan.previousLoanAmount == null || loan.previousLoanAmount == 0
-      ? "contract"
-      : "plus_contract";
-  const selectedDoc = DocTypes.find(d => d.key === docKey);
-
-  const companyDoc = selectedDoc?.companies?.find(
-    (c:any) =>
-      c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
-  );
-    if (companyDoc) {
-      generateFinalDocument(
-        loanDataObj,
-        companyDoc.value,
-        companyDoc.fileName
-      );
-    }
-
-    return;
-  }
-
-  // PAID OFF → open modal
-  if (loan.status === "Paid Off") {
-
-    const payoffDoc = DocTypes.find(d => d.key === "payoff");
-
-    const filteredDocs = payoffDoc?.companies?.filter(
-      (c:any) =>  c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
-    );
-
-    if (!filteredDocs?.length) {
-      toast.error("No documents available");
-      return;
-    }
-
-    setModalDocs(filteredDocs);
-    setModalTitle(payoffDoc.label);
-
-    setSelectedLoanForDoc({
-      ...loanData,
-      calculatedLoan: loanStore.calculateLoans(
-        loanData.loan,
-        loans,
-        "mergedDate"
-      ),
-    });
-
-    setDocModalOpen(true);
-    return;
-  }
 
   // ACTIVE / PARTIAL → dropdown
   setGenerateDocMap((prev) => ({
@@ -864,19 +807,20 @@ if (loan.status === "Paid Off") {
   if (loan.status === "Active" || loan.status === "Partial Payment") {
 
     const reductionDoc = DocTypes.find(d => d.key === "reduction");
+    const payoffDoc = DocTypes.find(d => d.key === "payoff");
 
     const filteredDocs = reductionDoc?.companies?.filter(
       (c: any) =>
         c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
-    );
+    ) || [];
+    const payoffDocs = payoffDoc?.companies?.filter(
+      (c:any) =>
+        c.companyName?.toLowerCase().includes(companyName?.toLowerCase())
+    ) || [];
+    const allDocs = [...filteredDocs, ...payoffDocs];
 
-    setModalDocs(filteredDocs);
-    setModalTitle(reductionDoc?.label || "Reduction Letter");
-
-    setSelectedDocTypeMap((prev) => ({
-      ...prev,
-      [loan._id]: "reduction"
-    }));
+    setModalDocs(allDocs);
+    setModalTitle("Generate Document");
 
     setDocModalOpen(true);
   }
@@ -1548,7 +1492,6 @@ return (
           documents={modalDocs}
           title={modalTitle}
           onSubmit={handleModalDocSubmit}
-          isPaidOff={selectedLoanForDoc?.loan?.status === "Paid Off"}
           isReduction={selectedDocTypeMap[selectedLoanForDoc?.loan?._id] === "reduction"}
           loan={selectedLoanForDoc?.loan}
            defaultDate={modalDate}

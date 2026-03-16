@@ -12,7 +12,6 @@ interface Props {
   documents: any[];
   onSubmit: (doc: any, selectDate?: string,reductionAmount?: number,endDate?:string) => void;
   title: string;
-  isPaidOff?: boolean;
   isReduction?: boolean;
   dynamicTerm?: number;
   totalAmount?: number;
@@ -26,8 +25,6 @@ const DocumentModal = ({
   documents,
   onSubmit,
   title,
-  isPaidOff,
-  isReduction,
   defaultDate,  
   endDate,
  loan  
@@ -37,21 +34,23 @@ const DocumentModal = ({
   const [reductionAmount,setReductionAmount] = useState<number>(null);
   const [selectDate, setSelectDate] = useState<any>(defaultDate || moment());
   const [endDateValue, setEndDateValue] = useState<any>(endDate || moment());
+  const selectedDoc = documents.find(doc => doc.value === selectedValue);
+  const isReductionDoc = selectedDoc?.fileName?.toLowerCase().includes("reduction");
   if (!open) return null;
-
   const handleSubmit = () => {
     if (!selectedValue) return;
     const selectedDoc = documents.find(
       (doc) => doc.value === selectedValue
     );
+  const finalDate =  moment(selectDate).format("MMM DD, YYYY");
+    const isReductionDoc = selectedDoc?.fileName?.toLowerCase().includes("reduction");
+
     if (selectedDoc) {
     onSubmit(
       selectedDoc,
-        (isPaidOff || isReduction)
-          ? moment(selectDate).format("MMM DD, YYYY")
-          : undefined,
-        isReduction ? reductionAmount : undefined,
-        isReduction ? moment(endDateValue).format("MMM DD, YYYY") : undefined,
+      finalDate,
+        isReductionDoc ? reductionAmount : undefined,
+        isReductionDoc ? moment(endDateValue).format("MMM DD, YYYY") : undefined
       );
   }
   };
@@ -89,7 +88,6 @@ useEffect(() => {
             <X size={18} />
           </button>
         </div>
-      {(isPaidOff || isReduction) && (
         <div className="flex gap-4 text-sm mb-4">
 
           <span className="bg-gray-200 px-3 py-1 rounded-md font-semibold text-gray-700">
@@ -101,13 +99,11 @@ useEffect(() => {
           </span>
 
         </div>
-      )}
         {/* Document List */}
         <div className="space-y-3 max-h-[300px] overflow-y-auto">
-          {(isPaidOff || isReduction) && (
             <div className="mt-4">
               <label className="text-xs font-semibold text-gray-700 mb-1 block">
-              {isReduction ? "Select Date" : "Paid Date"}
+              Select Date
               </label>
 
               <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -123,8 +119,7 @@ useEffect(() => {
                 />
               </LocalizationProvider>
             </div>
-          )}
-          {isReduction && (
+         {isReductionDoc && (
           <>
               {/* <div className="mt-4">
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">
