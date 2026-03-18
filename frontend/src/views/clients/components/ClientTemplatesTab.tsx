@@ -568,7 +568,7 @@ useEffect(() => {
       </div>
     {editableLoan && selectedLoan && calculatedLoan && (
 
-    <div className="bg-white rounded-md p-2 grid grid-cols-1 xl:grid-cols-2 gap-2 mt-0">
+    <div className="bg-white rounded-md p-0 grid grid-cols-1 xl:grid-cols-2 gap-2 ">
     <div className="flex flex-col gap-2">
       {/* CLIENT DETAILS */}
       <div className="p-4 border rounded-lg shadow-sm bg-white ">
@@ -673,6 +673,56 @@ useEffect(() => {
       </div>
       </div>
 
+    <div className="flex flex-col gap-2">
+   {(selectedDocType?.key === "payoff" || selectedDocType?.key === "reduction") && (
+      <div className="border rounded-lg shadow-sm bg-white p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          {/* Select Date */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Select Date
+            </label>
+
+            <LocalizationProvider dateAdapter={AdapterMoment}>
+              <DatePicker
+                value={todayDate}
+                onChange={(date: any) => setTodayDate(date)}
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    fullWidth: true
+                  }
+                }}
+              />
+            </LocalizationProvider>
+          </div>
+      {selectedDocType?.key === "reduction" && (
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold text-gray-700 mb-1">
+            Reduction Amount
+          </label>
+            <input
+            type="text"
+            value={reductionAmount ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "") {
+                setReductionAmount(null);
+                return;
+              }
+              const num = (parseInt(v.replace(/\D/g, ""), 10) / 100).toFixed(2);
+              setReductionAmount(Number(num));
+            }}
+            className="border rounded-md px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-green-600 outline-none"
+            placeholder="Enter amount"
+          />
+        </div>
+      )}
+
+    </div>
+  </div>
+)}
       <div className="border rounded-lg shadow-md bg-gray-50 p-4">
             <div className="flex items-center justify-between mb-4">
 
@@ -912,6 +962,7 @@ useEffect(() => {
           (editableLoan?.previousLoanAmount || 0)
         )}
       />
+    </div>
     </div>
   </div>
     </div>
