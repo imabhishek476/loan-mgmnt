@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import moment from "moment";
 import { Autocomplete, TextField } from "@mui/material";
-import { DocTypes, formatFee, formatUSPhone, getAllowedTerms, LOAN_TERMS, moneyFormat } from "../../../utils/constants";
+import { DocTypes, formatFee, formatUSPhone, LOAN_TERMS, moneyFormat } from "../../../utils/constants";
 import { toast } from "react-toastify";
 import { loanStore } from "../../../store/LoanStore";
 import api from "../../../api/axios";

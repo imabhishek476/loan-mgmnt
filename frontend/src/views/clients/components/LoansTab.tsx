@@ -723,6 +723,7 @@ const issueDate = moment(loan.issueDate);
 const daysPassed = moment().diff(issueDate, "days");
 const monthsPassed = Math.floor(daysPassed / 30);
 const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
+//@ts-ignore
 const runningTenure =
   ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
 let endDate;
