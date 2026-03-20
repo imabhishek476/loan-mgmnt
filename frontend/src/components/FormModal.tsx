@@ -19,6 +19,7 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
 import type { Moment } from "moment";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { formatUSPhone } from "../utils/constants";
 
 export interface FieldConfig {
   label: string;
@@ -780,9 +781,14 @@ const checkDuplicate = async (field, value) => {
                           type={field.type}
                           placeholder={field.label}
                           value={formData[field.key] || ""}
-                          onChange={(e) =>
-                            handleChange(field.key, e.target.value)
-                          }
+                            onChange={(e) => {
+                            let value = e.target.value;
+                            if (field.key === "phone") {
+                              value = formatUSPhone(value);
+                            }
+                            handleChange(field.key, value);
+                          }}
+                          
                           onBlur={() => {
                           if (["fullName","email","phone","ssn"].includes(field.key)) {
                             checkDuplicate(field.key, formData[field.key]);

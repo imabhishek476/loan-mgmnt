@@ -50,28 +50,31 @@ const DocumentModal = ({
       selectedDoc,
       finalDate,
         isReductionDoc ? reductionAmount : undefined,
-        isReductionDoc ? moment(endDateValue).format("MMM DD, YYYY") : undefined
+        endDateValue
       );
   }
   };
 useEffect(() => {
+  if (!loan || !selectDate) return;
 
-  if (!loan) return;
-
-  const result = loanStore.calculateLoans(
+     const result = loanStore.calculateLoans(
     loan,
-    [], // empty array (not needed)
+    [loan], 
     "mergedDate",
     selectDate
   );
 
   setCalculatedLoan(result);
+  const newEndDate = result?.issueDate
+    ?.clone()
+    ?.add(result.dynamicTerm * 30, "days");
+  setEndDateValue(newEndDate);
 
 }, [selectDate, loan]);
   useEffect(() => {
-    setSelectDate(defaultDate ? moment(defaultDate) : moment());
-    setEndDateValue(endDate ? moment(endDate) : null);
-  },[defaultDate,endDate])
+  if (defaultDate) {
+    setSelectDate(moment(defaultDate));
+  }}, [defaultDate]);
   useEffect(()=>{
     if(documents?.length === 1){
       setSelectedValue(documents[0].value)
@@ -91,7 +94,7 @@ useEffect(() => {
         <div className="flex gap-4 text-sm mb-4">
 
           <span className="bg-gray-200 px-3 py-1 rounded-md font-semibold text-gray-700">
-            Loan Term: {calculatedLoan?.dynamicTerm || 0} Months
+            Loan Term: {calculatedLoan?.dynamicTerm || 0} Months ({endDateValue.format("MMM DD, YYYY")})
           </span>
 
           <span className="bg-green-700 text-white px-3 py-1 rounded-md font-semibold">

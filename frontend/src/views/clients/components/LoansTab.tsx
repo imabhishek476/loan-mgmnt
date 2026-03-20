@@ -359,15 +359,19 @@ const handleOpenDocumentModal = (loanData: any) => {
     toast.error("No documents available for this company");
     return;
   }
-const issueDate = moment(loan.issueDate);
-const daysPassed = moment().diff(issueDate, "days");
-const monthsPassed = Math.floor(daysPassed / 30);
-const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
-const runningTenure =
-  ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
-
-const runningTenureEndDate = issueDate.clone().add(runningTenure * 30, "days");
-setModalDate(moment());
+  const calculatedLoan = loanStore.calculateLoans(
+    loan,
+    loans,
+    "mergedDate"
+  );
+  const runningTenureEndDate = calculatedLoan?.issueDate
+    ?.clone()
+    ?.add(calculatedLoan.dynamicTerm * 30, "days");
+  const endDate = calculatedLoan.issueDate
+    .clone()
+    .add(calculatedLoan.dynamicTerm * 30, "days");
+    console.log(endDate)
+  setModalDate(runningTenureEndDate);
 setEndModalDate(runningTenureEndDate);
 setModalDocs(filteredDocs);
 setModalTitle(selectedCategory.label);
@@ -386,7 +390,8 @@ if (["contract", "plus_contract"].includes(selectedDocKey)) {
   generateFinalDocument(
     selectedLoanDataObj,
     selectedDoc.value,
-    selectedDoc.fileName
+    selectedDoc.fileName,
+    modalEndDate
   );
   return;
 }
@@ -448,8 +453,9 @@ const companyObj = companies.find(
 
     const calculated:any = await loanStore.calculateLoanAmounts({
       loan,
+      date:selectDate,
       prevLoanTotal: loan?.previousLoanAmount || 0,
-      calculate: true
+      calculate: true,
     });
   const allTenureData = LOAN_TERMS.map((term:number)=>{
 
@@ -519,7 +525,9 @@ const payload = {
       email: companyObj?.email ?? "-",
       phone: formatPhone(companyObj?.phone ?? "-"),
     },
-    loan_end_date: endDate ?? "-",
+    loan_end_date: endDate
+      ? moment(endDate).format("MM/DD/YYYY")
+      : "-",
     today_date: moment().format("MM/DD/YYYY"),
     reduction_amount:
       reductionAmount != null ? usd(reductionAmount) : "-",
@@ -529,7 +537,7 @@ const payload = {
         : "-",
     selected_date: selectDate ?? todayFormatted,
     loan_issueDate: calculated?.issueDate
-      ? calculated.issueDate.format("MMM DD, YYYY")
+      ? calculated.issueDate.format("MM/DD/YYYY")
       : "-",
     loan_baseAmount: usd(baseAmount),
     loan_previousLoanAmount: usd(previousLoanAmount),
@@ -715,9 +723,9 @@ const issueDate = moment(loan.issueDate);
 const daysPassed = moment().diff(issueDate, "days");
 const monthsPassed = Math.floor(daysPassed / 30);
 const ALLOWED_TERMS = getAllowedTerms(loan.loanTerms);
+//@ts-ignore
 const runningTenure =
   ALLOWED_TERMS.find((t) => monthsPassed <= t) || loan.loanTerms;
-const runningTenureEndDate = issueDate.clone().add(runningTenure * 30, "days");
 let endDate;
 
 if (loan.status === "Paid Off") {
@@ -729,9 +737,21 @@ if (loan.status === "Paid Off") {
   // Reduction should use tenure calculation date
   endDate = moment(loan.issueDate, "MM-DD-YYYY").add(term * 30, "days");
 }
+setModalDate(endDate); // selected tenure date
 
-  setModalDate(endDate);
-  setEndModalDate(runningTenureEndDate);
+// ✅ SAME DATE se calculate karo
+const calc = loanStore.calculateLoans(
+  loan,
+  loans,
+  "mergedDate",
+  endDate // 👈 IMPORTANT
+);
+
+const newEndDate = calc?.issueDate
+  ?.clone()
+  ?.add(calc.dynamicTerm * 30, "days");
+
+setEndModalDate(newEndDate);
   const loaderKey = `${loan._id}_${term}`;
   setActiveDocLoaderKey(loaderKey);
   setDocLoadingMap(prev => ({
