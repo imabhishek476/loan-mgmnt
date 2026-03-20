@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import moment from "moment";
 import { Autocomplete, TextField } from "@mui/material";
-import { DocTypes, formatFee, getAllowedTerms, LOAN_TERMS, moneyFormat } from "../../../utils/constants";
+import { DocTypes, formatFee, formatUSPhone, getAllowedTerms, LOAN_TERMS, moneyFormat } from "../../../utils/constants";
 import { toast } from "react-toastify";
 import { loanStore } from "../../../store/LoanStore";
 import api from "../../../api/axios";
@@ -25,13 +25,13 @@ const ClientTemplatesTab = ({
   const [selectedDocType, setSelectedDocType] = useState<any>(null);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-const [editableClient, setEditableClient] = useState<any>(null);
-const [editableCompany, setEditableCompany] = useState<any>(null);
-const [editableLoan, setEditableLoan] = useState<any>(null);
-const [todayDate, setTodayDate] = useState(moment());
-const [calculatedLoan,setCalculatedLoan] = useState<any>(null);
-const [reductionAmount, setReductionAmount] = useState<number | null>(null);
-  /* ---------------- Company Options ---------------- */
+  const [editableClient, setEditableClient] = useState<any>(null);
+  const [editableCompany, setEditableCompany] = useState<any>(null);
+  const [editableLoan, setEditableLoan] = useState<any>(null);
+  const [todayDate, setTodayDate] = useState(moment());
+  const [calculatedLoan,setCalculatedLoan] = useState<any>(null);
+  const [reductionAmount, setReductionAmount] = useState<number | null>(null);
+  const [runningTenureEndDate, setRunningTenureEndDate] = useState<moment.Moment | null>(null);
 
   const companyOptions = useMemo(() => {
     const map = new Map();
@@ -158,12 +158,18 @@ useEffect(() => {
     interestAmount: Number(calculatedLoan.interestAmount).toFixed(2),
     total: Number(calculatedLoan.total).toFixed(2),
     remaining: Number(calculatedLoan.remaining).toFixed(2),
+    previousLoanAmount: Number(editableLoan?.previousLoanAmount || 0).toFixed(2),
     totalPrincipal: (
       Number(editableLoan?.baseAmount || 0) +
       Number(editableLoan?.previousLoanAmount || 0)
     ).toFixed(2)
-  }));
 
+  }));
+const endDate = calculatedLoan.issueDate
+  .clone()
+  .add(calculatedLoan.dynamicTerm * 30, "days");
+
+setRunningTenureEndDate(endDate);
 }, [calculatedLoan]);
   useEffect(() => {
     if (!selectedLoan) return;
@@ -280,17 +286,7 @@ const mergedData = useMemo(() => {
       const final_total = editableLoan?.total || calculatedLoan.total || 0;
       const reductionNum = convertToNumber(reductionAmount);
       const finalTotalNum = convertToNumber(final_total);
-      const issueDate = moment(editableLoan.issueDate);
-      const daysPassed = todayDate.diff(issueDate, "days");
-      const monthsPassed = Math.floor(daysPassed / 30);
-      const ALLOWED_TERMS = getAllowedTerms(editableLoan.loanTerms);
-      const runningTenure =
-        ALLOWED_TERMS.find((t) => monthsPassed <= t) || editableLoan.loanTerms;
-
-      const runningTenureEndDate = issueDate
-        .clone()
-        .add(runningTenure * 30, "days")
-        .format("MMM DD, YYYY");
+     
 
       const payload = {
         loanid: editableLoan?._id ?? "-",
@@ -303,7 +299,7 @@ const mergedData = useMemo(() => {
           client_ssn: editableClient?.ssn ?? "-",
           client_phone: formatPhone(editableClient?.phone),
           client_accidentDate: editableClient?.accidentDate
-            ? moment(editableClient.accidentDate).format("MMM DD, YYYY")
+            ? moment(editableClient.accidentDate).format("MM/DD/YYYY")
             : "-",
           client_attorney_name: editableClient?.attorneyName ?? "-",
           client_attorney_firm_name: editableClient?.attorneyFirmName ?? "-",
@@ -314,7 +310,9 @@ const mergedData = useMemo(() => {
             phone: formatPhone(companyData?.phone ?? "-"),
           },
           today_date: moment().format("MM/DD/YYYY"),
-          loan_end_date: runningTenureEndDate ?? "-",
+          loan_end_date: runningTenureEndDate
+            ? runningTenureEndDate.format("MM/DD/YYYY")
+            : "-",
           reduction_amount:
             reductionAmount != null ? usd(reductionNum) : usd(0),
           after_reduction_amount:
@@ -322,10 +320,10 @@ const mergedData = useMemo(() => {
               ? usd(finalTotalNum - reductionNum)
               : usd(finalTotalNum),
           selected_date: todayDate
-            ? todayDate.format("MMM DD, YYYY")
+            ? todayDate.format("MM/DD/YYYY")
             : "-",
           loan_issueDate: calculated?.issueDate
-            ? calculated.issueDate.format("MMM DD, YYYY")
+            ? calculated.issueDate.format("MM/DD/YYYY")
             : "-",
           loan_baseAmount: usd(
             convertToNumber(editableLoan?.baseAmount) +
@@ -342,7 +340,7 @@ const mergedData = useMemo(() => {
           loan_dynamicTerm: calculated?.dynamicTerm ?? "-",
           loan_parentLoanId: editableLoan?.parentLoanId ?? "-",
           loan_mergedDate: calculated?.mergedDate
-            ? calculated.mergedDate.format("MMM DD, YYYY")
+            ? calculated.mergedDate.format("MM/DD/YYYY")
             : "-",
           loan_fee_type: brokerFee?.type ?? "-",
           loan_fee_value: usd(brokerFee?.value) ?? "-",
@@ -358,7 +356,7 @@ const mergedData = useMemo(() => {
           ),
           merged_loan_issueDate:
             mergedData?.issueDate
-              ? moment(mergedData.issueDate).format("MMM DD, YYYY")
+              ? moment(mergedData.issueDate).format("MM/DD/YYYY")
               : "-",
           merged_loan_baseAmount:
             mergedData?.baseAmount
@@ -595,7 +593,7 @@ useEffect(() => {
            <Field
             label="Client Phone"
             value={editableClient?.phone}
-            onChange={(v:any)=>setEditableClient({...editableClient,phone:v})}
+            onChange={(v:any)=>setEditableClient({...editableClient,phone: formatUSPhone(v), })}
           />
           <div className="flex flex-col">
           <label className="text-xs text-gray-700 font-semibold mb-1">
@@ -662,7 +660,7 @@ useEffect(() => {
             <Field
             label="Telephone No."
             value={editableCompany?.phone}
-            onChange={(v:any)=>setEditableCompany({...editableCompany,phone:v})}
+            onChange={(v:any)=>setEditableCompany({...editableCompany,phone:formatUSPhone(v)})}
           />
            <Field
             label="Company Email"
@@ -733,7 +731,7 @@ useEffect(() => {
             <div className="flex gap-4 text-sm ">
 
               <span className="bg-gray-200 px-3 py-1 rounded-md  font-semibold text-gray-700">
-              Loan Term: {calculatedLoan?.dynamicTerm} Months
+              Loan Term: {calculatedLoan?.dynamicTerm} Months ({runningTenureEndDate?.format("MMM DD, YYYY")})
               </span>
 
               <span className="bg-green-700 text-white px-3 py-1 rounded-md  font-semibold">
@@ -744,29 +742,6 @@ useEffect(() => {
 
           </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ">
-          {(selectedDocType?.key === "payoff" || selectedDocType?.key === "reduction") && (
-              <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-700 mb-1">
-                  Select Date
-                </label>
-
-                <LocalizationProvider dateAdapter={AdapterMoment}>
-                  <DatePicker
-                    value={todayDate}
-                    onChange={(date: any) => setTodayDate(date)}
-                    slotProps={{ textField: { size: "small" } }}
-                  />
-                </LocalizationProvider>
-              </div>
-            )}
-            {selectedDocType?.key === "reduction" && (
-              <Field
-                label="Reduction Amount"
-                type="number"
-                value={reductionAmount}
-                onChange={(v:any)=>setReductionAmount(v)}
-              />
-            )}
           <div className="flex flex-col">
             <label className="text-xs font-semibold text-gray-700 mb-1">
               Issue Date
@@ -819,6 +794,7 @@ useEffect(() => {
         label="Previous Loan Amount"
         type="number"
         value={editableLoan?.previousLoanAmount}
+        preview={formatFee(editableLoan?.previousLoanAmount,(editableLoan?.previousLoanAmount || 0))}
         onChange={(v:any)=>setEditableLoan({...editableLoan,previousLoanAmount:v})}
       />
        <Field

@@ -626,8 +626,12 @@ const Loans = observer(
                                       <span className="font-semibold">
                                         Company Name:{" "}
                                         {companyStore.companies.find(
-                                          (c) => c._id === loan.company
-                                        )?.companyName || "-"}
+                                          (c) =>
+                                          c._id?.toString() ===
+                                          (typeof loan.company === "object"
+                                            ? loan.company?._id?.toString()
+                                            : loan.company?.toString())
+                                       )?.companyName || "-"}
                                       </span>
                                       <span className="font-semibold">
                                         Current Tenure:{" "}
