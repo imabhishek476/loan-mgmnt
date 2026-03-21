@@ -244,6 +244,7 @@ const mergedData = useMemo(() => {
       const calculated: any = await loanStore.calculateLoanAmounts({
         loan: editableLoan,
         date: todayDate,
+        prevLoanTotal: editableLoan?.previousLoanAmount || 0,
         calculate: true
       });
       const allTenureData = LOAN_TERMS.map((term: number) => {
@@ -794,7 +795,6 @@ useEffect(() => {
         label="Previous Loan Amount"
         type="number"
         value={editableLoan?.previousLoanAmount}
-        preview={formatFee(editableLoan?.previousLoanAmount,(editableLoan?.previousLoanAmount || 0))}
         onChange={(v:any)=>setEditableLoan({...editableLoan,previousLoanAmount:v})}
       />
        <Field
@@ -890,8 +890,8 @@ useEffect(() => {
         onChange={(v:any)=>updateFee("applicationFee",v)}
         preview={formatFee(
           editableLoan?.fees?.applicationFee,
-          (editableLoan?.baseAmount || 0) +
-          (editableLoan?.previousLoanAmount || 0)
+          Number(editableLoan?.baseAmount || 0) +
+          Number(editableLoan?.previousLoanAmount || 0)
         )}
       />
       <Field
@@ -901,8 +901,8 @@ useEffect(() => {
         onChange={(v:any)=>updateFee("brokerFee",v)}
         preview={formatFee(
           editableLoan?.fees?.brokerFee,
-          (editableLoan?.baseAmount || 0) +
-          (editableLoan?.previousLoanAmount || 0)
+         Number (editableLoan?.baseAmount || 0) +
+          Number(editableLoan?.previousLoanAmount || 0)
         )}
       />
       <Field
@@ -912,8 +912,8 @@ useEffect(() => {
         onChange={(v:any)=>updateFee("administrativeFee",v)}
         preview={formatFee(
           editableLoan?.fees?.administrativeFee,
-          (editableLoan?.baseAmount || 0) +
-          (editableLoan?.previousLoanAmount || 0)
+          Number(editableLoan?.baseAmount || 0) +
+          Number(editableLoan?.previousLoanAmount || 0)
         )}
       />
       <Field
@@ -923,8 +923,8 @@ useEffect(() => {
         onChange={(v:any)=>updateFee("attorneyReviewFee",v)}
         preview={formatFee(
           editableLoan?.fees?.attorneyReviewFee,
-          (editableLoan?.baseAmount || 0) +
-          (editableLoan?.previousLoanAmount || 0)
+          Number(editableLoan?.baseAmount || 0) +
+          Number(editableLoan?.previousLoanAmount || 0)
         )}
       />
       <Field
@@ -934,8 +934,8 @@ useEffect(() => {
         onChange={(v:any)=>updateFee("annualMaintenanceFee",v)}
         preview={formatFee(
           editableLoan?.fees?.annualMaintenanceFee,
-          (editableLoan?.baseAmount || 0) +
-          (editableLoan?.previousLoanAmount || 0)
+          Number(editableLoan?.baseAmount || 0) +
+          Number(editableLoan?.previousLoanAmount || 0)
         )}
       />
     </div>
@@ -954,27 +954,38 @@ useEffect(() => {
 
 /* ---------------- Field ---------------- */
 
-const Field = ({ label, value, onChange, type = "text", preview, readOnly = false }: any) => {
+const Field = ({ label, value, onChange, type = "text", preview, readOnly = false ,formatMoney = false }: any) => {
+const handleChange = (e:any) => {
+  if (readOnly) return;
 
-  const handleChange = (e:any) => {
-    if (readOnly) return;
+  let v = e.target.value;
 
-    let v = e.target.value;
+  // ✅ remove spaces (fix your main bug)
+  v = v.replace(/\s/g, "");
 
-    if (type === "number") {
-      if (v === "") {
-        onChange("");
-        return;
-      }
+  if (type === "number") {
 
+    if (v === "") {
+      onChange("");
+      return;
+    }
+
+    // ✅ ONLY apply /100 logic when needed
+    if (formatMoney) {
       const num = (parseInt(v.replace(/\D/g, ""), 10) / 100).toFixed(2);
-
       onChange(num);
       return;
     }
 
+    // ✅ NORMAL number (like baseAmount)
+    if (!/^\d*\.?\d*$/.test(v)) return;
+
     onChange(v);
-  };
+    return;
+  }
+
+  onChange(v);
+};
 
   return (
     <div className="flex flex-col">
