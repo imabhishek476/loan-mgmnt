@@ -8,6 +8,7 @@ import Layout from "./views/components/Layout";
 import ProtectedRoute from "./views/ProtectedRoute"; 
 import  Administration from "./views/administration/index";
 import  Loans from "./views/loans/index";
+import Reports from "./views/reports/index";
 import NotFound from "./views/components/404"; 
 import { ErrorMessage } from "./components/ErrorMessage";
 import ClientDetailsPage from "./views/clients/components/ClientDetailsPage";
@@ -43,6 +44,10 @@ const appRouter = createBrowserRouter([
       {
         path: "/loans",
         element: <Loans />,
+      },
+      {
+        path: "/reports",
+        element: <Reports />,
       },
      {
         path: "/administration",
