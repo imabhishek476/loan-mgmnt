@@ -12,6 +12,7 @@ import {
   Menu,
   Settings,
   Plus,
+  BarChart3,
 } from "lucide-react";
 import Logo from "../../assets/img/logo/favicon.png";
 import Cookies from "js-cookie";
@@ -43,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
     { name: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, path: "dashboard" },
     { name: "BI Clients", icon: <Users className="w-5 h-5" />, path: "clients" },
     { name: "Loans", icon: <DollarSign className="w-5 h-5" />, path: "loans" },
+    { name: "Reports", icon: <BarChart3 className="w-5 h-5" />, path: "reports" },
     { name: "Administration", icon: <Settings className="w-5 h-5" />, path: "administration" },
   ];
 
