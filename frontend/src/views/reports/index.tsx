@@ -45,7 +45,7 @@ const Reports: React.FC = () => {
 
   const tabs = [
     { key: "fraudulent", label: "Fraudulent Loan Report", icon: <AlertTriangle size={18} /> },
-    // { key: "yearly", label: "Yearly Reports", icon: <Calendar size={18} /> },
+    { key: "yearly", label: "Yearly Reports", icon: <Calendar size={18} /> },
     { key: "brokerFee", label: "Broker Fee Report", icon: <DollarSign size={18} /> },
   ];
 
