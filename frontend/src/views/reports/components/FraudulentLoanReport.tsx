@@ -1,263 +1,146 @@
-import React, { useState, useEffect } from "react";
-import reportService from "../../../api/reportService";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Autocomplete, TextField } from "@mui/material";
 
 interface FraudulentLoanReportProps {
   companies: any[];
   years: number[];
 }
 
-interface ReportRow {
-  _id: string;
-  loanId: string;
-  clientName: string;
-  companyName: string;
-  baseAmount: number;
-  status: string;
-  issueDate: string;
-  totalFees: string;
-}
+const smallLabel = {
+  sx: { fontSize: 13 }
+}; 
+
+const compactFieldSx = {
+  "& .MuiInputBase-root": { height: 40, backgroundColor: "#fff!important" },
+  "& .MuiInputBase-input": { padding: "4px 6px", fontSize: 12.5 },
+  "& .MuiInputLabel-root": { fontSize: 13 },
+  "& .MuiInputAdornment-root": { margin: 0 },
+  "& .MuiSvgIcon-root": { fontSize: 16 },
+  "& .MuiIconButton-root": { padding: 1 },
+  "& .MuiPickersInputBase-root":{ backgroundColor: "#fff!important" }
+};
 
 const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
   companies,
   years,
 }) => {
-  const [data, setData] = useState<ReportRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Filter state
   const [company, setCompany] = useState("all");
   const [status, setStatus] = useState("Fraud");
   const [year, setYear] = useState("");
 
-  // Pagination state
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalRecords, setTotalRecords] = useState(0);
-
-  // Exporting state
-  const [exporting, setExporting] = useState(false);
-
-  useEffect(() => {
-    fetchReport();
-  }, [company, status, year, page, pageSize]);
-
-  const fetchReport = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await reportService.getFraudulentReport({
-        company: company !== "all" ? company : undefined,
-        status: status !== "all" ? status : undefined,
-        year: year || undefined,
-        page,
-        pageSize,
-      });
-
-      if (response.data.success) {
-        setData(response.data.data);
-        setTotalPages(response.data.pagination?.totalPages || 0);
-        setTotalRecords(response.data.pagination?.totalRecords || 0);
-      } else {
-        setError("Failed to fetch report data");
-      }
-    } catch (err: any) {
-      setError(err.message || "Error fetching report");
-      console.error("Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExport = async () => {
-    try {
-      setExporting(true);
-      await reportService.exportFraudulentReportExcel({
-        company: company !== "all" ? company : undefined,
-        status: status !== "all" ? status : undefined,
-        year: year || undefined,
-      });
-    } catch (err: any) {
-      setError(err.message || "Error exporting report");
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
-  };
-
   const handleReset = () => {
     setCompany("all");
     setStatus("Fraud");
     setYear("");
-    setPage(1);
+  };
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    navigate("/reports/fraud-result", {
+      state: { company, status, year }
+    });
   };
 
   return (
-    <div className="report-section">
-      <h2>Fraudulent Loan Report</h2>
-      <p className="report-description">
-        View loans marked as fraudulent, lost, or denied with detailed information
-      </p>
-
-      {/* Filters */}
-      <div className="report-filters">
-        <div className="filter-group">
-          <label>Company</label>
-          <select value={company} onChange={(e) => setCompany(e.target.value)}>
-            <option value="all">All Companies</option>
-            {companies.map((comp) => (
-              <option key={comp._id} value={comp._id}>
-                {comp.companyName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Status</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="all">All Statuses</option>
-            <option value="Fraud">Fraud</option>
-            <option value="Lost">Lost</option>
-            <option value="Denied">Denied</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Year</label>
-          <select value={year} onChange={(e) => setYear(e.target.value)}>
-            <option value="">All Years</option>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="filter-actions">
-        <button className="btn btn-primary" onClick={handleReset}>
-          Reset Filters
-        </button>
-        <button
-          className="btn btn-secondary"
-          onClick={handleExport}
-          disabled={exporting || data.length === 0}
-        >
-          {exporting ? "Exporting..." : "Export to Excel"}
-        </button>
-      </div>
-
-      {/* Error Message */}
-      {error && <div className="error-message">{error}</div>}
-
-      {/* Loading State */}
-      {loading && <div className="loading-message">Loading report data...</div>}
-
-      {/* Table */}
-      {!loading && data.length > 0 && (
-        <>
-          <div className="report-table-wrapper">
-            <table className="report-table">
-              <thead>
-                <tr>
-                  <th>Loan ID</th>
-                  <th>Client Name</th>
-                  <th>Company</th>
-                  <th>Base Amount</th>
-                  <th>Total Fees</th>
-                  <th>Status</th>
-                  <th>Issue Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((row) => (
-                  <tr key={row._id}>
-                    <td>{row.loanId}</td>
-                    <td>{row.clientName}</td>
-                    <td>{row.companyName}</td>
-                    <td>${parseFloat(row.baseAmount as any).toFixed(2)}</td>
-                    <td>${row.totalFees}</td>
-                    <td>
-                      <span
-                        style={{
-                          backgroundColor:
-                            row.status === "Fraud"
-                              ? "#fee"
-                              : row.status === "Lost"
-                              ? "#ffd"
-                              : "#eee",
-                          padding: "4px 8px",
-                          borderRadius: "4px",
-                          fontSize: "12px",
-                        }}
-                      >
-                        {row.status}
-                      </span>
-                    </td>
-                    <td>{row.issueDate}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="pagination">
-            <div className="pagination-info">
-              Showing {(page - 1) * pageSize + 1} to{" "}
-              {Math.min(page * pageSize, totalRecords)} of {totalRecords} records
+    <div className="rounded-lg mb-3">
+      <div className="px-2 rounded-b-lg p-3">
+        <h2 className="text-lg font-bold text-gray-800 mb-2 text-left">Fraudulent Loan Filters</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 mb-1 pt-2">
+            <div>
+              <Autocomplete
+                size="small"
+                options={[{_id: "all", companyName: "All Companies"}, ...companies]}
+                getOptionLabel={(option) => option.companyName || ""}
+                value={
+                  company === "all" 
+                    ? { _id: "all", companyName: "All Companies" } 
+                    : companies.find((c) => c._id === company) || null
+                }
+                onChange={(_, value) => setCompany(value?._id || "all")}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Company"
+                    color="success"
+                    sx={compactFieldSx}
+                    slotProps={{ inputLabel: smallLabel }}
+                    fullWidth
+                  />
+                )}
+              />
             </div>
-            <div className="pagination-controls">
+            
+            <div>
+              <Autocomplete
+                size="small"
+                options={["All Statuses", "Fraud", "Lost", "Denied"]}
+                value={status === "all" ? "All Statuses" : status}
+                onChange={(_, value) => setStatus(value === "All Statuses" || !value ? "all" : value)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Status"
+                    color="success"
+                    sx={compactFieldSx}
+                    slotProps={{ inputLabel: smallLabel }}
+                    fullWidth
+                  />
+                )}
+              />
+            </div>
+
+            <div>
+              <Autocomplete
+                size="small"
+                options={[{label: "All Years", value: ""}, ...years.map(y => ({label: y.toString(), value: y.toString()}))]}
+                getOptionLabel={(option) => option.label || ""}
+                value={
+                  year === "" 
+                    ? { label: "All Years", value: "" }
+                    : { label: year, value: year }
+                }
+                onChange={(_, value) => setYear(value?.value || "")}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Year"
+                    color="success"
+                    sx={compactFieldSx}
+                    slotProps={{ inputLabel: smallLabel }}
+                    fullWidth
+                  />
+                )}
+              />
+            </div>
+
+            <div className="gap-2 flex sm:col-span-1">
               <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page === 1}
+                type="submit"
+                title="Submit"
+                className="bg-green-700 hover:bg-green-800 transition-all duration-200 text-white px-2 py-2 rounded text-sm font-semibold h-10 w-full"
               >
-                Previous
+                Submit
               </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <button
-                    key={pageNum}
-                    className={`pagination-btn ${
-                      pageNum === page ? "active" : ""
-                    }`}
-                    onClick={() => handlePageChange(pageNum)}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
               <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page === totalPages}
+                type="button"
+                title="Reset"
+                onClick={handleReset}
+                className="bg-gray-500 hover:bg-gray-600 transition-all duration-200 text-white px-1 py-2 rounded text-sm font-semibold h-10 w-full"
               >
-                Next
+                Reset
               </button>
             </div>
           </div>
-        </>
-      )}
-
-      {!loading && data.length === 0 && !error && (
-        <div className="empty-message">
-          No fraudulent loans found with the selected filters
-        </div>
-      )}
+        </form>
+      </div>
     </div>
   );
 };
 
 export default FraudulentLoanReport;
+

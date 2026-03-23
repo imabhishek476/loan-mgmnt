@@ -8,6 +8,9 @@ const {
   exportBrokerFeeReportExcel,
   getCompaniesForFilter,
   getYearsForFilter,
+  exportFraudulentReportPdf,
+  exportYearlyReportPdf,
+  exportBrokerFeeReportPdf,
 } = require("../controllers/reportService");
 const { isAuthenticated } = require("../middleware/auth.middleware");
 
@@ -23,13 +26,16 @@ router.get("/filter/years", getYearsForFilter);
 // Fraudulent Loans Report
 router.get("/fraudulent", getFraudulentReport);
 router.get("/fraudulent/export/excel", exportFraudulentReportExcel);
+router.get("/fraudulent/export/pdf", exportFraudulentReportPdf);
 
 // Yearly Report
 router.get("/yearly", getYearlyReport);
 router.get("/yearly/export/excel", exportYearlyReportExcel);
+router.get("/yearly/export/pdf", exportYearlyReportPdf);
 
 // Broker Fee Report
 router.get("/broker-fees", getBrokerFeeReport);
 router.get("/broker-fees/export/excel", exportBrokerFeeReportExcel);
+router.get("/broker-fees/export/pdf", exportBrokerFeeReportPdf);
 
 module.exports = router;

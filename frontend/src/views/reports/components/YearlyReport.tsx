@@ -1,258 +1,124 @@
-import React, { useState, useEffect } from "react";
-import reportService from "../../../api/reportService";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Autocomplete, TextField } from "@mui/material";
 
 interface YearlyReportProps {
   companies: any[];
   years: number[];
 }
 
-interface YearlyReportRow {
-  companyName: string;
-  year: number;
-  totalLoans: number;
-  totalBaseAmount: string;
-  totalFees: string;
-  totalInterest: string;
-  netProfit: string;
-  activeLoanCount: number;
-  paidOffCount: number;
-}
+const smallLabel = {
+  sx: { fontSize: 13 }
+}; 
+
+const compactFieldSx = {
+  "& .MuiInputBase-root": { height: 40, backgroundColor: "#fff!important" },
+  "& .MuiInputBase-input": { padding: "4px 6px", fontSize: 12.5 },
+  "& .MuiInputLabel-root": { fontSize: 13 },
+  "& .MuiInputAdornment-root": { margin: 0 },
+  "& .MuiSvgIcon-root": { fontSize: 16 },
+  "& .MuiIconButton-root": { padding: 1 },
+  "& .MuiPickersInputBase-root":{ backgroundColor: "#fff!important" }
+};
+
+const compactMultiFieldSx = {
+  "& .MuiInputBase-root": { minHeight: 40, backgroundColor: "#fff!important" },
+  "& .MuiInputBase-input": { fontSize: 12.5 },
+  "& .MuiInputLabel-root": { fontSize: 13 },
+};
 
 const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
-  const [data, setData] = useState<YearlyReportRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Filter state
   const [company, setCompany] = useState("all");
   const [selectedYears, setSelectedYears] = useState<string[]>([]);
 
-  // Pagination state
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalRecords, setTotalRecords] = useState(0);
-
-  // Exporting state
-  const [exporting, setExporting] = useState(false);
-
-  useEffect(() => {
-    fetchReport();
-  }, [company, selectedYears, page, pageSize]);
-
-  const fetchReport = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await reportService.getYearlyReport({
-        company: company !== "all" ? company : undefined,
-        years: selectedYears.length > 0 ? selectedYears : undefined,
-        page,
-        pageSize,
-      });
-
-      if (response.data.success) {
-        setData(response.data.data);
-        setTotalPages(response.data.pagination?.totalPages || 0);
-        setTotalRecords(response.data.pagination?.totalRecords || 0);
-      } else {
-        setError("Failed to fetch report data");
-      }
-    } catch (err: any) {
-      setError(err.message || "Error fetching report");
-      console.error("Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExport = async () => {
-    try {
-      setExporting(true);
-      await reportService.exportYearlyReportExcel({
-        company: company !== "all" ? company : undefined,
-        years: selectedYears.length > 0 ? selectedYears : undefined,
-      });
-    } catch (err: any) {
-      setError(err.message || "Error exporting report");
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleYearToggle = (year: number) => {
-    setSelectedYears((prev) => {
-      const yearStr = year.toString();
-      if (prev.includes(yearStr)) {
-        return prev.filter((y) => y !== yearStr);
-      } else {
-        return [...prev, yearStr];
-      }
-    });
-    setPage(1);
-  };
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
-  };
-
   const handleReset = () => {
     setCompany("all");
     setSelectedYears([]);
-    setPage(1);
+  };
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    navigate("/reports/yearly-result", {
+      state: { company, selectedYears }
+    });
   };
 
   return (
-    <div className="report-section">
-      <h2>Yearly Reports</h2>
-      <p className="report-description">
-        Analyze company-wise yearly financial performance and loan metrics
-      </p>
-
-      {/* Filters */}
-      <div className="report-filters">
-        <div className="filter-group">
-          <label>Company</label>
-          <select value={company} onChange={(e) => setCompany(e.target.value)}>
-            <option value="all">All Companies</option>
-            {companies.map((comp) => (
-              <option key={comp._id} value={comp._id}>
-                {comp.companyName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Years (Select Multiple)</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {years.map((year) => (
-              <label key={year} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedYears.includes(year.toString())}
-                  onChange={() => handleYearToggle(year)}
-                />
-                {year}
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="filter-actions">
-        <button className="btn btn-primary" onClick={handleReset}>
-          Reset Filters
-        </button>
-        <button
-          className="btn btn-secondary"
-          onClick={handleExport}
-          disabled={exporting || data.length === 0}
-        >
-          {exporting ? "Exporting..." : "Export to Excel"}
-        </button>
-      </div>
-
-      {/* Error Message */}
-      {error && <div className="error-message">{error}</div>}
-
-      {/* Loading State */}
-      {loading && <div className="loading-message">Loading report data...</div>}
-
-      {/* Table */}
-      {!loading && data.length > 0 && (
-        <>
-          <div className="report-table-wrapper">
-            <table className="report-table">
-              <thead>
-                <tr>
-                  <th>Company Name</th>
-                  <th>Year</th>
-                  <th>Total Loans</th>
-                  <th>Total Base Amount</th>
-                  <th>Total Fees</th>
-                  <th>Total Interest</th>
-                  <th>Net Profit</th>
-                  <th>Active Loans</th>
-                  <th>Paid Off</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((row, idx) => (
-                  <tr key={`${row.companyName}-${row.year}-${idx}`}>
-                    <td>{row.companyName}</td>
-                    <td>{row.year}</td>
-                    <td>{row.totalLoans}</td>
-                    <td>${parseFloat(row.totalBaseAmount).toFixed(2)}</td>
-                    <td>${parseFloat(row.totalFees).toFixed(2)}</td>
-                    <td>${parseFloat(row.totalInterest).toFixed(2)}</td>
-                    <td
-                      style={{
-                        color: parseFloat(row.netProfit) >= 0 ? "#27ae60" : "#e74c3c",
-                        fontWeight: 600,
-                      }}
-                    >
-                      ${parseFloat(row.netProfit).toFixed(2)}
-                    </td>
-                    <td>{row.activeLoanCount}</td>
-                    <td>{row.paidOffCount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="pagination">
-            <div className="pagination-info">
-              Showing {(page - 1) * pageSize + 1} to{" "}
-              {Math.min(page * pageSize, totalRecords)} of {totalRecords} records
+    <div className="rounded-lg mb-3">
+      <div className="px-2 rounded-b-lg p-3">
+        <h2 className="text-lg font-bold text-gray-800 mb-2 text-left">Yearly Report Filters</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-2 mb-1 pt-2">
+            <div>
+              <Autocomplete
+                size="small"
+                options={[{_id: "all", companyName: "All Companies"}, ...companies]}
+                getOptionLabel={(option) => option.companyName || ""}
+                value={
+                  company === "all" 
+                    ? { _id: "all", companyName: "All Companies" } 
+                    : companies.find((c) => c._id === company) || null
+                }
+                onChange={(_, value) => setCompany(value?._id || "all")}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Company"
+                    color="success"
+                    sx={compactFieldSx}
+                    slotProps={{ inputLabel: smallLabel }}
+                    fullWidth
+                  />
+                )}
+              />
             </div>
-            <div className="pagination-controls">
+            
+            <div className="sm:col-span-2">
+              <Autocomplete
+                multiple
+                size="small"
+                options={years.map(y => y.toString())}
+                value={selectedYears}
+                onChange={(_, value) => setSelectedYears(value)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Years (Select Multiple)"
+                    color="success"
+                    sx={compactMultiFieldSx}
+                    slotProps={{ inputLabel: smallLabel }}
+                    fullWidth
+                  />
+                )}
+              />
+            </div>
+
+            <div className="gap-2 flex sm:col-span-1">
               <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page === 1}
+                type="submit"
+                title="Submit"
+                className="bg-green-700 hover:bg-green-800 transition-all duration-200 text-white px-2 py-2 rounded text-sm font-semibold h-10 w-full"
               >
-                Previous
+                Submit
               </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <button
-                    key={pageNum}
-                    className={`pagination-btn ${
-                      pageNum === page ? "active" : ""
-                    }`}
-                    onClick={() => handlePageChange(pageNum)}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
               <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page === totalPages}
+                type="button"
+                title="Reset"
+                onClick={handleReset}
+                className="bg-gray-500 hover:bg-gray-600 transition-all duration-200 text-white px-1 py-2 rounded text-sm font-semibold h-10 w-full"
               >
-                Next
+                Reset
               </button>
             </div>
           </div>
-        </>
-      )}
-
-      {!loading && data.length === 0 && !error && (
-        <div className="empty-message">
-          No yearly reports found with the selected filters
-        </div>
-      )}
+        </form>
+      </div>
     </div>
   );
 };
 
 export default YearlyReport;
+

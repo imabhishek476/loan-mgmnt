@@ -9,6 +9,9 @@ import ProtectedRoute from "./views/ProtectedRoute";
 import  Administration from "./views/administration/index";
 import  Loans from "./views/loans/index";
 import Reports from "./views/reports/index";
+import FraudulentLoanResult from "./views/reports/components/FraudulentLoanResult";
+import YearlyReportResult from "./views/reports/components/YearlyReportResult";
+import BrokerFeeReportResult from "./views/reports/components/BrokerFeeReportResult";
 import NotFound from "./views/components/404"; 
 import { ErrorMessage } from "./components/ErrorMessage";
 import ClientDetailsPage from "./views/clients/components/ClientDetailsPage";
@@ -48,6 +51,18 @@ const appRouter = createBrowserRouter([
       {
         path: "/reports",
         element: <Reports />,
+      },
+      {
+        path: "/reports/fraud-result",
+        element: <FraudulentLoanResult />,
+      },
+      {
+        path: "/reports/yearly-result",
+        element: <YearlyReportResult />,
+      },
+      {
+        path: "/reports/broker-fee-result",
+        element: <BrokerFeeReportResult />,
       },
      {
         path: "/administration",

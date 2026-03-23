@@ -1,5 +1,5 @@
 import api from "./axios";
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 
 export interface ReportFilters {
   company?: string;
@@ -67,6 +67,30 @@ class ReportService {
     window.URL.revokeObjectURL(url);
   }
 
+  async exportFraudulentReportPdf(filters: ReportFilters): Promise<void> {
+    const params = new URLSearchParams();
+    if (filters.company) params.append("company", filters.company);
+    if (filters.status) params.append("status", filters.status);
+    if (filters.year) params.append("year", filters.year);
+
+    const response = await api.get(
+      `/reports/fraudulent/export/pdf?${params.toString()}`,
+      { responseType: "blob" }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `Fraudulent_Loans_${new Date().getTime()}.pdf`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
   // Yearly Report
   async getYearlyReport(
     filters: ReportFilters
@@ -98,6 +122,28 @@ class ReportService {
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", `Yearly_Report_${new Date().getTime()}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  async exportYearlyReportPdf(filters: ReportFilters): Promise<void> {
+    const params = new URLSearchParams();
+    if (filters.company) params.append("company", filters.company);
+    if (filters.years && filters.years.length > 0) {
+      filters.years.forEach((year) => params.append("years", year));
+    }
+
+    const response = await api.get(
+      `/reports/yearly/export/pdf?${params.toString()}`,
+      { responseType: "blob" }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `Yearly_Report_${new Date().getTime()}.pdf`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -137,6 +183,30 @@ class ReportService {
     link.setAttribute(
       "download",
       `Broker_Fee_Report_${new Date().getTime()}.xlsx`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  async exportBrokerFeeReportPdf(filters: ReportFilters): Promise<void> {
+    const params = new URLSearchParams();
+    if (filters.company) params.append("company", filters.company);
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
+
+    const response = await api.get(
+      `/reports/broker-fees/export/pdf?${params.toString()}`,
+      { responseType: "blob" }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `Broker_Fee_Report_${new Date().getTime()}.pdf`
     );
     document.body.appendChild(link);
     link.click();
