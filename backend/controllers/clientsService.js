@@ -715,3 +715,59 @@ exports.fixCaseIds = async (req, res) => {
     });
   }
 };
+exports.formatPhoneNumbers = async (req, res) => {
+  try {
+    const clients = await Client.find().select("_id phone");
+
+    if (!clients.length) {
+      return res.json({
+        success: true,
+        message: "No clients found",
+      });
+    }
+
+    const bulkOps = [];
+
+    clients.forEach((client) => {
+      if (!client.phone) return;
+
+      const digits = client.phone.toString().replace(/\D/g, "").slice(0, 10);
+
+      let formattedPhone = client.phone;
+
+      if (digits.length < 4) {
+        formattedPhone = digits;
+      } else if (digits.length < 7) {
+        formattedPhone = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      } else if (digits.length === 10) {
+        formattedPhone = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
+
+      if (formattedPhone !== client.phone) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: client._id },
+            update: { $set: { phone: formattedPhone } },
+          },
+        });
+      }
+    });
+
+    if (bulkOps.length > 0) {
+      await Client.bulkWrite(bulkOps);
+    }
+
+    return res.json({
+      success: true,
+      message: "Phone numbers updated successfully",
+      totalUpdated: bulkOps.length,
+    });
+  } catch (error) {
+    console.error("FixPhoneNumbers Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating phone numbers",
+      error: error.message,
+    });
+  }
+};
