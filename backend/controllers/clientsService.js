@@ -196,7 +196,13 @@ exports.searchClients = async (req, res) => {
 
     if (name) matchStage.fullName = new RegExp(name, "i");
     if (email) matchStage.email = new RegExp(email, "i");
-    if (phone) matchStage.phone = new RegExp(phone, "i");
+    if (phone) {
+        const digits = phone.replace(/\D/g, ""); 
+        matchStage.phone = {
+          $regex: digits.split("").join(".*"), 
+          $options: "i",
+        };
+      }
     if (attorneyId && mongoose.Types.ObjectId.isValid(attorneyId)) {
         matchStage.attorneyId = new mongoose.Types.ObjectId(attorneyId);
       }

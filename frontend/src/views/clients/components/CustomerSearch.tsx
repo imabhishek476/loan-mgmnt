@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Autocomplete, MenuItem, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { LOAN_STATUS_OPTIONS } from "../../../utils/constants";
+import { formatUSPhone, LOAN_STATUS_OPTIONS } from "../../../utils/constants";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
 import { clientStore } from "../../../store/ClientStore";
@@ -42,8 +42,13 @@ export const CustomerSearch = observer(({ tableRef }:any) => {
     tableRef.current?.onQueryChange();
   };
   const onChange = (e: any) => {
-    const { name, value } = e.target;
+  const { name, value } = e.target;
+  if (name === "phone") {
+    const formatted = formatUSPhone(value);
+    setLocalFilters(prev => ({ ...prev, [name]: formatted }));
+  } else {
     setLocalFilters(prev => ({ ...prev, [name]: value }));
+  }
   };
   const FILTER_LABELS = {
   name: "Name",
