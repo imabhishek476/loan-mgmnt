@@ -736,8 +736,8 @@ exports.formatPhoneNumbers = async (req, res) => {
 
     clients.forEach((client) => {
       if (!client.phone) return;
-
-      const digits = client.phone.toString().replace(/\D/g, "").slice(0, 10);
+      const clean = client.phone.toString().replace(/\D/g, "");
+      const digits = clean.length > 10 ? clean.slice(clean.length - 10) : clean;
 
       let formattedPhone = client.phone;
 

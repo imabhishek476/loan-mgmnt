@@ -216,8 +216,8 @@ exports.formatAttorneyPhones = async (req, res) => {
 
     attorneys.forEach((attorney) => {
       if (!attorney.phone) return;
-
-      const digits = attorney.phone.toString().replace(/\D/g, "").slice(0, 10);
+      const clean = attorney.phone.toString().replace(/\D/g, "");
+      const digits = clean.length > 10 ? clean.slice(clean.length - 10) : clean;
 
       let formattedPhone = attorney.phone;
 
