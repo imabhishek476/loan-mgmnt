@@ -9,6 +9,7 @@ const {
   getClientById,
   fixCaseIds,
   checkDuplicateClient,
+  formatPhoneNumbers,
 } = require("../controllers/clientsService");
 const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 

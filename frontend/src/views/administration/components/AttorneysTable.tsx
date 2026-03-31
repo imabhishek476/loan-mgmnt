@@ -125,7 +125,6 @@ const AttorneysDataTable = ({
             actionsColumnIndex: -1,
             padding: "dense",
             toolbar: false,
-            paginationType: "stepped",
 
             headerStyle: {
               fontWeight: "600",

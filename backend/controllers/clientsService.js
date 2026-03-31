@@ -196,7 +196,13 @@ exports.searchClients = async (req, res) => {
 
     if (name) matchStage.fullName = new RegExp(name, "i");
     if (email) matchStage.email = new RegExp(email, "i");
-    if (phone) matchStage.phone = new RegExp(phone, "i");
+    if (phone) {
+        const digits = phone.replace(/\D/g, ""); 
+        matchStage.phone = {
+          $regex: digits.split("").join(".*"), 
+          $options: "i",
+        };
+      }
     if (attorneyId && mongoose.Types.ObjectId.isValid(attorneyId)) {
         matchStage.attorneyId = new mongoose.Types.ObjectId(attorneyId);
       }
@@ -711,6 +717,62 @@ exports.fixCaseIds = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error updating case IDs",
+      error: error.message,
+    });
+  }
+};
+exports.formatPhoneNumbers = async (req, res) => {
+  try {
+    const clients = await Client.find().select("_id phone");
+
+    if (!clients.length) {
+      return res.json({
+        success: true,
+        message: "No clients found",
+      });
+    }
+
+    const bulkOps = [];
+
+    clients.forEach((client) => {
+      if (!client.phone) return;
+      const clean = client.phone.toString().replace(/\D/g, "");
+      const digits = clean.length > 10 ? clean.slice(clean.length - 10) : clean;
+
+      let formattedPhone = client.phone;
+
+      if (digits.length < 4) {
+        formattedPhone = digits;
+      } else if (digits.length < 7) {
+        formattedPhone = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      } else if (digits.length === 10) {
+        formattedPhone = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
+
+      if (formattedPhone !== client.phone) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: client._id },
+            update: { $set: { phone: formattedPhone } },
+          },
+        });
+      }
+    });
+
+    if (bulkOps.length > 0) {
+      await Client.bulkWrite(bulkOps);
+    }
+
+    return res.json({
+      success: true,
+      message: "Phone numbers updated successfully",
+      totalUpdated: bulkOps.length,
+    });
+  } catch (error) {
+    console.error("FixPhoneNumbers Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating phone numbers",
       error: error.message,
     });
   }

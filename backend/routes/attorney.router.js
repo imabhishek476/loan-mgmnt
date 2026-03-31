@@ -1,7 +1,7 @@
 const express = require("express");
 const attorneyRouter = express.Router();
 
-const { createAttorney, allAttorney, updateAttorney, deleteAttorney} = require("../controllers/attorneyService");
+const { createAttorney, allAttorney, updateAttorney, deleteAttorney,formatAttorneyPhones} = require("../controllers/attorneyService");
 const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
 attorneyRouter.post("/add", isAuthenticated, isAdmin, createAttorney);
