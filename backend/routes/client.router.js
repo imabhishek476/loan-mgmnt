@@ -15,7 +15,6 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
 const clientRouter = express.Router();
 
-clientRouter.route("/format-numbers").get(isAuthenticated, isAdmin, formatPhoneNumbers);
 clientRouter.route("/fixCaseIds").get(isAuthenticated, isAdmin, fixCaseIds);
 clientRouter.route("/add").post(isAuthenticated, isAdmin, AddClients);
 clientRouter.route("/search").get(isAuthenticated, isAdmin, searchClients);
