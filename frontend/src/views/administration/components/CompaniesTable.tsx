@@ -143,7 +143,6 @@ const renderFee = (fee: any) => {
             actionsColumnIndex: -1,
             padding: "dense",
             toolbar: false,
-            paginationType: "stepped",
             tableLayout: "auto",
             headerStyle: {
               position: "sticky",

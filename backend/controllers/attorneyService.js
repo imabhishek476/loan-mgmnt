@@ -201,3 +201,60 @@ exports.deleteAttorney = async (req, res) => {
     });
   }
 };
+exports.formatAttorneyPhones = async (req, res) => {
+  try {
+    const attorneys = await Attorney.find().select("_id phone");
+
+    if (!attorneys.length) {
+      return res.json({
+        success: true,
+        message: "No attorneys found",
+      });
+    }
+
+    const bulkOps = [];
+
+    attorneys.forEach((attorney) => {
+      if (!attorney.phone) return;
+      const clean = attorney.phone.toString().replace(/\D/g, "");
+      const digits = clean.length > 10 ? clean.slice(clean.length - 10) : clean;
+
+      let formattedPhone = attorney.phone;
+
+      if (digits.length < 4) {
+        formattedPhone = digits;
+      } else if (digits.length < 7) {
+        formattedPhone = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      } else if (digits.length === 10) {
+        formattedPhone = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
+
+      if (formattedPhone !== attorney.phone) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: attorney._id },
+            update: { $set: { phone: formattedPhone } },
+          },
+        });
+      }
+    });
+
+    if (bulkOps.length > 0) {
+      await Attorney.bulkWrite(bulkOps);
+    }
+
+    return res.json({
+      success: true,
+      message: "Attorney phone numbers updated successfully",
+      totalUpdated: bulkOps.length,
+    });
+
+  } catch (error) {
+    console.error("FixAttorneyPhones Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating attorney phone numbers",
+      error: error.message,
+    });
+  }
+};

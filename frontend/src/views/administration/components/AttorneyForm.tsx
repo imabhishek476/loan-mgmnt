@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { formatUSPhone } from "../../../utils/constants";
 
 const AttorneyForm = ({ initialData, onSubmit, onClose }: any) => {
   const [formData, setFormData] = useState({
@@ -91,7 +92,10 @@ const AttorneyForm = ({ initialData, onSubmit, onClose }: any) => {
           <input
             type="text"
             value={formData.phone}
-            onChange={(e) => handleChange("phone", e.target.value)}
+            onChange={(e) => {
+              const formatted = formatUSPhone(e.target.value);
+              handleChange("phone", formatted);
+            }}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none"
             placeholder="Enter phone number"
           />
