@@ -17,10 +17,11 @@ const YearlyReportResult: React.FC = () => {
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [hasData, setHasData] = useState(false);
+  const [summary, setSummary] = useState<{ totalAmount: number; totalPaid: number; totalProfit: number } | null>(null);
 
   useEffect(() => {
     if (!state) {
-      navigate("/reports");
+      navigate("/reports?tab=yearly");
     }
   }, [state, navigate]);
 
@@ -55,28 +56,26 @@ const YearlyReportResult: React.FC = () => {
   };
 
   const columns = [
-    { title: "Company Name", field: "companyName" },
-    { title: "Year", field: "year" },
-    { title: "Total Loans", field: "totalLoans" },
-    { title: "Total Base Amount", render: (rd: any) => `$${parseFloat(rd.totalBaseAmount || 0).toFixed(2)}` },
-    { title: "Total Fees", render: (rd: any) => `$${parseFloat(rd.totalFees || 0).toFixed(2)}` },
-    { title: "Total Interest", render: (rd: any) => `$${parseFloat(rd.totalInterest || 0).toFixed(2)}` },
+    { title: "Base Date", field: "baseDate" },
+    { title: "Amount", render: (rd: any) => `$${parseFloat(rd.amount || 0).toFixed(2)}` },
+    { title: "Total Expected", render: (rd: any) => `$${parseFloat(rd.totalToPay || 0).toFixed(2)}` },
+    { title: "Client Name", field: "clientName" },
+    { title: "Paid Date", field: "paidDate", emptyValue: "-" },
+    { title: "Amount Paid", render: (rd: any) => `$${parseFloat(rd.amountPaid || 0).toFixed(2)}` },
     {
-      title: "Net Profit",
+      title: "Total Profit",
       render: (rd: any) => (
         <Box
           component="span"
           sx={{
-            color: parseFloat(rd.netProfit) >= 0 ? "#27ae60" : "#e74c3c",
+            color: parseFloat(rd.totalProfit) >= 0 ? "#27ae60" : "#e74c3c",
             fontWeight: 600,
           }}
         >
-          ${parseFloat(rd.netProfit || 0).toFixed(2)}
+          ${parseFloat(rd.totalProfit || 0).toFixed(2)}
         </Box>
       )
-    },
-    { title: "Active Loans", field: "activeLoanCount" },
-    { title: "Paid Off", field: "paidOffCount" }
+    }
   ];
 
   return (
@@ -115,6 +114,35 @@ const YearlyReportResult: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
+      {summary && hasData && (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
+          <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', minWidth: 200, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Base Amount
+            </Typography>
+            <Typography variant="h5" color="primary.main" fontWeight="bold">
+              ${(summary.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', minWidth: 200, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Amount Paid
+            </Typography>
+            <Typography variant="h5" color="success.main" fontWeight="bold">
+              ${(summary.totalPaid || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', minWidth: 200, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Profit
+            </Typography>
+            <Typography variant="h5" color={(summary.totalProfit || 0) >= 0 ? "success.dark" : "error.main"} fontWeight="bold">
+              ${(summary.totalProfit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white mt-4">
         <MaterialTable
           tableRef={tableRef}
@@ -131,6 +159,9 @@ const YearlyReportResult: React.FC = () => {
                  });
                  if (response.data.success) {
                    setHasData(response.data.data.length > 0);
+                   if (response.data.summary) {
+                     setSummary(response.data.summary);
+                   }
                    resolve({
                      data: response.data.data,
                      page: query.page,
@@ -167,8 +198,8 @@ const YearlyReportResult: React.FC = () => {
               top: 0,
               zIndex: 30,
             },
-            maxBodyHeight: "calc(100vh - 250px)",
-            minBodyHeight: "calc(100vh - 250px)",
+            maxBodyHeight: "calc(100vh - 300px)",
+            minBodyHeight: "calc(100vh - 300px)",
             rowStyle: {
               fontSize: "13px",
               height: 38,

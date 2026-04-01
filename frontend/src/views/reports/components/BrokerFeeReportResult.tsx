@@ -17,10 +17,11 @@ const BrokerFeeReportResult: React.FC = () => {
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [hasData, setHasData] = useState(false);
+  const [summary, setSummary] = useState<{ totalFees: number; totalTransactions: number } | null>(null);
 
   useEffect(() => {
     if (!state) {
-      navigate("/reports");
+      navigate("/reports?tab=brokerFee");
     }
   }, [state, navigate]);
 
@@ -57,17 +58,17 @@ const BrokerFeeReportResult: React.FC = () => {
   };
 
   const columns = [
-    { title: "Company Name", field: "companyName" },
+    { title: "DATE", field: "date" },
+    { title: "Company", field: "companyName" },
+    { title: "Client Name", field: "clientName" },
     { 
-      title: "Total Broker Fees", 
+      title: "Broker Fee", 
       render: (rd: any) => (
         <Box component="span" sx={{ fontWeight: 600, color: "#ed7d31" }}>
-          ${parseFloat(rd.totalBrokerFees || 0).toFixed(2)}
+          ${parseFloat(rd.brokerFee || 0).toFixed(2)}
         </Box>
       )
-    },
-    { title: "Loan Count", field: "loanCount" },
-    { title: "Average Fee Per Loan", render: (rd: any) => `$${parseFloat(rd.averageFeePerLoan || 0).toFixed(2)}` }
+    }
   ];
 
   return (
@@ -106,6 +107,41 @@ const BrokerFeeReportResult: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
+      {summary && hasData && (
+        <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+          <Box sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            bgcolor: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
+            minWidth: 200,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Broker Fees
+            </Typography>
+            <Typography variant="h5" sx={{ color: '#ed7d31' }} fontWeight="bold">
+              ${(summary.totalFees || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            bgcolor: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
+            minWidth: 200,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Transactions
+            </Typography>
+            <Typography variant="h5" color="primary.main" fontWeight="bold">
+              {summary.totalTransactions}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white mt-4">
         <MaterialTable
           tableRef={tableRef}
@@ -123,6 +159,9 @@ const BrokerFeeReportResult: React.FC = () => {
                  });
                  if (response.data.success) {
                    setHasData(response.data.data.length > 0);
+                   if (response.data.summary) {
+                     setSummary(response.data.summary);
+                   }
                    resolve({
                      data: response.data.data,
                      page: query.page,

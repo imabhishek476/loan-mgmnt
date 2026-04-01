@@ -17,10 +17,11 @@ const FraudulentLoanResult: React.FC = () => {
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [hasData, setHasData] = useState(false);
+  const [summary, setSummary] = useState<{ totalAmount: number; totalLoans: number } | null>(null);
 
   useEffect(() => {
     if (!state) {
-      navigate("/reports");
+      navigate("/reports?tab=fraudulent");
     }
   }, [state, navigate]);
 
@@ -117,6 +118,41 @@ const FraudulentLoanResult: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
+      {summary && hasData && (
+        <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+          <Box sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            bgcolor: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
+            minWidth: 200,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Fraudulent Amount
+            </Typography>
+            <Typography variant="h5" color="error.main" fontWeight="bold">
+              ${(summary.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            bgcolor: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
+            minWidth: 200,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Affected Loans
+            </Typography>
+            <Typography variant="h5" color="primary.main" fontWeight="bold">
+              {summary.totalLoans}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white mt-4">
         <MaterialTable
           tableRef={tableRef}
@@ -134,6 +170,9 @@ const FraudulentLoanResult: React.FC = () => {
                  });
                  if (response.data.success) {
                    setHasData(response.data.data.length > 0);
+                   if (response.data.summary) {
+                     setSummary(response.data.summary);
+                   }
                    resolve({
                      data: response.data.data,
                      page: query.page,

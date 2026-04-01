@@ -31,16 +31,20 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
   const navigate = useNavigate();
 
   // Filter state
-  const [company, setCompany] = useState("all");
+  const [company, setCompany] = useState<string>("");
   const [selectedYears, setSelectedYears] = useState<string[]>([]);
 
   const handleReset = () => {
-    setCompany("all");
+    setCompany("");
     setSelectedYears([]);
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!company) {
+      alert("Company Name is compulsory for Yearly Report.");
+      return;
+    }
     navigate("/reports/yearly-result", {
       state: { company, selectedYears }
     });
@@ -55,12 +59,10 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
             <div>
               <Autocomplete
                 size="small"
-                options={[{_id: "all", companyName: "All Companies"}, ...companies]}
+                options={companies}
                 getOptionLabel={(option) => option.companyName || ""}
                 value={
-                  company === "all" 
-                    ? { _id: "all", companyName: "All Companies" } 
-                    : companies.find((c) => c._id === company) || null
+                  companies.find((c) => c._id === company) || null
                 }
                 onChange={(_, value) => setCompany(value?._id || "all")}
                 renderInput={(params) => (

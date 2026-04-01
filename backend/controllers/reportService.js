@@ -4,6 +4,7 @@ const { calculateLoanAmounts } = require("../utils/loanCalculation");
 const ExcelJS = require("exceljs");
 const PDFDocument = require("pdfkit");
 const moment = require("moment");
+const { LoanPayment } = require("../models/LoanPayment");
 
 // ==========================================
 // HELPER FUNCTIONS
@@ -72,49 +73,112 @@ const buildYearlyReportData = async (company, years) => {
     yearArray = Array.isArray(years) ? years.map((y) => parseInt(y, 10)) : [parseInt(years, 10)];
   }
 
-  const allLoans = await Loan.find({}).populate("company", "companyName").lean();
-  const reportMap = {};
+  const query = {};
+  if (company && company !== "all") {
+    query.company = company;
+  }
 
-  allLoans.forEach((loan) => {
-    const monthYear = getMonthYearFromDate(loan.issueDate);
-    if (!monthYear) return;
-    const { year } = monthYear;
-    const companyId = loan.company?._id?.toString();
-    const companyName = loan.company?.companyName || "Unknown";
+  const allLoans = await Loan.find(query)
+    .populate("company", "companyName")
+    .populate("client", "fullName")
+    .lean();
 
-    if (yearArray.length > 0 && !yearArray.includes(year)) return;
-    if (company && company !== "all" && companyId !== company) return;
+  const loanIds = allLoans.map((l) => l._id);
+  const payments = await LoanPayment.find({ loanId: { $in: loanIds } }).lean();
 
-    const key = `${companyName}|${year}`;
-    if (!reportMap[key]) {
-      reportMap[key] = {
-        companyName,
-        year,
-        totalLoans: 0,
-        totalBaseAmount: 0,
-        totalFees: 0,
-        totalInterest: 0,
-        activeLoanCount: 0,
-        paidOffCount: 0,
-      };
-    }
+  // Fetch loan profit and total paid data
+  // Aggregating by rootLoanId to match LoanSummary.tsx logic exactly
+  const loanProfits = await Loan.aggregate([
+    { $match: { _id: { $in: loanIds } } },
+    { $addFields: { rootLoanId: { $ifNull: ["$parentLoanId", "$_id"] } } },
+    {
+      $graphLookup: {
+        from: "loans",
+        startWith: "$rootLoanId",
+        connectFromField: "_id",
+        connectToField: "parentLoanId",
+        as: "mergedLoans",
+      },
+    },
+    {
+      $project: {
+        loanId: "$_id",
+        allLoans: { $concatArrays: [[{ _id: "$_id", baseAmount: "$baseAmount" }], "$mergedLoans"] },
+      },
+    },
+    { $unwind: "$allLoans" },
+    {
+      $group: {
+        _id: "$loanId",
+        loanIds: { $addToSet: "$allLoans._id" },
+        totalBaseAmount: { $sum: { $ifNull: ["$allLoans.baseAmount", 0] } },
+      },
+    },
+    {
+      $lookup: {
+        from: "loanpayments",
+        localField: "loanIds",
+        foreignField: "loanId",
+        as: "payments",
+      },
+    },
+    { $addFields: { totalPaid: { $sum: "$payments.paidAmount" } } },
+    {
+      $addFields: {
+        totalProfit: { $max: [0, { $subtract: ["$totalPaid", "$totalBaseAmount"] }] },
+      },
+    },
+  ]);
 
-    const loanAmounts = calculateLoanAmounts(loan);
-    const totalFees = calculateTotalFees(loan);
-    // Explicitly fallback to 0 if loanAmounts is null or interestAmount is missing
-    const interestAmount = loanAmounts && loanAmounts.interestAmount ? loanAmounts.interestAmount : 0;
-
-    reportMap[key].totalLoans += 1;
-    reportMap[key].totalBaseAmount += loan.baseAmount || 0;
-    reportMap[key].totalFees += totalFees;
-    reportMap[key].totalInterest += interestAmount;
-    if (loan.status === "Active") reportMap[key].activeLoanCount += 1;
-    if (loan.status === "Paid Off") reportMap[key].paidOffCount += 1;
+  const profitMap = {};
+  loanProfits.forEach((p) => {
+    profitMap[p._id.toString()] = p; 
   });
 
-  return Object.values(reportMap).sort(
-    (a, b) => b.year - a.year || a.companyName.localeCompare(b.companyName)
-  );
+  const flatTransactions = [];
+
+  allLoans.forEach((loan) => {
+    // Filter out loans that do not match the selected year
+    const monthYear = getMonthYearFromDate(loan.issueDate);
+    if (!monthYear) return;
+    if (yearArray.length > 0 && !yearArray.includes(monthYear.year)) return;
+
+    const loanIdStr = loan._id.toString();
+    const loanPayments = payments.filter((p) => p.loanId.toString() === loanIdStr);
+    const profitData = profitMap[loanIdStr] || { totalProfit: 0 };
+    
+    // Total debt computation placeholder - usually totalLoan or computed subTotal
+    const totalToPay = loan.totalLoan || loan.subTotal || 0;
+
+    // If no payments, still show the loan with 0 paid amount
+    if (loanPayments.length === 0) {
+      flatTransactions.push({
+        loan: loan, 
+        clientName: loan.client?.fullName || "Unknown",
+        baseDate: loan.issueDate,
+        amount: loan.baseAmount || 0,
+        totalToPay: totalToPay,
+        paidDate: null,
+        amountPaid: 0,
+        totalProfit: profitData.totalProfit,
+      });
+    } else {
+      loanPayments.forEach((payment) => {
+        flatTransactions.push({
+          loan: loan,
+          clientName: loan.client?.fullName || "Unknown",
+          baseDate: loan.issueDate,
+          amount: loan.baseAmount || 0,
+          totalToPay: totalToPay,
+          paidDate: payment.paidDate,
+          amountPaid: payment.paidAmount || 0,
+          totalProfit: profitData.totalProfit,
+        });
+      });
+    }
+  });
+
+  return flatTransactions.sort((a, b) => new Date(b.baseDate).getTime() - new Date(a.baseDate).getTime() || a.clientName.localeCompare(b.clientName));
 };
 
 const buildBrokerFeeReportData = async (company, startDate, endDate) => {
@@ -123,36 +187,45 @@ const buildBrokerFeeReportData = async (company, startDate, endDate) => {
     query.company = company;
   }
 
-  let loans = await Loan.find(query).populate("company", "companyName").populate("client", "fullName").lean();
-
   if (startDate || endDate) {
-    loans = loans.filter((loan) => {
-      const loanDate = moment(loan.issueDate, "MM-DD-YYYY");
-      if (startDate && loanDate.isBefore(moment(startDate))) return false;
-      if (endDate && loanDate.isAfter(moment(endDate))) return false;
-      return true;
-    });
+    query.issueDate = {};
+    if (startDate) query.issueDate.$gte = startDate;
+    if (endDate) query.issueDate.$lte = endDate; // Assuming issueDate is stored as string 'YYYY-MM-DD'
+    if (Object.keys(query.issueDate).length === 0) delete query.issueDate;
   }
 
-  const reportMap = {};
-  loans.forEach((loan) => {
-    const companyName = loan.company?.companyName || "Unknown";
-    const brokerFee = calculateFeeAmount(loan.fees?.brokerFee, loan.baseAmount);
+  const allLoans = await Loan.find(query)
+    .populate("company", "companyName")
+    .populate("client", "fullName")
+    .lean();
+    
+  const reportArray = [];
 
-    if (!reportMap[companyName]) {
-      reportMap[companyName] = { companyName, totalBrokerFees: 0, loanCount: 0, averageFeePerLoan: 0 };
+  allLoans.forEach((loan) => {
+    const brokerFee = loan.fees?.brokerFee;
+    let feeAmount = 0;
+    
+    if (brokerFee && brokerFee.value > 0) {
+      if (brokerFee.type === "percentage") {
+        feeAmount = ((loan.baseAmount || 0) * brokerFee.value) / 100;
+      } else {
+        feeAmount = brokerFee.value;
+      }
     }
-    reportMap[companyName].totalBrokerFees += brokerFee;
-    reportMap[companyName].loanCount += 1;
+
+    if (feeAmount > 0) {
+      reportArray.push({
+        _id: loan._id,
+        date: loan.issueDate,
+        companyName: loan.company?.companyName || "Unknown",
+        clientName: loan.client?.fullName || "Unknown",
+        brokerFee: feeAmount,
+      });
+    }
   });
 
-  const reportArray = Object.values(reportMap);
-  reportArray.forEach((item) => {
-    item.averageFeePerLoan = item.loanCount > 0 ? (item.totalBrokerFees / item.loanCount).toFixed(2) : "0.00";
-    item.totalBrokerFees = item.totalBrokerFees.toFixed(2);
-  });
-
-  return reportArray.sort((a, b) => b.totalBrokerFees - a.totalBrokerFees);
+  // Sort by date descending
+  return reportArray.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
 // ==========================================
@@ -169,6 +242,11 @@ exports.getFraudulentReport = async (req, res) => {
 
     const query = await buildFraudulentQuery(company, status, year);
     const totalCount = await Loan.countDocuments(query);
+    
+    // Calculate global summaries
+    const allFraudulentLoans = await Loan.find(query, "baseAmount").lean();
+    const totalFraudulentAmount = allFraudulentLoans.reduce((sum, loan) => sum + (loan.baseAmount || 0), 0);
+
     const loans = await Loan.find(query).populate("company", "companyName").populate("client", "fullName").sort({ issueDate: -1 }).skip(skip).limit(pageSizeNum).lean();
 
     const reportData = loans.map((loan) => ({
@@ -185,6 +263,10 @@ exports.getFraudulentReport = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: reportData,
+      summary: {
+        totalAmount: totalFraudulentAmount,
+        totalLoans: totalCount
+      },
       pagination: { page: pageNum, pageSize: pageSizeNum, totalRecords: totalCount, totalPages: Math.ceil(totalCount / pageSizeNum) },
     });
   } catch (error) {
@@ -199,6 +281,9 @@ exports.exportFraudulentReportExcel = async (req, res) => {
     const query = await buildFraudulentQuery(company, status, year);
     const loans = await Loan.find(query).populate("company", "companyName").populate("client", "fullName").lean();
 
+    const totalFraudulentAmount = loans.reduce((sum, loan) => sum + (loan.baseAmount || 0), 0);
+    const totalLoansCount = loans.length;
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Fraudulent Loans");
 
@@ -211,8 +296,31 @@ exports.exportFraudulentReportExcel = async (req, res) => {
       { header: "Status", key: "status", width: 12 },
       { header: "Issue Date", key: "issueDate", width: 15 },
     ];
-    worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    worksheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4472C4" } };
+
+    // Insert 3 empty rows at the top for our summary
+    worksheet.spliceRows(1, 0, [], [], []);
+
+    // Add Summary Title
+    worksheet.getCell('A1').value = "Fraudulent Loan Report Summary";
+    worksheet.mergeCells('A1:G1');
+    worksheet.getCell('A1').font = { size: 16, bold: true };
+    worksheet.getCell('A1').alignment = { horizontal: 'center' };
+
+    // Add Summary Data
+    worksheet.getCell('A2').value = "Total Fraudulent Amount:";
+    worksheet.getCell('A2').font = { bold: true };
+    worksheet.getCell('B2').value = totalFraudulentAmount;
+    worksheet.getCell('B2').numFmt = '"$"#,##0.00';
+    worksheet.getCell('B2').font = { bold: true };
+
+    worksheet.getCell('D2').value = "Total Affected Loans:";
+    worksheet.getCell('D2').font = { bold: true };
+    worksheet.getCell('E2').value = totalLoansCount;
+    worksheet.getCell('E2').font = { bold: true };
+
+    // Format the column header row (which is now row 4)
+    worksheet.getRow(4).font = { bold: true, color: { argb: "FFFFFFFF" } };
+    worksheet.getRow(4).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4472C4" } };
 
     loans.forEach((loan) => {
       worksheet.addRow({
@@ -245,6 +353,9 @@ exports.exportFraudulentReportPdf = async (req, res) => {
     const query = await buildFraudulentQuery(company, status, year);
     const loans = await Loan.find(query).populate("company", "companyName").populate("client", "fullName").lean();
 
+    const totalFraudulentAmount = loans.reduce((sum, loan) => sum + (loan.baseAmount || 0), 0);
+    const totalLoansCount = loans.length;
+
     const doc = new PDFDocument({ margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="Fraudulent_Loans_${Date.now()}.pdf"`);
@@ -252,6 +363,12 @@ exports.exportFraudulentReportPdf = async (req, res) => {
 
     doc.fontSize(20).text("Fraudulent Loans Report", { align: "center" });
     doc.moveDown();
+
+    // Add Summary Section
+    doc.fontSize(14).text("Summary", { underline: true });
+    doc.fontSize(12).text(`Total Fraudulent Amount: $${totalFraudulentAmount.toFixed(2)}`);
+    doc.text(`Total Affected Loans: ${totalLoansCount}`);
+    doc.moveDown(2);
 
     if (loans.length === 0) {
       doc.fontSize(12).text("No records found.", { align: "center" });
@@ -277,6 +394,10 @@ exports.exportFraudulentReportPdf = async (req, res) => {
 exports.getYearlyReport = async (req, res) => {
   try {
     const { company, years, page = 1, pageSize = 20, export: isExport = false } = req.query;
+    if (!company || company === "all") {
+      return res.status(400).json({ success: false, message: "Company is compulsory for Yearly Report." });
+    }
+
     const pageNum = parseInt(page, 10) || 1;
     const pageSizeNum = isExport ? 999999 : parseInt(pageSize, 10) || 20;
     const skip = (pageNum - 1) * pageSizeNum;
@@ -284,22 +405,25 @@ exports.getYearlyReport = async (req, res) => {
     const reportArray = await buildYearlyReportData(company, years);
     const totalCount = reportArray.length;
     const paginatedData = reportArray.slice(skip, skip + pageSizeNum);
+    
+    // Global summary calculation
+    const summary = reportArray.reduce((acc, curr) => {
+      acc.totalAmount += curr.amount; // total amounts across identical payments is technically redundant, but following exact logic
+      acc.totalPaid += curr.amountPaid;
+      return acc;
+    }, { totalAmount: 0, totalPaid: 0, totalProfit: 0 });
 
-    const formattedData = paginatedData.map((item) => ({
-      companyName: item.companyName,
-      year: item.year,
-      totalLoans: item.totalLoans,
-      totalBaseAmount: parseFloat(item.totalBaseAmount || 0).toFixed(2),
-      totalFees: parseFloat(item.totalFees || 0).toFixed(2),
-      totalInterest: parseFloat(item.totalInterest || 0).toFixed(2),
-      netProfit: parseFloat(item.totalFees + item.totalInterest - (item.totalBaseAmount * 0.02)).toFixed(2),
-      activeLoanCount: item.activeLoanCount,
-      paidOffCount: item.paidOffCount,
-    }));
+    // Deduplicate totalProfit at the loan level for summary accuracy
+    const uniqueLoanProfits = {};
+    reportArray.forEach(curr => {
+      uniqueLoanProfits[curr.loan._id.toString()] = curr.totalProfit || 0;
+    });
+    summary.totalProfit = Object.values(uniqueLoanProfits).reduce((sum, amount) => sum + amount, 0);
 
     return res.status(200).json({
       success: true,
-      data: formattedData,
+      data: paginatedData,
+      summary,
       pagination: { page: pageNum, pageSize: pageSizeNum, totalRecords: totalCount, totalPages: Math.ceil(totalCount / pageSizeNum) },
     });
   } catch (error) {
@@ -311,44 +435,43 @@ exports.getYearlyReport = async (req, res) => {
 exports.exportYearlyReportExcel = async (req, res) => {
   try {
     const { company, years } = req.query;
+    if (!company || company === "all") {
+      return res.status(400).json({ success: false, message: "Company is compulsory for Yearly Report." });
+    }
     const reportArray = await buildYearlyReportData(company, years);
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Yearly Report");
 
-    worksheet.columns = [
-      { header: "Company Name", key: "companyName", width: 20 },
-      { header: "Year", key: "year", width: 10 },
-      { header: "Total Loans", key: "totalLoans", width: 12 },
-      { header: "Total Base Amount", key: "totalBaseAmount", width: 18 },
-      { header: "Total Fees", key: "totalFees", width: 15 },
-      { header: "Total Interest", key: "totalInterest", width: 15 },
-      { header: "Net Profit", key: "netProfit", width: 15 },
-      { header: "Active Loans", key: "activeLoanCount", width: 12 },
-      { header: "Paid Off", key: "paidOffCount", width: 12 },
-    ];
+    const headerKeys = ["Base Date(Loan Date)", "Amount", "Total(To Pay)", "Name (Client Name)", "Paid Date(amount date)", "Amount Paid(how much we paid)", "Total Profit"];
+    worksheet.addRow(headerKeys);
     worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    worksheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF70AD47" } };
+    worksheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4472C4" } };
+    
+    worksheet.getColumn(1).width = 15;
+    worksheet.getColumn(2).width = 15;
+    worksheet.getColumn(3).width = 15;
+    worksheet.getColumn(4).width = 25;
+    worksheet.getColumn(5).width = 20;
+    worksheet.getColumn(6).width = 20;
+    worksheet.getColumn(7).width = 15;
 
-    reportArray.forEach((item) => {
-      const netProfit = item.totalFees + item.totalInterest - item.totalBaseAmount * 0.02;
-      worksheet.addRow({
-        companyName: item.companyName,
-        year: item.year,
-        totalLoans: item.totalLoans,
-        totalBaseAmount: parseFloat(item.totalBaseAmount || 0).toFixed(2),
-        totalFees: parseFloat(item.totalFees || 0).toFixed(2),
-        totalInterest: parseFloat(item.totalInterest || 0).toFixed(2),
-        netProfit: parseFloat(netProfit || 0).toFixed(2),
-        activeLoanCount: item.activeLoanCount,
-        paidOffCount: item.paidOffCount,
-      });
+    reportArray.forEach((row) => {
+      worksheet.addRow([
+        row.baseDate || "-",
+        parseFloat(row.amount || 0).toFixed(2),
+        parseFloat(row.totalToPay || 0).toFixed(2),
+        row.clientName || "-",
+        row.paidDate ? new Date(row.paidDate).toLocaleDateString() : "-",
+        parseFloat(row.amountPaid || 0).toFixed(2),
+        parseFloat(row.totalProfit || 0).toFixed(2)
+      ]);
     });
 
-    worksheet.getColumn("totalBaseAmount").numFmt = '"$"#,##0.00';
-    worksheet.getColumn("totalFees").numFmt = '"$"#,##0.00';
-    worksheet.getColumn("totalInterest").numFmt = '"$"#,##0.00';
-    worksheet.getColumn("netProfit").numFmt = '"$"#,##0.00';
+    worksheet.getColumn(2).numFmt = '"$"#,##0.00';
+    worksheet.getColumn(3).numFmt = '"$"#,##0.00';
+    worksheet.getColumn(6).numFmt = '"$"#,##0.00';
+    worksheet.getColumn(7).numFmt = '"$"#,##0.00';
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -363,6 +486,9 @@ exports.exportYearlyReportExcel = async (req, res) => {
 exports.exportYearlyReportPdf = async (req, res) => {
   try {
     const { company, years } = req.query;
+    if (!company || company === "all") {
+      return res.status(400).json({ success: false, message: "Company is compulsory for Yearly Report." });
+    }
     const reportArray = await buildYearlyReportData(company, years);
 
     const doc = new PDFDocument({ margin: 50 });
@@ -370,23 +496,22 @@ exports.exportYearlyReportPdf = async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="Yearly_Report_${Date.now()}.pdf"`);
     doc.pipe(res);
 
-    doc.fontSize(20).text("Yearly Report", { align: "center" });
+    doc.fontSize(20).text("Yearly Transactions Report", { align: "center" });
     doc.moveDown();
 
     if (reportArray.length === 0) {
-      doc.fontSize(12).text("No records found.", { align: "center" });
+      doc.fontSize(12).text("No transactions found.", { align: "center" });
     } else {
-      reportArray.forEach((item) => {
-        const netProfit = item.totalFees + item.totalInterest - item.totalBaseAmount * 0.02;
-        doc.fontSize(12).text(`Company: ${item.companyName} (${item.year})`);
-        doc.fontSize(10).text(`Total Loans: ${item.totalLoans} | Active: ${item.activeLoanCount} | Paid Off: ${item.paidOffCount}`);
-        doc.fontSize(10).text(`Base Amount: $${parseFloat(item.totalBaseAmount || 0).toFixed(2)} | Fees: $${parseFloat(item.totalFees || 0).toFixed(2)}`);
-        doc.fontSize(10).text(`Interest: $${parseFloat(item.totalInterest || 0).toFixed(2)} | Net Profit: $${parseFloat(netProfit || 0).toFixed(2)}`);
+      reportArray.forEach((row) => {
+        doc.fontSize(12).font("Helvetica-Bold").text(`Client: ${row.clientName} | Date: ${row.baseDate}`);
+        doc.fontSize(10).font("Helvetica").text(`Amount: $${parseFloat(row.amount || 0).toFixed(2)} | Total To Pay: $${parseFloat(row.totalToPay || 0).toFixed(2)}`);
+        doc.fontSize(10).text(`Paid Date: ${row.paidDate ? new Date(row.paidDate).toLocaleDateString() : '-'} | Paid: $${parseFloat(row.amountPaid || 0).toFixed(2)} | Profit: $${parseFloat(row.totalProfit || 0).toFixed(2)}`);
         doc.moveDown(0.5);
-        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#eeeeee").stroke();
         doc.moveDown(0.5);
       });
     }
+
     doc.end();
   } catch (error) {
     console.error("Error exporting yearly PDF:", error);
@@ -405,10 +530,17 @@ exports.getBrokerFeeReport = async (req, res) => {
     const reportArray = await buildBrokerFeeReportData(company, startDate, endDate);
     const totalCount = reportArray.length;
     const paginatedData = reportArray.slice(skip, skip + pageSizeNum);
+    
+    const summary = reportArray.reduce((acc, curr) => {
+      acc.totalFees += curr.brokerFee;
+      acc.totalTransactions += 1;
+      return acc;
+    }, { totalFees: 0, totalTransactions: 0 });
 
     return res.status(200).json({
       success: true,
       data: paginatedData,
+      summary,
       pagination: { page: pageNum, pageSize: pageSizeNum, totalRecords: totalCount, totalPages: Math.ceil(totalCount / pageSizeNum) },
     });
   } catch (error) {
@@ -426,29 +558,28 @@ exports.exportBrokerFeeReportExcel = async (req, res) => {
     const worksheet = workbook.addWorksheet("Broker Fees");
 
     worksheet.columns = [
-      { header: "Company Name", key: "companyName", width: 20 },
-      { header: "Total Broker Fees", key: "totalBrokerFees", width: 18 },
-      { header: "Loan Count", key: "loanCount", width: 12 },
-      { header: "Average Fee Per Loan", key: "averageFeePerLoan", width: 18 },
+      { header: "DATE", key: "date", width: 15 },
+      { header: "Company", key: "companyName", width: 20 },
+      { header: "Name", key: "clientName", width: 30 },
+      { header: "Total", key: "brokerFee", width: 15 },
     ];
     worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    worksheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFED7D31" } };
+    worksheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4472C4" } };
 
     reportArray.forEach((item) => {
       worksheet.addRow({
+        date: item.date,
         companyName: item.companyName,
-        totalBrokerFees: parseFloat(item.totalBrokerFees || 0).toFixed(2),
-        loanCount: item.loanCount,
-        averageFeePerLoan: parseFloat(item.averageFeePerLoan || 0).toFixed(2),
+        clientName: item.clientName,
+        brokerFee: parseFloat(item.brokerFee || 0).toFixed(2),
       });
     });
 
-    worksheet.getColumn("totalBrokerFees").numFmt = '"$"#,##0.00';
-    worksheet.getColumn("averageFeePerLoan").numFmt = '"$"#,##0.00';
+    worksheet.getColumn("brokerFee").numFmt = '"$"#,##0.00';
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename="Broker_Fee_Report_${Date.now()}.xlsx"`);
+    res.setHeader("Content-Disposition", `attachment; filename="Broker_Fees_${Date.now()}.xlsx"`);
     res.send(buffer);
   } catch (error) {
     console.error("Error exporting broker fee report:", error);
@@ -463,7 +594,7 @@ exports.exportBrokerFeeReportPdf = async (req, res) => {
 
     const doc = new PDFDocument({ margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="Broker_Fee_Report_${Date.now()}.pdf"`);
+    res.setHeader("Content-Disposition", `attachment; filename="Broker_Fees_${Date.now()}.pdf"`);
     doc.pipe(res);
 
     doc.fontSize(20).text("Broker Fee Report", { align: "center" });
@@ -473,11 +604,10 @@ exports.exportBrokerFeeReportPdf = async (req, res) => {
       doc.fontSize(12).text("No records found.", { align: "center" });
     } else {
       reportArray.forEach((item) => {
-        doc.fontSize(12).text(`Company: ${item.companyName}`);
-        doc.fontSize(10).text(`Loan Count: ${item.loanCount}`);
-        doc.fontSize(10).text(`Total Broker Fees: $${parseFloat(item.totalBrokerFees || 0).toFixed(2)} | Avg Fee/Loan: $${parseFloat(item.averageFeePerLoan || 0).toFixed(2)}`);
+        doc.fontSize(12).text(`Date: ${item.date} | Company: ${item.companyName}`);
+        doc.fontSize(10).text(`Client: ${item.clientName} | Fee: $${parseFloat(item.brokerFee || 0).toFixed(2)}`);
         doc.moveDown(0.5);
-        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#cccccc").stroke();
         doc.moveDown(0.5);
       });
     }
