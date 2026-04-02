@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Autocomplete, TextField } from "@mui/material";
+import { toast } from "react-toastify";
 
 interface YearlyReportProps {
   companies: any[];
@@ -41,8 +42,8 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!company) {
-      alert("Company Name is compulsory for Annual Report.");
+    if (!company || company.length === 0) {
+      toast.error("At least provide company name.");
       return;
     }
     navigate("/reports/yearly-result", {

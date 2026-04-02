@@ -1,11 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MaterialTable from "@material-table/core";
-import { Box, Button, Typography, Alert, Tooltip, IconButton } from "@mui/material";
+import { Box, Button, Typography, Alert } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import InfoIcon from "@mui/icons-material/Info";
 import reportService from "../../../api/reportService";
 
 const FraudulentLoanResult: React.FC = () => {

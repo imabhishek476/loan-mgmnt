@@ -219,6 +219,7 @@ const buildBrokerFeeReportData = async (company, startDate, endDate, feeTypeStr 
     .lean();
     
   const feeTypes = feeTypeStr ? feeTypeStr.split(",") : ["brokerFee"];
+  const reportArray = [];
 
   allLoans.forEach((loan) => {
     let combinedFeeAmount = 0;
@@ -494,6 +495,25 @@ exports.exportYearlyReportExcel = async (req, res) => {
       ]);
     });
 
+    const totalAmount = reportArray.reduce((acc, curr) => acc + curr.amount, 0);
+    const totalPaid = reportArray.reduce((acc, curr) => acc + curr.amountPaid, 0);
+    const uniqueLoanProfits = {};
+    reportArray.forEach(curr => { uniqueLoanProfits[curr.loan._id.toString()] = curr.totalProfit || 0; });
+    const totalProfit = Object.values(uniqueLoanProfits).reduce((sum, amount) => sum + amount, 0);
+
+    worksheet.addRow([]);
+    const summaryRow = worksheet.addRow([
+      "GLOBAL SUMMARY:", 
+      parseFloat(totalAmount).toFixed(2), 
+      "", 
+      "", 
+      "", 
+      parseFloat(totalPaid).toFixed(2), 
+      parseFloat(totalProfit).toFixed(2)
+    ]);
+    summaryRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    summaryRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4472C4" } };
+
     worksheet.getColumn(2).numFmt = '"$"#,##0.00';
     worksheet.getColumn(3).numFmt = '"$"#,##0.00';
     worksheet.getColumn(6).numFmt = '"$"#,##0.00';
@@ -541,6 +561,19 @@ exports.exportYearlyReportPdf = async (req, res) => {
         doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#eeeeee").stroke();
         doc.moveDown(0.5);
       });
+
+      doc.moveDown(1);
+      const totalAmount = reportArray.reduce((acc, curr) => acc + curr.amount, 0);
+      const totalPaid = reportArray.reduce((acc, curr) => acc + curr.amountPaid, 0);
+      const uniqueLoanProfits = {};
+      reportArray.forEach(curr => { uniqueLoanProfits[curr.loan?._id?.toString() || curr._id.toString()] = curr.totalProfit || 0; });
+      const totalProfit = Object.values(uniqueLoanProfits).reduce((sum, amount) => sum + amount, 0);
+
+      doc.fontSize(12).font("Helvetica-Bold").text("GLOBAL SUMMARY", { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(12).font("Helvetica").text(`Total Base Amount: $${parseFloat(totalAmount).toFixed(2)}`);
+      doc.text(`Total Amount Paid: $${parseFloat(totalPaid).toFixed(2)}`);
+      doc.text(`Total Profit: $${parseFloat(totalProfit).toFixed(2)}`);
     }
 
     doc.end();
@@ -605,6 +638,11 @@ exports.exportBrokerFeeReportExcel = async (req, res) => {
         feeAmount: parseFloat(item.feeAmount || 0).toFixed(2),
       });
     });
+
+    const totalFees = reportArray.reduce((acc, curr) => acc + curr.feeAmount, 0);
+    worksheet.addRow({});
+    const totalRow = worksheet.addRow({ clientName: "TOTAL FEES:", feeAmount: parseFloat(totalFees).toFixed(2) });
+    totalRow.font = { bold: true };
 
     worksheet.getColumn("feeAmount").numFmt = '"$"#,##0.00';
 
