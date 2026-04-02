@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Autocomplete, TextField, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from "@mui/material";
+import { Autocomplete, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment";
@@ -28,16 +28,24 @@ const BrokerFeeReport: React.FC<BrokerFeeReportProps> = ({ companies }) => {
   const navigate = useNavigate();
 
   // Filter state
-  const [company, setCompany] = useState("all");
+  const [company, setCompany] = useState<any[]>([]);
   const [startDate, setStartDate] = useState<any>(null);
   const [endDate, setEndDate] = useState<any>(null);
-  const [feeType, setFeeType] = useState<string>("brokerFee");
+  const [feeType, setFeeType] = useState<any[]>([]);
+
+  const feeOptions = [
+    { value: "brokerFee", label: "Broker Fee" },
+    { value: "applicationFee", label: "Application Fee" },
+    { value: "administrativeFee", label: "Administrative Fee" },
+    { value: "attorneyReviewFee", label: "Attorney Review Fee" },
+    { value: "annualMaintenanceFee", label: "Annual Maint. Fee" }
+  ];
 
   const handleReset = () => {
-    setCompany("all");
+    setCompany([]);
     setStartDate(null);
     setEndDate(null);
-    setFeeType("brokerFee");
+    setFeeType([]);
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -57,32 +65,40 @@ const BrokerFeeReport: React.FC<BrokerFeeReportProps> = ({ companies }) => {
       <div className="px-2 rounded-b-lg p-3">
         <h2 className="text-lg font-bold text-gray-800 mb-2 text-left">Fee Report Filters</h2>
         <form onSubmit={handleSubmit}>
-          <FormControl component="fieldset" margin="dense" sx={{ mb: 2 }}>
-            <FormLabel component="legend" sx={{ fontSize: 13, fontWeight: "bold", color: "#374151" }}>Select Fee Type</FormLabel>
-            <RadioGroup row value={feeType} onChange={(e) => setFeeType(e.target.value)}>
-              <FormControlLabel value="brokerFee" control={<Radio size="small" color="success" />} label={<span style={{fontSize: 13}}>Broker Fee</span>} />
-              <FormControlLabel value="applicationFee" control={<Radio size="small" color="success" />} label={<span style={{fontSize: 13}}>Application Fee</span>} />
-              <FormControlLabel value="administrativeFee" control={<Radio size="small" color="success" />} label={<span style={{fontSize: 13}}>Administrative Fee</span>} />
-              <FormControlLabel value="attorneyReviewFee" control={<Radio size="small" color="success" />} label={<span style={{fontSize: 13}}>Attorney Review Fee</span>} />
-              <FormControlLabel value="annualMaintenanceFee" control={<Radio size="small" color="success" />} label={<span style={{fontSize: 13}}>Annual Maint. Fee</span>} />
-            </RadioGroup>
-          </FormControl>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-2 mb-1 pt-2">
             <div>
               <Autocomplete
+                multiple
                 size="small"
-                options={[{_id: "all", companyName: "All Companies"}, ...companies]}
+                options={companies}
                 getOptionLabel={(option) => option.companyName || ""}
-                value={
-                  company === "all" 
-                    ? { _id: "all", companyName: "All Companies" } 
-                    : companies.find((c) => c._id === company) || null
-                }
-                onChange={(_, value) => setCompany(value?._id || "all")}
+                value={company}
+                onChange={(_, value) => setCompany(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Company"
+                    label="Companies"
+                    color="success"
+                    sx={compactFieldSx}
+                    slotProps={{ inputLabel: smallLabel }}
+                    fullWidth
+                  />
+                )}
+              />
+            </div>
+            
+            <div>
+              <Autocomplete
+                multiple
+                size="small"
+                options={feeOptions}
+                getOptionLabel={(option) => option.label || ""}
+                value={feeType}
+                onChange={(_, value) => setFeeType(value)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Fee Types"
                     color="success"
                     sx={compactFieldSx}
                     slotProps={{ inputLabel: smallLabel }}

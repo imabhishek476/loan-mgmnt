@@ -1,16 +1,17 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MaterialTable from "@material-table/core";
-import { Box, Button, Typography, Alert } from "@mui/material";
+import { Box, Button, Typography, Alert, Tooltip, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import InfoIcon from "@mui/icons-material/Info";
 import reportService from "../../../api/reportService";
 
 const FraudulentLoanResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; status: string; year: string; startDate: string; endDate: string } | null;
+  const state = location.state as { company: any[]; status: string[]; year: string; startDate: string; endDate: string } | null;
   const tableRef = useRef<any>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +32,8 @@ const FraudulentLoanResult: React.FC = () => {
     try {
       setExportingExcel(true);
       await reportService.exportFraudulentReportExcel({
-        company: state.company !== "all" ? state.company : undefined,
-        status: state.status !== "all" ? state.status : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+        status: state.status && state.status.length > 0 ? state.status.join(",") : undefined,
         year: state.year || undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
@@ -48,8 +49,8 @@ const FraudulentLoanResult: React.FC = () => {
     try {
       setExportingPdf(true);
       await reportService.exportFraudulentReportPdf({
-        company: state.company !== "all" ? state.company : undefined,
-        status: state.status !== "all" ? state.status : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+        status: state.status && state.status.length > 0 ? state.status.join(",") : undefined,
         year: state.year || undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
@@ -140,7 +141,7 @@ const FraudulentLoanResult: React.FC = () => {
             </Typography>
           </Box>
           <Box sx={{ 
-            p: 2, 
+            p: 1, 
             borderRadius: 2, 
             bgcolor: '#f8fafc', 
             border: '1px solid #e2e8f0', 
@@ -153,6 +154,7 @@ const FraudulentLoanResult: React.FC = () => {
             <Typography variant="h5" color="primary.main" fontWeight="bold">
               {summary.totalLoans}
             </Typography>
+            <span style={{fontSize: "12px", color: "#64748b"}}>(Fraud, Lost, Denied)</span>
           </Box>
         </Box>
       )}
@@ -166,8 +168,8 @@ const FraudulentLoanResult: React.FC = () => {
             new Promise(async (resolve) => {
                try {
                  const response = await reportService.getFraudulentReport({
-                   company: state.company !== "all" ? state.company : undefined,
-                   status: state.status !== "all" ? state.status : undefined,
+                   company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+                   status: state.status && state.status.length > 0 ? state.status.join(",") : undefined,
                    year: state.year || undefined,
                    startDate: state.startDate || undefined,
                    endDate: state.endDate || undefined,

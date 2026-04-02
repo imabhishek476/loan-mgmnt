@@ -27,13 +27,13 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
   const navigate = useNavigate();
 
   // Filter state
-  const [company, setCompany] = useState<string>("");
+  const [company, setCompany] = useState<any[]>([]);
   const [year, setYear] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
   const handleReset = () => {
-    setCompany("");
+    setCompany([]);
     setYear("");
     setStartDate("");
     setEndDate("");
@@ -58,17 +58,16 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
           <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-2 mb-1 pt-2">
             <div>
               <Autocomplete
+                multiple
                 size="small"
                 options={companies}
                 getOptionLabel={(option) => option.companyName || ""}
-                value={
-                  companies.find((c) => c._id === company) || null
-                }
-                onChange={(_, value) => setCompany(value?._id || "all")}
+                value={company}
+                onChange={(_, value) => setCompany(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Company"
+                    label="Companies"
                     color="success"
                     sx={compactFieldSx}
                     slotProps={{ inputLabel: smallLabel }}
@@ -82,6 +81,7 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
               <Autocomplete
                 size="small"
                 freeSolo
+                disabled={!!startDate || !!endDate}
                 options={years.map(y => y.toString())}
                 value={year || ""}
                 onChange={(_, value) => setYear(value || "")}
@@ -106,6 +106,7 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
                 size="small"
                 color="success"
                 value={startDate}
+                disabled={!!year}
                 onChange={(e) => setStartDate(e.target.value)}
                 sx={compactFieldSx}
                 slotProps={{ inputLabel: { shrink: true, ...smallLabel.sx } }}
@@ -120,6 +121,7 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
                 size="small"
                 color="success"
                 value={endDate}
+                disabled={!!year}
                 onChange={(e) => setEndDate(e.target.value)}
                 sx={compactFieldSx}
                 slotProps={{ inputLabel: { shrink: true, ...smallLabel.sx } }}

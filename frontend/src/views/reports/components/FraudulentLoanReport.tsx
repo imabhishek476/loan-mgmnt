@@ -28,15 +28,15 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
   const navigate = useNavigate();
 
   // Filter state
-  const [company, setCompany] = useState("all");
-  const [status, setStatus] = useState("all");
+  const [company, setCompany] = useState<any[]>([]);
+  const [status, setStatus] = useState<string[]>([]);
   const [year, setYear] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
   const handleReset = () => {
-    setCompany("all");
-    setStatus("all");
+    setCompany([]);
+    setStatus([]);
     setYear("");
     setStartDate("");
     setEndDate("");
@@ -57,19 +57,16 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
           <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 mb-1 pt-2">
             <div>
               <Autocomplete
+                multiple
                 size="small"
-                options={[{_id: "all", companyName: "All Companies"}, ...companies]}
+                options={companies}
                 getOptionLabel={(option) => option.companyName || ""}
-                value={
-                  company === "all" 
-                    ? { _id: "all", companyName: "All Companies" } 
-                    : companies.find((c) => c._id === company) || null
-                }
-                onChange={(_, value) => setCompany(value?._id || "all")}
+                value={company}
+                onChange={(_, value) => setCompany(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Company"
+                    label="Companies"
                     color="success"
                     sx={compactFieldSx}
                     slotProps={{ inputLabel: smallLabel }}
@@ -81,10 +78,11 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
             
             <div>
               <Autocomplete
+                multiple
                 size="small"
-                options={["All Statuses", "Active", "Paid Off", "Partial Payment", "Fraud", "Lost", "Denied", "Merged"]}
-                value={status === "all" ? "All Statuses" : status}
-                onChange={(_, value) => setStatus(value === "All Statuses" || !value ? "all" : value)}
+                options={["Active", "Paid Off", "Partial Payment", "Fraud", "Lost", "Denied", "Merged"]}
+                value={status}
+                onChange={(_, value) => setStatus(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -102,6 +100,7 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
               <Autocomplete
                 size="small"
                 freeSolo
+                disabled={!!startDate || !!endDate}
                 options={years.map(y => y.toString())}
                 value={year || ""}
                 onChange={(_, value) => setYear(value || "")}
@@ -126,6 +125,7 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
                 size="small"
                 color="success"
                 value={startDate}
+                disabled={!!year}
                 onChange={(e) => setStartDate(e.target.value)}
                 sx={compactFieldSx}
                 slotProps={{ inputLabel: { shrink: true, ...smallLabel.sx } }}
@@ -140,6 +140,7 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
                 size="small"
                 color="success"
                 value={endDate}
+                disabled={!!year}
                 onChange={(e) => setEndDate(e.target.value)}
                 sx={compactFieldSx}
                 slotProps={{ inputLabel: { shrink: true, ...smallLabel.sx } }}

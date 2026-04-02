@@ -52,8 +52,13 @@ const calculateTotalFees = (loan) => {
 const buildFraudulentQuery = async (company, status, year, startDate, endDate) => {
   const query = {};
 
-  if (company && company !== "all") query.company = company;
-  if (status && status !== "all") query.status = status;
+  if (company && company !== "all") {
+    query.company = { $in: company.split(",") };
+  }
+  
+  if (status && status !== "all") {
+    query.status = { $in: status.split(",") };
+  }
 
   if (startDate || endDate) {
     query.issueDate = {};
@@ -78,7 +83,7 @@ const buildYearlyReportData = async (company, year, startDate, endDate) => {
 
   const query = {};
   if (company && company !== "all") {
-    query.company = company;
+    query.company = { $in: company.split(",") };
   }
 
   if (startDate || endDate) {
@@ -195,10 +200,10 @@ const buildYearlyReportData = async (company, year, startDate, endDate) => {
   });
 };
 
-const buildBrokerFeeReportData = async (company, startDate, endDate, feeType = "brokerFee") => {
+const buildBrokerFeeReportData = async (company, startDate, endDate, feeTypeStr = "brokerFee") => {
   const query = {};
   if (company && company !== "all") {
-    query.company = company;
+    query.company = { $in: company.split(",") };
   }
 
   if (startDate || endDate) {
@@ -213,27 +218,29 @@ const buildBrokerFeeReportData = async (company, startDate, endDate, feeType = "
     .populate("client", "fullName")
     .lean();
     
-  const reportArray = [];
+  const feeTypes = feeTypeStr ? feeTypeStr.split(",") : ["brokerFee"];
 
   allLoans.forEach((loan) => {
-    const feeObj = loan.fees?.[feeType];
-    let feeAmount = 0;
+    let combinedFeeAmount = 0;
     
-    if (feeObj && feeObj.value > 0) {
-      if (feeObj.type === "percentage") {
-        feeAmount = ((loan.baseAmount || 0) * feeObj.value) / 100;
-      } else {
-        feeAmount = feeObj.value;
+    feeTypes.forEach((feeType) => {
+      const feeObj = loan.fees?.[feeType];
+      if (feeObj && feeObj.value > 0) {
+        if (feeObj.type === "percentage") {
+          combinedFeeAmount += ((loan.baseAmount || 0) * feeObj.value) / 100;
+        } else {
+          combinedFeeAmount += feeObj.value;
+        }
       }
-    }
+    });
 
-    if (feeAmount > 0) {
+    if (combinedFeeAmount > 0) {
       reportArray.push({
         _id: loan._id,
         date: loan.issueDate,
         companyName: loan.company?.companyName || "Unknown",
         clientName: loan.client?.fullName || "Unknown",
-        feeAmount: feeAmount,
+        feeAmount: combinedFeeAmount,
       });
     }
   });

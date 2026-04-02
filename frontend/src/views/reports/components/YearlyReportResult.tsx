@@ -10,7 +10,7 @@ import reportService from "../../../api/reportService";
 const YearlyReportResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; year: string; startDate: string; endDate: string } | null;
+  const state = location.state as { company: any[]; year: string; startDate: string; endDate: string } | null;
   const tableRef = useRef<any>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ const YearlyReportResult: React.FC = () => {
     try {
       setExportingExcel(true);
       await reportService.exportYearlyReportExcel({
-        company: state.company !== "all" ? state.company : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
         year: state.year || undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
@@ -47,7 +47,7 @@ const YearlyReportResult: React.FC = () => {
     try {
       setExportingPdf(true);
       await reportService.exportYearlyReportPdf({
-        company: state.company !== "all" ? state.company : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
         year: state.year || undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
@@ -156,7 +156,7 @@ const YearlyReportResult: React.FC = () => {
             new Promise(async (resolve) => {
                try {
                  const response = await reportService.getYearlyReport({
-                   company: state.company !== "all" ? state.company : undefined,
+                   company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
                    year: state.year || undefined,
                    startDate: state.startDate || undefined,
                    endDate: state.endDate || undefined,

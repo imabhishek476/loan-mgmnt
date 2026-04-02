@@ -10,18 +10,13 @@ import reportService from "../../../api/reportService";
 const BrokerFeeReportResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; startDate: string; endDate: string; feeType: string } | null;
+  const state = location.state as { company: any[]; startDate: string; endDate: string; feeType: any[] } | null;
   const tableRef = useRef<any>(null);
 
-  const getFeeLabel = (type: string) => {
-    switch(type) {
-      case 'applicationFee': return 'Application Fee';
-      case 'administrativeFee': return 'Administrative Fee';
-      case 'attorneyReviewFee': return 'Attorney Review Fee';
-      case 'annualMaintenanceFee': return 'Annual Maintenance Fee';
-      case 'brokerFee': 
-      default: return 'Broker Fee';
-    }
+  const getFeeLabel = (types: any[]) => {
+    if (!types || types.length === 0) return "Fees";
+    if (types.length === 1) return types[0].label;
+    return "Selected Fees";
   };
 
   const [error, setError] = useState<string | null>(null);
@@ -42,10 +37,10 @@ const BrokerFeeReportResult: React.FC = () => {
     try {
       setExportingExcel(true);
       await reportService.exportBrokerFeeReportExcel({
-        company: state.company !== "all" ? state.company : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
-        feeType: state.feeType || "brokerFee"
+        feeType: state.feeType && state.feeType.length > 0 ? state.feeType.map(f => f.value).join(",") : undefined
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report");
@@ -58,10 +53,10 @@ const BrokerFeeReportResult: React.FC = () => {
     try {
       setExportingPdf(true);
       await reportService.exportBrokerFeeReportPdf({
-        company: state.company !== "all" ? state.company : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
-        feeType: state.feeType || "brokerFee"
+        feeType: state.feeType && state.feeType.length > 0 ? state.feeType.map(f => f.value).join(",") : undefined
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report to PDF");
@@ -75,7 +70,7 @@ const BrokerFeeReportResult: React.FC = () => {
     { title: "Company", field: "companyName" },
     { title: "Client Name", field: "clientName" },
     { 
-      title: getFeeLabel(state ? state.feeType : ""), 
+      title: getFeeLabel(state ? state.feeType : []), 
       render: (rd: any) => (
         <Box component="span" sx={{ fontWeight: 600, color: "#ed7d31" }}>
           ${parseFloat(rd.feeAmount || rd.brokerFee || 0).toFixed(2)}
@@ -164,10 +159,10 @@ const BrokerFeeReportResult: React.FC = () => {
             new Promise(async (resolve) => {
                try {
                  const response = await reportService.getBrokerFeeReport({
-                   company: state.company !== "all" ? state.company : undefined,
+                   company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
                    startDate: state.startDate || undefined,
                    endDate: state.endDate || undefined,
-                   feeType: state.feeType || "brokerFee",
+                   feeType: state.feeType && state.feeType.length > 0 ? state.feeType.map(f => f.value).join(",") : undefined,
                    page: query.page + 1,
                    pageSize: query.pageSize,
                  });
