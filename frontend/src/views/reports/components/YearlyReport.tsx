@@ -13,7 +13,7 @@ const smallLabel = {
 }; 
 
 const compactFieldSx = {
-  "& .MuiInputBase-root": { height: 40, backgroundColor: "#fff!important" },
+  "& .MuiInputBase-root": { minHeight: 40, backgroundColor: "#fff!important" },
   "& .MuiInputBase-input": { padding: "4px 6px", fontSize: 12.5 },
   "& .MuiInputLabel-root": { fontSize: 13 },
   "& .MuiInputAdornment-root": { margin: 0 },
