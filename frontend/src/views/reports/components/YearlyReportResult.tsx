@@ -10,7 +10,7 @@ import reportService from "../../../api/reportService";
 const YearlyReportResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; selectedYears: string[] } | null;
+  const state = location.state as { company: string; year: string; startDate: string; endDate: string } | null;
   const tableRef = useRef<any>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,9 @@ const YearlyReportResult: React.FC = () => {
       setExportingExcel(true);
       await reportService.exportYearlyReportExcel({
         company: state.company !== "all" ? state.company : undefined,
-        years: state.selectedYears.length > 0 ? state.selectedYears : undefined,
+        year: state.year || undefined,
+        startDate: state.startDate || undefined,
+        endDate: state.endDate || undefined,
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report");
@@ -46,7 +48,9 @@ const YearlyReportResult: React.FC = () => {
       setExportingPdf(true);
       await reportService.exportYearlyReportPdf({
         company: state.company !== "all" ? state.company : undefined,
-        years: state.selectedYears.length > 0 ? state.selectedYears : undefined,
+        year: state.year || undefined,
+        startDate: state.startDate || undefined,
+        endDate: state.endDate || undefined,
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report to PDF");
@@ -59,7 +63,7 @@ const YearlyReportResult: React.FC = () => {
     { title: "Base Date", field: "baseDate" },
     { title: "Amount", render: (rd: any) => `$${parseFloat(rd.amount || 0).toFixed(2)}` },
     { title: "Total Expected", render: (rd: any) => `$${parseFloat(rd.totalToPay || 0).toFixed(2)}` },
-    { title: "Client Name", field: "clientName" },
+    { title: "Client Name", field: "displayClientName" },
     { title: "Paid Date", field: "paidDate", emptyValue: "-" },
     { title: "Amount Paid", render: (rd: any) => `$${parseFloat(rd.amountPaid || 0).toFixed(2)}` },
     {
@@ -86,7 +90,7 @@ const YearlyReportResult: React.FC = () => {
             Back to Filters
           </Button>
           <Typography variant="h5" component="h1" fontWeight="bold">
-            Yearly Report Results
+            Annual Report Results
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -153,7 +157,9 @@ const YearlyReportResult: React.FC = () => {
                try {
                  const response = await reportService.getYearlyReport({
                    company: state.company !== "all" ? state.company : undefined,
-                   years: state.selectedYears.length > 0 ? state.selectedYears : undefined,
+                   year: state.year || undefined,
+                   startDate: state.startDate || undefined,
+                   endDate: state.endDate || undefined,
                    page: query.page + 1,
                    pageSize: query.pageSize,
                  });
@@ -162,8 +168,17 @@ const YearlyReportResult: React.FC = () => {
                    if (response.data.summary) {
                      setSummary(response.data.summary);
                    }
+
+                   let lastClientName: string | null = null;
+                   const processedData = response.data.data.map((row: any) => {
+                     const displayRow = { ...row };
+                     displayRow.displayClientName = row.clientName === lastClientName ? "-" : (row.clientName || "-");
+                     lastClientName = row.clientName;
+                     return displayRow;
+                   });
+
                    resolve({
-                     data: response.data.data,
+                     data: processedData,
                      page: query.page,
                      totalCount: response.data.pagination?.totalRecords || 0,
                    });

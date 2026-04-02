@@ -49,15 +49,21 @@ const calculateTotalFees = (loan) => {
 
 // --- QUERY BUILDERS ---
 
-const buildFraudulentQuery = async (company, status, year) => {
-  const query = { status: { $in: ["Fraud", "Lost", "Denied"] } };
+const buildFraudulentQuery = async (company, status, year, startDate, endDate) => {
+  const query = {};
 
   if (company && company !== "all") query.company = company;
   if (status && status !== "all") query.status = status;
 
+  if (startDate || endDate) {
+    query.issueDate = {};
+    if (startDate) query.issueDate.$gte = startDate;
+    if (endDate) query.issueDate.$lte = endDate;
+  }
+
   if (year) {
     const yearNum = parseInt(year, 10);
-    const loansInYear = await Loan.find({}).populate("company", "companyName").populate("client", "fullName");
+    const loansInYear = await Loan.find(query).populate("company", "companyName").populate("client", "fullName");
     const filteredLoans = loansInYear.filter((loan) => {
       const monthYear = getMonthYearFromDate(loan.issueDate);
       return monthYear && monthYear.year === yearNum;
@@ -67,15 +73,18 @@ const buildFraudulentQuery = async (company, status, year) => {
   return query;
 };
 
-const buildYearlyReportData = async (company, years) => {
-  let yearArray = [];
-  if (years) {
-    yearArray = Array.isArray(years) ? years.map((y) => parseInt(y, 10)) : [parseInt(years, 10)];
-  }
+const buildYearlyReportData = async (company, year, startDate, endDate) => {
+  const yearArray = year ? [parseInt(year, 10)] : [];
 
   const query = {};
   if (company && company !== "all") {
     query.company = company;
+  }
+
+  if (startDate || endDate) {
+    query.issueDate = {};
+    if (startDate) query.issueDate.$gte = startDate;
+    if (endDate) query.issueDate.$lte = endDate;
   }
 
   const allLoans = await Loan.find(query)
@@ -178,10 +187,15 @@ const buildYearlyReportData = async (company, years) => {
     }
   });
 
-  return flatTransactions.sort((a, b) => new Date(b.baseDate).getTime() - new Date(a.baseDate).getTime() || a.clientName.localeCompare(b.clientName));
+  return flatTransactions.sort((a, b) => {
+    const nameA = a.clientName || "";
+    const nameB = b.clientName || "";
+    if (nameA !== nameB) return nameA.localeCompare(nameB);
+    return new Date(a.baseDate).getTime() - new Date(b.baseDate).getTime();
+  });
 };
 
-const buildBrokerFeeReportData = async (company, startDate, endDate) => {
+const buildBrokerFeeReportData = async (company, startDate, endDate, feeType = "brokerFee") => {
   const query = {};
   if (company && company !== "all") {
     query.company = company;
@@ -190,7 +204,7 @@ const buildBrokerFeeReportData = async (company, startDate, endDate) => {
   if (startDate || endDate) {
     query.issueDate = {};
     if (startDate) query.issueDate.$gte = startDate;
-    if (endDate) query.issueDate.$lte = endDate; // Assuming issueDate is stored as string 'YYYY-MM-DD'
+    if (endDate) query.issueDate.$lte = endDate; 
     if (Object.keys(query.issueDate).length === 0) delete query.issueDate;
   }
 
@@ -202,14 +216,14 @@ const buildBrokerFeeReportData = async (company, startDate, endDate) => {
   const reportArray = [];
 
   allLoans.forEach((loan) => {
-    const brokerFee = loan.fees?.brokerFee;
+    const feeObj = loan.fees?.[feeType];
     let feeAmount = 0;
     
-    if (brokerFee && brokerFee.value > 0) {
-      if (brokerFee.type === "percentage") {
-        feeAmount = ((loan.baseAmount || 0) * brokerFee.value) / 100;
+    if (feeObj && feeObj.value > 0) {
+      if (feeObj.type === "percentage") {
+        feeAmount = ((loan.baseAmount || 0) * feeObj.value) / 100;
       } else {
-        feeAmount = brokerFee.value;
+        feeAmount = feeObj.value;
       }
     }
 
@@ -219,7 +233,7 @@ const buildBrokerFeeReportData = async (company, startDate, endDate) => {
         date: loan.issueDate,
         companyName: loan.company?.companyName || "Unknown",
         clientName: loan.client?.fullName || "Unknown",
-        brokerFee: feeAmount,
+        feeAmount: feeAmount,
       });
     }
   });
@@ -232,15 +246,15 @@ const buildBrokerFeeReportData = async (company, startDate, endDate) => {
 // API ENDPOINTS
 // ==========================================
 
-// --- Fraudulent Loans ---
+// --- Status Reports (formerly Fraudulent) ---
 exports.getFraudulentReport = async (req, res) => {
   try {
-    const { company, status = "Fraud", year, page = 1, pageSize = 20, export: isExport = false } = req.query;
+    const { company, status, year, startDate, endDate, page = 1, pageSize = 20, export: isExport = false } = req.query;
     const pageNum = parseInt(page, 10) || 1;
     const pageSizeNum = isExport ? 999999 : parseInt(pageSize, 10) || 20;
     const skip = (pageNum - 1) * pageSizeNum;
 
-    const query = await buildFraudulentQuery(company, status, year);
+    const query = await buildFraudulentQuery(company, status, year, startDate, endDate);
     const totalCount = await Loan.countDocuments(query);
     
     // Calculate global summaries
@@ -277,15 +291,15 @@ exports.getFraudulentReport = async (req, res) => {
 
 exports.exportFraudulentReportExcel = async (req, res) => {
   try {
-    const { company, status = "Fraud", year } = req.query;
-    const query = await buildFraudulentQuery(company, status, year);
+    const { company, status, year, startDate, endDate } = req.query;
+    const query = await buildFraudulentQuery(company, status, year, startDate, endDate);
     const loans = await Loan.find(query).populate("company", "companyName").populate("client", "fullName").lean();
 
     const totalFraudulentAmount = loans.reduce((sum, loan) => sum + (loan.baseAmount || 0), 0);
     const totalLoansCount = loans.length;
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Fraudulent Loans");
+    const worksheet = workbook.addWorksheet("Status Report");
 
     worksheet.columns = [
       { header: "Loan ID", key: "loanId", width: 12 },
@@ -301,13 +315,13 @@ exports.exportFraudulentReportExcel = async (req, res) => {
     worksheet.spliceRows(1, 0, [], [], []);
 
     // Add Summary Title
-    worksheet.getCell('A1').value = "Fraudulent Loan Report Summary";
+    worksheet.getCell('A1').value = "Status Report Summary";
     worksheet.mergeCells('A1:G1');
     worksheet.getCell('A1').font = { size: 16, bold: true };
     worksheet.getCell('A1').alignment = { horizontal: 'center' };
 
     // Add Summary Data
-    worksheet.getCell('A2').value = "Total Fraudulent Amount:";
+    worksheet.getCell('A2').value = "Total Amount:";
     worksheet.getCell('A2').font = { bold: true };
     worksheet.getCell('B2').value = totalFraudulentAmount;
     worksheet.getCell('B2').numFmt = '"$"#,##0.00';
@@ -339,7 +353,7 @@ exports.exportFraudulentReportExcel = async (req, res) => {
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename="Fraudulent_Loans_${Date.now()}.xlsx"`);
+    res.setHeader("Content-Disposition", `attachment; filename="Status_Report_${Date.now()}.xlsx"`);
     res.send(buffer);
   } catch (error) {
     console.error("Error exporting fraudulent report:", error);
@@ -349,8 +363,8 @@ exports.exportFraudulentReportExcel = async (req, res) => {
 
 exports.exportFraudulentReportPdf = async (req, res) => {
   try {
-    const { company, status = "Fraud", year } = req.query;
-    const query = await buildFraudulentQuery(company, status, year);
+    const { company, status, year, startDate, endDate } = req.query;
+    const query = await buildFraudulentQuery(company, status, year, startDate, endDate);
     const loans = await Loan.find(query).populate("company", "companyName").populate("client", "fullName").lean();
 
     const totalFraudulentAmount = loans.reduce((sum, loan) => sum + (loan.baseAmount || 0), 0);
@@ -358,15 +372,15 @@ exports.exportFraudulentReportPdf = async (req, res) => {
 
     const doc = new PDFDocument({ margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="Fraudulent_Loans_${Date.now()}.pdf"`);
+    res.setHeader("Content-Disposition", `attachment; filename="Status_Report_${Date.now()}.pdf"`);
     doc.pipe(res);
 
-    doc.fontSize(20).text("Fraudulent Loans Report", { align: "center" });
+    doc.fontSize(20).text("Status Report", { align: "center" });
     doc.moveDown();
 
     // Add Summary Section
     doc.fontSize(14).text("Summary", { underline: true });
-    doc.fontSize(12).text(`Total Fraudulent Amount: $${totalFraudulentAmount.toFixed(2)}`);
+    doc.fontSize(12).text(`Total Amount: $${totalFraudulentAmount.toFixed(2)}`);
     doc.text(`Total Affected Loans: ${totalLoansCount}`);
     doc.moveDown(2);
 
@@ -390,19 +404,19 @@ exports.exportFraudulentReportPdf = async (req, res) => {
   }
 };
 
-// --- Yearly Reports ---
+// --- Annual Reports (formerly Yearly) ---
 exports.getYearlyReport = async (req, res) => {
   try {
-    const { company, years, page = 1, pageSize = 20, export: isExport = false } = req.query;
+    const { company, year, startDate, endDate, page = 1, pageSize = 20, export: isExport = false } = req.query;
     if (!company || company === "all") {
-      return res.status(400).json({ success: false, message: "Company is compulsory for Yearly Report." });
+      return res.status(400).json({ success: false, message: "Company is compulsory for Annual Report." });
     }
 
     const pageNum = parseInt(page, 10) || 1;
     const pageSizeNum = isExport ? 999999 : parseInt(pageSize, 10) || 20;
     const skip = (pageNum - 1) * pageSizeNum;
 
-    const reportArray = await buildYearlyReportData(company, years);
+    const reportArray = await buildYearlyReportData(company, year, startDate, endDate);
     const totalCount = reportArray.length;
     const paginatedData = reportArray.slice(skip, skip + pageSizeNum);
     
@@ -434,14 +448,14 @@ exports.getYearlyReport = async (req, res) => {
 
 exports.exportYearlyReportExcel = async (req, res) => {
   try {
-    const { company, years } = req.query;
+    const { company, year, startDate, endDate } = req.query;
     if (!company || company === "all") {
-      return res.status(400).json({ success: false, message: "Company is compulsory for Yearly Report." });
+      return res.status(400).json({ success: false, message: "Company is compulsory for Annual Report." });
     }
-    const reportArray = await buildYearlyReportData(company, years);
+    const reportArray = await buildYearlyReportData(company, year, startDate, endDate);
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Yearly Report");
+    const worksheet = workbook.addWorksheet("Annual Report");
 
     const headerKeys = ["Base Date(Loan Date)", "Amount", "Total(To Pay)", "Name (Client Name)", "Paid Date(amount date)", "Amount Paid(how much we paid)", "Total Profit"];
     worksheet.addRow(headerKeys);
@@ -456,12 +470,17 @@ exports.exportYearlyReportExcel = async (req, res) => {
     worksheet.getColumn(6).width = 20;
     worksheet.getColumn(7).width = 15;
 
+    let lastClientName = null;
+
     reportArray.forEach((row) => {
+      const displayClientName = row.clientName === lastClientName ? "-" : (row.clientName || "-");
+      lastClientName = row.clientName;
+
       worksheet.addRow([
         row.baseDate || "-",
         parseFloat(row.amount || 0).toFixed(2),
         parseFloat(row.totalToPay || 0).toFixed(2),
-        row.clientName || "-",
+        displayClientName,
         row.paidDate ? new Date(row.paidDate).toLocaleDateString() : "-",
         parseFloat(row.amountPaid || 0).toFixed(2),
         parseFloat(row.totalProfit || 0).toFixed(2)
@@ -475,7 +494,7 @@ exports.exportYearlyReportExcel = async (req, res) => {
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename="Yearly_Report_${Date.now()}.xlsx"`);
+    res.setHeader("Content-Disposition", `attachment; filename="Annual_Report_${Date.now()}.xlsx"`);
     res.send(buffer);
   } catch (error) {
     console.error("Error exporting yearly report:", error);
@@ -485,25 +504,30 @@ exports.exportYearlyReportExcel = async (req, res) => {
 
 exports.exportYearlyReportPdf = async (req, res) => {
   try {
-    const { company, years } = req.query;
+    const { company, year, startDate, endDate } = req.query;
     if (!company || company === "all") {
-      return res.status(400).json({ success: false, message: "Company is compulsory for Yearly Report." });
+      return res.status(400).json({ success: false, message: "Company is compulsory for Annual Report." });
     }
-    const reportArray = await buildYearlyReportData(company, years);
+    const reportArray = await buildYearlyReportData(company, year, startDate, endDate);
 
     const doc = new PDFDocument({ margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="Yearly_Report_${Date.now()}.pdf"`);
+    res.setHeader("Content-Disposition", `attachment; filename="Annual_Report_${Date.now()}.pdf"`);
     doc.pipe(res);
 
-    doc.fontSize(20).text("Yearly Transactions Report", { align: "center" });
+    doc.fontSize(20).text("Annual Transactions Report", { align: "center" });
     doc.moveDown();
 
     if (reportArray.length === 0) {
       doc.fontSize(12).text("No transactions found.", { align: "center" });
     } else {
+      let lastClientName = null;
+
       reportArray.forEach((row) => {
-        doc.fontSize(12).font("Helvetica-Bold").text(`Client: ${row.clientName} | Date: ${row.baseDate}`);
+        const displayClientName = row.clientName === lastClientName ? "-" : row.clientName;
+        lastClientName = row.clientName;
+
+        doc.fontSize(12).font("Helvetica-Bold").text(`Client: ${displayClientName} | Date: ${row.baseDate}`);
         doc.fontSize(10).font("Helvetica").text(`Amount: $${parseFloat(row.amount || 0).toFixed(2)} | Total To Pay: $${parseFloat(row.totalToPay || 0).toFixed(2)}`);
         doc.fontSize(10).text(`Paid Date: ${row.paidDate ? new Date(row.paidDate).toLocaleDateString() : '-'} | Paid: $${parseFloat(row.amountPaid || 0).toFixed(2)} | Profit: $${parseFloat(row.totalProfit || 0).toFixed(2)}`);
         doc.moveDown(0.5);
@@ -519,20 +543,20 @@ exports.exportYearlyReportPdf = async (req, res) => {
   }
 };
 
-// --- Broker Fee Reports ---
+// --- Fee Reports (formerly Broker Fee) ---
 exports.getBrokerFeeReport = async (req, res) => {
   try {
-    const { company, startDate, endDate, page = 1, pageSize = 20, export: isExport = false } = req.query;
+    const { company, startDate, endDate, feeType, page = 1, pageSize = 20, export: isExport = false } = req.query;
     const pageNum = parseInt(page, 10) || 1;
     const pageSizeNum = isExport ? 999999 : parseInt(pageSize, 10) || 20;
     const skip = (pageNum - 1) * pageSizeNum;
 
-    const reportArray = await buildBrokerFeeReportData(company, startDate, endDate);
+    const reportArray = await buildBrokerFeeReportData(company, startDate, endDate, feeType);
     const totalCount = reportArray.length;
     const paginatedData = reportArray.slice(skip, skip + pageSizeNum);
     
     const summary = reportArray.reduce((acc, curr) => {
-      acc.totalFees += curr.brokerFee;
+      acc.totalFees += curr.feeAmount;
       acc.totalTransactions += 1;
       return acc;
     }, { totalFees: 0, totalTransactions: 0 });
@@ -551,17 +575,17 @@ exports.getBrokerFeeReport = async (req, res) => {
 
 exports.exportBrokerFeeReportExcel = async (req, res) => {
   try {
-    const { company, startDate, endDate } = req.query;
-    const reportArray = await buildBrokerFeeReportData(company, startDate, endDate);
+    const { company, startDate, endDate, feeType } = req.query;
+    const reportArray = await buildBrokerFeeReportData(company, startDate, endDate, feeType);
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Broker Fees");
+    const worksheet = workbook.addWorksheet("Fee Report");
 
     worksheet.columns = [
       { header: "DATE", key: "date", width: 15 },
       { header: "Company", key: "companyName", width: 20 },
       { header: "Name", key: "clientName", width: 30 },
-      { header: "Total", key: "brokerFee", width: 15 },
+      { header: "Fee Amount", key: "feeAmount", width: 15 },
     ];
     worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
     worksheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4472C4" } };
@@ -571,15 +595,15 @@ exports.exportBrokerFeeReportExcel = async (req, res) => {
         date: item.date,
         companyName: item.companyName,
         clientName: item.clientName,
-        brokerFee: parseFloat(item.brokerFee || 0).toFixed(2),
+        feeAmount: parseFloat(item.feeAmount || 0).toFixed(2),
       });
     });
 
-    worksheet.getColumn("brokerFee").numFmt = '"$"#,##0.00';
+    worksheet.getColumn("feeAmount").numFmt = '"$"#,##0.00';
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename="Broker_Fees_${Date.now()}.xlsx"`);
+    res.setHeader("Content-Disposition", `attachment; filename="Fee_Report_${Date.now()}.xlsx"`);
     res.send(buffer);
   } catch (error) {
     console.error("Error exporting broker fee report:", error);
@@ -589,15 +613,15 @@ exports.exportBrokerFeeReportExcel = async (req, res) => {
 
 exports.exportBrokerFeeReportPdf = async (req, res) => {
   try {
-    const { company, startDate, endDate } = req.query;
-    const reportArray = await buildBrokerFeeReportData(company, startDate, endDate);
+    const { company, startDate, endDate, feeType } = req.query;
+    const reportArray = await buildBrokerFeeReportData(company, startDate, endDate, feeType);
 
     const doc = new PDFDocument({ margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="Broker_Fees_${Date.now()}.pdf"`);
+    res.setHeader("Content-Disposition", `attachment; filename="Fee_Report_${Date.now()}.pdf"`);
     doc.pipe(res);
 
-    doc.fontSize(20).text("Broker Fee Report", { align: "center" });
+    doc.fontSize(20).text("Fee Report", { align: "center" });
     doc.moveDown();
 
     if (reportArray.length === 0) {
@@ -605,7 +629,7 @@ exports.exportBrokerFeeReportPdf = async (req, res) => {
     } else {
       reportArray.forEach((item) => {
         doc.fontSize(12).text(`Date: ${item.date} | Company: ${item.companyName}`);
-        doc.fontSize(10).text(`Client: ${item.clientName} | Fee: $${parseFloat(item.brokerFee || 0).toFixed(2)}`);
+        doc.fontSize(10).text(`Client: ${item.clientName} | Fee: $${parseFloat(item.feeAmount || 0).toFixed(2)}`);
         doc.moveDown(0.5);
         doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#cccccc").stroke();
         doc.moveDown(0.5);

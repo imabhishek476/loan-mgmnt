@@ -8,6 +8,7 @@ export interface ReportFilters {
   years?: string[];
   startDate?: string;
   endDate?: string;
+  feeType?: string;
   page?: number;
   pageSize?: number;
 }

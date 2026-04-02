@@ -10,7 +10,7 @@ import reportService from "../../../api/reportService";
 const FraudulentLoanResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; status: string; year: string } | null;
+  const state = location.state as { company: string; status: string; year: string; startDate: string; endDate: string } | null;
   const tableRef = useRef<any>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +34,8 @@ const FraudulentLoanResult: React.FC = () => {
         company: state.company !== "all" ? state.company : undefined,
         status: state.status !== "all" ? state.status : undefined,
         year: state.year || undefined,
+        startDate: state.startDate || undefined,
+        endDate: state.endDate || undefined,
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report");
@@ -49,6 +51,8 @@ const FraudulentLoanResult: React.FC = () => {
         company: state.company !== "all" ? state.company : undefined,
         status: state.status !== "all" ? state.status : undefined,
         year: state.year || undefined,
+        startDate: state.startDate || undefined,
+        endDate: state.endDate || undefined,
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report to PDF");
@@ -90,7 +94,7 @@ const FraudulentLoanResult: React.FC = () => {
             Back to Filters
           </Button>
           <Typography variant="h5" component="h1" fontWeight="bold">
-            Fraudulent Loan Report Results
+            Status Report Results
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -129,9 +133,9 @@ const FraudulentLoanResult: React.FC = () => {
             boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
           }}>
             <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
-              Total Fraudulent Amount
+              Total Amount
             </Typography>
-            <Typography variant="h5" color="error.main" fontWeight="bold">
+            <Typography variant="h5" color="primary.main" fontWeight="bold">
               ${(summary.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Typography>
           </Box>
@@ -165,6 +169,8 @@ const FraudulentLoanResult: React.FC = () => {
                    company: state.company !== "all" ? state.company : undefined,
                    status: state.status !== "all" ? state.status : undefined,
                    year: state.year || undefined,
+                   startDate: state.startDate || undefined,
+                   endDate: state.endDate || undefined,
                    page: query.page + 1,
                    pageSize: query.pageSize,
                  });

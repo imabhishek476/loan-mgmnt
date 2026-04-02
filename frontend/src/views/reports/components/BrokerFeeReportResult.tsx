@@ -10,8 +10,19 @@ import reportService from "../../../api/reportService";
 const BrokerFeeReportResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; startDate: string; endDate: string } | null;
+  const state = location.state as { company: string; startDate: string; endDate: string; feeType: string } | null;
   const tableRef = useRef<any>(null);
+
+  const getFeeLabel = (type: string) => {
+    switch(type) {
+      case 'applicationFee': return 'Application Fee';
+      case 'administrativeFee': return 'Administrative Fee';
+      case 'attorneyReviewFee': return 'Attorney Review Fee';
+      case 'annualMaintenanceFee': return 'Annual Maintenance Fee';
+      case 'brokerFee': 
+      default: return 'Broker Fee';
+    }
+  };
 
   const [error, setError] = useState<string | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
@@ -34,6 +45,7 @@ const BrokerFeeReportResult: React.FC = () => {
         company: state.company !== "all" ? state.company : undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
+        feeType: state.feeType || "brokerFee"
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report");
@@ -49,6 +61,7 @@ const BrokerFeeReportResult: React.FC = () => {
         company: state.company !== "all" ? state.company : undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
+        feeType: state.feeType || "brokerFee"
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report to PDF");
@@ -62,10 +75,10 @@ const BrokerFeeReportResult: React.FC = () => {
     { title: "Company", field: "companyName" },
     { title: "Client Name", field: "clientName" },
     { 
-      title: "Broker Fee", 
+      title: getFeeLabel(state ? state.feeType : ""), 
       render: (rd: any) => (
         <Box component="span" sx={{ fontWeight: 600, color: "#ed7d31" }}>
-          ${parseFloat(rd.brokerFee || 0).toFixed(2)}
+          ${parseFloat(rd.feeAmount || rd.brokerFee || 0).toFixed(2)}
         </Box>
       )
     }
@@ -79,7 +92,7 @@ const BrokerFeeReportResult: React.FC = () => {
             Back to Filters
           </Button>
           <Typography variant="h5" component="h1" fontWeight="bold">
-            Broker Fee Report Results
+            Fee Report Results
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -118,7 +131,7 @@ const BrokerFeeReportResult: React.FC = () => {
             boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
           }}>
             <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
-              Total Broker Fees
+              Total {state ? getFeeLabel(state.feeType) : "Fees"}
             </Typography>
             <Typography variant="h5" sx={{ color: '#ed7d31' }} fontWeight="bold">
               ${(summary.totalFees || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -154,6 +167,7 @@ const BrokerFeeReportResult: React.FC = () => {
                    company: state.company !== "all" ? state.company : undefined,
                    startDate: state.startDate || undefined,
                    endDate: state.endDate || undefined,
+                   feeType: state.feeType || "brokerFee",
                    page: query.page + 1,
                    pageSize: query.pageSize,
                  });
