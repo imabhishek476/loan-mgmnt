@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Autocomplete, TextField } from "@mui/material";
+import { toast } from "react-toastify";
 
 interface YearlyReportProps {
   companies: any[];
@@ -12,7 +13,7 @@ const smallLabel = {
 }; 
 
 const compactFieldSx = {
-  "& .MuiInputBase-root": { height: 40, backgroundColor: "#fff!important" },
+  "& .MuiInputBase-root": { minHeight: 40, backgroundColor: "#fff!important" },
   "& .MuiInputBase-input": { padding: "4px 6px", fontSize: 12.5 },
   "& .MuiInputLabel-root": { fontSize: 13 },
   "& .MuiInputAdornment-root": { margin: 0 },
@@ -21,52 +22,53 @@ const compactFieldSx = {
   "& .MuiPickersInputBase-root":{ backgroundColor: "#fff!important" }
 };
 
-const compactMultiFieldSx = {
-  "& .MuiInputBase-root": { minHeight: 40, backgroundColor: "#fff!important" },
-  "& .MuiInputBase-input": { fontSize: 12.5 },
-  "& .MuiInputLabel-root": { fontSize: 13 },
-};
+
 
 const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
   const navigate = useNavigate();
 
   // Filter state
-  const [company, setCompany] = useState("all");
-  const [selectedYears, setSelectedYears] = useState<string[]>([]);
+  const [company, setCompany] = useState<any[]>([]);
+  const [year, setYear] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   const handleReset = () => {
-    setCompany("all");
-    setSelectedYears([]);
+    setCompany([]);
+    setYear("");
+    setStartDate("");
+    setEndDate("");
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!company || company.length === 0) {
+      toast.error("At least provide company name.");
+      return;
+    }
     navigate("/reports/yearly-result", {
-      state: { company, selectedYears }
+      state: { company, year, startDate, endDate }
     });
   };
 
   return (
     <div className="rounded-lg mb-3">
       <div className="px-2 rounded-b-lg p-3">
-        <h2 className="text-lg font-bold text-gray-800 mb-2 text-left">Yearly Report Filters</h2>
+        <h2 className="text-lg font-bold text-gray-800 mb-2 text-left">Annual Report Filters</h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-2 mb-1 pt-2">
             <div>
               <Autocomplete
+                multiple
                 size="small"
-                options={[{_id: "all", companyName: "All Companies"}, ...companies]}
+                options={companies}
                 getOptionLabel={(option) => option.companyName || ""}
-                value={
-                  company === "all" 
-                    ? { _id: "all", companyName: "All Companies" } 
-                    : companies.find((c) => c._id === company) || null
-                }
-                onChange={(_, value) => setCompany(value?._id || "all")}
+                value={company}
+                onChange={(_, value) => setCompany(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Company"
+                    label="Companies"
                     color="success"
                     sx={compactFieldSx}
                     slotProps={{ inputLabel: smallLabel }}
@@ -76,23 +78,55 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ companies, years }) => {
               />
             </div>
             
-            <div className="sm:col-span-2">
+            <div>
               <Autocomplete
-                multiple
                 size="small"
+                freeSolo
+                disabled={!!startDate || !!endDate}
                 options={years.map(y => y.toString())}
-                value={selectedYears}
-                onChange={(_, value) => setSelectedYears(value)}
+                value={year || ""}
+                onChange={(_, value) => setYear(value || "")}
+                onInputChange={(_, value) => setYear(value || "")}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Years (Select Multiple)"
+                    label="Year"
                     color="success"
-                    sx={compactMultiFieldSx}
+                    sx={compactFieldSx}
                     slotProps={{ inputLabel: smallLabel }}
                     fullWidth
                   />
                 )}
+              />
+            </div>
+            
+            <div>
+              <TextField
+                type="date"
+                label="Start Date"
+                size="small"
+                color="success"
+                value={startDate}
+                disabled={!!year}
+                onChange={(e) => setStartDate(e.target.value)}
+                sx={compactFieldSx}
+                slotProps={{ inputLabel: { shrink: true, ...smallLabel.sx } }}
+                fullWidth
+              />
+            </div>
+
+            <div>
+              <TextField
+                type="date"
+                label="End Date"
+                size="small"
+                color="success"
+                value={endDate}
+                disabled={!!year}
+                onChange={(e) => setEndDate(e.target.value)}
+                sx={compactFieldSx}
+                slotProps={{ inputLabel: { shrink: true, ...smallLabel.sx } }}
+                fullWidth
               />
             </div>
 

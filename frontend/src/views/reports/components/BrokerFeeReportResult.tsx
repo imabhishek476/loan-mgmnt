@@ -10,17 +10,24 @@ import reportService from "../../../api/reportService";
 const BrokerFeeReportResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; startDate: string; endDate: string } | null;
+  const state = location.state as { company: any[]; startDate: string; endDate: string; feeType: any[] } | null;
   const tableRef = useRef<any>(null);
+
+  const getFeeLabel = (types: any[]) => {
+    if (!types || types.length === 0) return "Fees";
+    if (types.length === 1) return types[0].label;
+    return "Selected Fees";
+  };
 
   const [error, setError] = useState<string | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [hasData, setHasData] = useState(false);
+  const [summary, setSummary] = useState<{ totalFees: number; totalTransactions: number } | null>(null);
 
   useEffect(() => {
     if (!state) {
-      navigate("/reports");
+      navigate("/reports?tab=brokerFee");
     }
   }, [state, navigate]);
 
@@ -30,9 +37,10 @@ const BrokerFeeReportResult: React.FC = () => {
     try {
       setExportingExcel(true);
       await reportService.exportBrokerFeeReportExcel({
-        company: state.company !== "all" ? state.company : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
+        feeType: state.feeType && state.feeType.length > 0 ? state.feeType.map(f => f.value).join(",") : undefined
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report");
@@ -45,9 +53,10 @@ const BrokerFeeReportResult: React.FC = () => {
     try {
       setExportingPdf(true);
       await reportService.exportBrokerFeeReportPdf({
-        company: state.company !== "all" ? state.company : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
         startDate: state.startDate || undefined,
         endDate: state.endDate || undefined,
+        feeType: state.feeType && state.feeType.length > 0 ? state.feeType.map(f => f.value).join(",") : undefined
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report to PDF");
@@ -57,17 +66,17 @@ const BrokerFeeReportResult: React.FC = () => {
   };
 
   const columns = [
-    { title: "Company Name", field: "companyName" },
+    { title: "DATE", field: "date" },
+    { title: "Company", field: "companyName" },
+    { title: "Client Name", field: "clientName" },
     { 
-      title: "Total Broker Fees", 
+      title: getFeeLabel(state ? state.feeType : []), 
       render: (rd: any) => (
         <Box component="span" sx={{ fontWeight: 600, color: "#ed7d31" }}>
-          ${parseFloat(rd.totalBrokerFees || 0).toFixed(2)}
+          ${parseFloat(rd.feeAmount || rd.brokerFee || 0).toFixed(2)}
         </Box>
       )
-    },
-    { title: "Loan Count", field: "loanCount" },
-    { title: "Average Fee Per Loan", render: (rd: any) => `$${parseFloat(rd.averageFeePerLoan || 0).toFixed(2)}` }
+    }
   ];
 
   return (
@@ -78,7 +87,7 @@ const BrokerFeeReportResult: React.FC = () => {
             Back to Filters
           </Button>
           <Typography variant="h5" component="h1" fontWeight="bold">
-            Broker Fee Report Results
+            Fee Report Results
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -106,6 +115,41 @@ const BrokerFeeReportResult: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
+      {summary && hasData && (
+        <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+          <Box sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            bgcolor: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
+            minWidth: 200,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total {state ? getFeeLabel(state.feeType) : "Fees"}
+            </Typography>
+            <Typography variant="h5" sx={{ color: '#ed7d31' }} fontWeight="bold">
+              ${(summary.totalFees || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            bgcolor: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
+            minWidth: 200,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Transactions
+            </Typography>
+            <Typography variant="h5" color="primary.main" fontWeight="bold">
+              {summary.totalTransactions}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white mt-4">
         <MaterialTable
           tableRef={tableRef}
@@ -115,14 +159,18 @@ const BrokerFeeReportResult: React.FC = () => {
             new Promise(async (resolve) => {
                try {
                  const response = await reportService.getBrokerFeeReport({
-                   company: state.company !== "all" ? state.company : undefined,
+                   company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
                    startDate: state.startDate || undefined,
                    endDate: state.endDate || undefined,
+                   feeType: state.feeType && state.feeType.length > 0 ? state.feeType.map(f => f.value).join(",") : undefined,
                    page: query.page + 1,
                    pageSize: query.pageSize,
                  });
                  if (response.data.success) {
                    setHasData(response.data.data.length > 0);
+                   if (response.data.summary) {
+                     setSummary(response.data.summary);
+                   }
                    resolve({
                      data: response.data.data,
                      page: query.page,

@@ -12,7 +12,7 @@ const smallLabel = {
 }; 
 
 const compactFieldSx = {
-  "& .MuiInputBase-root": { height: 40, backgroundColor: "#fff!important" },
+  "& .MuiInputBase-root": { minHeight: 40, backgroundColor: "#fff!important" },
   "& .MuiInputBase-input": { padding: "4px 6px", fontSize: 12.5 },
   "& .MuiInputLabel-root": { fontSize: 13 },
   "& .MuiInputAdornment-root": { margin: 0 },
@@ -28,44 +28,45 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
   const navigate = useNavigate();
 
   // Filter state
-  const [company, setCompany] = useState("all");
-  const [status, setStatus] = useState("Fraud");
+  const [company, setCompany] = useState<any[]>([]);
+  const [status, setStatus] = useState<string[]>([]);
   const [year, setYear] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const handleReset = () => {
-    setCompany("all");
-    setStatus("Fraud");
+    setCompany([]);
+    setStatus([]);
     setYear("");
+    setStartDate("");
+    setEndDate("");
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     navigate("/reports/fraud-result", {
-      state: { company, status, year }
+      state: { company, status, year, startDate, endDate }
     });
   };
 
   return (
     <div className="rounded-lg mb-3">
       <div className="px-2 rounded-b-lg p-3">
-        <h2 className="text-lg font-bold text-gray-800 mb-2 text-left">Fraudulent Loan Filters</h2>
+        <h2 className="text-lg font-bold text-gray-800 mb-2 text-left">Status Report Filters</h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 mb-1 pt-2">
             <div>
               <Autocomplete
+                multiple
                 size="small"
-                options={[{_id: "all", companyName: "All Companies"}, ...companies]}
+                options={companies}
                 getOptionLabel={(option) => option.companyName || ""}
-                value={
-                  company === "all" 
-                    ? { _id: "all", companyName: "All Companies" } 
-                    : companies.find((c) => c._id === company) || null
-                }
-                onChange={(_, value) => setCompany(value?._id || "all")}
+                value={company}
+                onChange={(_, value) => setCompany(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Company"
+                    label="Companies"
                     color="success"
                     sx={compactFieldSx}
                     slotProps={{ inputLabel: smallLabel }}
@@ -77,10 +78,11 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
             
             <div>
               <Autocomplete
+                multiple
                 size="small"
-                options={["All Statuses", "Fraud", "Lost", "Denied"]}
-                value={status === "all" ? "All Statuses" : status}
-                onChange={(_, value) => setStatus(value === "All Statuses" || !value ? "all" : value)}
+                options={["Active", "Paid Off", "Partial Payment", "Fraud", "Lost", "Denied", "Merged"]}
+                value={status}
+                onChange={(_, value) => setStatus(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -97,14 +99,12 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
             <div>
               <Autocomplete
                 size="small"
-                options={[{label: "All Years", value: ""}, ...years.map(y => ({label: y.toString(), value: y.toString()}))]}
-                getOptionLabel={(option) => option.label || ""}
-                value={
-                  year === "" 
-                    ? { label: "All Years", value: "" }
-                    : { label: year, value: year }
-                }
-                onChange={(_, value) => setYear(value?.value || "")}
+                freeSolo
+                disabled={!!startDate || !!endDate}
+                options={years.map(y => y.toString())}
+                value={year || ""}
+                onChange={(_, value) => setYear(value || "")}
+                onInputChange={(_, value) => setYear(value || "")}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -115,6 +115,36 @@ const FraudulentLoanReport: React.FC<FraudulentLoanReportProps> = ({
                     fullWidth
                   />
                 )}
+              />
+            </div>
+            
+            <div>
+              <TextField
+                type="date"
+                label="Start Date"
+                size="small"
+                color="success"
+                value={startDate}
+                disabled={!!year}
+                onChange={(e) => setStartDate(e.target.value)}
+                sx={compactFieldSx}
+                slotProps={{ inputLabel: { shrink: true, ...smallLabel.sx } }}
+                fullWidth
+              />
+            </div>
+
+            <div>
+              <TextField
+                type="date"
+                label="End Date"
+                size="small"
+                color="success"
+                value={endDate}
+                disabled={!!year}
+                onChange={(e) => setEndDate(e.target.value)}
+                sx={compactFieldSx}
+                slotProps={{ inputLabel: { shrink: true, ...smallLabel.sx } }}
+                fullWidth
               />
             </div>
 

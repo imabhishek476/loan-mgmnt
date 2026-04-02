@@ -10,17 +10,18 @@ import reportService from "../../../api/reportService";
 const FraudulentLoanResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; status: string; year: string } | null;
+  const state = location.state as { company: any[]; status: string[]; year: string; startDate: string; endDate: string } | null;
   const tableRef = useRef<any>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [hasData, setHasData] = useState(false);
+  const [summary, setSummary] = useState<{ totalAmount: number; totalLoans: number } | null>(null);
 
   useEffect(() => {
     if (!state) {
-      navigate("/reports");
+      navigate("/reports?tab=fraudulent");
     }
   }, [state, navigate]);
 
@@ -30,9 +31,11 @@ const FraudulentLoanResult: React.FC = () => {
     try {
       setExportingExcel(true);
       await reportService.exportFraudulentReportExcel({
-        company: state.company !== "all" ? state.company : undefined,
-        status: state.status !== "all" ? state.status : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+        status: state.status && state.status.length > 0 ? state.status.join(",") : undefined,
         year: state.year || undefined,
+        startDate: state.startDate || undefined,
+        endDate: state.endDate || undefined,
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report");
@@ -45,9 +48,11 @@ const FraudulentLoanResult: React.FC = () => {
     try {
       setExportingPdf(true);
       await reportService.exportFraudulentReportPdf({
-        company: state.company !== "all" ? state.company : undefined,
-        status: state.status !== "all" ? state.status : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+        status: state.status && state.status.length > 0 ? state.status.join(",") : undefined,
         year: state.year || undefined,
+        startDate: state.startDate || undefined,
+        endDate: state.endDate || undefined,
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report to PDF");
@@ -89,7 +94,7 @@ const FraudulentLoanResult: React.FC = () => {
             Back to Filters
           </Button>
           <Typography variant="h5" component="h1" fontWeight="bold">
-            Fraudulent Loan Report Results
+            Status Report Results
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -117,6 +122,42 @@ const FraudulentLoanResult: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
+      {summary && hasData && (
+        <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+          <Box sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            bgcolor: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
+            minWidth: 200,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Amount
+            </Typography>
+            <Typography variant="h5" color="primary.main" fontWeight="bold">
+              ${(summary.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            p: 1, 
+            borderRadius: 2, 
+            bgcolor: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
+            minWidth: 200,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Affected Loans
+            </Typography>
+            <Typography variant="h5" color="primary.main" fontWeight="bold">
+              {summary.totalLoans}
+            </Typography>
+            <span style={{fontSize: "12px", color: "#64748b"}}>(Fraud, Lost, Denied)</span>
+          </Box>
+        </Box>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white mt-4">
         <MaterialTable
           tableRef={tableRef}
@@ -126,14 +167,19 @@ const FraudulentLoanResult: React.FC = () => {
             new Promise(async (resolve) => {
                try {
                  const response = await reportService.getFraudulentReport({
-                   company: state.company !== "all" ? state.company : undefined,
-                   status: state.status !== "all" ? state.status : undefined,
+                   company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+                   status: state.status && state.status.length > 0 ? state.status.join(",") : undefined,
                    year: state.year || undefined,
+                   startDate: state.startDate || undefined,
+                   endDate: state.endDate || undefined,
                    page: query.page + 1,
                    pageSize: query.pageSize,
                  });
                  if (response.data.success) {
                    setHasData(response.data.data.length > 0);
+                   if (response.data.summary) {
+                     setSummary(response.data.summary);
+                   }
                    resolve({
                      data: response.data.data,
                      page: query.page,

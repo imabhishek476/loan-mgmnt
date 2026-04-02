@@ -8,6 +8,7 @@ export interface ReportFilters {
   years?: string[];
   startDate?: string;
   endDate?: string;
+  feeType?: string;
   page?: number;
   pageSize?: number;
 }
@@ -15,6 +16,7 @@ export interface ReportFilters {
 export interface ReportData {
   success: boolean;
   data: any[];
+  summary?: any;
   pagination?: {
     page: number;
     pageSize: number;

@@ -10,17 +10,18 @@ import reportService from "../../../api/reportService";
 const YearlyReportResult: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { company: string; selectedYears: string[] } | null;
+  const state = location.state as { company: any[]; year: string; startDate: string; endDate: string } | null;
   const tableRef = useRef<any>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [hasData, setHasData] = useState(false);
+  const [summary, setSummary] = useState<{ totalAmount: number; totalPaid: number; totalProfit: number } | null>(null);
 
   useEffect(() => {
     if (!state) {
-      navigate("/reports");
+      navigate("/reports?tab=yearly");
     }
   }, [state, navigate]);
 
@@ -30,8 +31,10 @@ const YearlyReportResult: React.FC = () => {
     try {
       setExportingExcel(true);
       await reportService.exportYearlyReportExcel({
-        company: state.company !== "all" ? state.company : undefined,
-        years: state.selectedYears.length > 0 ? state.selectedYears : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+        year: state.year || undefined,
+        startDate: state.startDate || undefined,
+        endDate: state.endDate || undefined,
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report");
@@ -44,8 +47,10 @@ const YearlyReportResult: React.FC = () => {
     try {
       setExportingPdf(true);
       await reportService.exportYearlyReportPdf({
-        company: state.company !== "all" ? state.company : undefined,
-        years: state.selectedYears.length > 0 ? state.selectedYears : undefined,
+        company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+        year: state.year || undefined,
+        startDate: state.startDate || undefined,
+        endDate: state.endDate || undefined,
       });
     } catch (err: any) {
       setError(err.message || "Error exporting report to PDF");
@@ -55,28 +60,26 @@ const YearlyReportResult: React.FC = () => {
   };
 
   const columns = [
-    { title: "Company Name", field: "companyName" },
-    { title: "Year", field: "year" },
-    { title: "Total Loans", field: "totalLoans" },
-    { title: "Total Base Amount", render: (rd: any) => `$${parseFloat(rd.totalBaseAmount || 0).toFixed(2)}` },
-    { title: "Total Fees", render: (rd: any) => `$${parseFloat(rd.totalFees || 0).toFixed(2)}` },
-    { title: "Total Interest", render: (rd: any) => `$${parseFloat(rd.totalInterest || 0).toFixed(2)}` },
+    { title: "Base Date", field: "baseDate" },
+    { title: "Amount", render: (rd: any) => `$${parseFloat(rd.amount || 0).toFixed(2)}` },
+    { title: "Total Expected", render: (rd: any) => `$${parseFloat(rd.totalToPay || 0).toFixed(2)}` },
+    { title: "Client Name", field: "displayClientName" },
+    { title: "Paid Date", field: "paidDate", emptyValue: "-" },
+    { title: "Amount Paid", render: (rd: any) => `$${parseFloat(rd.amountPaid || 0).toFixed(2)}` },
     {
-      title: "Net Profit",
+      title: "Total Profit",
       render: (rd: any) => (
         <Box
           component="span"
           sx={{
-            color: parseFloat(rd.netProfit) >= 0 ? "#27ae60" : "#e74c3c",
+            color: parseFloat(rd.totalProfit) >= 0 ? "#27ae60" : "#e74c3c",
             fontWeight: 600,
           }}
         >
-          ${parseFloat(rd.netProfit || 0).toFixed(2)}
+          ${parseFloat(rd.totalProfit || 0).toFixed(2)}
         </Box>
       )
-    },
-    { title: "Active Loans", field: "activeLoanCount" },
-    { title: "Paid Off", field: "paidOffCount" }
+    }
   ];
 
   return (
@@ -87,7 +90,7 @@ const YearlyReportResult: React.FC = () => {
             Back to Filters
           </Button>
           <Typography variant="h5" component="h1" fontWeight="bold">
-            Yearly Report Results
+            Annual Report Results
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -115,6 +118,35 @@ const YearlyReportResult: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
+      {summary && hasData && (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
+          <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', minWidth: 200, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Base Amount
+            </Typography>
+            <Typography variant="h5" color="primary.main" fontWeight="bold">
+              ${(summary.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', minWidth: 200, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Amount Paid
+            </Typography>
+            <Typography variant="h5" color="success.main" fontWeight="bold">
+              ${(summary.totalPaid || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', minWidth: 200, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold" gutterBottom>
+              Total Profit
+            </Typography>
+            <Typography variant="h5" color={(summary.totalProfit || 0) >= 0 ? "success.dark" : "error.main"} fontWeight="bold">
+              ${(summary.totalProfit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white mt-4">
         <MaterialTable
           tableRef={tableRef}
@@ -124,15 +156,29 @@ const YearlyReportResult: React.FC = () => {
             new Promise(async (resolve) => {
                try {
                  const response = await reportService.getYearlyReport({
-                   company: state.company !== "all" ? state.company : undefined,
-                   years: state.selectedYears.length > 0 ? state.selectedYears : undefined,
+                   company: state.company && state.company.length > 0 ? state.company.map(c => c._id).join(",") : undefined,
+                   year: state.year || undefined,
+                   startDate: state.startDate || undefined,
+                   endDate: state.endDate || undefined,
                    page: query.page + 1,
                    pageSize: query.pageSize,
                  });
                  if (response.data.success) {
                    setHasData(response.data.data.length > 0);
+                   if (response.data.summary) {
+                     setSummary(response.data.summary);
+                   }
+
+                   let lastClientName: string | null = null;
+                   const processedData = response.data.data.map((row: any) => {
+                     const displayRow = { ...row };
+                     displayRow.displayClientName = row.clientName === lastClientName ? "-" : (row.clientName || "-");
+                     lastClientName = row.clientName;
+                     return displayRow;
+                   });
+
                    resolve({
-                     data: response.data.data,
+                     data: processedData,
                      page: query.page,
                      totalCount: response.data.pagination?.totalRecords || 0,
                    });
@@ -167,8 +213,8 @@ const YearlyReportResult: React.FC = () => {
               top: 0,
               zIndex: 30,
             },
-            maxBodyHeight: "calc(100vh - 250px)",
-            minBodyHeight: "calc(100vh - 250px)",
+            maxBodyHeight: "calc(100vh - 300px)",
+            minBodyHeight: "calc(100vh - 300px)",
             rowStyle: {
               fontSize: "13px",
               height: 38,
