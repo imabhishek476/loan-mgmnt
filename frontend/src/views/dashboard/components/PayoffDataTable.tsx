@@ -5,6 +5,8 @@ import { Autocomplete, TextField } from "@mui/material";
 import { dashboardStore } from "../../../store/DashboardStore";
 import { calculateLoanAmounts, formatUSD } from "../../../utils/loanCalculations";
 import moment from "moment";
+import { exportPayoffStats } from "../../../services/DashboardService";
+import { exportToExcel } from "../../../utils/exportExcel";
 
 interface PayoffDataTableProps {
   loading: boolean;
@@ -57,10 +59,42 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
     // All end dates are before today → return last tenure (overdue)
     return tenureArray[tenureArray.length - 1];
   };
+  const handleExport = async () => {
+  const res = await exportPayoffStats("all");
 
+  const formatted = res.data.map((row) => {
+    const loanTerms = getTermForToDate(
+      moment().format("MM-DD-YYYY"),
+      row.tenures
+    );
+
+    const calc = calculateLoanAmounts({
+      ...row,
+      loanTerms,
+    });
+
+    return {
+      Client: row.clientName,
+      Company: row.companyName,
+      TotalLoan: Number(row.subTotal || 0).toLocaleString(),
+      Remaining: Number(calc.remaining || 0).toLocaleString(),
+      Paid: Number(calc.paidAmount || 0).toLocaleString(),
+      IssueDate: row.issueDate
+        ? moment(row.issueDate).format("MM-DD-YYYY")
+        : "",
+      "End Date": loanTerms?.endDate
+        ? moment(loanTerms.endDate, "MM-DD-YYYY").format("MM-DD-YYYY")
+        : "",
+
+      Status: row.status,
+    };
+  });
+
+  exportToExcel(formatted);
+};
   return (
     <div>
-      <div className="flex gap-2 mb-3">
+      <div className="flex gap-2 mb-3 items-center">
         <Autocomplete
           options={payoffOptions}
           value={payoffOptions.find((o) => o.value === payoffFilter)}
@@ -79,6 +113,13 @@ const PayoffDataTable: React.FC<PayoffDataTableProps> = ({ loading }) => {
           <Search size={26} />
           <span className="font-medium">Search</span>
         </div>
+        <button
+          onClick={handleExport}
+          className="ml-auto px-4 py-2 font-bold bg-green-700 text-white rounded-lg hover:bg-green-800 transition"
+          title="Export"
+        >
+          Export
+        </button>
       </div>
 
       <MaterialTable

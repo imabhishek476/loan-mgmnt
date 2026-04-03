@@ -22,6 +22,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "@tinymce/tinymce-react": "^6.3.0",
     "axios": "^1.12.2",
+    "file-saver": "^2.0.5",
     "js-cookie": "^3.0.5",
     "lodash": "^4.17.21",
     "lucide-react": "^0.544.0",
@@ -40,7 +41,8 @@
     "react-toastify": "^11.0.5",
     "recharts": "^3.2.1",
     "redux-persist": "^6.0.0",
-    "tinymce": "^8.3.2"
+    "tinymce": "^8.3.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
