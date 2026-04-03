@@ -15,13 +15,13 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
 const clientRouter = express.Router();
 
-clientRouter.route("/fixCaseIds").get(isAuthenticated, isAdmin, fixCaseIds);
-clientRouter.route("/add").post(isAuthenticated, isAdmin, AddClients);
-clientRouter.route("/search").get(isAuthenticated, isAdmin, searchClients);
-clientRouter.route("/loans/:id").get(isAuthenticated, isAdmin, getClietsLoan);
-clientRouter.route("/:id").put(isAuthenticated, isAdmin, updateClient);
+clientRouter.route("/fixCaseIds").get(isAuthenticated, fixCaseIds);
+clientRouter.route("/add").post(isAuthenticated, AddClients);
+clientRouter.route("/search").get(isAuthenticated, searchClients);
+clientRouter.route("/loans/:id").get(isAuthenticated, getClietsLoan);
+clientRouter.route("/:id").put(isAuthenticated,  updateClient);
 clientRouter.route("/:id").delete(isAuthenticated, isAdmin, deleteClient);
-clientRouter.route("/toggle/:id").put(isAuthenticated, isAdmin, toggleClientStatus);
-clientRouter.route("/:id").get(isAuthenticated, isAdmin, getClientById);
-clientRouter.route("/checkDuplicate").post(isAuthenticated, isAdmin, checkDuplicateClient);
+clientRouter.route("/toggle/:id").put(isAuthenticated, toggleClientStatus);
+clientRouter.route("/:id").get(isAuthenticated, getClientById);
+clientRouter.route("/checkDuplicate").post(isAuthenticated, checkDuplicateClient);
 module.exports = clientRouter;
