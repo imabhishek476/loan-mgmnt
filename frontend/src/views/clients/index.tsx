@@ -33,7 +33,7 @@ const clientFields: FieldConfig[] = [
   { label: "Full Name", key: "fullName", type: "text", required: true },
   { label: "Email", key: "email", type: "email" },
   { label: "Phone", key: "phone", type: "text" },
-  { label: "SSN / TIN (Last 4 Digits)", key: "ssn", type: "text", onChange: (value: string) => formatSSNInput(value) },
+  { label: "SSN / TIN (Last 4 Digits)", key: "ssn", type: "text" },
   // { label: "Underwriter", key: "underwriter", type: "text" },
   // { 
   //   label: "UCC Filed", 
@@ -76,7 +76,7 @@ const clientFields: FieldConfig[] = [
   // { label: "Case ID", key: "caseId", type: "text" },
   // { label: "Index #", key: "indexNumber", type: "text" },
   { label: "Loan Type", key: "loanType", type: "select", required: false ,options: getLoanTypeOptions() },
-  { label: "Address", key: "address", type: "text" },
+  { label: "Mailing Address", key: "address", type: "text" },
   { label: "Date of Birth", key: "dob", type: "date" },
   { label: "Accident Date", key: "accidentDate", type: "date" },
   { label: "Memo", key: "memo", type: "textarea", required: false },
