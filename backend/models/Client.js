@@ -30,6 +30,11 @@ const ClientSchema = new mongoose.Schema(
   },
   underwriter: String,
   uccFiled: Boolean,
+  requestedBy: {
+    type: String,
+    enum: ["applicant", "law_office"],
+    default: null,
+  },
   medicalParalegal: String,
   caseId: {
     type: String,

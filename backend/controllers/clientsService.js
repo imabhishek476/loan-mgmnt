@@ -24,6 +24,7 @@ exports.AddClients = async (req, res) => {
       underwriter,
       uccFiled,
       medicalParalegal,
+      requestedBy,
       loanType,
       indexNumber,
       memo,
@@ -102,7 +103,7 @@ let newClient;
       attorneyId: attorney?._id || null,               
       // attorneyName: attorney?.fullName || attorneyName || "",
       memo: memo || "",
-
+      requestedBy: requestedBy || "",
       customFields: cleanedCustomFields,
       createdBy: req.user ? req.user.id : null,
     });

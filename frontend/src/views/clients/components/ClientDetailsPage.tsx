@@ -15,6 +15,7 @@ const ClientDetailsPage = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [attorneyOptions, setAttorneyOptions] = useState<any[]>([]);
+  const [requestedBy, setRequestedBy] = useState("");
 
   const clientFields: FieldConfig[] = [
     { label: "Full Name", key: "fullName", type: "text", required: true },
@@ -41,7 +42,25 @@ const ClientDetailsPage = observer(() => {
         value: attorney._id,
       })),
     },
-    { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
+      {
+    label: "Medical Paralegal Type",
+    key: "requestedBy",
+    type: "select",
+    options: [
+      { label: "Applicant", value: "applicant" },
+      { label: "Law Office", value: "law_office" },
+    ],
+    onChange: (value: string) => setRequestedBy(value),
+  },
+
+  {
+    label:
+      requestedBy === "law_office"
+        ? "Law Office Name"
+        : "Applicant Name",
+    key: "medicalParalegal",
+    type: "text",
+  },
     // { label: "Case ID", key: "caseId", type: "text", disabled: true  },
     // { label: "Index #", key: "indexNumber", type: "text" },
     {
