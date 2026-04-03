@@ -55,7 +55,8 @@ export const LOAN_TYPE_OPTIONS = [
   { label: "Workers Comp", value: "Workers Comp" },
   { label: "MVA", value: "MVA" },
   { label: "Labor Law", value: "Labor Law" },
-  { label: "Commercial", value: "Commercial" },
+  { label: "Personal", value: "Personal" },
+  { label: "Corporate", value: "Corporate" },
 ];
 export const formatMoney = (val: any) => {
   return convertToUsd.format(convertToNumber(val)).replace("$", "");

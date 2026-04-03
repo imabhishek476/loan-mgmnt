@@ -43,7 +43,9 @@ const ClientSchema = new mongoose.Schema(
     "Workers Comp",
     "MVA",
     "Labor Law",
-    "Commercial",
+    "Personal",
+    "Corporate",
+
     ],
   },
   ssn: String,
