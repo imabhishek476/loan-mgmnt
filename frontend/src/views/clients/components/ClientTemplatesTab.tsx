@@ -32,6 +32,7 @@ const ClientTemplatesTab = ({
   const [calculatedLoan,setCalculatedLoan] = useState<any>(null);
   const [reductionAmount, setReductionAmount] = useState<number | null>(null);
   const [runningTenureEndDate, setRunningTenureEndDate] = useState<moment.Moment | null>(null);
+  const [reductionInput, setReductionInput] = useState("");
 
   const companyOptions = useMemo(() => {
     const map = new Map();
@@ -495,9 +496,10 @@ useEffect(() => {
             options={companyLoans}
             sx={{ width: 350 }}
             getOptionLabel={(loan: any) =>
-              ` $${moneyFormat(
-                loan.baseAmount
-              )} - ${moment(loan.issueDate).format("MM/DD/YYYY")} - (${loan.status})`
+              ` ${new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(Number(loan.baseAmount || 0))}  - ${moment(loan.issueDate).format("MM/DD/YYYY")} - (${loan.status})`
             }
             value={selectedLoan}
             //@ts-ignore
@@ -703,15 +705,16 @@ useEffect(() => {
           </label>
             <input
             type="text"
-            value={reductionAmount ?? ""}
+            value={reductionInput ? (Number(reductionInput) / 100).toFixed(2) : ""}
             onChange={(e) => {
-              const v = e.target.value;
-              if (v === "") {
+              const raw = e.target.value.replace(/\D/g, ""); 
+              setReductionInput(raw);
+              if (!raw) {
                 setReductionAmount(null);
                 return;
               }
-              const num = (parseInt(v.replace(/\D/g, ""), 10) / 100).toFixed(2);
-              setReductionAmount(Number(num));
+              const num = parseFloat(raw) / 100;
+              setReductionAmount(num);
             }}
             className="border rounded-md px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-green-600 outline-none"
             placeholder="Enter amount"
@@ -735,10 +738,12 @@ useEffect(() => {
               Loan Term: {calculatedLoan?.dynamicTerm} Months ({runningTenureEndDate?.format("MMM DD, YYYY")})
               </span>
 
-              <span className="bg-green-700 text-white px-3 py-1 rounded-md  font-semibold">
-                Total: $ {moneyFormat( editableLoan?.total || calculatedLoan.total || 0)}
+              <span className="bg-green-700 text-white px-3 py-1 rounded-md font-semibold">
+                Total: {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(Number(editableLoan?.total || calculatedLoan?.total || 0))}
               </span>
-
             </div>
 
           </div>
@@ -763,6 +768,7 @@ useEffect(() => {
       <Field
         label="Base Amount"
          type="number"
+         formatMoney={true}
         value={editableLoan?.baseAmount}
         onChange={(v:any)=>setEditableLoan({...editableLoan,baseAmount:v})}
       />
@@ -770,6 +776,7 @@ useEffect(() => {
       <Field
         label="Monthly Rate"
         type="number"
+        formatMoney={true}
         value={editableLoan?.monthlyRate}
         onChange={(v:any)=>setEditableLoan({...editableLoan,monthlyRate:v})}
       />
@@ -777,6 +784,7 @@ useEffect(() => {
       <Field
         label="Interest Amount"
         type="number"
+        formatMoney={true}
         value={editableLoan?.interestAmount}
         onChange={(v:any)=>
           setEditableLoan({
@@ -788,18 +796,21 @@ useEffect(() => {
        <Field
         label="Subtotal"
         type="number"
+        formatMoney={true}
         value={editableLoan?.subtotal || calculatedLoan?.subtotal}
         onChange={(v:any)=>setEditableLoan({...editableLoan,subtotal:v})}
       />
       <Field
         label="Previous Loan Amount"
         type="number"
+        formatMoney={true}
         value={editableLoan?.previousLoanAmount}
         onChange={(v:any)=>setEditableLoan({...editableLoan,previousLoanAmount:v})}
       />
        <Field
         label="Total Principal"
         type="number"
+        formatMoney={true}
         value={editableLoan?.totalPrincipal}
         onChange={(v:any)=>
           setEditableLoan({
@@ -812,6 +823,7 @@ useEffect(() => {
       <Field
         label="Loan Total"
         type="number"
+        formatMoney={true}
         value={editableLoan?.total}
         onChange={(v:any)=>
           setEditableLoan({
@@ -823,6 +835,7 @@ useEffect(() => {
       <Field
         label="Paid Amount"
         type="number"
+        formatMoney={true}
         value={editableLoan?.paidAmount}
         onChange={(v:any)=>
           setEditableLoan({
@@ -835,6 +848,7 @@ useEffect(() => {
         <Field
         label="Remaining Amount"
         type="number"
+        formatMoney={true}
         value={editableLoan?.remaining}
         onChange={(v:any)=>
           setEditableLoan({
@@ -955,29 +969,45 @@ useEffect(() => {
 /* ---------------- Field ---------------- */
 
 const Field = ({ label, value, onChange, type = "text", preview, readOnly = false ,formatMoney = false }: any) => {
-const handleChange = (e:any) => {
+ const [rawValue, setRawValue] = useState("");
+  useEffect(() => {
+  if (formatMoney && value !== undefined && value !== null) {
+    const num = Number(value);
+
+    if (!isNaN(num)) {
+      const digits = Math.round(num * 100).toString();
+      setRawValue(digits);
+    } else {
+      setRawValue("");
+    }
+  }
+}, [value, formatMoney]);
+const handleChange = (e: any) => {
   if (readOnly) return;
 
   let v = e.target.value;
 
-  // ✅ remove spaces (fix your main bug)
-  v = v.replace(/\s/g, "");
+    if (type === "number" && formatMoney) {
+      const raw = v.replace(/\D/g, "");
 
-  if (type === "number") {
+      setRawValue(raw);
 
-    if (v === "") {
+    if (!raw) {
       onChange("");
       return;
     }
 
-    // ✅ ONLY apply /100 logic when needed
-    if (formatMoney) {
-      const num = (parseInt(v.replace(/\D/g, ""), 10) / 100).toFixed(2);
-      onChange(num);
+      const num = parseFloat(raw) / 100;
+      onChange(num.toFixed(2));
       return;
     }
 
-    // ✅ NORMAL number (like baseAmount)
+    v = v.replace(/\s/g, "");
+    if (type === "number") {
+      if (v === "") {
+        onChange("");
+        return;
+      }
     if (!/^\d*\.?\d*$/.test(v)) return;
 
     onChange(v);
@@ -995,7 +1025,13 @@ const handleChange = (e:any) => {
 
       <input
         type="text"
-        value={value ?? ""}
+        value={
+          formatMoney
+            ? rawValue
+              ? (Number(rawValue) / 100).toFixed(2)
+              : ""
+            : value ?? ""
+        }
         readOnly={readOnly}
         onChange={handleChange}
         className={`border rounded-md px-3 py-2 text-sm ${
