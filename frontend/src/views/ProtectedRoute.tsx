@@ -5,9 +5,10 @@ import { userStore } from "../store/UserStore";
 import FullPageLoader from "../components/FullPageLoader";
 interface ProtectedRouteProps {
   children: React.ReactElement;
+   allowedRoles?: string[]; 
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = observer(({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = observer(({ children,allowedRoles }) => {
   const [checking, setChecking] = useState(true);
 
   const checkUser = async () => {
@@ -29,6 +30,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = observer(({ children }) =>
 
   if (!userStore.user) {
     return <Navigate to="/login" replace />;
+  }
+  if (
+      allowedRoles &&
+      !allowedRoles.includes(userStore.user.role)
+    ) {
+      return <Navigate to="/dashboard" replace />;
   }
 
   return children;

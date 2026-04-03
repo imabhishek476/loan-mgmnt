@@ -16,6 +16,7 @@ import NotFound from "./views/components/404";
 import { ErrorMessage } from "./components/ErrorMessage";
 import ClientDetailsPage from "./views/clients/components/ClientDetailsPage";
 import TemplateEditor from "./views/administration/components/TemplateEditor";
+import { userStore } from "./store/UserStore";
 
 const appRouter = createBrowserRouter([
   {
@@ -35,10 +36,25 @@ const appRouter = createBrowserRouter([
     ),
     errorElement: <ErrorMessage />,
     children: [
-    { path: "", element: <Navigate to="/dashboard" replace /> },
+    {
+    path: "",
+    element: (
+      <ProtectedRoute>
+        {userStore.user?.role === "admin" ? (
+          <Navigate to="/dashboard" replace />
+        ) : (
+          <Navigate to="/clients" replace />
+        )}
+      </ProtectedRoute>
+    ),
+  },
       {
         path: "/dashboard",
-        element: <Dashboard />,
+        element: (
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/clients",
