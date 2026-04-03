@@ -111,7 +111,7 @@ const Dashboard = observer(() => {
   const [filteredLoansByCompany, setFilteredLoansByCompany] = useState<any[]>(
     []
   );
-  const [viewMode, setViewMode] = useState<"graph" | "upcoming">("upcoming");
+  const [viewMode, setViewMode] = useState<"graph">("graph");
 const { globalStats } = dashboardStore;
 
   const [filters, setFilters] = useState({
@@ -266,22 +266,8 @@ const { globalStats } = dashboardStore;
         <div className="relative flex bg-gray-100 border border-gray-300 rounded-md p-1 shadow-sm">
           {/* Sliding Highlight */}
           <div
-            className={`absolute top-1 bottom-1 rounded-md bg-[#166534]  transition-all duration-300 ease-in-out ${
-              viewMode === "upcoming"
-                ? "left-1 w-[160px]"
-                : "left-[165px] w-[220px]"
-            }`}
+            className={`absolute top-1 bottom-1 rounded-md bg-[#166534]  transition-all duration-300 ease-in-out left-1 w-[220px]`}
           />
-          {/* Buttons */}
-          <button
-            onClick={() => setViewMode("upcoming")}
-            className={`relative z-10 w-[160px] text-center px-4 py-2 rounded-full font-semibold transition ${
-              viewMode === "upcoming" ? "text-white" : "text-gray-700"
-            }`}
-          >
-            Upcoming Payoff
-          </button>
-
           <button
             onClick={() => setViewMode("graph")}
             className={`relative z-10 w-[220px] text-center px-4 py-2 rounded-full font-semibold transition ${
@@ -309,11 +295,6 @@ const { globalStats } = dashboardStore;
         <ChartSection chartData={filteredLoansByCompany} />
       )}
 
-      {viewMode === "upcoming" && (
-        <div className="bg-white p-5 rounded-2xl shadow-lg">
-          <PayoffDataTable loading={dashboardStore.loading} />
-        </div>
-      )}
     </div>
   );
 });
