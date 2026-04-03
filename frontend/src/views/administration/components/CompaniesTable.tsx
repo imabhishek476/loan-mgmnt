@@ -3,6 +3,7 @@ import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2 } from "lucide-react";
 import { companyStore } from "../../../store/CompanyStore";
+import { isAdmin } from "../../../utils/helpers";
 
 interface CompaniesDataTableProps {
   onSearch: (query: string) => void;
@@ -127,12 +128,15 @@ const renderFee = (fee: any) => {
               //@ts-ignore
               onClick: (event, rowData: any) => onEdit(rowData),
             },
+             ...(isAdmin()
+            ? [
             {
               icon: () => <Trash2 className="w-4 h-4 text-red-600" />,
               tooltip: "Delete",
               //@ts-ignore
               onClick: (event, rowData: any) => onDelete(rowData._id),
             },
+              ] : []),
           ]}
           options={{
             paging: true,

@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2 } from "lucide-react";
+import { isAdmin } from "../../../utils/helpers";
 
 interface AttorneysDataTableProps {
   data: any[];
@@ -109,12 +110,16 @@ const AttorneysDataTable = ({
               tooltip: "Edit",
               onClick: (_: any, rowData: any) => onEdit(rowData),
             },
+             ...(isAdmin()
+        ? [
             {
-              icon: () => <Trash2 className="w-4 h-4 text-red-600" />,
+              icon: () => <Trash2 className="w-4 h-4 text-red-600 " />,
               tooltip: "Delete",
               onClick: (_: any, rowData: any) =>
                 onDelete(rowData._id),
             },
+          ]
+        : []),
           ]}
           options={{
             paging: true,
@@ -133,6 +138,7 @@ const AttorneysDataTable = ({
               fontSize: "13px",
               borderBottom: "1px solid #e5e7eb",
               whiteSpace: "nowrap",
+              padding:"7px 10px",
             },
             maxBodyHeight: "calc(100vh - 320px)",
             minBodyHeight: "calc(100vh - 370px)",
@@ -140,6 +146,7 @@ const AttorneysDataTable = ({
               fontSize: "13px",
               height: 38,
               borderBottom: "1px solid #f1f1f1",
+              
             },
 
             emptyRowsWhenPaging: false,

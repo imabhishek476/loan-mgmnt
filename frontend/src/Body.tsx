@@ -17,7 +17,12 @@ import { ErrorMessage } from "./components/ErrorMessage";
 import ClientDetailsPage from "./views/clients/components/ClientDetailsPage";
 import TemplateEditor from "./views/administration/components/TemplateEditor";
 import { userStore } from "./store/UserStore";
-
+const RoleRedirect = () => {
+  if (userStore.user?.role === "admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <Navigate to="/clients" replace />;
+};
 const appRouter = createBrowserRouter([
   {
     path: "/login",
@@ -36,18 +41,14 @@ const appRouter = createBrowserRouter([
     ),
     errorElement: <ErrorMessage />,
     children: [
-    {
-    path: "",
-    element: (
-      <ProtectedRoute>
-        {userStore.user?.role === "admin" ? (
-          <Navigate to="/dashboard" replace />
-        ) : (
-          <Navigate to="/clients" replace />
-        )}
-      </ProtectedRoute>
-    ),
-  },
+      {
+        path: "",
+        element: (
+          <ProtectedRoute>
+            <RoleRedirect />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "/dashboard",
         element: (

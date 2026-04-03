@@ -35,7 +35,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = observer(({ children,allow
       allowedRoles &&
       !allowedRoles.includes(userStore.user.role)
     ) {
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/clients" replace />;
   }
 
   return children;

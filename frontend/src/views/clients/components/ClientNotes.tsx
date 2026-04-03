@@ -7,6 +7,7 @@ import moment from "moment";
 import { toast } from "react-toastify";
 import { addClientNote, deleteClientNote, fetchClientNotes, updateClientNote} from "../../../services/ClientNotesService";
 import Confirm from "../../../components/Confirm";
+import { isAdmin } from "../../../utils/helpers";
 
 const ClientNotes = ({
   clientId,
@@ -231,11 +232,13 @@ const ClientNotes = ({
                   className="text-blue-600 cursor-pointer hover:text-blue-800"
                   onClick={() => openEditEditor(note)}
                 />
+               {isAdmin() && (
                 <Trash2
                   size={15}
                   className="text-red-600 cursor-pointer hover:text-red-800"
                   onClick={() => handleDelete(note._id)}
                 />
+              )}
               </div>
             </div>
             <p className="text-sm text-gray-700 leading-relaxed">

@@ -1,4 +1,5 @@
 import moment from "moment";
+import { userStore } from "../store/UserStore";
 export const convertToNumber = (val: any): number => {
     const num = typeof val === "string" ? parseFloat(val) : Number(val);
     return isNaN(num) ? 0 : num;
@@ -74,3 +75,6 @@ export const formatPhone = (phone) => {
   return phone;
 };
 export const getLoanTypeOptions = () => LOAN_TYPE_OPTIONS;
+export const isAdmin = () => {
+  return userStore.user?.role === "admin";
+};

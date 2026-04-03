@@ -25,7 +25,7 @@ import { loanStore } from "../../../store/LoanStore";
 import { fetchCompanies } from "../../../services/CompaniesServices";
 import api from "../../../api/axios";
 import DocumentModal from "./DocumentModal";
-import { formatPhone, usd } from "../../../utils/helpers";
+import { formatPhone, isAdmin, usd } from "../../../utils/helpers";
 
 interface LoansTabProps {
 client: any;
@@ -1170,6 +1170,7 @@ return (
                                           >
                                             <Pencil size={16} />
                                           </button>
+                                           {isAdmin() && (
                                           <button
                                             onClick={() =>
                                               handleDeletePayment(p)
@@ -1179,6 +1180,7 @@ return (
                                           >
                                             <Trash2 size={14} />
                                           </button>
+                                           )}                                           
                                             </>
                                           )}
                                         </div>

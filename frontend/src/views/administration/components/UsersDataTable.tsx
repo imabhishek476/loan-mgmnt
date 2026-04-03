@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import MaterialTable from "@material-table/core";
 import { debounce } from "lodash";
 import { Search, Pencil, Trash2 } from "lucide-react";
+import { isAdmin } from "../../../utils/helpers";
 
 interface User {
   _id: string;
@@ -98,11 +99,15 @@ const UsersDataTable = ({
               tooltip: "Edit",
                onClick: (_event, rowData) => onEdit(rowData as User),
             },
+              ...(isAdmin()
+          ? [
             {
               icon: () => <Trash2 className="w-4 h-4 text-red-600" />,
               tooltip: "Delete",
-               onClick: (_event, rowData) => onDelete((rowData as User)._id),
-            },
+              onClick: (_event, rowData) => onDelete((rowData as User)._id),
+                  },
+            ]
+          : []),
           ]}
           options={{
             paging: true,

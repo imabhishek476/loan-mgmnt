@@ -13,6 +13,7 @@ import { getAllowedTerms, LOAN_STATUS_OPTIONS } from "../../../utils/constants";
 import CustomerSearch from "./CustomerSearch";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router-dom";
+import { isAdmin } from "../../../utils/helpers";
 interface ClientsDataTableProps {
   // clients: any[];
   onAddLoan: (client: any) => void;
@@ -350,11 +351,15 @@ const renderLoanStatus = (loan: any) => {
               onClick: (_event, data: any) =>
                 handleToggleActive(data._id, data.isActive),
             }),
+            ...(isAdmin()
+              ? [
             {
               icon: () => <Trash2 className="w-5 h-5 text-red-600" />,
               tooltip: "Delete Client",
               onClick: (_event, rowData: any) => handleDelete(rowData._id),
             },       
+              ]
+              : []),
           ]}
           options={{
             paging: true,
