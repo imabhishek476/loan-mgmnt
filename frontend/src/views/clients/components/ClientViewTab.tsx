@@ -8,6 +8,7 @@ import {
   Scale,
   Shield,
 } from "lucide-react";
+import { formatSSN } from "../../../utils/helpers";
 
 interface ClientViewTabProps {
   client: any;
@@ -75,7 +76,7 @@ const ClientViewTab = ({
                 <InfoRow icon={<Phone size={16} />} label="Phone" value={client.phone} />
                 <InfoRow icon={<MapPin size={16} />} label="Address" value={client.address} />
                 <InfoRow icon={<Scale size={16} />} label="Attorney" value={client.attorneyId?.fullName} />
-                <InfoRow icon={<Shield size={16} />} label="SSN" value={client.ssn} />
+                <InfoRow icon={<Shield size={16} />} label="SSN" value={formatSSN(client.ssn)} />
               </div>
 
               {/* Secondary Info */}

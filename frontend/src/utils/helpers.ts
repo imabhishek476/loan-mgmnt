@@ -79,3 +79,22 @@ export const getLoanTypeOptions = () => LOAN_TYPE_OPTIONS;
 export const isAdmin = () => {
   return userStore.user?.role === "admin";
 };
+export const formatSSN = (ssn: string) => {
+  if (!ssn) return "—";
+  const cleaned = ssn.replace(/\D/g, "");
+  if (cleaned.length !== 9) return ssn; // fallback
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
+};
+export const formatSSNInput = (value: string) => {
+  let cleaned = value.replace(/\D/g, ""); // only digits
+
+  if (cleaned.length > 9) cleaned = cleaned.slice(0, 9);
+
+  if (cleaned.length > 5) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
+  } else if (cleaned.length > 3) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  }
+
+  return cleaned;
+};

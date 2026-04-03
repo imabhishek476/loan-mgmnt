@@ -10,7 +10,7 @@ import { clientStore, type Client } from "../../store/ClientStore";
 import Loans from "../loans/index";
 import { useNavigate } from "react-router-dom";
 import { getAttorney } from "../../services/AttorneyServices";
-import { getLoanTypeOptions } from "../../utils/helpers";
+import { formatSSNInput, getLoanTypeOptions } from "../../utils/helpers";
 // import { loanStore } from "../../store/LoanStore";
 const FormModal = React.lazy(()=> import("../../components/FormModal"))
 const Clients = observer(() => {
@@ -33,7 +33,7 @@ const clientFields: FieldConfig[] = [
   { label: "Full Name", key: "fullName", type: "text", required: true },
   { label: "Email", key: "email", type: "email" },
   { label: "Phone", key: "phone", type: "text" },
-  { label: "SSN / TIN (Last 4 Digits)", key: "ssn", type: "text" },
+  { label: "SSN / TIN (Last 4 Digits)", key: "ssn", type: "text", onChange: (value: string) => formatSSNInput(value) },
   // { label: "Underwriter", key: "underwriter", type: "text" },
   // { 
   //   label: "UCC Filed", 

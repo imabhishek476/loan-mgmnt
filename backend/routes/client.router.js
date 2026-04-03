@@ -9,12 +9,13 @@ const {
   getClientById,
   fixCaseIds,
   checkDuplicateClient,
-  formatPhoneNumbers,
+  formatSSNs
 } = require("../controllers/clientsService");
 const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
 const clientRouter = express.Router();
 
+clientRouter.get("/format-ssn", isAuthenticated, formatSSNs);
 clientRouter.route("/fixCaseIds").get(isAuthenticated, fixCaseIds);
 clientRouter.route("/add").post(isAuthenticated, AddClients);
 clientRouter.route("/search").get(isAuthenticated, searchClients);
