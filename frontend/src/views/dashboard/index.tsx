@@ -5,7 +5,7 @@ import { Users, Building2, CreditCard, DollarSign, EyeOff, Eye } from "lucide-re
 import { clientStore } from "../../store/ClientStore";
 import { companyStore } from "../../store/CompanyStore";
 import CountUp from "react-countup";
-import PayoffDataTable from "./components/PayoffDataTable";
+// import PayoffDataTable from "./components/PayoffDataTable";
 import SearchFilters from "./components/SearchFilters";
 import ChartSection from "./components/ChartSection";
 import { formatCompact, normalizeDateObject } from "../../utils/helpers";
