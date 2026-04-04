@@ -28,7 +28,7 @@ const Clients = observer(() => {
     setSelectedClientForLoan(client);
     clientStore.toggleLoanModel();
   };
-
+const [requestedBy, setRequestedBy] = useState("");
 const clientFields: FieldConfig[] = [
   { label: "Full Name", key: "fullName", type: "text", required: true },
   { label: "Email", key: "email", type: "email" },
@@ -54,11 +54,32 @@ const clientFields: FieldConfig[] = [
       value: attorney._id,
     })),
   },
-  { label: "Medical Paralegal", key: "medicalParalegal", type: "text" },
+  {
+    label: "Medical Paralegal Type",
+    key: "requestedBy",
+    type: "select",
+    options: [
+      { label: "Applicant", value: "applicant" },
+      { label: "Law Office", value: "law_office" },
+    ],
+    onChange: (value: string) => setRequestedBy(value),
+  },
+
+  {
+    label:
+      requestedBy === "law_office"
+        ? "Law Office Name"
+        : "Applicant Name",
+    key: "medicalParalegal",
+    type: "text",
+  },
   // { label: "Case ID", key: "caseId", type: "text" },
   // { label: "Index #", key: "indexNumber", type: "text" },
   { label: "Loan Type", key: "loanType", type: "select", required: false ,options: getLoanTypeOptions() },
-  { label: "Address", key: "address", type: "text" },
+  { label: "Mailing Address", key: "address", type: "text" },
+  { label: "City", key: "city", type: "text" },
+  { label: "State", key: "state", type: "text" },
+  { label: "Zip Code", key: "zipCode", type: "text" },
   { label: "Date of Birth", key: "dob", type: "date" },
   { label: "Accident Date", key: "accidentDate", type: "date" },
   { label: "Memo", key: "memo", type: "textarea", required: false },

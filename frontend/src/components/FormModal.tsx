@@ -20,6 +20,7 @@ import moment from "moment";
 import type { Moment } from "moment";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { formatUSPhone } from "../utils/constants";
+import { formatSSNInput } from "../utils/helpers";
 
 export interface FieldConfig {
   label: string;
@@ -785,6 +786,9 @@ const checkDuplicate = async (field, value) => {
                             let value = e.target.value;
                             if (field.key === "phone") {
                               value = formatUSPhone(value);
+                            }
+                            if (field.key === "ssn") {
+                              value = formatSSNInput(value);
                             }
                             handleChange(field.key, value);
                           }}

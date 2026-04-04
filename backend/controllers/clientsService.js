@@ -9,6 +9,7 @@ const { LoanPayment } = require("../models/LoanPayment");
 const { Attorney } = require("../models/Attorney");
 const { default: mongoose } = require("mongoose");
 const caseCounter = require("../utils/caseCounter");
+const { parseAddress } = require("../library/helper");
 exports.AddClients = async (req, res) => {
   try {
     const {
@@ -19,11 +20,15 @@ exports.AddClients = async (req, res) => {
       dob,
       accidentDate,
       address,
+      city,
+      state,
+      zipCode,
       // attorneyName,
       attorneyId,
       underwriter,
       uccFiled,
       medicalParalegal,
+      requestedBy,
       loanType,
       indexNumber,
       memo,
@@ -99,10 +104,13 @@ let newClient;
       dob: dobStr,
       accidentDate: accidentDateStr,
       address: address || "",
+      city: city || "",
+      state: state || "",
+      zipCode: zipCode || "",
       attorneyId: attorney?._id || null,               
       // attorneyName: attorney?.fullName || attorneyName || "",
       memo: memo || "",
-
+      requestedBy: requestedBy || "",
       customFields: cleanedCustomFields,
       createdBy: req.user ? req.user.id : null,
     });
@@ -777,3 +785,116 @@ exports.formatPhoneNumbers = async (req, res) => {
     });
   }
 };
+exports.formatSSNs = async (req, res) => {
+  try {
+    const clients = await Client.find().select("_id ssn");
+
+    if (!clients.length) {
+      return res.json({
+        success: true,
+        message: "No clients found",
+      });
+    }
+
+    const bulkOps = [];
+
+    clients.forEach((client) => {
+      if (!client.ssn) return;
+
+      // ✅ remove non-digits
+      let cleaned = client.ssn.toString().replace(/\D/g, "");
+
+      // ✅ handle >9 digits
+        if (cleaned.length > 9) {
+          cleaned = cleaned.slice(-9);
+        }
+      // only valid 9 digits
+      if (cleaned.length !== 9) return;
+
+      // ✅ format
+      const formattedSSN = `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
+
+      // update only if changed
+      if (formattedSSN !== client.ssn) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: client._id },
+            update: { $set: { ssn: formattedSSN } },
+          },
+        });
+      }
+    });
+
+    if (bulkOps.length > 0) {
+      await Client.bulkWrite(bulkOps);
+    }
+
+    return res.json({
+      success: true,
+      message: "SSNs updated successfully",
+      totalUpdated: bulkOps.length,
+    });
+  } catch (error) {
+    console.error("FixSSN Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating SSNs",
+      error: error.message,
+    });
+  }
+};
+  exports.formatAddresses = async (req, res) => {
+    try {
+      const clients = await Client.find().select("_id address");
+
+      if (!clients.length) {
+        return res.json({
+          success: true,
+          message: "No clients found",
+        });
+      }
+
+      const bulkOps = [];
+
+      clients.forEach((client) => {
+        if (!client.address) return;
+
+        const { mailingAddress, city, state, zipCode } =
+          parseAddress(client.address);
+
+        // skip empty results
+        if (!mailingAddress && !city && !state && !zipCode) return;
+
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: client._id },
+            update: {
+              $set: {
+                address: mailingAddress,
+                city,
+                state,
+                zipCode,
+              },
+            },
+          },
+        });
+      });
+
+      if (bulkOps.length > 0) {
+        await Client.bulkWrite(bulkOps);
+      }
+
+      return res.json({
+        success: true,
+        message: "Address formatted successfully",
+        totalUpdated: bulkOps.length,
+      });
+    } catch (error) {
+      console.error("FormatAddress Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error updating addresses",
+        error: error.message,
+      });
+    }
+  };

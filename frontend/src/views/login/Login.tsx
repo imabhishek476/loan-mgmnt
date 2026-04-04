@@ -18,7 +18,11 @@ const Login = observer(() => {
     try {
       await userStore.login(email, password);
       toast.success("Login successful 🎉");
+    if (userStore.user?.role === "admin") {
       navigate("/dashboard");
+      } else {
+        navigate("/clients");
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.msg || "Login failed ❌");
     }
@@ -26,7 +30,11 @@ const Login = observer(() => {
  async function fetchData() {
    await userStore.loadUser();
     if (userStore.user?.name) {
+          if (userStore.user?.role === "admin") {
           navigate("/dashboard");
+      } else {
+        navigate("/clients");
+      }
     }
   }
   useEffect(() => {

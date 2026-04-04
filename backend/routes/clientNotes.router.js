@@ -6,9 +6,9 @@ const { addClientNote, getClientNotes, deleteClientNote, updateClientNote } = re
 
 const clientNotesRouter = express.Router();
 
-clientNotesRouter.post("/store", isAuthenticated, isAdmin, addClientNote);
-clientNotesRouter.put("/:id", isAuthenticated, isAdmin, updateClientNote);
-clientNotesRouter.get("/:clientId", isAuthenticated, isAdmin, getClientNotes);
+clientNotesRouter.post("/store", isAuthenticated, addClientNote);
+clientNotesRouter.put("/:id", isAuthenticated, updateClientNote);
+clientNotesRouter.get("/:clientId", isAuthenticated, getClientNotes);
 clientNotesRouter.delete("/:id", isAuthenticated, isAdmin, deleteClientNote);
 
 module.exports = clientNotesRouter;
