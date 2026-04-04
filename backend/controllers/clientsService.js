@@ -9,6 +9,7 @@ const { LoanPayment } = require("../models/LoanPayment");
 const { Attorney } = require("../models/Attorney");
 const { default: mongoose } = require("mongoose");
 const caseCounter = require("../utils/caseCounter");
+const { parseAddress } = require("../library/helper");
 exports.AddClients = async (req, res) => {
   try {
     const {
@@ -842,3 +843,58 @@ exports.formatSSNs = async (req, res) => {
     });
   }
 };
+  exports.formatAddresses = async (req, res) => {
+    try {
+      const clients = await Client.find().select("_id address");
+
+      if (!clients.length) {
+        return res.json({
+          success: true,
+          message: "No clients found",
+        });
+      }
+
+      const bulkOps = [];
+
+      clients.forEach((client) => {
+        if (!client.address) return;
+
+        const { mailingAddress, city, state, zipCode } =
+          parseAddress(client.address);
+
+        // skip empty results
+        if (!mailingAddress && !city && !state && !zipCode) return;
+
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: client._id },
+            update: {
+              $set: {
+                address: mailingAddress,
+                city,
+                state,
+                zipCode,
+              },
+            },
+          },
+        });
+      });
+
+      if (bulkOps.length > 0) {
+        await Client.bulkWrite(bulkOps);
+      }
+
+      return res.json({
+        success: true,
+        message: "Address formatted successfully",
+        totalUpdated: bulkOps.length,
+      });
+    } catch (error) {
+      console.error("FormatAddress Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error updating addresses",
+        error: error.message,
+      });
+    }
+  };

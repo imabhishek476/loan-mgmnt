@@ -9,7 +9,8 @@ const {
   getClientById,
   fixCaseIds,
   checkDuplicateClient,
-  formatSSNs
+  formatSSNs,
+  formatAddresses
 } = require("../controllers/clientsService");
 const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
@@ -18,6 +19,7 @@ const clientRouter = express.Router();
 clientRouter.get("/format-ssn", isAuthenticated, formatSSNs);
 clientRouter.route("/fixCaseIds").get(isAuthenticated, fixCaseIds);
 clientRouter.route("/add").post(isAuthenticated, AddClients);
+clientRouter.get("/format-address", isAuthenticated,  formatAddresses);
 clientRouter.route("/search").get(isAuthenticated, searchClients);
 clientRouter.route("/loans/:id").get(isAuthenticated, getClietsLoan);
 clientRouter.route("/:id").put(isAuthenticated,  updateClient);
