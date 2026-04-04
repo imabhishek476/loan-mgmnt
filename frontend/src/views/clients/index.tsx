@@ -10,7 +10,7 @@ import { clientStore, type Client } from "../../store/ClientStore";
 import Loans from "../loans/index";
 import { useNavigate } from "react-router-dom";
 import { getAttorney } from "../../services/AttorneyServices";
-import { formatSSNInput, getLoanTypeOptions } from "../../utils/helpers";
+import { getLoanTypeOptions } from "../../utils/helpers";
 // import { loanStore } from "../../store/LoanStore";
 const FormModal = React.lazy(()=> import("../../components/FormModal"))
 const Clients = observer(() => {
@@ -77,6 +77,9 @@ const clientFields: FieldConfig[] = [
   // { label: "Index #", key: "indexNumber", type: "text" },
   { label: "Loan Type", key: "loanType", type: "select", required: false ,options: getLoanTypeOptions() },
   { label: "Mailing Address", key: "address", type: "text" },
+  { label: "City", key: "city", type: "text" },
+  { label: "State", key: "state", type: "text" },
+  { label: "Zip Code", key: "zipCode", type: "text" },
   { label: "Date of Birth", key: "dob", type: "date" },
   { label: "Accident Date", key: "accidentDate", type: "date" },
   { label: "Memo", key: "memo", type: "textarea", required: false },

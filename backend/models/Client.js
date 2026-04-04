@@ -32,7 +32,7 @@ const ClientSchema = new mongoose.Schema(
   uccFiled: Boolean,
   requestedBy: {
     type: String,
-    enum: ["applicant", "law_office"],
+    enum: ["","applicant", "law_office"],
     default: null,
   },
   medicalParalegal: String,
@@ -57,6 +57,9 @@ const ClientSchema = new mongoose.Schema(
   dob: String,
   accidentDate: String,
   address: String,
+  city: String,
+  state: String,
+  zipCode: String,
   attorneyName: String,
   attorneyId: { type: mongoose.Schema.Types.ObjectId, ref: "Attorney" },
   memo: String,
@@ -72,6 +75,9 @@ ClientSchema.index({ phone: 1 });
 ClientSchema.index({ ssn: 1 });
 ClientSchema.index({ accidentDate: 1 });
 ClientSchema.index({ address: 1 });
+ClientSchema.index({ city: 1 });
+ClientSchema.index({ state: 1 });
+ClientSchema.index({ zipCode: 1 });
 ClientSchema.index({ attorneyName: 1 });
 ClientSchema.index({ underwriter: 1 });
 ClientSchema.index({ medicalParalegal: 1 });
