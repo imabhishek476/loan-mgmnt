@@ -10,10 +10,10 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
 const userRouter = express.Router();
 
-userRouter.get("/allusers", isAuthenticated, isAdmin, getAllUsers);
-userRouter.post("/", isAuthenticated, isAdmin, createUser);
-// userRouter.get("/:id", isAuthenticated, isAdmin, getUserById);
-userRouter.put("/:id", isAuthenticated, isAdmin, updateUser);
+userRouter.get("/allusers", isAuthenticated,getAllUsers);
+userRouter.post("/", isAuthenticated,createUser);
+// userRouter.get("/:id", isAuthenticated,getUserById);
+userRouter.put("/:id", isAuthenticated,updateUser);
 userRouter.delete("/:id", isAuthenticated, isAdmin, deleteUser);
 
 module.exports = userRouter;

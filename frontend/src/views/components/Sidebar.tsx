@@ -47,7 +47,12 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
     { name: "Reports", icon: <BarChart3 className="w-5 h-5" />, path: "reports" },
     { name: "Administration", icon: <Settings className="w-5 h-5" />, path: "administration" },
   ];
-
+  const filteredMenuItems = menuItems.filter((item) => {
+    if (item.path === "dashboard" && userStore.user?.role !== "admin") {
+      return false;
+    }
+    return true;
+  });
   const currentPath = location.pathname.replace(/^\/+/, "") || "dashboard";
   const title = getAppTitle();
 
@@ -90,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = observer(({ open, setOpen }) => {
 
       {/* Navigation Links */}
       <nav className="m-2 mt-4 flex flex-col gap-2 flex-1">
-        {menuItems.map((item) => {
+        {filteredMenuItems.map((item) => {
           const isActive = currentPath.startsWith(item.path);
           if (item.action === "createClient") {
             return (

@@ -1,4 +1,5 @@
 import moment from "moment";
+import { userStore } from "../store/UserStore";
 export const convertToNumber = (val: any): number => {
     const num = typeof val === "string" ? parseFloat(val) : Number(val);
     return isNaN(num) ? 0 : num;
@@ -54,7 +55,8 @@ export const LOAN_TYPE_OPTIONS = [
   { label: "Workers Comp", value: "Workers Comp" },
   { label: "MVA", value: "MVA" },
   { label: "Labor Law", value: "Labor Law" },
-  { label: "Commercial", value: "Commercial" },
+  { label: "Personal", value: "Personal" },
+  { label: "Corporate", value: "Corporate" },
 ];
 export const formatMoney = (val: any) => {
   return convertToUsd.format(convertToNumber(val)).replace("$", "");
@@ -74,3 +76,25 @@ export const formatPhone = (phone) => {
   return phone;
 };
 export const getLoanTypeOptions = () => LOAN_TYPE_OPTIONS;
+export const isAdmin = () => {
+  return userStore.user?.role === "admin";
+};
+export const formatSSN = (ssn: string) => {
+  if (!ssn) return "—";
+  const cleaned = ssn.replace(/\D/g, "");
+  if (cleaned.length !== 9) return ssn; // fallback
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
+};
+export const formatSSNInput = (value: string) => {
+  let cleaned = value.replace(/\D/g, ""); // only digits
+
+  if (cleaned.length > 9) cleaned = cleaned.slice(0, 9);
+
+  if (cleaned.length > 5) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
+  } else if (cleaned.length > 3) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  }
+
+  return cleaned;
+};

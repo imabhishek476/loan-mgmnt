@@ -431,11 +431,98 @@ const getPayoffStats = async (req, res) => {
   }
 };
 
+const exportPayoffStats = async (req, res) => {
+  try {
+    const { type = "all" } = req.query;
 
+    const today = moment();
+    let from, to;
+
+    if (type === "day") {
+      from = today.clone().startOf("day").toDate();
+      to = today.clone().endOf("day").toDate();
+    } else if (type === "week") {
+      from = today.clone().startOf("week").toDate();
+      to = today.clone().endOf("week").toDate();
+    } else if (type === "month") {
+      from = today.clone().startOf("month").toDate();
+      to = today.clone().endOf("month").toDate();
+    } else {
+      from = new Date("1970-01-01");
+      to = new Date("2100-12-31");
+    }
+
+    const loans = await Loan.aggregate([
+      { $match: { status: { $nin: ["Paid Off", "Merged"] } } },
+
+      { $unwind: "$tenures" },
+
+      {
+        $addFields: {
+          "tenures.endDateObj": {
+            $dateFromString: {
+              dateString: "$tenures.endDate",
+              format: "%m-%d-%Y",
+            },
+          },
+        },
+      },
+
+      {
+        $match: {
+          "tenures.endDateObj": { $gte: from, $lte: to },
+        },
+      },
+
+      { $sort: { "tenures.endDateObj": 1 } },
+
+      {
+        $lookup: {
+          from: "clients",
+          localField: "client",
+          foreignField: "_id",
+          as: "client",
+        },
+      },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company",
+          foreignField: "_id",
+          as: "company",
+        },
+      },
+
+      {
+        $addFields: {
+          clientName: { $arrayElemAt: ["$client.fullName", 0] },
+          companyName: { $arrayElemAt: ["$company.companyName", 0] },
+          companycolour: { $arrayElemAt: ["$company.backgroundColor", 0] },
+        },
+      },
+
+      {
+        $project: {
+          client: 0,
+          company: 0,
+        },
+      },
+    ]);
+
+    return res.json({
+      total: loans.length,
+      data: loans,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Export failed" });
+  }
+};
 
 module.exports = {
   getLoansByCompanyByDate,
   getFilteredStats,
   getDashboardStats,
   getPayoffStats,
+  exportPayoffStats
 };

@@ -4,9 +4,9 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth.middleware");
 
 const companiesRouter = express.Router();
 
-companiesRouter.route("/store").post(isAuthenticated, isAdmin, CompaniesCreate);
-companiesRouter.route("/allcompanies").get(isAuthenticated, isAdmin, AllCompanies);
-companiesRouter.route("/update/:id").put(isAuthenticated, isAdmin, updateCompany);
+companiesRouter.route("/store").post(isAuthenticated,CompaniesCreate);
+companiesRouter.route("/allcompanies").get(isAuthenticated, AllCompanies);
+companiesRouter.route("/update/:id").put(isAuthenticated, updateCompany);
 companiesRouter.route("/delete/:id").delete(isAuthenticated, isAdmin, deleteCompany);
 
 

@@ -25,6 +25,7 @@
   import FormModal, { type FieldConfig } from "../../../components/FormModal";
   
 import { useNavigate } from "react-router-dom";
+import { isAdmin } from "../../../utils/helpers";
 
   interface LoanTableProps {
     clientId?: string;
@@ -443,6 +444,8 @@ import { useNavigate } from "react-router-dom";
                   hidden: false,
                   onClick: (_event, row) => handleView(row),
                 }),
+                 ...(isAdmin()
+            ? [
                 (rowData: any) => ({
                   icon: () => <Trash2 className="w-5 h-5 text-red-500" />,
                   tooltip:
@@ -451,6 +454,8 @@ import { useNavigate } from "react-router-dom";
                       : "Delete Loan",
                   onClick: (_event, row) => handleDelete(row),
                 }),
+              ]
+            : []),
               ]}
               options={{
                 paging: true,

@@ -6,8 +6,10 @@ import BrokerFeeReport from "./components/BrokerFeeReport";
 import reportService from "../../api/reportService";
 import { Autocomplete, TextField } from "@mui/material";
 import { AlertTriangle, Calendar, DollarSign, Files } from "lucide-react";
+import PayoffDataTable from "../dashboard/components/PayoffDataTable";
+import { dashboardStore } from "../../store/DashboardStore";
 
-type TabType = "fraudulent" | "yearly" | "brokerFee";
+type TabType = "fraudulent" | "yearly" | "brokerFee"|"payoff";
 
 const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -22,7 +24,11 @@ const Reports: React.FC = () => {
   useEffect(() => {
     loadFilterOptions();
   }, []);
-
+  useEffect(() => {
+    if (activeTab === "payoff") {
+      dashboardStore.loadPayoffStats("week", 1, 10); 
+    }
+  }, [activeTab]);
   const loadFilterOptions = async () => {
     try {
       const [companiesRes, yearsRes] = await Promise.all([
@@ -47,6 +53,7 @@ const Reports: React.FC = () => {
     { key: "fraudulent", label: "Status Report", icon: <AlertTriangle size={18} /> },
     { key: "yearly", label: "Annual Report", icon: <Calendar size={18} /> },
     { key: "brokerFee", label: "Fee Report", icon: <DollarSign size={18} /> },
+    { key: "payoff", label: "Upcoming Payoff", icon: <DollarSign size={18} /> }, 
   ];
 
   return (
@@ -135,6 +142,9 @@ const Reports: React.FC = () => {
             )}
             {activeTab === "brokerFee" && (
               <BrokerFeeReport companies={companies} years={years} />
+            )}
+            {activeTab === "payoff" && (
+                <PayoffDataTable loading={dashboardStore.loading} />
             )}
           </>
         ) : (

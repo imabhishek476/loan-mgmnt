@@ -2,6 +2,7 @@ import { AlertTriangle, Home, RefreshCcw } from "lucide-react";
 import { useEffect } from "react";
 import { useRouteError, useNavigate } from "react-router-dom";
 import { logFrontendError } from "../services/AuditLogService";
+import { userStore } from "../store/UserStore";
 
 export const ErrorMessage = () => {
   const error: any = useRouteError();
@@ -18,7 +19,11 @@ export const ErrorMessage = () => {
   }, [error]);
 
   const goToDashboard = async () => {
-    navigate("/dashboard");
+    if (userStore?.user?.role === "admin") {
+      navigate("/dashboard");
+    } else {
+      navigate("/clients");
+    }
   };
 
   return (
